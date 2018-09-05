@@ -1,0 +1,206 @@
+# Prediction level explanations {-}
+
+# Introduction
+
+## Variable atribution vs What-If analysis
+
+## Example: Promoted or Fired?
+
+[@R-randomForest]
+[@R-ggplot2]
+
+Call Center
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(HR)
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+library("ceterisParibus")
+set.seed(59)
+
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+```
+
+```{r, warning=FALSE, message=FALSE}
+pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
+pred2 <- function(m, x)   predict(m, x, type = "prob")[,2]
+pred3 <- function(m, x)   predict(m, x, type = "prob")[,3]
+
+explainer_rf_fired <- explain(model, data = HR[,1:5], 
+                              y = HR$status == "fired", 
+                              predict_function = pred1, label = "fired")
+explainer_rf_ok <- explain(model, data = HR[,1:5], 
+                              y = HR$status == "ok", 
+                              predict_function = pred2, label = "ok")
+explainer_rf_promoted <- explain(model, data = HR[,1:5], 
+                               y = HR$status == "promoted", 
+                               predict_function = pred3, label = "promoted")
+```
+
+
+
+
+
+# Break Down
+
+[@R-breakDown]
+
+```{r, warning=FALSE, message=FALSE}
+library(breakDown)
+```
+
+Variable Atribution
+
+## Interactions
+
+# Shapley Values
+
+Variable Atribution
+
+
+# LIME: Local Interpretable Model-Agnostic Explanations
+
+[@R-lime]
+[@R-live]
+
+```{r, warning=FALSE, message=FALSE}
+library(lime)
+library(live)
+```
+
+Sparse model approximation / variable selection / feature ranking
+
+live: Local Interpretable (Model-Agnostic) Visual Explanations 
+
+# Ceteris Paribus Principle
+
+[@R-ceterisParibus]
+
+```{r, warning=FALSE, message=FALSE}
+library(ceterisParibus)
+```
+
+What if scenarios
+
+## 1D profiles
+
+## 2D profiles
+
+2d plots for interactions
+
+```{r, eval=FALSE}
+library("DALEX")
+library("ceterisParibus")
+library("randomForest")
+set.seed(59)
+
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
+explainer_rf_fired <- explain(model, data = HR[,1:5],
+   y = HR$status == "fired",
+   predict_function = pred1, label = "fired")
+
+new_emp <- HR[1, ]
+new_emp
+
+wi_rf_2d <- what_if_2d(explainer_rf_fired, observation = new_emp)
+wi_rf_2d
+
+library("dplyr")
+library("tidyr")
+wi_rf_2d %>% 
+  filter(vname1 == "age", vname2 == "salary") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+library("lattice")
+wireframe(wi_mat, shade = TRUE, xlab="age", ylab="salary", zlab="y hat")
+
+
+wi_rf_2d %>% 
+  filter(vname1 == "age", vname2 == "hours") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="age", ylab="hours", zlab="y hat")
+
+
+plot(wi_rf_2d)
+
+
+
+# -------------
+
+apartments_rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
+      no.rooms + district, data = apartments)
+
+explainer_rf <- explain(apartments_rf_model,
+      data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
+
+new_apartment <- apartmentsTest[100, ]
+new_apartment
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment)
+
+wi_rf_2d %>% 
+  filter(vname1 == "construction.year", vname2 == "surface") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="construction.year", ylab="surface", zlab="y hat")
+
+
+plot(wi_rf_2d)
+
+
+
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
+
+wi_rf_2d %>% 
+  filter(vname1 == "construction.year", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+wi_mat[100,] = NA
+wi_mat[,100] = NA
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+
+
+wi_rf_2d %>% 
+  filter(vname1 == "surface", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="surface", ylab="floor", zlab="y hat")
+
+wireframe(wi_mat[101:1,101:1], xlab="surface", ylab="floor", zlab="y hat")
+
+plot(wi_rf_2d, add_raster = FALSE, bins = 5) + theme_dark()
+
+
+```
+
+# Local model fidelity
+
+ Local fit
+
+# Other topics
+
+
