@@ -2,6 +2,27 @@
 
 # Introduction
 
+
+
+
+
+76 years ago Isaac Asimov devised [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 1) a robot may not injure a human being, 2) a robot must obey the orders given it by human beings and 3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
+
+Today we are surrounded by complex predictive algorithms used for decision making. Machine learning models are used in health care, politics, education, judiciary and many other areas. Black box predictive models have far larger influence on our lives than physical robots. Yet, applications of such models are left unregulated despite many examples of their potential harmfulness. See *Weapons of Math Destruction* by Cathy O'Neil for an excellent overview of potential problems.
+
+It's clear that we need to control algorithms that may affect us. Such control is in our civic rights. Here we propose three requirements that any predictive model should fulfill.
+
+-	**Prediction's justifications**. For every prediction of a model one should be able to understand which variables affect the prediction and how strongly. Variable attribution to final prediction.
+-	**Prediction's speculations**. For every prediction of a model one should be able to understand how the model prediction would change if input variables were changed. Hypothesizing about what-if scenarios.
+-	**Prediction's validations** For every prediction of a model one should be able to verify how strong are evidences that confirm this particular prediction.
+
+There are two ways to comply with these requirements. 
+One is to use only models that fulfill these conditions by design. White-box models like linear regression or decision trees. In many cases the price for transparency is lower performance. 
+The other way is to use approximated explainers – techniques that find only approximated answers, but work for any black box model. Here we present such techniques.
+
+
+
+
 ## Variable atribution vs What-If analysis
 
 ## Example: Promoted or Fired?
@@ -74,133 +95,4 @@ library(live)
 Sparse model approximation / variable selection / feature ranking
 
 live: Local Interpretable (Model-Agnostic) Visual Explanations 
-
-# Ceteris Paribus Principle
-
-[@R-ceterisParibus]
-
-```{r, warning=FALSE, message=FALSE}
-library(ceterisParibus)
-```
-
-What if scenarios
-
-## 1D profiles
-
-## 2D profiles
-
-2d plots for interactions
-
-```{r, eval=FALSE}
-library("DALEX")
-library("ceterisParibus")
-library("randomForest")
-set.seed(59)
-
-model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
-explainer_rf_fired <- explain(model, data = HR[,1:5],
-   y = HR$status == "fired",
-   predict_function = pred1, label = "fired")
-
-new_emp <- HR[1, ]
-new_emp
-
-wi_rf_2d <- what_if_2d(explainer_rf_fired, observation = new_emp)
-wi_rf_2d
-
-library("dplyr")
-library("tidyr")
-wi_rf_2d %>% 
-  filter(vname1 == "age", vname2 == "salary") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-library("lattice")
-wireframe(wi_mat, shade = TRUE, xlab="age", ylab="salary", zlab="y hat")
-
-
-wi_rf_2d %>% 
-  filter(vname1 == "age", vname2 == "hours") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="age", ylab="hours", zlab="y hat")
-
-
-plot(wi_rf_2d)
-
-
-
-# -------------
-
-apartments_rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
-      no.rooms + district, data = apartments)
-
-explainer_rf <- explain(apartments_rf_model,
-      data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
-
-new_apartment <- apartmentsTest[100, ]
-new_apartment
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment)
-
-wi_rf_2d %>% 
-  filter(vname1 == "construction.year", vname2 == "surface") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="construction.year", ylab="surface", zlab="y hat")
-
-
-plot(wi_rf_2d)
-
-
-
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
-
-wi_rf_2d %>% 
-  filter(vname1 == "construction.year", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-wi_mat[100,] = NA
-wi_mat[,100] = NA
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-
-
-wi_rf_2d %>% 
-  filter(vname1 == "surface", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="surface", ylab="floor", zlab="y hat")
-
-wireframe(wi_mat[101:1,101:1], xlab="surface", ylab="floor", zlab="y hat")
-
-plot(wi_rf_2d, add_raster = FALSE, bins = 5) + theme_dark()
-
-
-```
-
-# Local model fidelity
-
- Local fit
-
-# Other topics
-
 
