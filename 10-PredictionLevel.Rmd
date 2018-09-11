@@ -2,28 +2,35 @@
 
 # Introduction {PredictionExplainers}
 
-Prediction level exlpainers help to understand factors beyond model responsses for individual data points.
+Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model in general. Prediction level explainers are always in context of a single observation.
 
-Here we are asking questions related to a single models response, like:
+Think about following use-cases
 
-- is the single prediction reliable
+- One wants to attribute effects of variables to a model predictions. Think about model for hart attack. Having a final score for a patient one wants to understand how much of this score come from smoking or age or gender. 
+- One wants to understand how the model response would change if some inputs are changed. Think about model for hart attack. How the model response would change it the patient cut the number of smoked cigarettes by half.
+- Model is not working correctly for a particular point and one wants to understand why predictions for this point are wrong. 
 
+## Variable atribution vs What-if analysis
 
-We are not interested in global model behaviour.
+There are many different tools that may be used to explore model around a single data point and in following sections we will describe the most popular approaches. They can be divided into two classes.
 
-There are several usecases for such explainers. 
-
-* Model improvement. If model works particualry bad for a selected observation (the residual is very high) then investigation of model responses for missfitted points may give some hints how to improve the model. For individual predictions it is easier to notice that selected variable should have different a effect.
-* Increased trust in model predictions. 
-* Model selection. Having multiple candidate responses for a single observation one may look for additional factors to select final decision. This moves us towards expert consilus that identify different options and allow user to seelct one of them. 
-
-
----
+* Analysis of the model curvature. Here we treat the model as a function and we are interested in the curvature of this function around the point of interest (see Figure \@ref(fig:model_response_curve)). In section \@ref(LIME) we present the LIME method that approximates the black-box model in a point of interest while in section \@ref(ceterisParibus) we present Ceteris Paribus profiles that are more focused on conditional changes of model response given only one coordinate is modified. 
+* Analysis of the probabilistic behavior of the model. Here we are interested in decomposition of the model response to parts that can be attributed to particular features.
 
 
+```{r model_response_curve, fig.cap="Model response surface. We are interested in understanding the model behavior in a single point"}
+knitr::include_graphics("figures/model_response.png")
+```
 
+## When to use? 
 
+There are several use-cases for such explainers. Think about following.
 
+* Model improvement. If model works particular bad for a selected observation (the residual is very high) then investigation of model responses for miss fitted points may give some hints how to improve the model. For individual predictions it is easier to notice that selected variable should have different a effect.
+* Additional domain specific validation. Understanding which factors are important for model predictions helps to be critical about model response. If model contributions are against domain knowledge then we may be more skeptical and willing to try another model. On the other hand, if the model response is aligned with domain knowledge we may trust more in these responses. Such trust is important in decisions that may lead to serious consequences like predictive models in medicine.
+* Model selection. Having multiple candidate models one may select the final response based on model explanations. Even if one model is better in terms of global model performance it may happen that locally other model is better fitted. This moves us towards model consultations that identify different options and allow human to select one of them. 
+
+## A bit of philosophy
 
 76 years ago Isaac Asimov devised [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 1) a robot may not injure a human being, 2) a robot must obey the orders given it by human beings and 3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
 
@@ -40,31 +47,43 @@ One is to use only models that fulfill these conditions by design. White-box mod
 The other way is to use approximated explainers – techniques that find only approximated answers, but work for any black box model. Here we present such techniques.
 
 
-
-
-## Variable atribution vs What-If analysis
-
 ## Example: Promoted or Fired?
 
-[@R-randomForest]
-[@R-ggplot2]
+In this chapter we will use artificial dataset from Human Resources department in a call center to present pros and cons for different techniques of prediction level explainers. At the end of each section there is a collection of examples that shows how to use described techniques in R and Python.
 
-Call Center
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee of a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
+
+The problem here is to first build a model, that will determine when to fires and when to promote an employer, so it's a classification problem with three classes. 
+But having a model we will use prediction level explainers to better understand how the model works for selected cases.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(HR)
 ```
 
+In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest [@R-randomForest] and generalized linear model [@R-nnet].
+
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-library("ceterisParibus")
 set.seed(59)
 
-model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+
+library("nnet")
+model_glm <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
 ```
 
+
+
+
+# Break Down
+
+[@R-breakDown]
+
 ```{r, warning=FALSE, message=FALSE}
+library("ceterisParibus")
+model = model_rf
+
 pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
 pred2 <- function(m, x)   predict(m, x, type = "prob")[,2]
 pred3 <- function(m, x)   predict(m, x, type = "prob")[,3]
@@ -82,12 +101,6 @@ explainer_rf_promoted <- explain(model, data = HR[,1:5],
 
 
 
-
-
-# Break Down
-
-[@R-breakDown]
-
 ```{r, warning=FALSE, message=FALSE}
 library(breakDown)
 ```
@@ -100,18 +113,4 @@ Variable Atribution
 
 Variable Atribution
 
-
-# LIME: Local Interpretable Model-Agnostic Explanations
-
-[@R-lime]
-[@R-live]
-
-```{r, warning=FALSE, message=FALSE}
-library(lime)
-library(live)
-```
-
-Sparse model approximation / variable selection / feature ranking
-
-live: Local Interpretable (Model-Agnostic) Visual Explanations 
 
