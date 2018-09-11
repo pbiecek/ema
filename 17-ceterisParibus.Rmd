@@ -1,28 +1,72 @@
 # Ceteris Paribus Principle {#ceterisParibus}
 
-Explainers listed in the previouse point were focused on a question, how variables are linked with the model prediction. 
-Here we will present methods, that are linked with a questions, how changes in variables affect model predictions. Instead of being focused on a response for a single input, we would like to explore model responses around the point of interest.
+In this section we introduce tools based on Ceteris Paribus principle. The main goal for these tools is to help understand how changes in model input affect changes in model output. 
 
-Such explainers are linked with the second right listed in [ref:PredictionExplainers]. Such speculations are designed to present / visualise model response for input that is sighty changed.
-
+Presented explainers are linked with the second law introduced in Section \@ref(three-single-laws), i.e. law for prediction's speculations. This is why these explainers are also known as *What-If model analysis* or *Individual Conditional EXpectations* [@ICEbox]. It turns out that it is easier to understand how blacx-box model is working if we can play with it by changing variable by variable. 
 
 Think of following usecases:
 
-A. For a patient Alicia the model retuns high risk of a hypertension. The patient would like to know how to reduce this risk. Here the patient would like to know, how his risk of hupertension would change if a particular variable will change (like smoking status, physical activity, diet).
-B. For customer Bob the credit scoring model retunrs high risk of default therefore bank refuses the credit. Here Bob would like to know what needs to be changed to pass the bank criteria. To change the model decision 
-C. 
+- Think about a model for hart attack. How the model response would change if a patient cuts the number of smoked cigarettes by half or increase physical activity.
+- Think about a model for credit scoring. A customer gets a low score and is asking what he needs to change to increase this score to a certain level, to pass the bank criteria.
+- Think about a model for apartment prices. An investor wants to know how much the price may increase if apartment standard is upgraded.
 
 
 
-[@R-ceterisParibus]
+## Introduction
 
-```{r, warning=FALSE, message=FALSE}
-library(ceterisParibus)
+*Ceteris paribus* is a Latin phrase meaning "other things held constant" or "all else unchanged". Using this principle we examine input variable per variable separatly, asumming that effects of all other variables are unchanged. See Figure \@ref(fig:modelResponseCurveLine) 
+
+
+```{r modelResponseCurveLine, echo=FALSE, fig.cap="(fig:modelResponseCurveLine) A) Model response surface. Ceteris Paribus profiles marked with black curves helps to understand the curvature of the model response by updating only a single variable. B) CP profiles are individual conditional model responses", out.width = '70%'}
+knitr::include_graphics("figure/model_response_line.png")
 ```
 
-What if scenarios
+Similar to the LIME method introduced in the section \@ref(LIME), Ceteris Paribus profiles examine curvature of a model response function. The difference between these two methods that LIME approximates the model curvature with a simpler white-box model that is easier to present. Usually the LIME model is sparse, thus our attention may be limited to smaller number of dimensions. In contrary, the CP plots show conditional model response for every variable. In the last subsection we discuss pros and cons of this approach.
 
-## Intoduction
+## 1D profiles
+
+Let $f_{M}(x): \mathcal R^{d} \rightarrow \mathcal R$ denote a predictive model, i.e. function that takes $d$ dimensional vector and calculate numerical score. 
+Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subscript $x_i$ to refer to a different data points and superscript $x^j$ to refer to specific dimensions. Additionally, let $x^{-j}$ denote all coordinates except $j$-th and let $x|^j=z$ denote a data point $x^*$ with all coordinates equal to $x$ except coordinate $j$ equal to value $z$. I.e. $\forall_{i \neq {j}} x^i = x^{*,i}$ and $x^j = z$. In other words $x|^j=z$ denote a $x$ with $j$th coordinate changed to $z$.
+
+Now we can define uni-dimensional Ceteris Paribus Profile for model $f$, variable $j$ and point $x$ as
+
+$$
+CP^{f, j, x}(z) := f(x|^j = z).
+$$
+I.e. CP profile is a model response obtained for observations created based on $x$ with $j$ coordinated changes and all other coordinates kept unchanged.
+
+A natural way to visualise CP profiles is to use a profile plot as in Figure.
+
+
+
+Figure \@ref(fig:HRCPFiredHours) shows an example of Ceteris Paribus profile. The black dot stands for prediction for a single observation. Grey line show how the model response would change if in this single observation coordinate `hours` will be changed to selected value. One thing that we can read is that the model response is not smooth and there is some variability along the profile. Second thing is that for this particular observation the model response would drop significantly if the variable `hours` will be higher than 45.
+
+```{r HRCPFiredHours, echo=FALSE, fig.cap="(fig:HRCPHiredHours) Ceteris Paribus profile for Random Forest model that assess the probability of being fired in call center as a function of average number of working hours", out.width = '50%'}
+knitr::include_graphics("figure/HR_cp_fired_hours.png")
+```
+
+Since in the example dataset we are struggling with model for three classes, one can plot CP profiles for each class in the same panel. See an example in the Figure  \@ref(fig:HRCPAllHours).
+
+```{r HRCPAllHours, echo=FALSE, fig.cap="(fig:HRCPHiredHours) Ceteris Paribus profiles for three classess predicted by the Random Forest model as a function of average number of working hours", out.width = '70%'}
+knitr::include_graphics("figure/HR_cp_all_hours.png")
+```
+
+Usually model input consist many variables, then it is beneficial to show more variables at the same time. The easiest way to do so is to plot consecutive variables on separate panels. See an example in Figure \@ref(HRCPFiredAll).
+
+```{r HRCPFiredAll, echo=FALSE, fig.cap="(fig:HRCPFiredAll) Ceteris Paribus profiles for all continuous variables", out.width = '70%'}
+knitr::include_graphics("figure/HR_cp_fired_all.png")
+```
+
+
+## Profile oscilations
+
+
+
+
+
+## 2D profiles
+
+## Pros and cons
 
 + visualise what if scenarios
   easier to understand black box if we can understand how model response changes with changes in input
@@ -32,21 +76,18 @@ limits
 - correlated variables
 - interactions between variables
 
--> 
-Individual Conditional EXpectations ICE
-
-
-
-
-
-
-## 1D profiles
-
-## 2D profiles
-
 ## Code snippets
 
 2d plots for interactions
+
+
+
+[@R-ceterisParibus]
+
+```{r, warning=FALSE, message=FALSE}
+library(ceterisParibus)
+```
+
 
 ```{r}
 library("DALEX")
@@ -60,8 +101,44 @@ explainer_rf_fired <- explain(model, data = HR[,1:5],
    y = HR$status == "fired",
    predict_function = pred1, label = "fired")
 
+pred2 <- function(m, x)   predict(m, x, type = "prob")[,2]
+explainer_rf_ok <- explain(model, data = HR[,1:5],
+   y = HR$status == "ok",
+   predict_function = pred2, label = "ok")
+
+pred3 <- function(m, x)   predict(m, x, type = "prob")[,3]
+explainer_rf_promoted <- explain(model, data = HR[,1:5],
+   y = HR$status == "promoted",
+   predict_function = pred3, label = "promoted")
+
+
 new_emp <- HR[1, ]
 new_emp
+
+
+cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired", variables = "hours")
+cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok", variables = "hours")
+cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted", variables = "hours")
+
+plot(cp_rf_fired, cp_rf_ok, cp_rf_promoted, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() +ylab("y hat") + xlab("")
+
+plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
+
+
+
+cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired")
+cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok")
+cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted")
+
+plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
+
+
 
 wi_rf_2d <- what_if_2d(explainer_rf_fired, observation = new_emp)
 wi_rf_2d
