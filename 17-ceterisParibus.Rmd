@@ -141,7 +141,33 @@ knitr::include_graphics("figure/cp_2d_all.png")
 
 ## Local model fidelity
 
- Local fit
+Ceteris Paribus profiles are also a useful tool to validate local model fidelity. 
+It may happen that global performance of the model is good, while for some points the local fit is very bad. Local fidelity helps to understand how good is the model fit around point of interest.
+
+How does it work?
+
+The idea behind fidelity plots is to select some number of points from the validation dataset that are closes to the point of interest. 
+It's a similar approach as in k nearest neighbours. Then for these neighbours we may plot Ceteris Paribus Profiles and check how stable they are.
+
+Also, if we know true taget values for points from the validation dataset we may plot residuals to show how large are residuals.
+
+An example fidelity plot is presented in Figure \@ref(fig:CPfidelity1). 
+Black line shows the CP profiles for the point of interest, while grey lines show CP profiles for neihgbors. Red intervals stand for residuals and in this example it looks like residuals for neighbours are all negative. Thus maybe model is biased around the point of interest.
+
+```{r CPfidelity1, echo=FALSE, fig.cap="(fig:CPfidelity1) Local fidelity plots. Black line shows the CP profile for the point of interest. Grey lines show CP profiles for nearest neighbors. Red intervals correspond to residuals. Each red interval starts in a model prediction for a selected neighbor and ends in its true value of target variable.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/cp_fidelity_1.png")
+```
+
+This observation may be confirmed by plots that compare distribution of all residuals against distribution of residuals for neighbors.
+
+See Figure \@ref(CPfidelityBoxplot) for an example. Here residuals for neighbors are shifted towards highest values. This suggests that the model response is biased around the observation of interest.
+
+
+```{r CPfidelityBoxplot, echo=FALSE, fig.cap="(fig:CPfidelityBoxplot) Distribution of residuals for whole validation data (grey boxplot) and for selected closes 15 neighbors (red boxplot).", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/cp_fidelity_boxplot.png")
+```
+
+
 
 
 ## Pros and cons
@@ -268,6 +294,77 @@ And the `what_if_2d()` function calculates 2D CP profiles.
 wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, 
                  selected_variables = c("surface","floor", "construction.year"))
 plot(wi_rf_2d, split_ncol = 2)
+```
+
+
+
+
+
+
+
+
+
+
+```{r, warning=FALSE, message=FALSE}
+new_apartment <- apartmentsTest[348,]
+
+
+
+
+similar_apartments <- select_neighbours(apartmentsTest, new_apartment, n = 10)
+
+cp_rf_1 <- ceteris_paribus(explainer_rf, new_apartment, y = new_apartment$m2.price)
+
+cp_rf_neighbours <- ceteris_paribus(explainer_rf, similar_apartments, y = similar_apartments$m2.price)
+
+tmp <- attr(cp_rf_neighbours, "observations")
+tmp$`_yhat_` - tmp$`_y_`
+
+model_performance(explainer_rf)$diff
+
+df <- rbind(data.frame(group = "full data", diff = model_performance(explainer_rf)$diff),
+      data.frame(group = "neighbours", diff = tmp$`_y_` - tmp$`_yhat_` ))
+
+ggplot(df, aes(group, diff, fill = group)) +
+  geom_boxplot(coef = 100) +
+  coord_flip() + scale_fill_manual(values = c("grey", "red3")) +
+  ylab("diff = y - f(x)") + xlab("") + theme_bw() + theme(legend.position = "none")
+ 
+
+boxplot(model_performance(explainer_rf)$diff, 
+        tmp$`_yhat_` - tmp$`_y_`)
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = c("construction.year", "surface")) 
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") 
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "surface")
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "surface", as.gg = TRUE) + 
+  theme_bw() + xlab("") + ylab("")
+
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "construction.year") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "construction.year")
+
 ```
 
 
