@@ -196,7 +196,33 @@ Components $(x^{*}_i - \bar x_i) \beta_i$ are all expressed in the same units.
 
 ## Interactions
 
+
+
+
+```{r bdInter1, echo=FALSE, fig.cap="(fig:bdInter1) Break Down plot with interactions ", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/bd_inter_1.png")
+```
+
+
 ## Pros and cons
+
+Break Down Plots gives a uniform approach to decompose model prediction into parts that can be attributed additively to variables. Below we summarize key strengths and weaknesses of this approach. 
+
+**Pros**
+
+- Graphical representation of Break Down plots is easy to understand.
+- Break Down plots are compact, many variables may be presented in a small space.
+- Break Down plots are model agnostic yet they reduce to intuitive interpretation for linear Gaussian and generalized models.
+- Break Down plots are faster than other approaches to variable attribution.
+
+**Cons**
+
+- If the model is non-additive then showing only additive contributions may be misleading.
+- For large number of variables the Break Down plot may be messy with many variables having small contributions.
+- For non-additive models the Break Down plot will depend on the order of variables being relaxed.
+
+
+
 
 ## Code snippets for R
 
@@ -208,16 +234,15 @@ In this section we will present examples based on the `apartments` dataset. See 
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-head(apartments)
+head(HR)
 ```
 
 The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
 
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
-      no.rooms, data = apartments)
-rf_model
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
 ```
 
 Model exploration with `breakDown` package is performed in three steps. 
@@ -227,10 +252,11 @@ Model exploration with `breakDown` package is performed in three steps.
 Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
 
 ```{r, warning=FALSE, message=FALSE}
-library("DALEX")
-explainer_rf <- explain(rf_model,
-      data = apartmentsTest, y = apartmentsTest$m2.price)
-explainer_rf
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
 ```
 
 **2. Define point of interest.** 
@@ -238,24 +264,33 @@ explainer_rf
 Break Down Plots decompose model prediction around a single point.
 
 ```{r, warning=FALSE, message=FALSE}
-new_apartment <- data.frame(construction.year = 2014, no.rooms = 1, surface = 35, floor = 1, district = "Srodmiescie")
-new_apartment
-predict(rf_model, new_apartment)
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
 ```
 
 **3. Calculate BD decomposition**
 
-The `prediction_breakdown()` function calculates BP decomposition for selected model around selected observation. 
+The `break_down()` function calculates BP decomposition for selected model around selected observation. 
 
-The result from  `prediction_breakdown()` function is a data frame with variable attributions.
+The result from  `break_down()` function is a data frame with variable attributions.
 
 ```{r, warning=FALSE, message=FALSE}
-bd_rf <- prediction_breakdown(explainer_rf, new_apartment)
+library("breakDown")
+bd_rf <- break_down(explainer_rf_fired,
+                 new_observation,
+                 keep_distributions = TRUE)
+
 bd_rf
 
 plot(bd_rf) 
-
+plot(bd_rf, plot_distributions = TRUE) 
 ```
+
 
 
 
@@ -272,6 +307,9 @@ plot(bd_rf) + theme_bw() + scale_y_continuous("price per square meter", expand =
 
 plot(bd_rf, plot_distributions = TRUE) + theme_bw() + scale_y_continuous("price per square meter", expand = c(0,0), limits = c(0,6300)) + theme(legend.position = "none")
 
+
+
+plot(bd_rf) + theme_bw()+ scale_y_continuous("price per square meter", expand = c(0,0)) 
 ```
 
 
