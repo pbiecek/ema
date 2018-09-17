@@ -335,6 +335,270 @@ baseline = \mu + \bar x_1 \beta_1 + ... + \bar x_p \beta_p.
 </div>
 <div id="interactions" class="section level2">
 <h2><span class="header-section-number">3.4</span> Interactions</h2>
+<p>Break Down decomposition shows how the expected model prediction changes when we move from general population to a particular observation.
+Changes here means that values of variables are set to a value observed in a point of interest.
+For non additive models the order of relaxations is important.
+Therefore the construction of Break Down containes two phases.</p>
+<p>A. Order of relaxations is determined.
+B. Sequential relaxation is performed.</p>
+<p>Let us present each phase in details based on an example.</p>
+<p>To determine the order we consider a series of one step relaxations.</p>
+<p>With the use of notation introduced in this section, we calculate expected valued for model predictions after a single variable <span class="math inline">\(i\)</span> is set to value observed in <span class="math inline">\(x^*\)</span>.</p>
+<p><span class="math display">\[
+score_i = f^{\{i\}}(x^*)
+\]</span></p>
+<p>To determine the effect of this variable, we compare <span class="math inline">\(score_i\)</span> with the average model response <span class="math inline">\(score_0\)</span>. The larger the difference, the larger is the effect of particular value.</p>
+<p><span class="math display">\[
+diff_i = score_i - f^{\emptyset}(x^*)
+\]</span></p>
+<p><strong>Example</strong></p>
+<p>Let us consider a HR dataset. The observation of interested is (TODO).
+The table below shows <span class="math inline">\(score_i\)</span> and <span class="math inline">\(diff_i\)</span> calculated for consecutive variables.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">score</th>
+<th align="right">diff</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">hours</td>
+<td align="right">0.616200</td>
+<td align="right">0.230614</td>
+</tr>
+<tr class="even">
+<td align="left">salary</td>
+<td align="right">0.225528</td>
+<td align="right">-0.160058</td>
+</tr>
+<tr class="odd">
+<td align="left">evaluation</td>
+<td align="right">0.430994</td>
+<td align="right">0.045408</td>
+</tr>
+<tr class="even">
+<td align="left">age</td>
+<td align="right">0.364258</td>
+<td align="right">-0.021328</td>
+</tr>
+<tr class="odd">
+<td align="left">gender</td>
+<td align="right">0.391060</td>
+<td align="right">0.005474</td>
+</tr>
+</tbody>
+</table>
+<p>Once we determine the order we can calculate sequential relaxations.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">variable</th>
+<th align="right">cumulative</th>
+<th align="right">contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">0.385586</td>
+<td align="right">0.385586</td>
+</tr>
+<tr class="even">
+<td align="left">* hours = 42</td>
+<td align="right">0.616200</td>
+<td align="right">0.230614</td>
+</tr>
+<tr class="odd">
+<td align="left">* salary = 2</td>
+<td align="right">0.400206</td>
+<td align="right">-0.215994</td>
+</tr>
+<tr class="even">
+<td align="left">* evaluation = 2</td>
+<td align="right">0.405776</td>
+<td align="right">0.005570</td>
+</tr>
+<tr class="odd">
+<td align="left">* age = 58</td>
+<td align="right">0.497314</td>
+<td align="right">0.091538</td>
+</tr>
+<tr class="even">
+<td align="left">* gender = male</td>
+<td align="right">0.778000</td>
+<td align="right">0.280686</td>
+</tr>
+<tr class="odd">
+<td align="left">final_prognosis</td>
+<td align="right">0.778000</td>
+<td align="right">0.778000</td>
+</tr>
+</tbody>
+</table>
+<p>As we see contributions calculated in the sequential relaxations are different that these calculated in the first step.</p>
+<p>Such situation suggests that the model under consideration is not additive.
+What we can do with interactions?</p>
+<p>Actually it turns out that we can use a very similar technique to identify interactions. We just need to extend bot steps intorduces in this section.</p>
+<p>A. Order of relaxations is determined.
+B. Sequential relaxation is performed.</p>
+<p>For A. we need to calculate second order scores, i.e.</p>
+<p><span class="math display">\[
+score_{ij} = f^{\{i,j\}}(x^*)
+\]</span></p>
+<p>And calculate how much the second order score is different than sum of first order scores.</p>
+<p><span class="math display">\[
+diff_{ij} = score_{ij} - f^{\{i\}}(x^*) - f^{\{j\}}(x^*) + f^{\emptyset}(x^*) = score_{ij} - diff_i - diff_j - f^{\emptyset}(x^*) 
+\]</span></p>
+<p>Note, that for additive models <span class="math inline">\(diff_{ij}\)</span> shall be close to zero, so the larger is this value the larger deviation from additivness.</p>
+<p><strong>Example</strong></p>
+<p>Again, let us consider a HR dataset. The observation of interested is (TODO).
+The table below shows <span class="math inline">\(score_i\)</span> and <span class="math inline">\(diff_i\)</span> calculated for consecutive variables.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">baseline</th>
+<th align="right">diff</th>
+<th align="right">diff ij</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">hours</td>
+<td align="right">0.616200</td>
+<td align="right">0.230614</td>
+<td align="right"></td>
+</tr>
+<tr class="even">
+<td align="left">salary</td>
+<td align="right">0.225528</td>
+<td align="right">-0.160058</td>
+<td align="right"></td>
+</tr>
+<tr class="odd">
+<td align="left">age:gender</td>
+<td align="right">0.516392</td>
+<td align="right"></td>
+<td align="right">0.146660</td>
+</tr>
+<tr class="even">
+<td align="left">salary:age</td>
+<td align="right">0.266226</td>
+<td align="right"></td>
+<td align="right">0.062026</td>
+</tr>
+<tr class="odd">
+<td align="left">salary:hours</td>
+<td align="right">0.400206</td>
+<td align="right"></td>
+<td align="right">-0.055936</td>
+</tr>
+<tr class="even">
+<td align="left">evaluation</td>
+<td align="right">0.430994</td>
+<td align="right">0.045408</td>
+<td align="right"></td>
+</tr>
+<tr class="odd">
+<td align="left">hours:age</td>
+<td align="right">0.635662</td>
+<td align="right"></td>
+<td align="right">0.040790</td>
+</tr>
+<tr class="even">
+<td align="left">salary:evaluation</td>
+<td align="right">0.238126</td>
+<td align="right"></td>
+<td align="right">-0.032810</td>
+</tr>
+<tr class="odd">
+<td align="left">age</td>
+<td align="right">0.364258</td>
+<td align="right">-0.021328</td>
+<td align="right"></td>
+</tr>
+<tr class="even">
+<td align="left">evaluation:hours</td>
+<td align="right">0.677798</td>
+<td align="right"></td>
+<td align="right">0.016190</td>
+</tr>
+<tr class="odd">
+<td align="left">salary:gender</td>
+<td align="right">0.223292</td>
+<td align="right"></td>
+<td align="right">-0.007710</td>
+</tr>
+<tr class="even">
+<td align="left">evaluation:age</td>
+<td align="right">0.415688</td>
+<td align="right"></td>
+<td align="right">0.006022</td>
+</tr>
+<tr class="odd">
+<td align="left">gender</td>
+<td align="right">0.391060</td>
+<td align="right">0.005474</td>
+<td align="right"></td>
+</tr>
+<tr class="even">
+<td align="left">hours:gender</td>
+<td align="right">0.626478</td>
+<td align="right"></td>
+<td align="right">0.004804</td>
+</tr>
+<tr class="odd">
+<td align="left">evaluation:gender</td>
+<td align="right">0.433814</td>
+<td align="right"></td>
+<td align="right">-0.002654</td>
+</tr>
+</tbody>
+</table>
+<p>Again, once we determine the order we can calculate sequential relaxations.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">variable</th>
+<th align="right">cummulative</th>
+<th align="right">contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">0.385586</td>
+<td align="right">0.385586</td>
+</tr>
+<tr class="even">
+<td align="left">* hours = 42</td>
+<td align="right">0.616200</td>
+<td align="right">0.230614</td>
+</tr>
+<tr class="odd">
+<td align="left">* salary = 2</td>
+<td align="right">0.400206</td>
+<td align="right">-0.215994</td>
+</tr>
+<tr class="even">
+<td align="left">* age:gender = 58:male</td>
+<td align="right">0.796856</td>
+<td align="right">0.396650</td>
+</tr>
+<tr class="odd">
+<td align="left">* evaluation = 2</td>
+<td align="right">0.778000</td>
+<td align="right">-0.018856</td>
+</tr>
+<tr class="even">
+<td align="left">final_prognosis</td>
+<td align="right">0.778000</td>
+<td align="right">0.778000</td>
+</tr>
+</tbody>
+</table>
 <div class="figure" style="text-align: center"><span id="fig:bdInter1"></span>
 <img src="figure/bd_inter_1.png" alt="(fig:bdInter1) Break Down plot with interactions " width="70%" />
 <p class="caption">

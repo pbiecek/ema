@@ -831,6 +831,147 @@ same units.
 \hypertarget{interactions}{%
 \section{Interactions}\label{interactions}}
 
+Break Down decomposition shows how the expected model prediction changes
+when we move from general population to a particular observation.
+Changes here means that values of variables are set to a value observed
+in a point of interest. For non additive models the order of relaxations
+is important. Therefore the construction of Break Down containes two
+phases.
+
+A. Order of relaxations is determined. B. Sequential relaxation is
+performed.
+
+Let us present each phase in details based on an example.
+
+To determine the order we consider a series of one step relaxations.
+
+With the use of notation introduced in this section, we calculate
+expected valued for model predictions after a single variable \(i\) is
+set to value observed in \(x^*\).
+
+\[
+score_i = f^{\{i\}}(x^*)
+\]
+
+To determine the effect of this variable, we compare \(score_i\) with
+the average model response \(score_0\). The larger the difference, the
+larger is the effect of particular value.
+
+\[
+diff_i = score_i - f^{\emptyset}(x^*)
+\]
+
+\textbf{Example}
+
+Let us consider a HR dataset. The observation of interested is (TODO).
+The table below shows \(score_i\) and \(diff_i\) calculated for
+consecutive variables.
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+& score & diff\tabularnewline
+\midrule
+\endhead
+hours & 0.616200 & 0.230614\tabularnewline
+salary & 0.225528 & -0.160058\tabularnewline
+evaluation & 0.430994 & 0.045408\tabularnewline
+age & 0.364258 & -0.021328\tabularnewline
+gender & 0.391060 & 0.005474\tabularnewline
+\bottomrule
+\end{longtable}
+
+Once we determine the order we can calculate sequential relaxations.
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+variable & cumulative & contribution\tabularnewline
+\midrule
+\endhead
+(Intercept) & 0.385586 & 0.385586\tabularnewline
+* hours = 42 & 0.616200 & 0.230614\tabularnewline
+* salary = 2 & 0.400206 & -0.215994\tabularnewline
+* evaluation = 2 & 0.405776 & 0.005570\tabularnewline
+* age = 58 & 0.497314 & 0.091538\tabularnewline
+* gender = male & 0.778000 & 0.280686\tabularnewline
+final\_prognosis & 0.778000 & 0.778000\tabularnewline
+\bottomrule
+\end{longtable}
+
+As we see contributions calculated in the sequential relaxations are
+different that these calculated in the first step.
+
+Such situation suggests that the model under consideration is not
+additive. What we can do with interactions?
+
+Actually it turns out that we can use a very similar technique to
+identify interactions. We just need to extend bot steps intorduces in
+this section.
+
+A. Order of relaxations is determined. B. Sequential relaxation is
+performed.
+
+For A. we need to calculate second order scores, i.e.
+
+\[
+score_{ij} = f^{\{i,j\}}(x^*)
+\]
+
+And calculate how much the second order score is different than sum of
+first order scores.
+
+\[
+diff_{ij} = score_{ij} - f^{\{i\}}(x^*) - f^{\{j\}}(x^*) + f^{\emptyset}(x^*) = score_{ij} - diff_i - diff_j - f^{\emptyset}(x^*) 
+\]
+
+Note, that for additive models \(diff_{ij}\) shall be close to zero, so
+the larger is this value the larger deviation from additivness.
+
+\textbf{Example}
+
+Again, let us consider a HR dataset. The observation of interested is
+(TODO). The table below shows \(score_i\) and \(diff_i\) calculated for
+consecutive variables.
+
+\begin{longtable}[]{@{}lrrr@{}}
+\toprule
+& baseline & diff & diff ij\tabularnewline
+\midrule
+\endhead
+hours & 0.616200 & 0.230614 &\tabularnewline
+salary & 0.225528 & -0.160058 &\tabularnewline
+age:gender & 0.516392 & & 0.146660\tabularnewline
+salary:age & 0.266226 & & 0.062026\tabularnewline
+salary:hours & 0.400206 & & -0.055936\tabularnewline
+evaluation & 0.430994 & 0.045408 &\tabularnewline
+hours:age & 0.635662 & & 0.040790\tabularnewline
+salary:evaluation & 0.238126 & & -0.032810\tabularnewline
+age & 0.364258 & -0.021328 &\tabularnewline
+evaluation:hours & 0.677798 & & 0.016190\tabularnewline
+salary:gender & 0.223292 & & -0.007710\tabularnewline
+evaluation:age & 0.415688 & & 0.006022\tabularnewline
+gender & 0.391060 & 0.005474 &\tabularnewline
+hours:gender & 0.626478 & & 0.004804\tabularnewline
+evaluation:gender & 0.433814 & & -0.002654\tabularnewline
+\bottomrule
+\end{longtable}
+
+Again, once we determine the order we can calculate sequential
+relaxations.
+
+\begin{longtable}[]{@{}lrr@{}}
+\toprule
+variable & cummulative & contribution\tabularnewline
+\midrule
+\endhead
+(Intercept) & 0.385586 & 0.385586\tabularnewline
+* hours = 42 & 0.616200 & 0.230614\tabularnewline
+* salary = 2 & 0.400206 & -0.215994\tabularnewline
+* age:gender = 58:male & 0.796856 & 0.396650\tabularnewline
+* evaluation = 2 & 0.778000 & -0.018856\tabularnewline
+final\_prognosis & 0.778000 & 0.778000\tabularnewline
+\bottomrule
+\end{longtable}
+
 \begin{figure}
 
 {\centering \includegraphics[width=0.7\linewidth]{figure/bd_inter_1} 
@@ -1725,6 +1866,13 @@ Examples presented in this chapter are generated with the
 \chapter{Variable Importance}\label{variable-importance}}
 
 Feature selection
+
+Beware Default Random Forest Importances
+
+Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
+March 26, 2018.
+
+\url{http://explained.ai/rf-importance/index.html}
 
 \hypertarget{marginal-response}{%
 \chapter{Marginal Response}\label{marginal-response}}
