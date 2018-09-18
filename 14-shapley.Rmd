@@ -1,8 +1,67 @@
-
 # Shapley Values {#shapley}
+
+In this section we introduce other, very popular tool for additive variable attribution. As in Break Down the model response is decomposed into parts that may be assigned to variables. Also, in similar spirit to Break Down, this explainers are linked the first law introduced in Section \@ref(#PredictionExplainers), i.e. law for prediction’s justifications.
+
+This method was first introduced in [@Strumbelj2014] but the wide adoption comes with a NIPS 2017 paper [@SHAP] and python library SHAP `https://github.com/slundberg/shap`. 
+
+
+## Introduction
+
+The name *Shapley Values* comes from the solution in cooperative game theory attributed to Lloyd Shapley. The original problem was to assess how important is each player to the overall cooperation, and what payoff can he or she reasonably expect from the coalition? [@shapleybook1952]
+
+The idea is similar to the Break Down \@ref(breakDown) plots. The main difference comes from the way how variable attributions are calculated.
+
+
+
+
+
+
+$$
+\phi_i (f) = \frac 1{|N|}\sum_{S \subseteq N\setminus \{i\}}  {{|N|-1}\choose{|S|}}^{-1} \left(f(S \cup \{i\}) - f(S)\right)
+$$
+
+
+The original concept is straightforward. 
+
+[@TreeSHAP]
+
+
+
+
+
+
+
+It is straightforward for linear (and more general: additive) models. But not that obvious for more complex models. In this section we present uniform, model agnostic approach to variable attribution.
+ 
+```{r BDPrice1, echo=FALSE, fig.cap="(fig:BDPrice1) An illustration of Break Down Plots. Model prediction for Random Forest models for a single observation (grey bar, 4763.9) is decomposed into parts that can be attributed to population average (the bottom bar, 3515.9) and effects of particular variables. ", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/bd_price_1.png")
+```
+
+
+Similar to the Shapley method introduced in the Section \@ref(shapley), Break Down Plots show additive decomposition of model output. As we will show later, the Shapely method may be perceived as an average from all possible Break Down Paths.
+In the last subsection we discuss pros and cons of this approach.
+
+
+
+
 
 Variable Atribution
 
 
 This approach can be seen as an approximation of Shapley values where feature contribution is linked with the average effect of a feature across all possible relaxations. These approaches are identical for additive models. For non-additive models the additive attribution is just an approximation in both cases, yet the greedy strategy produces explanations that are easier to interpret.
 It is worth noting that similar decomposition of predictions and measures of contribution for classifiers have been examined in \cite{4407709}.
+
+
+
+## Pros and cons
+
+Shapley Values give a uniform approach to decompose model prediction into parts that can be attributed additively to variables. Below we summarize key strengths and weaknesses of this approach. 
+
+**Pros**
+
+- There is a nice theory.
+
+**Cons**
+
+- For non additive models the summation over all possible orderings is consistent, but on the other hand it has to be wrong, since the model is non additive anyway.
+
