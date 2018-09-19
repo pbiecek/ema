@@ -24,7 +24,45 @@ The part $E[f(X) | X_{S \cup \{i\}} = x^*_{S \cup \{i\}}] - E [f(X) | X_{S} = x^
 
 Time complexity of this method is $O(2^p)$ where $p$ stands for the number of variables. Such complexity makes this method impractical for most cases. Fortunately it is enough to assess this value. [@Strumbelj2014] proposed to use sampling. [@TreeSHAP] proposed fast implementations for tree based ensembles.
 
+## Code snippets for R
 
+In this section we will present an example based on the `HR` dataset and Random Forest model [@R-randomForest]. See the Section \@ref(HRdataset) for more details.
+
+```{r, message=FALSE, warning=FALSE}
+library("DALEX")
+library("randomForest")
+model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+```
+
+Here we use the `iml` package, see more examples in [@imlPackage].
+
+
+```{r, message=FALSE, warning=FALSE}
+library("iml")
+explainer_rf = Predictor$new(model_rf, data = HR, type="prob")
+```
+
+Explanations for a new observation.
+
+```{r, message=FALSE, warning=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2,
+                      status = factor("fired"))
+
+shapley = Shapley$new(explainer_rf, x.interest = new_observation)
+shapley
+```
+
+And the plot with Shapley attributions.
+
+```{r, message=FALSE, warning=FALSE}
+plot(shapley)
+```
+
+See more examples for `iml` package in the [@molnar] book.
 
 ## Pros and cons
 

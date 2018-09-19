@@ -802,12 +802,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.41%
+##         OOB estimate of  error rate: 27.27%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2263  393      199   0.2073555
-## ok         520 1255      446   0.4349392
-## promoted   201  392     2178   0.2140022
+## fired     2270  391      194   0.2049037
+## ok         530 1246      445   0.4389914
+## promoted   201  379     2191   0.2093107
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -848,8 +848,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired   ok promoted
-## 1 0.774 0.22    0.006
+##   fired    ok promoted
+## 1 0.808 0.192        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -877,12 +877,12 @@ variable attributions.
 \begin{verbatim}
 ##                  contribution
 ## (Intercept)             0.375
-## * hours = 42            0.238
-## * salary = 2           -0.212
-## * evaluation = 2        0.016
-## * age = 58              0.072
-## * gender = male         0.285
-## final_prognosis         0.774
+## * hours = 42            0.241
+## * salary = 2           -0.205
+## * evaluation = 2        0.004
+## * age = 58              0.106
+## * gender = male         0.287
+## final_prognosis         0.808
 ## baseline:  0
 \end{verbatim}
 
@@ -1089,12 +1089,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.34%
+##         OOB estimate of  error rate: 27.37%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2269  389      197   0.2052539
-## ok         518 1244      459   0.4398919
-## promoted   204  378     2189   0.2100325
+## fired     2266  393      196   0.2063047
+## ok         538 1251      432   0.4367402
+## promoted   204  385     2182   0.2125586
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1135,8 +1135,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired   ok promoted
-## 1  0.78 0.22        0
+##   fired    ok promoted
+## 1 0.786 0.214        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1165,12 +1165,12 @@ variable attributions.
 
 \begin{verbatim}
 ##                        contribution
-## (Intercept)                   0.375
+## (Intercept)                   0.376
 ## * hours = 42                  0.239
-## * salary = 2                 -0.205
-## * age:gender = 58:male        0.387
-## * evaluation = 2             -0.017
-## final_prognosis               0.780
+## * salary = 2                 -0.206
+## * age:gender = 58:male        0.384
+## * evaluation = 2             -0.007
+## final_prognosis               0.786
 ## baseline:  0
 \end{verbatim}
 
@@ -1235,6 +1235,80 @@ most cases. Fortunately it is enough to assess this value.
 \citep{Strumbelj2014} proposed to use sampling. \citep{TreeSHAP}
 proposed fast implementations for tree based ensembles.
 
+\hypertarget{code-snippets-for-r-2}{%
+\section{Code snippets for R}\label{code-snippets-for-r-2}}
+
+In this section we will present an example based on the \texttt{HR}
+dataset and Random Forest model \citep{R-randomForest}. See the Section
+\ref{HRdataset} for more details.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
+\NormalTok{model_rf <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(status }\OperatorTok{~}\StringTok{ }\NormalTok{gender }\OperatorTok{+}\StringTok{ }\NormalTok{age }\OperatorTok{+}\StringTok{ }\NormalTok{hours }\OperatorTok{+}\StringTok{ }\NormalTok{evaluation }\OperatorTok{+}\StringTok{ }\NormalTok{salary, }\DataTypeTok{data =}\NormalTok{ HR)}
+\end{Highlighting}
+\end{Shaded}
+
+Here we use the \texttt{iml} package, see more examples in
+\citep{imlPackage}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"iml"}\NormalTok{)}
+\NormalTok{explainer_rf =}\StringTok{ }\NormalTok{Predictor}\OperatorTok{$}\KeywordTok{new}\NormalTok{(model_rf, }\DataTypeTok{data =}\NormalTok{ HR, }\DataTypeTok{type=}\StringTok{"prob"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Explanations for a new observation.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{new_observation <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{gender =} \KeywordTok{factor}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\StringTok{"female"}\NormalTok{)),}
+                      \DataTypeTok{age =} \FloatTok{57.7}\NormalTok{,}
+                      \DataTypeTok{hours =} \FloatTok{42.3}\NormalTok{,}
+                      \DataTypeTok{evaluation =} \DecValTok{2}\NormalTok{,}
+                      \DataTypeTok{salary =} \DecValTok{2}\NormalTok{,}
+                      \DataTypeTok{status =} \KeywordTok{factor}\NormalTok{(}\StringTok{"fired"}\NormalTok{))}
+
+\NormalTok{shapley =}\StringTok{ }\NormalTok{Shapley}\OperatorTok{$}\KeywordTok{new}\NormalTok{(explainer_rf, }\DataTypeTok{x.interest =}\NormalTok{ new_observation)}
+\NormalTok{shapley}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Interpretation method:  Shapley 
+## Predicted value: 0.784000, Average prediction: 0.375191 (diff = 0.408809) Predicted value: 0.216000, Average prediction: 0.275334 (diff = -0.059334) Predicted value: 0.000000, Average prediction: 0.349475 (diff = -0.349475)
+## 
+## Analysed predictor: 
+## Prediction task: unknown 
+## 
+## 
+## Analysed data:
+## Sampling from data.frame with 7847 rows and 6 columns.
+## 
+## Head of results:
+##      feature class      phi     phi.var feature.value
+## 1     gender fired  0.15228 0.092793214   gender=male
+## 2        age fired  0.11602 0.090938626      age=57.7
+## 3      hours fired  0.21836 0.131288031    hours=42.3
+## 4 evaluation fired  0.00702 0.009199313  evaluation=2
+## 5     salary fired -0.11034 0.031584570      salary=2
+## 6     status fired  0.00000 0.000000000  status=fired
+\end{verbatim}
+
+And the plot with Shapley attributions.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot}\NormalTok{(shapley)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-18-1.pdf}
+
+See more examples for \texttt{iml} package in the \citep{molnar} book.
+
 \hypertarget{pros-and-cons-2}{%
 \section{Pros and cons}\label{pros-and-cons-2}}
 
@@ -1275,7 +1349,7 @@ Note that fully additive model solutions presented in sections
 to same variable contributions.
 
 \hypertarget{LIME}{%
-\chapter{LIME: Local Interpretable Model-Agnostic
+\chapter{Local model: LIME: Local Interpretable Model-Agnostic
 Explanations}\label{LIME}}
 
 \citep{R-lime} \citep{R-live}
@@ -1648,8 +1722,8 @@ this approach.
   Visualization of categorical variables is non trivial.
 \end{itemize}
 
-\hypertarget{code-snippets-for-r-2}{%
-\section{Code snippets for R}\label{code-snippets-for-r-2}}
+\hypertarget{code-snippets-for-r-3}{%
+\section{Code snippets for R}\label{code-snippets-for-r-3}}
 
 In this section we present key features of the \texttt{ceterisParibus}
 package for R \citep{R-ceterisParibus}. This package covers all features
@@ -1700,8 +1774,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 484349.9
-##                     % Var explained: 41.02
+##           Mean of squared residuals: 488053.9
+##                     % Var explained: 40.57
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -1756,7 +1830,7 @@ Certeris Paribus profiles explore model around a single point.
 
 \begin{verbatim}
 ##        1 
-## 2335.903
+## 2326.086
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -1782,12 +1856,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3094.671 construction.year
-## 1.1              1921        5     142     8 3127.662 construction.year
-## 1.2              1922        5     142     8 3129.693 construction.year
-## 1.3              1923        5     142     8 3087.723 construction.year
-## 1.4              1923        5     142     8 3087.723 construction.year
-## 1.5              1924        5     142     8 3085.631 construction.year
+## 1                1920        5     142     8 3105.107 construction.year
+## 1.1              1921        5     142     8 3131.468 construction.year
+## 1.2              1922        5     142     8 3114.740 construction.year
+## 1.3              1923        5     142     8 3078.400 construction.year
+## 1.4              1923        5     142     8 3078.400 construction.year
+## 1.5              1924        5     142     8 3079.768 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -1799,7 +1873,7 @@ interest.
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor   _yhat_      _label_
-## 1              1965        5     142     8 2335.903 randomForest
+## 1              1965        5     142     8 2326.086 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -1815,7 +1889,7 @@ visible in the plot.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-21-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 One of very useful features of \texttt{ceterisParibus} explainers is
 that profiles for two or more models may be superimposed in a single
@@ -1845,7 +1919,7 @@ color as a key for model.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-23-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 \textbf{Oscillations}
 
@@ -1862,10 +1936,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     645.2362
-## 4          no.rooms     1     396.4632
-## 3             floor     1     327.9815
-## 1 construction.year     1     241.0252
+## 2           surface     1     602.0750
+## 4          no.rooms     1     463.2205
+## 3             floor     1     342.1643
+## 1 construction.year     1     258.6177
 \end{verbatim}
 
 \begin{Shaded}
@@ -1874,7 +1948,7 @@ for CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-28-1.pdf}
 
 \textbf{2D Ceteris Paribus profiles}
 
@@ -1888,7 +1962,7 @@ And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-29-1.pdf}
 
 \hypertarget{model-level-explanations}{%
 \chapter*{Model level explanations}\label{model-level-explanations}}
