@@ -27,9 +27,9 @@ In other words, model response is the sum of weighted elements of $x = (x_1, x_2
 
 From a global perspective of a model, we are usually interested in questions like, how good is the model, which variables are significant or how accurate are model predictions.
 
-But in this chapter we are focues in a local perspective, i.e. for a single observation $x^*$ how to measure the impact of  a variable $x_i$ on model prediction $f(x^*)$.
+But in this chapter we are focues in a local perspective, i.e. for a single observation $x^*$ how to measure the contribution of  a variable $x_i$ on model prediction $f(x^*)$.
 
-Let $v(f, x^*, i)$ stnad for the impact of variable $x_i$ on prediction of model $f()$ in point $x^*$. For linear models it is easy to define such impact as
+Let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. For linear models it is easy to define such contribution as
 $$
 v(f, x^*, i) = f(x^*) - E[f(x)|x_{-1} = x^*_{-1}] = \beta_i x^*_i  - E \beta_i X_i
 $$
@@ -95,5 +95,94 @@ Here $baseline$ is an average model response and variable contributions show how
 ** NOTE for careful readers **
 
 There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasise these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+
+## Model agnostic variable attribution {#modelAgnosticAttribution}
+
+In the Section \@ref(VAlinMod) we introduced a method for calculation of variable attributions for linear models.
+This method is accurate, based directly on the structure of the model. But for most popular machine learning models we cannot assume that they are linear nor even additive. 
+
+In next sections we introduce a model agnostic approach. Note that even if the model itself is not additive, the model attribution will be additive.
+
+Again, let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. 
+
+We expect that such contribution will sum up to the model prediction in a given point (property called *local accuracy*), so
+$$
+f(x^*) = baseline + \sum_{i=1}^p v(f, x^*, i)
+$$
+where $baseline$ stands for average model response.
+
+Note that the equation above may be rewritten as
+
+$$
+E [f(X)|X_1 = x_1^*, \ldots, X+p = x_p^*] = E[f(X)] + \sum_{i=1}^p v(f, x^*, i)
+$$
+what leads to quite natural proposition for $v(f, x^*_i, i)$, such as
+
+$$
+v(f, x^*_i, i) = E [f(X) | X_1 = x_1^*, \ldots, X_i = x_i^*] - E [f(X) | X_1 = x_1^*, \ldots, X_{i-1} = x_{i-1}^*] 
+$$
+In other words the contribution of variable $i$ is the difference between expected model response conditioned on first $i$ variables minus the model response conditioned on first $i-1$ variables.
+
+Such proposition fulfills the *local accuracy* condition, but unfortunatelly variable contributions depends on the ordering of variables. 
+
+ 
+```{r ordering, echo=FALSE, fig.cap="(fig:ordering) Two different paths between average model prediction and the model prediction for a selected observation. Black dots stand for conditional average, red arrows stands for changes between conditional averages.", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/ordering.png")
+```
+
+
+See for example Figure \@ref(fig:ordering). In the first ordering the contribution of variable `age` is calculated as 0.01, while in the second the contribution is calculated as 0.13. Such differences are related to the lack of additivness of the model $f()$. Propositions presented in next two sections present different solutions for this problem.
+
+
+
+```{r, eval=FALSE, echo=FALSE}
+model_rf <- aread("9e4913a2f1257bd905945d960ed7072b")
+
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model_rf, new_observation, type = "prob")
+
+p1 <- c()
+p2 <- c()
+tmp <- HR
+p1[1] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$hours <- 42.3
+p1[2] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$age <- 57.7
+p1[3] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$gender <- factor("male", levels = c("male", "female"))
+p1[4] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+#####
+tmp <- HR
+p2[1] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$gender <- factor("male", levels = c("male", "female"))
+p2[2] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$age <- 57.7
+p2[3] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$hours <- 42.3
+p2[4] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+p1
+diff(p1)
+p2
+diff(p2)
+df <- data.frame(id=c(1:4,1:4),co=rep(1:2,each = 4),E=c(p1, p2))
+ggplot(df, aes(E, id)) +
+  geom_point() +
+  facet_wrap(~co, ncol = 1) + theme_bw() +
+  scale_y_reverse()
+```
+
 
 
