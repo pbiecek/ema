@@ -1,14 +1,14 @@
 # Break Down {#breakDown}
 
-The method approach for variable attribution presented in the Section \@ref(modelAgnosticAttribution) has the property of *local accuracy*, but variable contributions depends on the variable ordering.
+The approach for variable attribution presented in the Section \@ref(modelAgnosticAttribution) has the property of *local accuracy*, but variable contributions depends on the variable ordering.
 
 The Break Down method solves this problem by using two-step procedure. In the first step variables are ordered and in the second step the consecutive conditioning is applied to ordered variables.
 
 
-## The Break Down Algorithm
+## The Algorithm
 
-First step of this algorithm is to determine the order of variables for conditionaing. 
-It seems to be resonable to include first variables that are likely to be most important, leaving the noise variables at the end.
+First step of this algorithm is to determine the order of variables for conditioning. 
+It seems to be reasonable to include first variables that are likely to be most important, leaving the noise variables at the end.
 This leads to order based on following scores
 
 $$
@@ -54,18 +54,18 @@ Once we determine the order we can calculate sequential contributions
 |* gender = male  |    0.778000|     0.280686|
 |final_prognosis  |    0.778000|     0.778000|
 
-## The Break Down Plot
+## Break Down Plots
 
 Once we calculated variable attributions we may plot them in an intuitive form.
 This intuition behind Break Down Plots is described in Figure \@ref(BDPrice4). 
 
-The variable ordering determined in the first step of Break Down Algorithm is reflected by the ordering of variables in consecutive rows of a plot. 
+The variable ordering determined in the first step of Break Down Algorithm is reflected by the ordering of variables in rows of the plot. 
 
-The last row of a plot shows the $baseline$, i.e. an average model prediction. The next row corresponds to average model prediction for observations with variable `surface` fixed to value `35`. The next for correspons to average model prediction with variables `surface` set to `35` and `floor` set to `1`, and so on. The first row corresponds to model response for $x^*$.
+The last row of a plot shows the $baseline$, i.e. an average model prediction. The next row corresponds to average model prediction for observations with variable `surface` fixed to value `35`. The next for corresponds to average model prediction with variables `surface` set to `35` and `floor` set to `1`, and so on. The first row corresponds to model response for $x^*$.
 
 In panels A and B violines show distribution of model predictions for selected points, while red dots stands for averages. 
 
-The most minimal form that shows all important information is presented in the panel C.
+The most minimal form that shows important information is presented in the panel C.
 Positive values are presented with green bars while negative differences are marked with yellow bar. They sum up to final model prediction, which is denoted by a grey bar in this example.
 
 
@@ -79,13 +79,13 @@ knitr::include_graphics("figure/bd_price_4.png")
 
 ## Pros and cons
 
-Break Down approach is model agnotic, can be applied to any predictive model that returns a single number. It leads to additive variable attribution. Below we summarize key strengths and weaknesses of this approach. 
+Break Down approach is model agnostic, can be applied to any predictive model that returns a single number. It leads to additive variable attribution. Below we summarize key strengths and weaknesses of this approach. 
 
 
 **Pros**
 
 - Break Down Plots are easy to understand and decipher.
-- Break Down Plots are compact, many variables may be presented in a small space.
+- Break Down Plots are compact; many variables may be presented in a small space.
 - Break Down Plots are model agnostic yet they reduce to intuitive interpretation for linear Gaussian and generalized models.
 - Complexity of Break Down Algorithm is linear in respect to the number of variables.
 
@@ -188,87 +188,49 @@ plot(bd_rf) + theme_bw()+ scale_y_continuous("price per square meter", expand = 
 
 # Break Down for Interactions
 
+In the Section \@ref(breakDown) we presented model agnostic approach for additive decomposition of a model prediction for a single observation. 
 
-Break Down decomposition shows how the expected model prediction changes when we move from general population to a particular observation.
-Changes here means that values of variables are set to a value observed in a point of interest.
-For non additive models the order of relaxations is important.
-Therefore the construction of Break Down containes two phases.
+For non-additive models the variables contributions depend on values of other variables. 
 
-A. Order of relaxations is determined.
-B. Sequential relaxation is performed.
+In this section we present an algorithm that identifies interactions between pairs of variables and include such interactions in variable decomposition plots. Here we present an algorithm for pairs of variables, but it can be easily generalized to larger number of variables.
 
-Let us present each phase in details based on an example. 
+## The Algorithm
 
-To determine the order we consider a series of one step relaxations. 
+This algorithm is also composed out of two steps. In the first step variables and pairs of variables are ordered in terms of their importance, while in the second step the consecutive conditioning is applied to ordered variables.
 
-With the use of notation introduced in this section, we calculate expected valued for model predictions after a single variable $i$ is set to value observed in $x^*$.
 
-$$
-score_i = f^{\{i\}}(x^*)
-$$
+To determine an importance of variables and pairs of variables following scores are being calculated.
 
-To determine the effect of this variable, we compare $score_i$ with the average model response $score_0$. The larger the difference, the larger is the effect of particular value.  
+For a single variable
 
 $$
-diff_i = score_i - f^{\emptyset}(x^*)
+score_1(f, x^*, i) = \left| E [f(X)|X_i = x^*_i]  - E [f(X)]\right|
 $$
-
-**Example**
-
-Let us consider a HR dataset. The observation of interested is (TODO). 
-The table below shows $score_i$ and $diff_i$ calculated for consecutive variables.
-
-|           |    score|      diff|
-|:----------|--------:|---------:|
-|hours      | 0.616200|  0.230614|
-|salary     | 0.225528| -0.160058|
-|evaluation | 0.430994|  0.045408|
-|age        | 0.364258| -0.021328|
-|gender     | 0.391060|  0.005474|
-
-Once we determine the order we can calculate sequential relaxations.
-
-|variable         | cumulative| contribution|
-|:----------------|-----------:|------------:|
-|(Intercept)      |    0.385586|     0.385586|
-|* hours = 42     |    0.616200|     0.230614|
-|* salary = 2     |    0.400206|    -0.215994|
-|* evaluation = 2 |    0.405776|     0.005570|
-|* age = 58       |    0.497314|     0.091538|
-|* gender = male  |    0.778000|     0.280686|
-|final_prognosis  |    0.778000|     0.778000|
-
-
-As we see contributions calculated in the sequential relaxations are different that these calculated in the first step.
-
-Such situation suggests that the model under consideration is not additive.
-What we can do with interactions?
-
-Actually it turns out that we can use a very similar technique to identify interactions. We just need to extend bot steps intorduces in this section.
-
-A. Order of relaxations is determined.
-B. Sequential relaxation is performed.
-
-For A. we need to calculate second order scores, i.e.
+For pairs of variables
 
 $$
-score_{ij} = f^{\{i,j\}}(x^*)
+score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - E [f(X)|X_i = x^*_i] - E [f(X)| X_j = x^*_j]+ E [f(X)] \right|
 $$
-
-And calculate how much the second order score is different than sum of first order scores.
+Note that this is equivalent to 
 
 $$
-diff_{ij} = score_{ij} - f^{\{i\}}(x^*) - f^{\{j\}}(x^*) + f^{\emptyset}(x^*) = score_{ij} - diff_i - diff_j - f^{\emptyset}(x^*) 
+score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - score_1 (f, x^*, i) - score_1 (f, x^*, j) + baseline \right|
 $$
+In other words the $score_1(f, x^*, i)$ measures how much the average model response changes if variable $x_i$ is set to $x_i^*$, which is some index of local variable importance. On the other hand the $score_2(f, x^*, (i,j))$ measures how much the change is different than additive composition of changes for $x_i$ and $x_j$, which is some index of local interaction importance.
 
-Note, that for additive models $diff_{ij}$ shall be close to zero, so the larger is this value the larger deviation from additivness.
+Note, that for additive models $score_2(f, x^*, (i,j))$ shall be close to zero. So the larger is this value the larger deviation from additivness.
 
-**Example**
 
-Again, let us consider a HR dataset. The observation of interested is (TODO). 
-The table below shows $score_i$ and $diff_i$ calculated for consecutive variables.
+The second step of the algorithm is the sequential conditioning. In this version in every new step we condition on a single variable of pair of variables in an order determined by $score_1$ and $score_2$.
 
-|                  | baseline|      diff| diff ij  |
+The complexity of the first step id $O(p^2)$ where $p$ stands for the number of variables. The complexity of the second step is $O(p)$.
+
+## HR dataset: Hire or Fire?
+
+Again, let us consider a HR dataset. 
+The table below shows $score_1$ and $score_2$ calculated for consecutive variables.
+
+|                  | Ei f(X) |    score1|  score2  |
 |:-----------------|--------:|---------:|---------:|
 |hours             | 0.616200|  0.230614|          |
 |salary            | 0.225528| -0.160058|          |
@@ -286,9 +248,9 @@ The table below shows $score_i$ and $diff_i$ calculated for consecutive variable
 |hours:gender      | 0.626478|          |  0.004804|
 |evaluation:gender | 0.433814|          | -0.002654|
 
-Again, once we determine the order we can calculate sequential relaxations.
+Once we determined the order, we can calculate sequential conditionings. In the first step we condition over variable `hours`, then over `salary`. The third position is occupied by interaction between `age:gender` thus we add both variables to the conditioning
 
-|variable               | cummulative| contribution|
+|variable               | cumulative| contribution|
 |:----------------------|-----------:|------------:|
 |(Intercept)            |    0.385586|     0.385586|
 |* hours = 42           |    0.616200|     0.230614|
@@ -299,8 +261,96 @@ Again, once we determine the order we can calculate sequential relaxations.
 
 
 
+## Break Down Plots
 
-```{r bdInter1, echo=FALSE, fig.cap="(fig:bdInter1) Break Down plot with interactions ", out.width = '70%', fig.align='center'}
+Break Down Plots for interactions are similar in structure as plots for single variables. The only difference is that in some rows pair of variable is listed in a single row. See an example in Figure \@ref(BDPrice4). 
+
+```{r bdInter1, echo=FALSE, fig.cap="(fig:bdInter1) Break Down Plot for variable attrbution with interactions ", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/bd_inter_1.png")
 ```
+
+
+## Pros and cons
+
+Break Down for interactions shares many features of Break Down for single variables. Below we summarize unique strengths and weaknesses of this approach. 
+
+
+**Pros**
+
+- If interactions are present in the model, then additive contributions may be misleading. In such case the identification of interactions leads to better explanations. 
+- Complexity of Break Down Algorithm is quadratic, what is not that bad if number of features is small or moderate.
+
+**Cons**
+
+- For large number of variables, the consideration of all interactions is both time consuming and sensitive to noise as the number of $score_2$ scores grow faster than number of $score_1$. 
+
+
+## Code snippets for R
+
+The algorithm for Break Down for Interactions is also implemented in the `break_down` function from  `breakDown` package. 
+
+It is enough to set argument `check_interactions = TRUE`  to identify interactions.
+
+**Model preparation**
+
+First a model needs to be trained.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
+```
+
+Model exploration with the `breakDown` package is performed in three steps. 
+
+**1. Create an explainer - wrapper around model and validation data.**
+
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package.
+
+```{r, warning=FALSE, message=FALSE}
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
+```
+
+**2. Select an observation of interest.** 
+
+Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
+
+```{r, warning=FALSE, message=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
+```
+
+**3. Calculate Break Down decomposition**
+
+The `break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+
+Note that `check_interactions = TRUE` is needed to identify interactions.
+
+The result from `break_down()` function is a data frame with variable attributions.
+
+```{r, warning=FALSE, message=FALSE}
+library("breakDown")
+bd_rf <- break_down(explainer_rf_fired,
+                 new_observation,
+                 check_interactions = TRUE)
+
+bd_rf
+```
+
+The generic `plot()` function creates a Break Down plots. 
+```{r, warning=FALSE, message=FALSE}
+plot(bd_rf) 
+```
+
+
 
