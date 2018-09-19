@@ -1,0 +1,99 @@
+# Variable attribution
+
+In this section we introduce method for additive decomposition of predictions. The main goal for these tools is to help understand how model output may be attributed to input variables or sets of variables. 
+
+Presented explainers are linked with the first law introduced in Section \@ref(three-single-laws), i.e. law for prediction’s justifications. Note that there are more tools for variable attribution, some of them will be presented in next sections.
+
+Think of following use cases:
+
+* Think about a model for heart attack. A patient wants to know which factors have highest impact on the final heart risk score.
+* Think about a model for apartment prices. An investor wants to know how much of the final price may be attributed to the location of an apartment.
+* Think about a model for credit scoring. A customer wants to know if factors like gender, age or number of kids influence model decisions.
+
+In the section \@ref(VAlinMod) we will introduce key concepts and intuitions beyond variable attribution based on linear models. This approach may be easily applied to additive models and generalized linear models. 
+In sections \@ref(breakDown) and \@ref(shapley) we will present model agnostic extentions of this concept.
+
+
+## Variable attribution for linear models {#VAlinMod}
+
+
+Linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
+
+$$
+f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
+$$
+In other words, model response is the sum of weighted elements of $x = (x_1, x_2, \ldots, x_p)$. 
+
+
+From a global perspective of a model, we are usually interested in questions like, how good is the model, which variables are significant or how accurate are model predictions.
+
+But in this chapter we are focues in a local perspective, i.e. for a single observation $x^*$ how to measure the impact of  a variable $x_i$ on model prediction $f(x^*)$.
+
+Let $v(f, x^*, i)$ stnad for the impact of variable $x_i$ on prediction of model $f()$ in point $x^*$. For linear models it is easy to define such impact as
+$$
+v(f, x^*, i) = f(x^*) - E[f(x)|x_{-1} = x^*_{-1}] = \beta_i x^*_i  - E \beta_i X_i
+$$
+where the expected value can be estimated from the data
+$$
+v(f, x^*, i) = \beta_i x^*_i - \beta_i \bar x_i = \beta_i (x^*_i - \bar x_i)
+$$
+
+The logic behind the attribution is the following. 
+Contribution of variable $x_i$ is the difference between model response for value $x_i^*$ minus the average model response.
+
+### Wine quality example
+
+It may be a surprise, that the attribution for variable $x_i$ is not the $\beta_i x_i$.
+But, please consider following example. 
+Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The corresponding linear model is
+
+$$
+quality(alcohol) = 2.5820 + 0.3135 * alcohol
+$$
+
+The weakest wine in this dataset has 8\% of alcohol, average alcohol concentration is 10.51, so the contribution of alcohol to the model prediction is $0.3135  *(8-10.51) = -0.786885$. It means that low value of alcohol for this wine (8\%) lower the prediction of quality by $-0.786885$.
+
+Note, that it would be confusing to forget about normalisation and say, that for the alcohol contribution on quality is $0.3135*8 = 2.508$ as this is high positive value.
+
+
+
+```{r attribution1, echo=FALSE, fig.cap="(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/attribution_1.png")
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+library(breakDown)
+library(ggplot2)
+
+lm(quality ~ alcohol, wine)
+plot(quality ~ alcohol, wine)
+ggplot(wine, aes(alcohol, quality)) +
+  geom_point() + 
+  geom_smooth(method="lm", se=FALSE, size=2, color="red") + theme_bw() + xlab("alcohol [%]") + 
+  ylab("wine quality")
+
+```
+
+
+
+
+Note that the linear model ma be rewritten in a following way
+
+
+$$
+f(x) = baseline + (x_1 - \bar x_1) \beta_1 + ... + (x_p - \bar x_p) \beta_p
+$$
+
+where
+$$
+baseline = \mu + \bar x_1 \beta_1 + ... + \bar x_p \beta_p.
+$$
+
+Here $baseline$ is an average model response and variable contributions show how prediction for particular $x^*$ is different from the average response. 
+
+** NOTE for careful readers **
+
+There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasise these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+
+
