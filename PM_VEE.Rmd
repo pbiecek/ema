@@ -12,7 +12,16 @@ description: "This is a minimal example of using the bookdown package to write a
 
 # Introduction
 
-Machine Learning (ML) models have a wide range of applications in classification or regression problems. Due to the increasing computational power of computers and complexity of data sources, ML models are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
+Predictive models are used to automatically guess (statisticians would say: estimate) one interesting variable based on other variables. Think about prediction of sales based on historical data, prediction of risk of heart disease based on demographic factors, prediction of political attitudes based on facebook comments.
+
+There is a lot of very interesting applications. 
+
+**NOTE** The use of word *guess* is intended as the word *prediction* may result in false impression that the prediction is accurate. Yet in many cases it is not.  And if we are going to be sceptical about these models it is better to use the words *guess*. 
+
+
+
+
+Machine Learning models have a wide range of applications in classification or regression problems. Due to the increasing computational power of computers and complexity of data sources, ML models are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
 
 In many applications we need to know, understand or prove how the input variables are used in the model. We need to know the impact of particular variables on the final model predictions. Thus we need tools that extract useful information from thousands of model parameters.
 
@@ -937,42 +946,7 @@ Any model that is easy to interpret may be fitted to this data, like decision tr
 ## HR dataset: Hire or Fire?
 
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("DALEX")
-library("randomForest")
-model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-model
-
-explainer_rf_fired <- explain(model,
-                 data = HR,
-                 y = HR$status == "fired",
-                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
-                 label = "fired")
-
-
-new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2)
-
-predict(model, new_observation, type = "prob")
-
-
-library(lime)
-model_type.randomForest <- function(x, ...) "classification"
-lime_rf <- lime(HR[,1:5], model)
-lime::explain(new_observation[,1:5], lime_rf, n_labels = 1, n_features = 10)
-
-
-library(iml)
-mod = Predictor$new(model, data = HR[,1:5])
-x.interest = new_observation
-lemon = LocalModel$new(mod, x.interest = x.interest, k = 5)
-lemon
-
-lemon$results
-plot(lemon)
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
 
 ```
 
@@ -1026,46 +1000,41 @@ new_observation <- data.frame(gender = factor("male", levels = c("male", "female
 predict(rf_model, new_observation, type = "prob")
 ```
 
-**The lime pacakge**
+### **The lime pacakge**
 
 ```{r, warning=FALSE, message=FALSE}
 library("lime")
 model_type.randomForest <- function(x, ...) "classification"
 lime_rf <- lime(HR[,1:5], rf_model)
-explanations <- lime::explain(new_observation[,1:5], lime_rf, n_labels = 3, n_features = 5)
+explanations <- lime::explain(new_observation[,1:5], lime_rf, n_labels = 3, n_features = 3)
 explanations
 
 plot_features(explanations)
 
 ```
 
-**The live package**
+### **The live package**
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE}
 library("live")
+
 new_observation$status <- "fired"
+explainer_rf_fired <- explain(rf_model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
 
-similar <- sample_locally2(data = HR,
-                           explained_instance = new_observation,
-                           explained_var = "status",
-                           method = "lime",
-                           size = 500)
-similar <- sample_locally2(data = HR,
-                           explained_instance = new_observation,
-                           explained_var = "status",
-                           size = 500)
-similar1 <- add_predictions2(to_explain = similar,
-                             black_box_model = rf_model, 
-                              predict_fun = function(m,x) predict(m,x,type="prob")[,1])
-HR_explanation <- fit_explanation2(live_object = similar1,
-                              white_box = "regr.glm")
-HR_explanation
+local_model <- local_approximation(explainer_rf_fired, new_observation, 
+                    target_variable_name = "status", n_new_obs = 500)
 
-plot(HR_explanation, type = "forest")
+local_model
+plot(local_model)
+
 ```
 
 
-**The iml package**
+### **The iml package**
 
 ```{r, warning=FALSE, message=FALSE}
 library("iml")
@@ -1082,115 +1051,6 @@ plot(white_box)
 
 
 
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
-library(mlbench)
-library(randomForest)
-
-phi <- runif(400)
-r <- runif(400, 0.9, 1.1)
-d1 <- data.frame(x1 = runif(1000, -1.5, 1.5), x2 = runif(1000, -1.5, 1.5), class = "background")
-d2 <- data.frame(x1 = r*cos(2*pi*phi), x2 = r*sin(2*pi*phi), class = "circle")
-df <- rbind(d1, d2)
-
-
-df <- data.frame(x1 = runif(2000, -1.5, 1.5), x2 = runif(2000, -1.5, 1.5), class = "background")
-r <- sqrt(df$x1^2 + df$x2^2)
-df$class <- factor(ifelse(r < 1.1 & r > 0.9, "circle", "background"))
-
-
-
-data <- mlbench.circle(1000)
-data <- mlbench.spirals(1000)
-data <- mlbench.2dnormals(1000)
-df <- data.frame(x1 = data$x[,1], x2 = data$x[,2], class = data$classes)
-
-ggplot(df, aes(x1, x2, color = class)) +
-  geom_point()
-
-ggplot(df, aes(x1, x2, color = class)) +
-  geom_point() + theme_minimal() + scale_color_manual(values = c("grey", "red3")) +
-  coord_fixed()
-
-
-model_rf <- randomForest(class ~ ., data = df)
-model_rf
-
-new_obs <- data.frame(x1 = 1, x2 = 1, class = factor("background", levels = c("background","circle")))
-predict(model_rf, new_obs, type = "prob")
-
-grid_df <- data.frame(x1 = rep(seq(-1.5,1.5,0.015), each = 201),
-                      x2 = rep(seq(-1.5,1.5,0.015), times = 201))
-
-grid_df$y <- predict(model_rf, grid_df, type = "prob")[,1]
-
-ggplot(grid_df, aes(x1, x2, color = y)) +
-  geom_point()
-
-library(lime)
-model_type.randomForest <- function(x, ...) "classification"
-lime_rf <- lime(df[,1:2], model_rf)
-lime::explain(new_obs[,1:2], lime_rf, n_labels = 1, n_features = 5)
-
-
-library(iml)
-
-mod = Predictor$new(model_rf, data = df)
-x.interest = new_obs
-lemon = LocalModel$new(mod, x.interest = x.interest, k = 2)
-lemon
-
-lemon$results
-plot(lemon)
-
-
-
-
-library(lime)
-library(live)
-
-similar <- sample_locally2(data = df,
-                           explained_instance = new_obs,
-                           explained_var = "class",
-                           method = "lime",
-                           size = 500)
-similar <- sample_locally2(data = df,
-                           explained_instance = new_obs,
-                           explained_var = "class",
-                           size = 500)
-similar1 <- add_predictions2(to_explain = similar,
-                             black_box_model = model_rf, 
-                              predict_fun = function(m,x) predict(m,x,type="prob")[,1])
-wine_expl <- fit_explanation2(live_object = similar1,
-                              white_box = "regr.glm")
-
-plot(wine_expl, type = "forest")
-
-library(ceterisParibus)
-exp_rf <- DALEX::explain(model_rf, df, predict_function = function(m,x) predict(m,x,type="prob")[,1])
-
-cp_rf <- ceteris_paribus(exp_rf, new_obs)
-plot(cp_rf)
-
-cp2_rf <- what_if_2d(exp_rf, new_obs)
-plot(cp2_rf, add_contour = FALSE) + theme_minimal()
-
-cp2_rf <- what_if_2d(exp_rf, new_obs)
-plot(cp2_rf, add_contour = FALSE) + theme_minimal() + facet_null() + coord_fixed() + xlab("x1") + ylab("x2")
-
-dfs <- data.frame(x1 = runif(25, -1, 1)^3 + 1,
-                  x2 = runif(25, -1, 1)^3 + 1)
-
-plot(cp2_rf, add_contour = FALSE) + theme_minimal() + facet_null() + coord_fixed() + xlab("x1") + ylab("x2") +
-  geom_point(data = dfs, aes(x1, x2, fill=1, z =1))
-
-tmpdata <- similar1$data
-plot(cp2_rf, add_contour = FALSE) + theme_minimal() +
-  geom_point(data=tmpdata, aes(x1, x2, color=class, fill=class, z=1))
-
-break_down(exp_rf, new_obs)
-
-```
 
 
 <!--chapter:end:15-LIME.Rmd-->
