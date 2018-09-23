@@ -399,8 +399,8 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 <p>In this section we present key features of the <code>ceterisParibus</code> package for R <span class="citation">(P. Biecek <a href="#ref-R-ceterisParibus">2018</a><a href="#ref-R-ceterisParibus">b</a>)</span>. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package <code>https://pbiecek.github.io/ceterisParibus/</code>.</p>
 <p><strong>Model preparation</strong></p>
 <p>In this section we will present examples based on the <code>apartments</code> dataset. See section TODO for more details.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="kw">head</span>(apartments)</a></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb40-2" data-line-number="2"><span class="kw">head</span>(apartments)</a></code></pre></div>
 <pre><code>##   m2.price construction.year surface floor no.rooms    district
 ## 1     5897              1953      25     3        1 Srodmiescie
 ## 2     1818              1992     143     9        5     Bielany
@@ -409,10 +409,10 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 ## 5     3013              1992     144     6        5     Mokotow
 ## 6     5795              1926      61     6        2 Srodmiescie</code></pre>
 <p>The problem here is to predict average price for square meter for an apartment. Let’s build a random forest model with <code>randomForest</code> package <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb41-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span></a>
-<a class="sourceLine" id="cb41-3" data-line-number="3"><span class="st">      </span>no.rooms, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb41-4" data-line-number="4">rf_model</a></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb42-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span></a>
+<a class="sourceLine" id="cb42-3" data-line-number="3"><span class="st">      </span>no.rooms, <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb42-4" data-line-number="4">rf_model</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = m2.price ~ construction.year + surface +      floor + no.rooms, data = apartments) 
@@ -420,15 +420,15 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 486308.1
-##                     % Var explained: 40.79</code></pre>
+##           Mean of squared residuals: 487670.7
+##                     % Var explained: 40.62</code></pre>
 <p>Model exploration with <code>ceterisParibus</code> package is performed in four steps.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
 <p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX</code> package <span class="citation">(P. Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">c</a>)</span>.</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb43-2" data-line-number="2">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
-<a class="sourceLine" id="cb43-3" data-line-number="3">      <span class="dt">data =</span> apartmentsTest, <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb43-4" data-line-number="4">explainer_rf</a></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb44-2" data-line-number="2">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
+<a class="sourceLine" id="cb44-3" data-line-number="3">      <span class="dt">data =</span> apartmentsTest, <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
+<a class="sourceLine" id="cb44-4" data-line-number="4">explainer_rf</a></code></pre></div>
 <pre><code>## Model label:  randomForest 
 ## Model class:  randomForest.formula,randomForest 
 ## Data head  :
@@ -437,29 +437,29 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 ## 1002     3082              1978     112     9        4     Mokotow</code></pre>
 <p><strong>2. Define point of interest.</strong></p>
 <p>Certeris Paribus profiles explore model around a single point.</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1">new_apartment &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">construction.year =</span> <span class="dv">1965</span>, <span class="dt">no.rooms =</span> <span class="dv">5</span>, <span class="dt">surface =</span> <span class="dv">142</span>, <span class="dt">floor =</span> <span class="dv">8</span>)</a>
-<a class="sourceLine" id="cb45-2" data-line-number="2">new_apartment</a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" data-line-number="1">new_apartment &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">construction.year =</span> <span class="dv">1965</span>, <span class="dt">no.rooms =</span> <span class="dv">5</span>, <span class="dt">surface =</span> <span class="dv">142</span>, <span class="dt">floor =</span> <span class="dv">8</span>)</a>
+<a class="sourceLine" id="cb46-2" data-line-number="2">new_apartment</a></code></pre></div>
 <pre><code>##   construction.year no.rooms surface floor
 ## 1              1965        5     142     8</code></pre>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="kw">predict</span>(rf_model, new_apartment)</a></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="kw">predict</span>(rf_model, new_apartment)</a></code></pre></div>
 <pre><code>##        1 
-## 2300.061</code></pre>
+## 2348.585</code></pre>
 <p><strong>3. Calculate CP profiles</strong></p>
 <p>The <code>ceteris_paribus()</code> function calculates CP profiles for selected model around selected observation.</p>
 <p>By default CP profiles are calculated for all numerical variables. Use the <code>variables</code> argument to select subset of interesting variables.
 The result from <code>ceteris_paribus()</code>function is a data frame with model predictions for modified points around the point of interest.</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ceterisParibus&quot;</span>)</a>
-<a class="sourceLine" id="cb49-2" data-line-number="2">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, new_apartment, </a>
-<a class="sourceLine" id="cb49-3" data-line-number="3">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;construction.year&quot;</span>, <span class="st">&quot;floor&quot;</span>))</a>
-<a class="sourceLine" id="cb49-4" data-line-number="4">cp_rf</a></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ceterisParibus&quot;</span>)</a>
+<a class="sourceLine" id="cb50-2" data-line-number="2">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, new_apartment, </a>
+<a class="sourceLine" id="cb50-3" data-line-number="3">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;construction.year&quot;</span>, <span class="st">&quot;floor&quot;</span>))</a>
+<a class="sourceLine" id="cb50-4" data-line-number="4">cp_rf</a></code></pre></div>
 <pre><code>## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3096.582 construction.year
-## 1.1              1921        5     142     8 3113.184 construction.year
-## 1.2              1922        5     142     8 3107.749 construction.year
-## 1.3              1923        5     142     8 3076.540 construction.year
-## 1.4              1923        5     142     8 3076.540 construction.year
-## 1.5              1924        5     142     8 3084.706 construction.year
+## 1                1920        5     142     8 3094.253 construction.year
+## 1.1              1921        5     142     8 3121.808 construction.year
+## 1.2              1922        5     142     8 3117.937 construction.year
+## 1.3              1923        5     142     8 3087.433 construction.year
+## 1.4              1923        5     142     8 3087.433 construction.year
+## 1.5              1924        5     142     8 3092.566 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -471,39 +471,39 @@ The result from <code>ceteris_paribus()</code>function is a data frame with mode
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor   _yhat_      _label_
-## 1              1965        5     142     8 2300.061 randomForest</code></pre>
+## 1              1965        5     142     8 2348.585 randomForest</code></pre>
 <p><strong>4. Plot CP profiles.</strong></p>
 <p>Generic <code>plot()</code> function plot CP profiles. It returns a <code>ggplot2</code> object that can be polished if needed. Use additional arguments of this function to select colors and sizes for elements visible in the plot.</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="kw">plot</span>(cp_rf) </a></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="kw">plot</span>(cp_rf) </a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
 <p>One of very useful features of <code>ceterisParibus</code> explainers is that profiles for two or more models may be superimposed in a single plot. This helps in model comparisons.</p>
 <p>Let’s create a linear model for this dataset and repeat steps 1-3 for the lm model.</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" data-line-number="1">lm_model &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span></a>
-<a class="sourceLine" id="cb52-2" data-line-number="2"><span class="st">      </span>no.rooms, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb52-3" data-line-number="3">explainer_lm &lt;-<span class="st"> </span><span class="kw">explain</span>(lm_model,</a>
-<a class="sourceLine" id="cb52-4" data-line-number="4">      <span class="dt">data =</span> apartmentsTest, <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb52-5" data-line-number="5">cp_lm &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_lm, new_apartment, </a>
-<a class="sourceLine" id="cb52-6" data-line-number="6">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;construction.year&quot;</span>, <span class="st">&quot;floor&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1">lm_model &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span></a>
+<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="st">      </span>no.rooms, <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb53-3" data-line-number="3">explainer_lm &lt;-<span class="st"> </span><span class="kw">explain</span>(lm_model,</a>
+<a class="sourceLine" id="cb53-4" data-line-number="4">      <span class="dt">data =</span> apartmentsTest, <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
+<a class="sourceLine" id="cb53-5" data-line-number="5">cp_lm &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_lm, new_apartment, </a>
+<a class="sourceLine" id="cb53-6" data-line-number="6">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;construction.year&quot;</span>, <span class="st">&quot;floor&quot;</span>))</a></code></pre></div>
 <p>Now we can use function <code>plot()</code> to compare both models in a single chart. Additional argument <code>color = &quot;_label_&quot;</code> set color as a key for model.</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="kw">plot</span>(cp_rf, cp_lm, <span class="dt">color =</span> <span class="st">&quot;_label_&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="kw">plot</span>(cp_rf, cp_lm, <span class="dt">color =</span> <span class="st">&quot;_label_&quot;</span>)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
 <p><strong>Oscillations</strong></p>
 <p>The <code>calculate_oscillations()</code> function calculates oscillations for CP profiles.</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" data-line-number="1">cp_rf_all &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, new_apartment)</a>
-<a class="sourceLine" id="cb54-2" data-line-number="2">co_rf_all &lt;-<span class="st"> </span><span class="kw">calculate_oscillations</span>(cp_rf_all)</a>
-<a class="sourceLine" id="cb54-3" data-line-number="3">co_rf_all</a></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1">cp_rf_all &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, new_apartment)</a>
+<a class="sourceLine" id="cb55-2" data-line-number="2">co_rf_all &lt;-<span class="st"> </span><span class="kw">calculate_oscillations</span>(cp_rf_all)</a>
+<a class="sourceLine" id="cb55-3" data-line-number="3">co_rf_all</a></code></pre></div>
 <pre><code>##             _vname_ _ids_ oscillations
-## 2           surface     1     652.6892
-## 4          no.rooms     1     452.8753
-## 3             floor     1     357.4222
-## 1 construction.year     1     254.1506</code></pre>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="kw">plot</span>(co_rf_all)</a></code></pre></div>
+## 2           surface     1     631.8636
+## 4          no.rooms     1     417.2446
+## 3             floor     1     307.2147
+## 1 construction.year     1     242.2518</code></pre>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="kw">plot</span>(co_rf_all)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
 <p><strong>2D Ceteris Paribus profiles</strong></p>
 <p>And the <code>what_if_2d()</code> function calculates 2D CP profiles.</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1">wi_rf_2d &lt;-<span class="st"> </span><span class="kw">what_if_2d</span>(explainer_rf, <span class="dt">observation =</span> new_apartment, </a>
-<a class="sourceLine" id="cb57-2" data-line-number="2">                 <span class="dt">selected_variables =</span> <span class="kw">c</span>(<span class="st">&quot;surface&quot;</span>,<span class="st">&quot;floor&quot;</span>, <span class="st">&quot;construction.year&quot;</span>))</a>
-<a class="sourceLine" id="cb57-3" data-line-number="3"><span class="kw">plot</span>(wi_rf_2d, <span class="dt">split_ncol =</span> <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1">wi_rf_2d &lt;-<span class="st"> </span><span class="kw">what_if_2d</span>(explainer_rf, <span class="dt">observation =</span> new_apartment, </a>
+<a class="sourceLine" id="cb58-2" data-line-number="2">                 <span class="dt">selected_variables =</span> <span class="kw">c</span>(<span class="st">&quot;surface&quot;</span>,<span class="st">&quot;floor&quot;</span>, <span class="st">&quot;construction.year&quot;</span>))</a>
+<a class="sourceLine" id="cb58-3" data-line-number="3"><span class="kw">plot</span>(wi_rf_2d, <span class="dt">split_ncol =</span> <span class="dv">2</span>)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
 
 </div>
