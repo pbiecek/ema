@@ -1,0 +1,1772 @@
+--- 
+title: "Predictive Models: Visualisation, Exploration and Explanation"
+author: "Przemyslaw Biecek and Tomasz Burzykowski"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+biblio-style: apalike
+link-citations: yes
+description: "This is a minimal example of using the bookdown package to write a book. The output format for this example is bookdown::gitbook."
+---
+
+# Introduction
+
+Machine Learning (ML) models have a wide range of applications in classification or regression problems. Due to the increasing computational power of computers and complexity of data sources, ML models are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
+
+In many applications we need to know, understand or prove how the input variables are used in the model. We need to know the impact of particular variables on the final model predictions. Thus we need tools that extract useful information from thousands of model parameters.
+
+
+**This book is about**
+
+* We present techniques to examine particular predictions from ML models. In this book you will find theory and examples that explains model locally like break down, ceteris paribus, LIME or Shapley.
+* We present techniques to examine fully trained ML models as a whole. In this book you will find theory and examples that explains model globally like Partial Dependency Plots, Variable Importance Plots and others.
+* We present tools and methods for model comparison.
+
+**This book is NOT about.**
+
+* We do not focus on any specific model. Presented techniques are model agnostic and do not have any assumptions related to model structure.
+* We do not focus on the data exploration. There are very good books and techniques related to this, like R for Data Science http://r4ds.had.co.nz/ or TODO
+* We do not focus on the process of model building. There are also very good books about this, see An Introduction to Statistical Learning by Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani http://www-bcf.usc.edu/~gareth/ISL/ or TODO
+* We do not focus on particular tools for model building, see Applied Predictive Modeling By Max Kuhn and Kjell Johnson http://appliedpredictivemodeling.com/
+
+
+
+## Model Lifecycle
+
+![Workflow of a typical machine learning modeling. 
+A) Modeling is a process in which domain knowledge and data are turned into models. 
+B) Models are used to generate predictions. 
+C) Understanding of a model structure may increase our knowledge, and in consequence it may lead to a better model. DALEX helps here.
+D) Understanding of drivers behind a particular model’s predictions may help to correct wrong decisions, and in consequence it leads to a better model. DALEX helps here.](figure/mp_understanding.png)
+
+
+
+Variable importance
+
+Model response as a function of a variable
+
+Model performance / diagnostic / validation
+
+
+## Why do we need model explainers?
+
+Developer perspective:
+
+  AutoML
+  
+  Feature Extraction
+  
+  Model Improvement
+
+  Complex mthods are not being adopted quickly because people do not understand them. Model explainers can change this and open new applications
+
+User perspective:
+
+  Justification of model decisions - civic rights
+  
+  Model debudding / auditing
+  
+  [@ONeil]
+
+Cathy O'Neil: 
+The era of blind faith 
+in big data must end
+
+“You don’t see a lot of skepticism,” she says. “The algorithms are like shiny new toys that we can’t resist using. We trust them so much that we project meaning on to them.”
+Ultimately algorithms, according to O’Neil, reinforce discrimination and widen inequality, “using people’s fear and trust of mathematics to prevent them from asking questions”.
+
+
+## Black-box models vs White-box models
+
+[@R-DALEX]
+
+## Model agnostic vs Model specific
+
+## Glossary / Notation
+
+feature / variable
+
+
+Let $f_{M}(x): \mathcal R^{d} \rightarrow \mathcal R$ denote a predictive model, i.e. function that takes $d$ dimensional vector and calculate numerical score. In section in which we work with larger number of models we use subscript $M$ to index models. But to simplify notation, this subscript is omitted if profiles for only one model are considered. 
+
+Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subscript $x_i$ to refer to a different data points and superscript $x^j$ to refer to specific dimensions. Additionally, let $x^{-j}$ denote all coordinates except $j$-th and let $x|^j=z$ denote a data point $x^*$ with all coordinates equal to $x$ except coordinate $j$ equal to value $z$. I.e. $\forall_{i \neq {j}} x^i = x^{*,i}$ and $x^j = z$. In other words $x|^j=z$ denote a $x$ with $j$th coordinate changed to $z$.
+
+Now we can define Ceteris Paribus Profile for model $f$, variable $j$ and point $x$ as
+
+$$
+CP^{f, j, x}(z) := f(x|^j = z).
+$$
+I.e. CP profile is a model response obtained for observations created based on $x$ with $j$ coordinated changes and all other coordinates kept unchanged.
+
+It is convenient to use an alternative name for this plot: What-If Plots. CP profiles show what would happen if only a single variable is changed.
+
+Figure 5.1 shows an example of Ceteris Paribus profile. The black dot stands for prediction for a single observation. Grey line show how the model response would change if in this single observation coordinate `surface` will be changes to selected value. From this profile one may read that the model response is non monotonic. If `construction.year` for this observation would be below 1935 the model response would be higher, but if construction year were between 1935 and 1995 the model response would be lower.
+
+## Thanks to {#thanksto}
+
+We are using the **bookdown** package [@R-bookdown] in this sample book
+
+Chris Drake and Janusz Holyst
+
+
+<!--chapter:end:index.Rmd-->
+
+# Prediction level explanations {-}
+
+# Introduction {#PredictionExplainers}
+
+Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model in general. Prediction level explainers are always in context of a single observation.
+
+Think about following use-cases
+
+- One wants to attribute effects of variables to a model predictions. Think about model for hart attack. Having a final score for a patient one wants to understand how much of this score come from smoking or age or gender. 
+- One wants to understand how the model response would change if some inputs are changed. Think about model for hart attack. How the model response would change if a patient cuts the number of smoked cigarettes by half.
+- Model is not working correctly for a particular point and one wants to understand why predictions for this point are wrong. 
+
+## Variable attribution vs What-if analysis
+
+TODO: varaible attribution is not sparse, no reason for them to be like that
+
+TODO: Three approaches: variable attribution, local model, 
+
+TODO: condvis [@JSSv081i05]
+
+Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to Better Decisions’?
+[@Edwards_Veale_2018]
+
+
+
+There are many different tools that may be used to explore model around a single data point and in following sections we will describe the most popular approaches. They can be divided into two classes.
+
+* Analysis of the model curvature. Here we treat the model as a function and we are interested in the curvature of this function around the point of interest (see Figure \@ref(fig:modelResponseCurve)). In the Section \@ref(LIME) we present the LIME method that approximates the black-box model in a point of interest while in section \@ref(ceterisParibus) we present Ceteris Paribus profiles that are more focused on conditional changes of model response given only one coordinate is modified. 
+* Analysis of the probabilistic behavior of the model. Here we are interested in decomposition of the model response to parts that can be attributed to particular features.
+
+
+```{r modelResponseCurve, echo=FALSE, fig.cap="(fig:modelResponseCurve) Model response surface. We are interested in understanding the model behavior in a single point", out.width = '70%'}
+knitr::include_graphics("figure/model_response.png")
+```
+
+## When to use? 
+
+There are several use-cases for such explainers. Think about following.
+
+* Model improvement. If model works particular bad for a selected observation (the residual is very high) then investigation of model responses for miss fitted points may give some hints how to improve the model. For individual predictions it is easier to notice that selected variable should have different a effect.
+* Additional domain specific validation. Understanding which factors are important for model predictions helps to be critical about model response. If model contributions are against domain knowledge then we may be more skeptical and willing to try another model. On the other hand, if the model response is aligned with domain knowledge we may trust more in these responses. Such trust is important in decisions that may lead to serious consequences like predictive models in medicine.
+* Model selection. Having multiple candidate models one may select the final response based on model explanations. Even if one model is better in terms of global model performance it may happen that locally other model is better fitted. This moves us towards model consultations that identify different options and allow human to select one of them. 
+
+## A bit of philosophy: Three Laws for Prediction Level Explanations {#three-single-laws}
+
+76 years ago Isaac Asimov devised [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 1) a robot may not injure a human being, 2) a robot must obey the orders given it by human beings and 3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
+
+Today we are surrounded by complex predictive algorithms used for decision making. Machine learning models are used in health care, politics, education, judiciary and many other areas. Black box predictive models have far larger influence on our lives than physical robots. Yet, applications of such models are left unregulated despite many examples of their potential harmfulness. See *Weapons of Math Destruction* by Cathy O'Neil for an excellent overview of potential problems.
+
+It's clear that we need to control algorithms that may affect us. Such control is in our civic rights. Here we propose three requirements that any predictive model should fulfill.
+
+-	**Prediction's justifications**. For every prediction of a model one should be able to understand which variables affect the prediction and how strongly. Variable attribution to final prediction.
+-	**Prediction's speculations**. For every prediction of a model one should be able to understand how the model prediction would change if input variables were changed. Hypothesizing about what-if scenarios.
+-	**Prediction's validations** For every prediction of a model one should be able to verify how strong are evidences that confirm this particular prediction.
+
+There are two ways to comply with these requirements. 
+One is to use only models that fulfill these conditions by design. White-box models like linear regression or decision trees. In many cases the price for transparency is lower performance. 
+The other way is to use approximated explainers – techniques that find only approximated answers, but work for any black box model. Here we present such techniques.
+
+
+
+<!--chapter:end:10-PredictionLevel.Rmd-->
+
+# Introduction to variable attribution methods
+
+In this section we introduce method for additive decomposition of predictions. The main goal for these tools is to help understand how model output may be attributed to input variables or sets of variables. 
+
+Presented explainers are linked with the first law introduced in Section \@ref(three-single-laws), i.e. law for prediction’s justifications. Note that there are more tools for variable attribution, some of them will be presented in next sections.
+
+Think of following use cases:
+
+* Think about a model for heart attack. A patient wants to know which factors have highest impact on the final heart risk score.
+* Think about a model for apartment prices. An investor wants to know how much of the final price may be attributed to the location of an apartment.
+* Think about a model for credit scoring. A customer wants to know if factors like gender, age or number of kids influence model decisions.
+
+In the section \@ref(VAlinMod) we will introduce key concepts and intuitions beyond variable attribution based on linear models. This approach may be easily applied to additive models and generalized linear models. 
+In sections \@ref(breakDown) and \@ref(shapley) we will present model agnostic extentions of this concept.
+
+
+## Variable attribution for linear models {#VAlinMod}
+
+
+Linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
+
+$$
+f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
+$$
+In other words, model response is the sum of weighted elements of $x = (x_1, x_2, \ldots, x_p)$. 
+
+
+From a global perspective of a model, we are usually interested in questions like, how good is the model, which variables are significant or how accurate are model predictions.
+
+But in this chapter we are focues in a local perspective, i.e. for a single observation $x^*$ how to measure the contribution of  a variable $x_i$ on model prediction $f(x^*)$.
+
+Let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. For linear models it is easy to define such contribution as
+$$
+v(f, x^*, i) = f(x^*) - E[f(x)|x_{-1} = x^*_{-1}] = \beta_i x^*_i  - E \beta_i X_i
+$$
+where the expected value can be estimated from the data
+$$
+v(f, x^*, i) = \beta_i x^*_i - \beta_i \bar x_i = \beta_i (x^*_i - \bar x_i)
+$$
+
+The logic behind the attribution is the following. 
+Contribution of variable $x_i$ is the difference between model response for value $x_i^*$ minus the average model response.
+
+### Wine quality example
+
+It may be a surprise, that the attribution for variable $x_i$ is not the $\beta_i x_i$.
+But, please consider following example. 
+Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The corresponding linear model is
+
+$$
+quality(alcohol) = 2.5820 + 0.3135 * alcohol
+$$
+
+The weakest wine in this dataset has 8\% of alcohol, average alcohol concentration is 10.51, so the contribution of alcohol to the model prediction is $0.3135  *(8-10.51) = -0.786885$. It means that low value of alcohol for this wine (8\%) lower the prediction of quality by $-0.786885$.
+
+Note, that it would be confusing to forget about normalisation and say, that for the alcohol contribution on quality is $0.3135*8 = 2.508$ as this is high positive value.
+
+
+
+```{r attribution1, echo=FALSE, fig.cap="(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/attribution_1.png")
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+library(breakDown)
+library(ggplot2)
+
+lm(quality ~ alcohol, wine)
+plot(quality ~ alcohol, wine)
+ggplot(wine, aes(alcohol, quality)) +
+  geom_point() + 
+  geom_smooth(method="lm", se=FALSE, size=2, color="red") + theme_bw() + xlab("alcohol [%]") + 
+  ylab("wine quality")
+
+```
+
+
+
+
+Note that the linear model ma be rewritten in a following way
+
+
+$$
+f(x) = baseline + (x_1 - \bar x_1) \beta_1 + ... + (x_p - \bar x_p) \beta_p
+$$
+
+where
+$$
+baseline = \mu + \bar x_1 \beta_1 + ... + \bar x_p \beta_p.
+$$
+
+Here $baseline$ is an average model response and variable contributions show how prediction for particular $x^*$ is different from the average response. 
+
+** NOTE for careful readers **
+
+There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasise these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+
+## Model agnostic approaches {#modelAgnosticAttribution}
+
+In the Section \@ref(VAlinMod) we introduced a method for calculation of variable attributions for linear models.
+This method is accurate, based directly on the structure of the model. But for most popular machine learning models we cannot assume that they are linear nor even additive. 
+
+In next sections we introduce a model agnostic approach. Note that even if the model itself is not additive, the model attribution will be additive.
+
+Again, let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. 
+
+We expect that such contribution will sum up to the model prediction in a given point (property called *local accuracy*), so
+$$
+f(x^*) = baseline + \sum_{i=1}^p v(f, x^*, i)
+$$
+where $baseline$ stands for average model response.
+
+Note that the equation above may be rewritten as
+
+$$
+E [f(X)|X_1 = x_1^*, \ldots, X+p = x_p^*] = E[f(X)] + \sum_{i=1}^p v(f, x^*, i)
+$$
+what leads to quite natural proposition for $v(f, x^*_i, i)$, such as
+
+$$
+v(f, x^*_i, i) = E [f(X) | X_1 = x_1^*, \ldots, X_i = x_i^*] - E [f(X) | X_1 = x_1^*, \ldots, X_{i-1} = x_{i-1}^*] 
+$$
+In other words the contribution of variable $i$ is the difference between expected model response conditioned on first $i$ variables minus the model response conditioned on first $i-1$ variables.
+
+Such proposition fulfills the *local accuracy* condition, but unfortunatelly variable contributions depends on the ordering of variables. 
+
+ 
+```{r ordering, echo=FALSE, fig.cap="(fig:ordering) Two different paths between average model prediction and the model prediction for a selected observation. Black dots stand for conditional average, red arrows stands for changes between conditional averages.", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/ordering.png")
+```
+
+
+See for example Figure \@ref(fig:ordering). In the first ordering the contribution of variable `age` is calculated as 0.01, while in the second the contribution is calculated as 0.13. Such differences are related to the lack of additivness of the model $f()$. Propositions presented in next two sections present different solutions for this problem.
+
+
+
+```{r, eval=FALSE, echo=FALSE}
+model_rf <- aread("9e4913a2f1257bd905945d960ed7072b")
+
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model_rf, new_observation, type = "prob")
+
+p1 <- c()
+p2 <- c()
+tmp <- HR
+p1[1] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$hours <- 42.3
+p1[2] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$age <- 57.7
+p1[3] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$gender <- factor("male", levels = c("male", "female"))
+p1[4] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+#####
+tmp <- HR
+p2[1] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$gender <- factor("male", levels = c("male", "female"))
+p2[2] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$age <- 57.7
+p2[3] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+tmp$hours <- 42.3
+p2[4] <- mean(predict(model_rf, tmp, type = "prob")[,1])
+
+p1
+diff(p1)
+p2
+diff(p2)
+df <- data.frame(id=c(1:4,1:4),co=rep(1:2,each = 4),E=c(p1, p2))
+ggplot(df, aes(E, id)) +
+  geom_point() +
+  facet_wrap(~co, ncol = 1) + theme_bw() +
+  scale_y_reverse()
+```
+
+
+
+
+<!--chapter:end:12-linearModels.Rmd-->
+
+# Break Down Attributions {#breakDown}
+
+The approach for variable attribution presented in the Section \@ref(modelAgnosticAttribution) has the property of *local accuracy*, but variable contributions depends on the variable ordering.
+
+The Break Down method solves this problem by using two-step procedure. In the first step variables are ordered and in the second step the consecutive conditioning is applied to ordered variables.
+
+
+## The Algorithm
+
+First step of this algorithm is to determine the order of variables for conditioning. 
+It seems to be reasonable to include first variables that are likely to be most important, leaving the noise variables at the end.
+This leads to order based on following scores
+
+$$
+score(f, x^*, i) = \left| E [f(X)] - E [f(X)|X_i = x^*_i] \right|
+$$
+Note, that the absolute value is needed as variable contributions can be both positive and negative. 
+
+Once the ordering is determined in the second step variable contributions are calculated as
+
+$$
+v(f, x^*_i, i) = E [f(X) | X_{I \cup \{i\}} = x_{I \cup \{i\}}^*] - E [f(X) | X_{I} = x_{I}^*] 
+$$
+where $I$ is the set of variables that have scores smaller than score for variable $i$.
+
+$$
+I = \{j: score(f, x^*, j) < score(f, x^*, i)\}
+$$
+
+The time complexity of the first step id $O(p)$ where $p$ is the number of variables and the time complexity of the second step is also $O(p)$.
+
+
+## HR dataset: Hire or Fire?
+
+Let us consider a random forest model created for HR data. The average model response is $\bar f(x) = 0.385586$. For a selected observation $x^*$ the table below presents scores for particular variables.
+
+|           |  Ei f(X)|    scorei|
+|:----------|--------:|---------:|
+|hours      | 0.616200|  0.230614|
+|salary     | 0.225528|  0.160058|
+|evaluation | 0.430994|  0.045408|
+|age        | 0.364258|  0.021328|
+|gender     | 0.391060|  0.005474|
+
+Once we determine the order we can calculate sequential contributions
+
+|variable         | cumulative| contribution|
+|:----------------|-----------:|------------:|
+|(Intercept)      |    0.385586|     0.385586|
+|* hours = 42     |    0.616200|     0.230614|
+|* salary = 2     |    0.400206|    -0.215994|
+|* evaluation = 2 |    0.405776|     0.005570|
+|* age = 58       |    0.497314|     0.091538|
+|* gender = male  |    0.778000|     0.280686|
+|final_prognosis  |    0.778000|     0.778000|
+
+## Break Down Plots
+
+Once we calculated variable attributions we may plot them in an intuitive form.
+This intuition behind Break Down Plots is described in Figure \@ref(BDPrice4). 
+
+The variable ordering determined in the first step of Break Down Algorithm is reflected by the ordering of variables in rows of the plot. 
+
+The last row of a plot shows the $baseline$, i.e. an average model prediction. The next row corresponds to average model prediction for observations with variable `surface` fixed to value `35`. The next for corresponds to average model prediction with variables `surface` set to `35` and `floor` set to `1`, and so on. The first row corresponds to model response for $x^*$.
+
+In panels A and B violines show distribution of model predictions for selected points, while red dots stands for averages. 
+
+The most minimal form that shows important information is presented in the panel C.
+Positive values are presented with green bars while negative differences are marked with yellow bar. They sum up to final model prediction, which is denoted by a grey bar in this example.
+
+
+
+```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. ", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/bd_price_4.png")
+```
+
+
+
+
+## Pros and cons
+
+Break Down approach is model agnostic, can be applied to any predictive model that returns a single number. It leads to additive variable attribution. Below we summarize key strengths and weaknesses of this approach. 
+
+
+**Pros**
+
+- Break Down Plots are easy to understand and decipher.
+- Break Down Plots are compact; many variables may be presented in a small space.
+- Break Down Plots are model agnostic yet they reduce to intuitive interpretation for linear Gaussian and generalized models.
+- Complexity of Break Down Algorithm is linear in respect to the number of variables.
+
+**Cons**
+
+- If the model is non-additive then showing only additive contributions may be misleading.
+- Selection of the ordering based on scores is subjective. Different orderings may lead to different contributions.
+- For large number of variables the Break Down Plot may be messy with many variables having small contributions.
+
+
+
+## Code snippets for R
+
+In this section we present key features of the `breakDown` package for R [@R-breakDown]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://pbiecek.github.io/breakDown/`.
+
+**Model preparation**
+
+In this section we will present an example based on the `HR` dataset and Random Forest model [@R-randomForest]. See the Section \@ref(HRdataset) for more details.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
+```
+
+Model exploration with the `breakDown` package is performed in three steps. 
+
+**1. Create an explainer - wrapper around model and validation data.**
+
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
+
+```{r, warning=FALSE, message=FALSE}
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
+```
+
+**2. Select an observation of interest.** 
+
+Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
+
+```{r, warning=FALSE, message=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
+```
+
+**3. Calculate Break Down decomposition**
+
+The `break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+
+The result from `break_down()` function is a data frame with variable attributions.
+
+```{r, warning=FALSE, message=FALSE}
+library("breakDown")
+bd_rf <- break_down(explainer_rf_fired,
+                 new_observation,
+                 check_interactions = FALSE,
+                 keep_distributions = TRUE)
+
+bd_rf
+```
+
+The generic `plot()` function creates a Break Down plots. 
+```{r, warning=FALSE, message=FALSE}
+plot(bd_rf) 
+```
+
+Add the `plot_distributions = TRUE` argument to enrich model response with additional information.
+
+```{r, warning=FALSE, message=FALSE}
+plot(bd_rf, plot_distributions = TRUE) 
+```
+
+
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
+
+bd_rf <- broken(rf_model, new_apartment, data = apartmentsTest, direction = "up", keep_distributions = TRUE)
+bd_rf
+
+plot(bd_rf) + theme_bw() + scale_y_continuous("price per square meter", expand = c(0,0), limits = c(0,6300)) + theme(legend.position = "none")
+
+plot(bd_rf, plot_distributions = TRUE) + theme_bw() + scale_y_continuous("price per square meter", expand = c(0,0), limits = c(0,6300)) + theme(legend.position = "none")
+
+
+
+plot(bd_rf) + theme_bw()+ scale_y_continuous("price per square meter", expand = c(0,0)) 
+```
+
+
+
+# Break Down for Interactions
+
+In the Section \@ref(breakDown) we presented model agnostic approach for additive decomposition of a model prediction for a single observation. 
+
+For non-additive models the variables contributions depend on values of other variables. 
+
+In this section we present an algorithm that identifies interactions between pairs of variables and include such interactions in variable decomposition plots. Here we present an algorithm for pairs of variables, but it can be easily generalized to larger number of variables.
+
+## The Algorithm
+
+This algorithm is also composed out of two steps. In the first step variables and pairs of variables are ordered in terms of their importance, while in the second step the consecutive conditioning is applied to ordered variables.
+
+
+To determine an importance of variables and pairs of variables following scores are being calculated.
+
+For a single variable
+
+$$
+score_1(f, x^*, i) = \left| E [f(X)|X_i = x^*_i]  - E [f(X)]\right|
+$$
+For pairs of variables
+
+$$
+score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - E [f(X)|X_i = x^*_i] - E [f(X)| X_j = x^*_j]+ E [f(X)] \right|
+$$
+Note that this is equivalent to 
+
+$$
+score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - score_1 (f, x^*, i) - score_1 (f, x^*, j) + baseline \right|
+$$
+In other words the $score_1(f, x^*, i)$ measures how much the average model response changes if variable $x_i$ is set to $x_i^*$, which is some index of local variable importance. On the other hand the $score_2(f, x^*, (i,j))$ measures how much the change is different than additive composition of changes for $x_i$ and $x_j$, which is some index of local interaction importance.
+
+Note, that for additive models $score_2(f, x^*, (i,j))$ shall be close to zero. So the larger is this value the larger deviation from additivness.
+
+
+The second step of the algorithm is the sequential conditioning. In this version in every new step we condition on a single variable of pair of variables in an order determined by $score_1$ and $score_2$.
+
+The complexity of the first step id $O(p^2)$ where $p$ stands for the number of variables. The complexity of the second step is $O(p)$.
+
+## HR dataset: Hire or Fire?
+
+Again, let us consider a HR dataset. 
+The table below shows $score_1$ and $score_2$ calculated for consecutive variables.
+
+|                  | Ei f(X) |    score1|  score2  |
+|:-----------------|--------:|---------:|---------:|
+|hours             | 0.616200|  0.230614|          |
+|salary            | 0.225528| -0.160058|          |
+|age:gender        | 0.516392|          |  0.146660|
+|salary:age        | 0.266226|          |  0.062026|
+|salary:hours      | 0.400206|          | -0.055936|
+|evaluation        | 0.430994|  0.045408|          |
+|hours:age         | 0.635662|          |  0.040790|
+|salary:evaluation | 0.238126|          | -0.032810|
+|age               | 0.364258| -0.021328|          |
+|evaluation:hours  | 0.677798|          |  0.016190|
+|salary:gender     | 0.223292|          | -0.007710|
+|evaluation:age    | 0.415688|          |  0.006022|
+|gender            | 0.391060|  0.005474|          |
+|hours:gender      | 0.626478|          |  0.004804|
+|evaluation:gender | 0.433814|          | -0.002654|
+
+Once we determined the order, we can calculate sequential conditionings. In the first step we condition over variable `hours`, then over `salary`. The third position is occupied by interaction between `age:gender` thus we add both variables to the conditioning
+
+|variable               | cumulative| contribution|
+|:----------------------|-----------:|------------:|
+|(Intercept)            |    0.385586|     0.385586|
+|* hours = 42           |    0.616200|     0.230614|
+|* salary = 2           |    0.400206|    -0.215994|
+|* age:gender = 58:male |    0.796856|     0.396650|
+|* evaluation = 2       |    0.778000|    -0.018856|
+|final_prognosis        |    0.778000|     0.778000|
+
+
+
+## Break Down Plots
+
+Break Down Plots for interactions are similar in structure as plots for single variables. The only difference is that in some rows pair of variable is listed in a single row. See an example in Figure \@ref(BDPrice4). 
+
+```{r bdInter1, echo=FALSE, fig.cap="(fig:bdInter1) Break Down Plot for variable attrbution with interactions ", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/bd_inter_1.png")
+```
+
+
+## Pros and cons
+
+Break Down for interactions shares many features of Break Down for single variables. Below we summarize unique strengths and weaknesses of this approach. 
+
+
+**Pros**
+
+- If interactions are present in the model, then additive contributions may be misleading. In such case the identification of interactions leads to better explanations. 
+- Complexity of Break Down Algorithm is quadratic, what is not that bad if number of features is small or moderate.
+
+**Cons**
+
+- For large number of variables, the consideration of all interactions is both time consuming and sensitive to noise as the number of $score_2$ scores grow faster than number of $score_1$. 
+
+
+## Code snippets for R
+
+The algorithm for Break Down for Interactions is also implemented in the `break_down` function from  `breakDown` package. 
+
+It is enough to set argument `check_interactions = TRUE`  to identify interactions.
+
+**Model preparation**
+
+First a model needs to be trained.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
+```
+
+Model exploration with the `breakDown` package is performed in three steps. 
+
+**1. Create an explainer - wrapper around model and validation data.**
+
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package.
+
+```{r, warning=FALSE, message=FALSE}
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
+```
+
+**2. Select an observation of interest.** 
+
+Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
+
+```{r, warning=FALSE, message=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
+```
+
+**3. Calculate Break Down decomposition**
+
+The `break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+
+Note that `check_interactions = TRUE` is needed to identify interactions.
+
+The result from `break_down()` function is a data frame with variable attributions.
+
+```{r, warning=FALSE, message=FALSE}
+library("breakDown")
+bd_rf <- break_down(explainer_rf_fired,
+                 new_observation,
+                 check_interactions = TRUE)
+
+bd_rf
+```
+
+The generic `plot()` function creates a Break Down plots. 
+```{r, warning=FALSE, message=FALSE}
+plot(bd_rf) 
+```
+
+
+
+
+<!--chapter:end:13-breakDown.Rmd-->
+
+# Shapley Attributions {#shapley}
+
+In the Section \@ref(modelAgnosticAttribution) we show the problem related to the ordering of variables. In the Section \@ref(breakDown) we show an approach in which the ordering was determined based on single step assessment of variable importance.
+
+In this section we introduce other, very popular approach for additive variable attribution. The problem of contributions that depends on the variable ordering is solved by averaging over all possible orderings.
+
+This method is motivated with results in cooperative game theory and was first introduced in [@Strumbelj2014]. Wide adoption of this method comes with a NIPS 2017 paper [@SHAP] and python library SHAP `https://github.com/slundberg/shap`. Authors of the SHAP method introduced also efficient algorithm for tree-based models, see [@TreeSHAP].
+
+
+## The Algorithm
+
+The name *Shapley Values* comes from the solution in cooperative game theory attributed to Lloyd Shapley. The original problem was to assess how important is each player to the overall cooperation, and what payoff can he or she reasonably expect from the coalition? [@shapleybook1952]
+
+In the context of model interpretability the payoff is the average model response while the players are the variables in the conditioning. Then Formula for variable contributions is following.
+
+
+$$
+v(f, x^*, i) = \frac 1{|P|}\sum_{S \subseteq P\setminus \{i\}}  {{|P|-1}\choose{|S|}}^{-1} \left(E [f(X) | X_{S \cup \{i\}} = x^*_{S \cup \{i\}}] - E [f(X) | X_{S} = x^*_{S}]\right)
+$$
+where $P = \{1, \ldots, p\}$ is the set of all variables.
+The intuition beyond this contribution is following. We consider all possible orderings of variables (yes, there is $2^p$ of them) and calculate the contribution of variable $i$ as an average from contributions calculated in particular orderings.
+
+The part $E[f(X) | X_{S \cup \{i\}} = x^*_{S \cup \{i\}}] - E [f(X) | X_{S} = x^*_{S}]$ is the contribution of variable $i$ which is introduces after variables from $S$.
+
+Time complexity of this method is $O(2^p)$ where $p$ stands for the number of variables. Such complexity makes this method impractical for most cases. Fortunately it is enough to assess this value. [@Strumbelj2014] proposed to use sampling. [@TreeSHAP] proposed fast implementations for tree based ensembles.
+
+## Code snippets for R
+
+In this section we will present an example based on the `HR` dataset and Random Forest model [@R-randomForest]. See the Section \@ref(HRdataset) for more details.
+
+```{r, message=FALSE, warning=FALSE}
+library("DALEX")
+library("randomForest")
+model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+```
+
+Here we use the `iml` package, see more examples in [@imlPackage].
+
+
+```{r, message=FALSE, warning=FALSE}
+library("iml")
+explainer_rf = Predictor$new(model_rf, data = HR, type="prob")
+```
+
+Explanations for a new observation.
+
+```{r, message=FALSE, warning=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2,
+                      status = factor("fired"))
+
+shapley = Shapley$new(explainer_rf, x.interest = new_observation)
+shapley
+```
+
+And the plot with Shapley attributions.
+
+```{r, message=FALSE, warning=FALSE}
+plot(shapley)
+```
+
+See more examples for `iml` package in the [@molnar] book.
+
+## Pros and cons
+
+Shapley Values give a uniform approach to decompose model prediction into parts that can be attributed additively to variables. Below we summarize key strengths and weaknesses of this approach. 
+
+**Pros**
+
+- There is a nice theory based on cooperative games.
+- [@SHAP] shows that this method unifies different approaches to additive features attribution.
+- There is efficient implementation available for Python.
+- [@SHAP] shows more desired properties of this method, like symmetry or additivity.
+
+**Cons**
+
+- The exact calculation of Shapley values is time consuming.
+- If the model is not additive, then the Shaply scores may be misleading. And there is no way to determine if model is far from additiveness.
+
+Note that fully additive model solutions presented in sections \@ref(modelAgnosticAttribution), \@ref(breakDown) and \@ref(shapley) lead to same variable contributions.
+
+
+
+<!--chapter:end:14-shapley.Rmd-->
+
+# Approximation with small model: Local model: LIME: Local Interpretable Model-Agnostic Explanations {#LIME}
+
+Variable attribution method are not interested in the local curvature of the model. 
+They rarther compare model prediction agains average model prediction.
+
+The complementary approach would be to directly explore infromation about model curvature around point of interest.
+In the section \@ref(ceterisParibus) we introduce Ceteris Paribus tool for what if analysis.
+In this section we describe an another approach based on local approximations with white-box models.
+
+The most known paper related to local approximations is *Why Should I Trust You?: Explaining the Predictions of Any Classifier* [@lime]. This methods and it's clones are now implemented in variouse R and python packages, see for example [@R-lime] or [@R-live].
+
+## The Algorithm
+
+The algorithm is composed from two steps:
+
+* Sampling from neighbourhood around the point of interest
+* Fitting a white box model in this neighbouhood
+
+
+
+## HR dataset: Hire or Fire?
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("DALEX")
+library("randomForest")
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
+
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
+
+
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
+
+
+library(lime)
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(HR[,1:5], model)
+lime::explain(new_observation[,1:5], lime_rf, n_labels = 1, n_features = 10)
+
+
+library(iml)
+mod = Predictor$new(model, data = HR[,1:5])
+x.interest = new_observation
+lemon = LocalModel$new(mod, x.interest = x.interest, k = 5)
+lemon
+
+lemon$results
+plot(lemon)
+
+```
+
+
+## Pros and cons
+
+
+
+
+
+
+## Code snippets for R
+
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library(mlbench)
+library(randomForest)
+
+data <- mlbench.circle(1000)
+data <- mlbench.spirals(1000)
+data <- mlbench.2dnormals(1000)
+df <- data.frame(x1 = data$x[,1], x2 = data$x[,2], class = data$classes)
+
+ggplot(df, aes(x1, x2, color = class)) +
+  geom_point()
+
+model_rf <- randomForest(class ~ ., data = df)
+model_rf
+
+new_obs <- data.frame(x1 = 0.25, x2 = 0.25, class = factor(1, levels = 1:2))
+new_obs <- data.frame(x1 = 0, x2 = 0, class = factor(1, levels = 1:2))
+predict(model_rf, new_obs, type = "prob")
+
+grid_df <- data.frame(x1 = rep(seq(-1,1,0.01), each = 201),
+                      x2 = rep(seq(-1,1,0.01), times = 201))
+
+grid_df$y <- predict(model_rf, grid_df, type = "prob")[,1]
+
+ggplot(grid_df, aes(x1, x2, color = y)) +
+  geom_point()
+
+library(lime)
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(df[,1:2], model_rf)
+lime::explain(new_obs[,1:2], lime_rf, n_labels = 1, n_features = 2)
+
+
+library(iml)
+
+mod = Predictor$new(model_rf, data = df)
+x.interest = new_obs
+lemon = LocalModel$new(mod, x.interest = x.interest, k = 2)
+lemon
+
+lemon$results
+plot(lemon)
+
+
+
+
+library(lime)
+library(live)
+
+similar <- sample_locally2(data = df,
+                           explained_instance = new_obs,
+                           explained_var = "class",
+                           size = 500)
+similar1 <- add_predictions2(to_explain = similar,
+                             black_box_model = model_rf, 
+                              predict_fun = function(m,x) predict(m,x,type="prob")[,1])
+wine_expl <- fit_explanation2(live_object = similar1,
+                              white_box = "regr.glm")
+
+plot(wine_expl, type = "forest")
+
+library(ceterisParibus)
+exp_rf <- DALEX::explain(model_rf, df, predict_function = function(m,x) predict(m,x,type="prob")[,1])
+
+cp_rf <- ceteris_paribus(exp_rf, new_obs)
+plot(cp_rf)
+
+cp2_rf <- what_if_2d(exp_rf, new_obs)
+plot(cp2_rf)
+
+
+```
+
+Sparse model approximation / variable selection / feature ranking
+
+live: Local Interpretable (Model-Agnostic) Visual Explanations 
+
+
+<!--chapter:end:15-LIME.Rmd-->
+
+# Ceteris Paribus Principle {#ceterisParibus}
+
+In this section we introduce tools based on Ceteris Paribus principle. The main goal for these tools is to help understand how changes in model input affect changes in model output. 
+
+Presented explainers are linked with the second law introduced in Section \@ref(three-single-laws), i.e. law for prediction's speculations. This is why these explainers are also known as *What-If model analysis* or *Individual Conditional EXpectations* [@ICEbox]. It turns out that it is easier to understand how blacx-box model is working if we can play with it by changing variable by variable. 
+
+Think of following usecases:
+
+- Think about a model for hart attack. How the model response would change if a patient cuts the number of smoked cigarettes by half or increase physical activity.
+- Think about a model for credit scoring. A customer gets a low score and is asking what he needs to change to increase this score to a certain level, to pass the bank criteria.
+- Think about a model for apartment prices. An investor wants to know how much the price may increase if apartment standard is upgraded.
+
+
+
+## Introduction
+
+*Ceteris paribus* is a Latin phrase meaning "other things held constant" or "all else unchanged". Using this principle we examine input variable per variable separatly, asumming that effects of all other variables are unchanged. See Figure \@ref(fig:modelResponseCurveLine) 
+
+
+```{r modelResponseCurveLine, echo=FALSE, fig.cap="(fig:modelResponseCurveLine) A) Model response surface. Ceteris Paribus profiles marked with black curves helps to understand the curvature of the model response by updating only a single variable. B) CP profiles are individual conditional model responses", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/model_response_line.png")
+```
+
+Similar to the LIME method introduced in the section \@ref(LIME), Ceteris Paribus profiles examine curvature of a model response function. The difference between these two methods that LIME approximates the model curvature with a simpler white-box model that is easier to present. Usually the LIME model is sparse, thus our attention may be limited to smaller number of dimensions. In contrary, the CP plots show conditional model response for every variable. In the last subsection we discuss pros and cons of this approach.
+
+## 1D profiles {#ceterisParibus1d}
+
+Let $f_{M}(x): \mathcal R^{d} \rightarrow \mathcal R$ denote a predictive model, i.e. function that takes $d$ dimensional vector and calculate numerical score. 
+Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subscript $x_i$ to refer to a different data points and superscript $x^j$ to refer to specific dimensions. Additionally, let $x^{-j}$ denote all coordinates except $j$-th and let $x|^j=z$ denote a data point $x^*$ with all coordinates equal to $x$ except coordinate $j$ equal to value $z$. I.e. $\forall_{i \neq {j}} x^i = x^{*,i}$ and $x^j = z$. In other words $x|^j=z$ denote a $x$ with $j$th coordinate changed to $z$.
+
+Now we can define uni-dimensional Ceteris Paribus Profile for model $f$, variable $j$ and point $x$ as
+
+$$
+CP^{f, j, x}(z) := f(x|^j = z).
+$$
+I.e. CP profile is a model response obtained for observations created based on $x$ with coordinate $j$ changed and all other coordinates kept unchanged.
+
+A natural way to visualise CP profiles is to use a profile plot as in Figure \@ref(fig:HRCPFiredHours).
+
+
+
+Figure \@ref(fig:HRCPFiredHours) shows an example of Ceteris Paribus profile. The black dot stands for prediction for a single observation. Grey line show how the model response would change if in this single observation coordinate `hours` will be changed to selected value. One thing that we can read is that the model response is not smooth and there is some variability along the profile. Second thing is that for this particular observation the model response would drop significantly if the variable `hours` will be higher than 45.
+
+```{r HRCPFiredHours, echo=FALSE, fig.cap="(fig:HRCPHiredHours) Ceteris Paribus profile for Random Forest model that assess the probability of being fired in call center as a function of average number of working hours", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/HR_cp_fired_hours.png")
+```
+
+Since in the example dataset we are struggling with model for three classes, one can plot CP profiles for each class in the same panel. See an example in the Figure  \@ref(fig:HRCPAllHours).
+
+```{r HRCPAllHours, echo=FALSE, fig.cap="(fig:HRCPAllHours) Ceteris Paribus profiles for three classess predicted by the Random Forest model as a function of average number of working hours", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/HR_cp_all_hours.png")
+```
+
+Usually model input consist many variables, then it is beneficial to show more variables at the same time. The easiest way to do so is to plot consecutive variables on separate panels. See an example in Figure \@ref(fig:HRCPFiredAll).
+
+```{r HRCPFiredAll, echo=FALSE, fig.cap="(fig:HRCPFiredAll) Ceteris Paribus profiles for all continuous variables", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/HR_cp_fired_all.png")
+```
+
+
+## Profile oscillations {#oscillations}
+
+Visual examination of variables is insightful, but for large number of variables we end up with large number of panels, most of which are flat.
+This is why we want to asses variable importance and show only profiles for important variables. The advantage of CP profiles is that they lead to a very natural and intuitive way of assessing the variable importance for a single prediction. The intuition is: the more important variable the larger are changes along the CP profile. If variable is not important then model response will barely change. If variable is important the CP profile change a lot for different values of a variable. 
+
+Let's write it down in a more formal way.
+
+Let $vip^{CP}_j(x)$ denotes variable importance calculated based on CP profiles in point $x$ for variable $j$.
+
+$$
+vip^{CP}_j(x) = \int_{-\inf}^{inf} |CP^{f,j,x}(z) - f(x)| dz
+$$
+
+So it's an absolute deviation from $f(x)$. Note that one can consider different modification of this coefficient:
+
+1. Deviations can be calculated not as a distance from $f(x)$ but from average $\bar CP^{f,j,x}(z)$. 
+2. The integral may be weighted based on the density of variable $x^j$. 
+3. Instead of absolute deviations one may use root from average squares.
+
+TODO: we need to verify which approach is better. Anna Kozak is working on this
+
+The straightforward estimator for $vip^{CP}_j(x)$ is
+
+
+$$
+\widehat{ vip^{CP}_j(x)} = \frac 1n \sum_{i=1}^n |CP^{f,j,x}(x_i) - f(x)|.
+$$
+
+Figure \@ref(fig:CPVIPprofiles) shows the idea behind measuring oscillations. The larger the highlighted area the more important is the variable.
+
+```{r CPVIPprofiles, echo=FALSE, fig.cap="(fig:CPVIPprofiles) CP oscillations are average deviations between CP profiles and the model response", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/CP_VIP_profiles.png")
+```
+
+Figure \@ref(fig:CPVIP1) summarizes variable oscillations. Such visuals help to quickly grasp how large are model oscillations around a specific point.
+
+```{r CPVIP1, echo=FALSE, fig.cap="(fig:CPVIP1) Variable importance plots calculated for Ceteris Paribus profiles for observation ID: 1001", out.width = '40%', fig.align='center'}
+knitr::include_graphics("figure/cp_vip_1.png")
+```
+
+
+**NOTE**
+
+Variable importance for single prediction may be very different than variable importance for the full model. 
+
+For example, consider a model 
+$$
+f(x_1, x_2) = x_1 * x_2
+$$
+where variables $x_1$ and $x_2$ takes values in $[0,1]$. 
+
+From the global perspective both variables are equally important. 
+
+But local variable importance is very different. Around point $x = (0, 1)$ the importance of $x_1$ is much larger than $x_2$. This is because profile for $f(z, 1)$ have larger oscillations than $f(0, z)$.
+
+
+## 2D profiles
+
+The definition of ceteris paribus profiles given in section \@ref(ceterisParibus1d) may be easily extended to two and more variables. Also definition of CP oscillations \@ref(oscillations) have straight forward generalization for larger number of dimensions. Such generalisations are usefull when model is non additive. Presence of pairwise interactions may be detected with 2D Ceteris Paribus plots.
+
+Let's define two-dimensional Ceteris Paribus Profile for model $f$, variables $j$ and $k$ and point $x$ as
+
+$$
+CP^{f, (j,k), x}(z_1, z_2) := f(x|^{(j,k)} = (z_1,z_2)).
+$$
+I.e. CP profile is a model response obtained for observations created based on $x$ with $j$ and $k$ coordinates changed to $(z_1, z_2)$ and all other coordinates kept unchanged.
+
+A natural way to visualise 2D CP profiles is to use a level plot as in Figure \@ref(fig:CP2Dsurflor).
+
+```{r CP2Dsurflor, echo=FALSE, fig.cap="(fig:CP2Dsurflor) Ceteris Paribus plot for a pair of variales. Black cross marks coordinated for the observation of interest. Presented model estimates price of an appartment", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/cp_2d_surf_floor.png")
+```
+
+If number of variables is small or moderate thein it is possible to present all pairs of variables. See an example in Figure \@ref(fig:CP2Dall).
+
+
+```{r CP2Dall, echo=FALSE, fig.cap="(fig:CP2Dall) Ceteris Paribus plot for all pairs of variales.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/cp_2d_all.png")
+```
+
+
+## Local model fidelity
+
+Ceteris Paribus profiles are also a useful tool to validate local model fidelity. 
+It may happen that global performance of the model is good, while for some points the local fit is very bad. Local fidelity helps to understand how good is the model fit around point of interest.
+
+How does it work?
+
+The idea behind fidelity plots is to select some number of points from the validation dataset that are closes to the point of interest. 
+It's a similar approach as in k nearest neighbours. Then for these neighbours we may plot Ceteris Paribus Profiles and check how stable they are.
+
+Also, if we know true taget values for points from the validation dataset we may plot residuals to show how large are residuals.
+
+An example fidelity plot is presented in Figure \@ref(fig:CPfidelity1). 
+Black line shows the CP profiles for the point of interest, while grey lines show CP profiles for neihgbors. Red intervals stand for residuals and in this example it looks like residuals for neighbours are all negative. Thus maybe model is biased around the point of interest.
+
+```{r CPfidelity1, echo=FALSE, fig.cap="(fig:CPfidelity1) Local fidelity plots. Black line shows the CP profile for the point of interest. Grey lines show CP profiles for nearest neighbors. Red intervals correspond to residuals. Each red interval starts in a model prediction for a selected neighbor and ends in its true value of target variable.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/cp_fidelity_1.png")
+```
+
+This observation may be confirmed by plots that compare distribution of all residuals against distribution of residuals for neighbors.
+
+See Figure \@ref(CPfidelityBoxplot) for an example. Here residuals for neighbors are shifted towards highest values. This suggests that the model response is biased around the observation of interest.
+
+
+```{r CPfidelityBoxplot, echo=FALSE, fig.cap="(fig:CPfidelityBoxplot) Distribution of residuals for whole validation data (grey boxplot) and for selected closes 15 neighbors (red boxplot).", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/cp_fidelity_boxplot.png")
+```
+
+
+
+
+## Pros and cons
+
+Ceteris Paribus principle gives a uniform and extendable approach to model exploration. Below we summarize key strengths and weaknesses of this approach. 
+
+**Pros**
+
+- Graphical representation of Ceteris Paribus profile is easy to understand.
+- Ceteris Paribus profiles are compact and it is easy to fit many models or many variables in a small space.
+- Ceteris Paribus profiles helps to understand how model response would change and how stable it is
+- Oscillations calculated for CP profiles helps to select the most important variables.
+- 2D Ceteris Paribus profiles help to identify pairwise interactions between variables.
+
+**Cons**
+
+- If variables are correlated (like surface and number of rooms) then the '*everything else kept unchanged*' approach leads to unrealistic settings.
+- Interactions between variables are not visible in 1D plots.
+- This tool is not suited for very wide data, like hundreds or thousands of variables.
+- Visualization of categorical variables is non trivial.
+
+
+## Code snippets for R
+
+In this section we present key features of the `ceterisParibus` package for R [@R-ceterisParibus]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://pbiecek.github.io/ceterisParibus/`.
+
+**Model preparation**
+
+In this section we will present examples based on the `apartments` dataset. See section TODO for more details.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(apartments)
+```
+
+The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
+      no.rooms, data = apartments)
+rf_model
+```
+
+Model exploration with `ceterisParibus` package is performed in four steps. 
+
+**1. Create an explainer - wrapper around model and validation data.**
+
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+explainer_rf <- explain(rf_model,
+      data = apartmentsTest, y = apartmentsTest$m2.price)
+explainer_rf
+```
+
+**2. Define point of interest.** 
+
+Certeris Paribus profiles explore model around a single point.
+
+```{r, warning=FALSE, message=FALSE}
+new_apartment <- data.frame(construction.year = 1965, no.rooms = 5, surface = 142, floor = 8)
+new_apartment
+predict(rf_model, new_apartment)
+```
+
+**3. Calculate CP profiles**
+
+The `ceteris_paribus()` function calculates CP profiles for selected model around selected observation. 
+
+By default CP profiles are calculated for all numerical variables. Use the `variables` argument to select subset of interesting variables.
+The result from  `ceteris_paribus()`function is a data frame with model predictions for modified points around the point of interest.
+
+```{r, warning=FALSE, message=FALSE}
+library("ceterisParibus")
+cp_rf <- ceteris_paribus(explainer_rf, new_apartment, 
+                            variables = c("construction.year", "floor"))
+cp_rf
+```
+
+**4. Plot CP profiles.**
+
+Generic `plot()` function plot CP profiles. It returns a `ggplot2` object that can be polished if needed. Use additional arguments of this function to select colors and sizes for elements visible in the plot.
+
+```{r, warning=FALSE, message=FALSE}
+plot(cp_rf) 
+```
+
+One of very useful features of `ceterisParibus` explainers is that profiles for two or more models may be superimposed in a single plot. This helps in model comparisons. 
+
+Let's create a linear model for this dataset and repeat steps 1-3 for the lm model.
+
+```{r, warning=FALSE, message=FALSE}
+lm_model <- lm(m2.price ~ construction.year + surface + floor +
+      no.rooms, data = apartments)
+explainer_lm <- explain(lm_model,
+      data = apartmentsTest, y = apartmentsTest$m2.price)
+cp_lm <- ceteris_paribus(explainer_lm, new_apartment, 
+                            variables = c("construction.year", "floor"))
+```
+
+Now we can use function `plot()` to compare both models in a single chart. Additional argument `color = "_label_"` set color as a key for model.
+
+```{r, warning=FALSE, message=FALSE}
+plot(cp_rf, cp_lm, color = "_label_")
+```
+
+**Oscillations**
+
+The `calculate_oscillations()` function calculates oscillations for CP profiles.
+
+```{r, warning=FALSE, message=FALSE}
+cp_rf_all <- ceteris_paribus(explainer_rf, new_apartment)
+co_rf_all <- calculate_oscillations(cp_rf_all)
+co_rf_all
+plot(co_rf_all)
+```
+
+**2D Ceteris Paribus profiles**
+
+And the `what_if_2d()` function calculates 2D CP profiles.
+
+```{r, warning=FALSE, message=FALSE}
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, 
+                 selected_variables = c("surface","floor", "construction.year"))
+plot(wi_rf_2d, split_ncol = 2)
+```
+
+
+
+
+
+
+
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+new_apartment <- apartmentsTest[348,]
+
+
+
+
+similar_apartments <- select_neighbours(apartmentsTest, new_apartment, n = 10)
+
+cp_rf_1 <- ceteris_paribus(explainer_rf, new_apartment, y = new_apartment$m2.price)
+
+cp_rf_neighbours <- ceteris_paribus(explainer_rf, similar_apartments, y = similar_apartments$m2.price)
+
+tmp <- attr(cp_rf_neighbours, "observations")
+tmp$`_yhat_` - tmp$`_y_`
+
+model_performance(explainer_rf)$diff
+
+df <- rbind(data.frame(group = "full data", diff = model_performance(explainer_rf)$diff),
+      data.frame(group = "neighbours", diff = tmp$`_y_` - tmp$`_yhat_` ))
+
+ggplot(df, aes(group, diff, fill = group)) +
+  geom_boxplot(coef = 100) +
+  coord_flip() + scale_fill_manual(values = c("grey", "red3")) +
+  ylab("diff = y - f(x)") + xlab("") + theme_bw() + theme(legend.position = "none")
+ 
+
+boxplot(model_performance(explainer_rf)$diff, 
+        tmp$`_yhat_` - tmp$`_y_`)
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = c("construction.year", "surface")) 
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") 
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "surface")
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "surface") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "surface", as.gg = TRUE) + 
+  theme_bw() + xlab("") + ylab("")
+
+
+plot(cp_rf_neighbours, 
+     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
+     selected_variables = "construction.year") + 
+  ceteris_paribus_layer(cp_rf_1, 
+     alpha = 1, size_points =  5,
+    selected_variables = "construction.year")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+###########
+#
+# This is not used anymore
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
+
+wi_rf_2d %>% 
+  filter(vname1 == "construction.year", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+wi_mat[100,] = NA
+wi_mat[,100] = NA
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+
+
+wi_rf_2d %>% 
+  filter(vname1 == "surface", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+#wireframe(wi_ma
+
+library("ceterisParibus")
+library("randomForest")
+set.seed(59)
+
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
+explainer_rf_fired <- explain(model, data = HR[,1:5],
+   y = HR$status == "fired",
+   predict_function = pred1, label = "fired")
+
+pred2 <- function(m, x)   predict(m, x, type = "prob")[,2]
+explainer_rf_ok <- explain(model, data = HR[,1:5],
+   y = HR$status == "ok",
+   predict_function = pred2, label = "ok")
+
+pred3 <- function(m, x)   predict(m, x, type = "prob")[,3]
+explainer_rf_promoted <- explain(model, data = HR[,1:5],
+   y = HR$status == "promoted",
+   predict_function = pred3, label = "promoted")
+
+
+new_emp <- HR[1, ]
+new_emp
+
+
+cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired", variables = "hours")
+cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok", variables = "hours")
+cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted", variables = "hours")
+
+plot(cp_rf_fired, cp_rf_ok, cp_rf_promoted, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() +ylab("y hat") + xlab("")
+
+plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
+
+
+
+cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired")
+cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok")
+cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted")
+
+plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
+     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
+
+
+
+wi_rf_2d <- what_if_2d(explainer_rf_fired, observation = new_emp)
+wi_rf_2d
+
+library("dplyr")
+library("tidyr")
+wi_rf_2d %>% 
+  filter(vname1 == "age", vname2 == "salary") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+library("lattice")
+wireframe(wi_mat, shade = TRUE, xlab="age", ylab="salary", zlab="y hat")
+
+
+wi_rf_2d %>% 
+  filter(vname1 == "age", vname2 == "hours") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="age", ylab="hours", zlab="y hat")
+
+
+plot(wi_rf_2d)
+
+
+
+
+
+# -------------
+
+apartments_rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
+      no.rooms + district, data = apartments)
+
+explainer_rf <- explain(apartments_rf_model,
+      data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
+
+new_apartment <- apartmentsTest[100, ]
+new_apartment
+
+new_apartment$construction.year = 1965
+new_apartment$no.rooms = 5
+
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment)
+
+wi_rf_2d %>% 
+  filter(vname1 == "construction.year", vname2 == "surface") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="construction.year", ylab="surface", zlab="y hat")
+
+
+plot(wi_rf_2d)
+
+plot(wi_rf_2d)+ theme_bw() + scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) 
+
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, selected_variables = c("surface","floor"))
+plot(wi_rf_2d, bins = 0)+ theme_bw() + xlab("surface") + ylab("floor") +scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) 
+
+
+
+cp_rf_y1 <- ceteris_paribus(explainer_rf, new_apartment, y = new_apartment$m2.price, variables = c("construction.year", "floor"))
+# plot(cp_rf_y1, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+#                alpha = 1, size_points = 3, color = "_vname_", color_points = "black")
+plot(cp_rf_y1, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
+               alpha = 1, size_points = 3, color = "_vname_", color_points = "black",
+     as.gg = TRUE) + theme_bw() + 
+  theme(legend.position = "none") + scale_y_reverse(name = "y hat") + xlab("")
+
+
+
+
+wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
+
+wi_rf_2d %>% 
+  filter(vname1 == "construction.year", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+wi_mat[100,] = NA
+wi_mat[,100] = NA
+wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
+
+
+
+wi_rf_2d %>% 
+  filter(vname1 == "surface", vname2 == "floor") %>%
+  select(y_hat, new_x1, new_x2) %>%
+  spread(new_x2, y_hat) -> wi_mat
+wi_mat <- as.matrix(wi_mat[, -1])
+attr(wi_mat, "dimnames") = NULL
+
+#wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="surface", ylab="floor", zlab="y hat")
+
+#wireframe(wi_mat[101:1,101:1], xlab="surface", ylab="floor", zlab="y hat")
+
+#plot(wi_rf_2d, add_raster = FALSE, bins = 5) + theme_dark()
+
+
+```
+
+
+<!--chapter:end:17-ceterisParibus.Rmd-->
+
+# Model level explanations {-}
+
+# Introduction
+
+## A bit of philosophy
+
+Rights:
+
+1. audit model residuals
+2. variable importance
+3. partial dependency plot
+
+## Example: Price prediction
+
+[@R-DALEX]
+
+[@R-e1071]
+
+[@R-factorMerger]
+
+```{r, warning=FALSE, message=FALSE}
+library("factorMerger")
+```
+
+In this chapter we show examples for three predictive models trained on `apartments` dataset from the `DALEX` package. Random Forest model (elastic but biased), Support Vector Machines model (large variance on boundaries) and Linear Model (stable but not very elastic). 
+Presented examples are for regression (prediction of square meter price), but the CP profiles may be used in the same way for classification.
+
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+# Linear model trained on apartments data
+model_lm <- lm(m2.price ~ construction.year + surface + floor + 
+                      no.rooms + district, data = apartments)
+
+library("randomForest")
+set.seed(59)
+# Random Forest model trained on apartments data
+model_rf <- randomForest(m2.price ~ construction.year + surface + floor + 
+                      no.rooms + district, data = apartments)
+
+library("e1071")
+# Support Vector Machinesr model trained on apartments data
+model_svm <- svm(m2.price ~ construction.year + surface + floor + 
+                         no.rooms + district, data = apartments)
+```
+
+For these models we use `DALEX` explainers created with `explain()` function. There exapliners  wrap models, predict functions and validation data.
+
+```{r, warning=FALSE, message=FALSE}
+explainer_lm <- explain(model_lm, 
+                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
+explainer_rf <- explain(model_rf, 
+                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
+explainer_svm <- explain(model_svm, 
+                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
+```
+
+Examples presented in this chapter are generated with the `ceterisParibus` package in version `r installed.packages()["ceterisParibus","Version"]`.
+
+```{r, warning=FALSE, message=FALSE}
+library("ceterisParibus")
+```
+
+
+
+
+# Variable Importance
+
+Feature selection
+
+[@Strobl2007] 
+[@Strobl2008] 
+- variable importance
+
+[@2018arXiv180101489F]
+
+Beware Default Random Forest Importances
+
+Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
+March 26, 2018.
+
+http://explained.ai/rf-importance/index.html
+
+
+# Marginal Response
+
+Feature extraction
+
+## Partial Dependency Plots
+
+Accumulated Local Effects (ALE) Plots
+
+[@RJ2017016]
+[@R-ALEPlot]
+
+```{r, warning=FALSE, message=FALSE}
+library(ALEPlot)
+```
+
+
+[@MAGIX]
+
+Interactions - extraction
+
+## Merging Path Plots
+
+[@R-factorMerger]
+
+```{r, warning=FALSE, message=FALSE}
+library(factorMerger)
+```
+
+# Performance Diagnostic
+
+Model selection
+
+# Residual Diagnostic
+
+Model validation
+
+[@R-auditor]
+
+```{r, warning=FALSE, message=FALSE}
+library(auditor)
+```
+
+
+# Other topics
+
+
+[@R-randomForestExplainer]
+[@R-ICEbox]
+[@R-ALEPlot]
+
+```{r, warning=FALSE, message=FALSE}
+library(randomForestExplainer)
+library(ICEbox)
+library(ALEPlot)
+```
+
+
+[@R-modelDown]
+
+```{r, warning=FALSE, message=FALSE}
+library(modelDown)
+```
+
+<!--chapter:end:20-ModelLevel.Rmd-->
+
+# Appendixes {-}
+
+# Data Sets {#DataSets}
+
+## Hire or Fire? HR in Call Center {#HRdataset}
+
+In this chapter we present an artificial dataset from Human Resources department in a Call Center to present pros and cons for different techniques of prediction level explainers. 
+
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee of a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
+
+The problem here is to first build a model, that will determine when to fires and when to promote an employer, so it's a classification problem with three classes. 
+But having a model we will use prediction level explainers to better understand how the model works for selected cases.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(HR)
+```
+
+In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest [@R-randomForest] and generalized linear model [@R-nnet].
+
+```{r, warning=FALSE, message=FALSE }
+set.seed(59)
+library("randomForest")
+model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+
+library("nnet")
+model_glm <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+```
+
+## How much does it cost? Price prediction for a square meter {#apartmentsDataset}
+
+In this chapter we present an artificial dataset related to prediction of prices for appartments in Warsaw. This dataset wil be used to discuss  pros and cons for different techniques of model level explainers. 
+
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single apartment. Features like surface, number of rooms, district or floor are used as predictive features.
+
+The problem here is to predict price of a square meter for an appartment, so it's a regression problem with continouse outcome. 
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(apartments)
+```
+
+The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+model_rf <- randomForest(m2.price ~ construction.year + surface + floor + no.rooms + district, data = apartments)
+model_rf
+```
+
+And a linear model.
+
+```{r, warning=FALSE, message=FALSE}
+model_lm <- lm(m2.price ~ construction.year + surface + floor + no.rooms + district, data = apartments)
+model_lm
+```
+
+
+
+<!--chapter:end:30-DataSets.Rmd-->
+
+`r if (knitr::is_html_output()) '
+# References {-}
+'`
+
+<!--chapter:end:40-References.Rmd-->
+

@@ -1,11 +1,156 @@
-# Local model: LIME: Local Interpretable Model-Agnostic Explanations {#LIME}
+# Approximation with small model: Local model: LIME: Local Interpretable Model-Agnostic Explanations {#LIME}
 
-[@R-lime]
-[@R-live]
+Variable attribution method are not interested in the local curvature of the model. 
+They rather compare model prediction against average model prediction.
 
-```{r, warning=FALSE, message=FALSE}
+The complementary approach would be to directly explore information about model curvature around point of interest.
+In the section \@ref(ceterisParibus) we introduce Ceteris Paribus tool for what if analysis.
+In this section we describe an another approach based on local approximations with white-box models.
+
+The most known paper related to local approximations is *Why Should I Trust You?: Explaining the Predictions of Any Classifier* [@lime]. This methods and it's clones are now implemented in various R and python packages, see for example [@R-lime] or [@R-live].
+
+## The Algorithm
+
+
+The algorithm is composed from two steps:
+
+* Sampling from neighbourhood around the point of interest
+* Fitting a white box model in this neighbouhood
+
+
+
+## HR dataset: Hire or Fire?
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("DALEX")
+library("randomForest")
+model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+model
+
+explainer_rf_fired <- explain(model,
+                 data = HR,
+                 y = HR$status == "fired",
+                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
+                 label = "fired")
+
+
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model, new_observation, type = "prob")
+
+
+library(lime)
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(HR[,1:5], model)
+lime::explain(new_observation[,1:5], lime_rf, n_labels = 1, n_features = 10)
+
+
+library(iml)
+mod = Predictor$new(model, data = HR[,1:5])
+x.interest = new_observation
+lemon = LocalModel$new(mod, x.interest = x.interest, k = 5)
+lemon
+
+lemon$results
+plot(lemon)
+
+```
+
+
+## Pros and cons
+
+
+
+
+
+
+## Code snippets for R
+
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library(mlbench)
+library(randomForest)
+
+phi <- runif(500)
+d1 <- data.frame(x1 = runif(1000, -1, 1), x2 = runif(1000, -1, 1), class = "1")
+d2 <- data.frame(x1 = 0.8*cos(2*pi*phi), x2 = 0.8*sin(2*pi*phi), class = "2")
+df <- rbind(d1, d2)
+
+
+data <- mlbench.circle(1000)
+data <- mlbench.spirals(1000)
+data <- mlbench.2dnormals(1000)
+df <- data.frame(x1 = data$x[,1], x2 = data$x[,2], class = data$classes)
+
+ggplot(df, aes(x1, x2, color = class)) +
+  geom_point()
+
+model_rf <- randomForest(class ~ ., data = df)
+model_rf
+
+new_obs <- data.frame(x1 = 0.25, x2 = 0.25, class = factor(1, levels = 1:2))
+new_obs <- data.frame(x1 = 0, x2 = 0, class = factor(1, levels = 1:2))
+new_obs <- data.frame(x1 = 0.566, x2 = 0.566, class = factor(1, levels = 1:2))
+predict(model_rf, new_obs, type = "prob")
+
+grid_df <- data.frame(x1 = rep(seq(-1,1,0.01), each = 201),
+                      x2 = rep(seq(-1,1,0.01), times = 201))
+
+grid_df$y <- predict(model_rf, grid_df, type = "prob")[,1]
+
+ggplot(grid_df, aes(x1, x2, color = y)) +
+  geom_point()
+
+library(lime)
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(df[,1:2], model_rf)
+lime::explain(new_obs[,1:2], lime_rf, n_labels = 1, n_features = 2)
+
+
+library(iml)
+
+mod = Predictor$new(model_rf, data = df)
+x.interest = new_obs
+lemon = LocalModel$new(mod, x.interest = x.interest, k = 2)
+lemon
+
+lemon$results
+plot(lemon)
+
+
+
+
 library(lime)
 library(live)
+
+similar <- sample_locally2(data = df,
+                           explained_instance = new_obs,
+                           explained_var = "class",
+                           size = 500)
+similar1 <- add_predictions2(to_explain = similar,
+                             black_box_model = model_rf, 
+                              predict_fun = function(m,x) predict(m,x,type="prob")[,1])
+wine_expl <- fit_explanation2(live_object = similar1,
+                              white_box = "regr.glm")
+
+plot(wine_expl, type = "forest")
+
+library(ceterisParibus)
+exp_rf <- DALEX::explain(model_rf, df, predict_function = function(m,x) predict(m,x,type="prob")[,1])
+
+cp_rf <- ceteris_paribus(exp_rf, new_obs)
+plot(cp_rf)
+
+cp2_rf <- what_if_2d(exp_rf, new_obs)
+plot(cp2_rf, add_contour = FALSE) + theme_minimal()
+
+
 ```
 
 Sparse model approximation / variable selection / feature ranking
