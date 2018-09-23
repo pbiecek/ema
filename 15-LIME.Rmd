@@ -1,28 +1,65 @@
-# Approximation with small model: Local model: LIME: Local Interpretable Model-Agnostic Explanations {#LIME}
+# Local approximations with white-box model {#LIME}
 
-Variable attribution method are not interested in the local curvature of the model. 
-They rather compare model prediction against average model prediction.
+A different approach to explanations of a single observations is through surrogate models. Models that easy to understand and are similar to black box model around the point of interest.
+
+Variable attribution methods, that were presented in the Section \@ref(breakDown) are not interested in the local curvature of the model. They rather compare model prediction against average model prediction and they use probability structure of the dataset.
+
 
 The complementary approach would be to directly explore information about model curvature around point of interest.
-In the section \@ref(ceterisParibus) we introduce Ceteris Paribus tool for what if analysis.
-In this section we describe an another approach based on local approximations with white-box models.
+In the section \@ref(ceterisParibus) we introduced Ceteris Paribus tool for such what-if analysis. But the limitation of ceteris Paribus pltos is that they explore changes along single dimension or pairs of dimensions.
 
-The most known paper related to local approximations is *Why Should I Trust You?: Explaining the Predictions of Any Classifier* [@lime]. This methods and it's clones are now implemented in various R and python packages, see for example [@R-lime] or [@R-live].
+In this section we describe an another approach based on local approximations with white-box models. This approach will also investigate local curvature of the model but indirectly, through surrogate white-box models.
+
+
+The most known method from this class if LIME (Local Interpretable Model-Agnostic Explanations), introduced in the paper *Why Should I Trust You?: Explaining the Predictions of Any Classifier* [@lime]. This methods and it's clones are now implemented in various R and python packages, see for example [@R-lime], [@R-live] or [@R-iml].
+
 
 ## The Algorithm
 
+The LIME method, and its clones, has following properties: 
 
-The algorithm is composed from two steps:
+- *model-agnostic*, they do not imply any assumptions on model structure, 
+- *interpretable representation*, model input is transformed into a feature space that is easier to understand. One of applications comes from image data, single pixels are not easy to interpret, thus the LIME method decompose image into a series of super pixels, that are easier to interpret to humans,
+- *local fidelity* means that the explanations shall be locally well fitted to the black-box model.
 
-* Sampling from neighbourhood around the point of interest
+Therefore the objective is to find a local model $M^L$ that approximates the black box model $f$ in the point $x^*$.
+As a solution the penalized loss function is used. The white-box model that is used for explanations satisfies following condition.
+
+$$
+M^L(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g) 
+$$
+where $G$ is a family of white box models (e.g. linear models), $\Pi_{x^*}$ is neighbourhood of $x^*$ and $\Omega$ stands for model complexity.
+
+```{r LIME1, echo=FALSE, fig.cap="(fig:LIME1) A schematic idea behind local model approximations. Panel A shows training data, colors correspond to classess. Panel B showhs results fom the Random Forest model, whis is where the algorithm starts. Panel C shows new data sampled around the point of interest. Their color correspond to model response. Panel D shows fitted linear model that approximated the random forest model around point of interest", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/circle_4panels.png")
+```
+
+
+
+The algorithm is composed from three steps:
+
+* Identification of interpretable data representations,
+* Local sampling around the point of interest,
 * Fitting a white box model in this neighbouhood
+
+**Identification of interpretable data representations**
+
+For image data, single pixel is not an interpretable feature. In this step the input space of the model is transformed to input space that is easier to understand for human. The image may be decomposed into parts and represented as presence/absence of some part of an image. 
+
+**Local sampling around the point of interest**
+
+Once the interpretable data representation is identified, then the neighbourhood around point of interest needs to be explored. 
+
+**Fitting a white box model in this neighbouhood**
+
+Any model that is easy to interpret may be fitted to this data, like decision tree or rule based system. However in practice the most common family of models are linear models.
 
 
 
 ## HR dataset: Hire or Fire?
 
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
 model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
@@ -64,23 +101,125 @@ plot(lemon)
 
 ## Pros and cons
 
+Local approximations are model agnostic, can be applied to any predictive model. Below we summarize key strengths and weaknesses of this approach.
 
+**Pros**
 
+* This method is highly adopted in text analysis and image analysis, in part thanks to the interpretable data representations. 
+* The intuition behind the model is straightforward
+* Model explanations are sparse, thus only small number of features is used
+
+**Cons**
+
+* For continuous variables and tabular data it is not that easy to find interpretable representations
+* The black-box model approximated the data and the white box model approximates the black box model. We do not have control over the quality of local fit of the white box model, thus the surrogate model may be misleading.
+* Due to the *curse of dimensionality*, for high dimensional space points are sparse.
 
 
 
 ## Code snippets for R
 
+In this section we present example application of `lime` [@R-lime] and `live` [@R-live] packages. Note that this method is also implemented in `iml` [@R-iml] and other packages. These pacakages differ in some details and also results in different explanations.
 
+**Model preparation**
+
+In this section we will present examples based on the `HR` dataset. See the Section \@ref(HRdataset) for more details.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(HR)
+```
+
+The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+rf_model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+rf_model
+```
+
+```{r, warning=FALSE, message=FALSE}
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(rf_model, new_observation, type = "prob")
+```
+
+**The lime pacakge**
+
+```{r, warning=FALSE, message=FALSE}
+library("lime")
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(HR[,1:5], rf_model)
+explanations <- lime::explain(new_observation[,1:5], lime_rf, n_labels = 3, n_features = 5)
+explanations
+
+plot_features(explanations)
+
+```
+
+**The live package**
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("live")
+new_observation$status <- "fired"
+
+similar <- sample_locally2(data = HR,
+                           explained_instance = new_observation,
+                           explained_var = "status",
+                           method = "lime",
+                           size = 500)
+similar <- sample_locally2(data = HR,
+                           explained_instance = new_observation,
+                           explained_var = "status",
+                           size = 500)
+similar1 <- add_predictions2(to_explain = similar,
+                             black_box_model = rf_model, 
+                              predict_fun = function(m,x) predict(m,x,type="prob")[,1])
+HR_explanation <- fit_explanation2(live_object = similar1,
+                              white_box = "regr.glm")
+HR_explanation
+
+plot(HR_explanation, type = "forest")
+```
+
+
+**The iml package**
+
+```{r, warning=FALSE, message=FALSE}
+library("iml")
+
+explainer_rf = Predictor$new(rf_model, data = HR[,1:5])
+white_box = LocalModel$new(explainer_rf, x.interest = new_observation[,1:5], k = 5)
+white_box
+
+plot(white_box)
+
+```
+
+
+
+
+
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
 library(mlbench)
 library(randomForest)
 
-phi <- runif(500)
-d1 <- data.frame(x1 = runif(1000, -1, 1), x2 = runif(1000, -1, 1), class = "1")
-d2 <- data.frame(x1 = 0.8*cos(2*pi*phi), x2 = 0.8*sin(2*pi*phi), class = "2")
+phi <- runif(400)
+r <- runif(400, 0.9, 1.1)
+d1 <- data.frame(x1 = runif(1000, -1.5, 1.5), x2 = runif(1000, -1.5, 1.5), class = "background")
+d2 <- data.frame(x1 = r*cos(2*pi*phi), x2 = r*sin(2*pi*phi), class = "circle")
 df <- rbind(d1, d2)
+
+
+df <- data.frame(x1 = runif(2000, -1.5, 1.5), x2 = runif(2000, -1.5, 1.5), class = "background")
+r <- sqrt(df$x1^2 + df$x2^2)
+df$class <- factor(ifelse(r < 1.1 & r > 0.9, "circle", "background"))
+
 
 
 data <- mlbench.circle(1000)
@@ -91,16 +230,19 @@ df <- data.frame(x1 = data$x[,1], x2 = data$x[,2], class = data$classes)
 ggplot(df, aes(x1, x2, color = class)) +
   geom_point()
 
+ggplot(df, aes(x1, x2, color = class)) +
+  geom_point() + theme_minimal() + scale_color_manual(values = c("grey", "red3")) +
+  coord_fixed()
+
+
 model_rf <- randomForest(class ~ ., data = df)
 model_rf
 
-new_obs <- data.frame(x1 = 0.25, x2 = 0.25, class = factor(1, levels = 1:2))
-new_obs <- data.frame(x1 = 0, x2 = 0, class = factor(1, levels = 1:2))
-new_obs <- data.frame(x1 = 0.566, x2 = 0.566, class = factor(1, levels = 1:2))
+new_obs <- data.frame(x1 = 1, x2 = 1, class = factor("background", levels = c("background","circle")))
 predict(model_rf, new_obs, type = "prob")
 
-grid_df <- data.frame(x1 = rep(seq(-1,1,0.01), each = 201),
-                      x2 = rep(seq(-1,1,0.01), times = 201))
+grid_df <- data.frame(x1 = rep(seq(-1.5,1.5,0.015), each = 201),
+                      x2 = rep(seq(-1.5,1.5,0.015), times = 201))
 
 grid_df$y <- predict(model_rf, grid_df, type = "prob")[,1]
 
@@ -110,7 +252,7 @@ ggplot(grid_df, aes(x1, x2, color = y)) +
 library(lime)
 model_type.randomForest <- function(x, ...) "classification"
 lime_rf <- lime(df[,1:2], model_rf)
-lime::explain(new_obs[,1:2], lime_rf, n_labels = 1, n_features = 2)
+lime::explain(new_obs[,1:2], lime_rf, n_labels = 1, n_features = 5)
 
 
 library(iml)
@@ -132,6 +274,11 @@ library(live)
 similar <- sample_locally2(data = df,
                            explained_instance = new_obs,
                            explained_var = "class",
+                           method = "lime",
+                           size = 500)
+similar <- sample_locally2(data = df,
+                           explained_instance = new_obs,
+                           explained_var = "class",
                            size = 500)
 similar1 <- add_predictions2(to_explain = similar,
                              black_box_model = model_rf, 
@@ -150,10 +297,20 @@ plot(cp_rf)
 cp2_rf <- what_if_2d(exp_rf, new_obs)
 plot(cp2_rf, add_contour = FALSE) + theme_minimal()
 
+cp2_rf <- what_if_2d(exp_rf, new_obs)
+plot(cp2_rf, add_contour = FALSE) + theme_minimal() + facet_null() + coord_fixed() + xlab("x1") + ylab("x2")
+
+dfs <- data.frame(x1 = runif(25, -1, 1)^3 + 1,
+                  x2 = runif(25, -1, 1)^3 + 1)
+
+plot(cp2_rf, add_contour = FALSE) + theme_minimal() + facet_null() + coord_fixed() + xlab("x1") + ylab("x2") +
+  geom_point(data = dfs, aes(x1, x2, fill=1, z =1))
+
+tmpdata <- similar1$data
+plot(cp2_rf, add_contour = FALSE) + theme_minimal() +
+  geom_point(data=tmpdata, aes(x1, x2, color=class, fill=class, z=1))
+
+break_down(exp_rf, new_obs)
 
 ```
-
-Sparse model approximation / variable selection / feature ranking
-
-live: Local Interpretable (Model-Agnostic) Visual Explanations 
 
