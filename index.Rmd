@@ -68,28 +68,63 @@ Every method for model exploration is described in a separate section. In each s
 
 
 
-## Black-box models vs White-box models
+## White-box models vs Black-box models
 
-[@R-DALEX]
+In this book we focus on black box models, i.e. models with complex structure, high number of coefficients that are hard to trace and understand by humans.
+
+The opposite are white box models, that have structure easy to understand even for non specialist. Two most common classess of white box models are decision or regression trees (see an example in Figure \@ref(fig:BILLCD8)) or models with additive structure, like this model for relative risk.
+
+$$
+RelativeRisk = 1 + 3.6 * [Breslow > 2] - 2 * [TILs > 0] 
+$$
+
+For white box models it is easy to understand how they are working from the model structure. It may be complicated to build the model, collect necessary data, do model validation, but once the model is derived the understanding is easy.
+
+Understanding of the model structure gives us few benefits 
+
+* For any model prediction we can easily link model prediction with variables
+* We see which variables are used in the model and which are not, thus we may question the model, which variable X is not included.
+* We may challenge the model against the domain knowledge. As wee see how each variable influence the model prediction we may verify if it's along domain knowledge.
+
+
+```{r BILLCD8, echo=FALSE, fig.cap="(fig:BILLCD8) Example tree model for melanoma risk", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/wbBILL8model.png")
+```
+
+
+Note, that being a white box model is not only about the structure, but also about the number of parameters. A classification tree with 100s of nodes is hard to understand, linear model with 100s of parameters is hard to understand.
+
+Things that are natural for white box models are hard for black box models. For complex models we may not understand how and which features influence the model decision, is the model consistent with the domain knowledge. Tools presented in this book help to extract such information even from complex models.
 
 
 ## Model agnostic vs Model specific
 
-Tools designed to deal with specific models
+Some classes of models attract higher interest than others or are developed for longer period of time. Thus some classes of models are quipped with very good tools for model exploration or visualisation. 
+Just to mention some of them:
 
-* [@R-randomForestExplainer]
-* [@R-xgboostExplainer]
-* Specific for neural networks
+* Linear models have lots of tools for model diagnostic and validation of model assumptions. Assumptions are defined in a strict way (normality, linear structure, homogenous variance) and can be validated with normality tests or plots (qq plot), diagnostic plots, tests for model structure (RESET test), tools for identification of outliers etc.
+* More complex models with additive structure, like proportional hazards models have tools that verifies model assumptions.
+* Random Forest model is equipped with out of bag method of evaluation of performance and few tools for measuring variable importance [@R-RandomForest]. Some tools were developed to extract information about possible interactions from the model structure  [@R-randomForestExplainer]. Similar tools are developed to other ensembles of trees, like xgboost models [@R-xgboostExplainer].
+* Neural Networks have large collection of dedicated explainers that use Layer-wise Relevance Propagation technique [@BachLWRP] or Saliency Maps technique [@SaliencyMaps] or a mixed approach.
 
-Model agnostic
+List of model classes is much longer, and for every class there is a collection of tools to use. 
+But this variety of approaches leads to problems. (1) One cannot easily compare explanations for two models with different structures. 
+(2) Every time when a new architecture of new ensemble of models is proposed, we need to look for new methods of model exploration. (3) For some new models we may not have yet any tool for model explanation.
 
-* DALEX, lime and all other presented in this book
+This book is focused on model agnostic techniques. Thus we do not assume anything about model structure. The model will be threated as a black box and the only operation that we will be able to perform is evaluation of a model in a selected point.
 
-```{r, message=FALSE, warning=FALSE}
-library("xgboostExplainer")
-```
+Hoever, even if we do not assume anything about the model, we have some assumptions about data. We assume that the model is a function of a form
+$$
+f: R^p \rightarrow R
+$$
+i.e. operates on a vector of $p$ values. This assumption is most suited with tabular data, is held for images, text data video and so on. It may not be suited to models with states, or models with memory as there the model output depends not only on model inputs.
 
-## When do we need model explainers?
+Note also that if $p$ is high dimensional then techniques described here may not be enough to fully understand models with such large number of degrees of freedom.
+
+
+## Why do we need model explainers?
+
+Better understanding of a model or its predictions has many applications. Here we summarise how different roles can use model explainers.
 
 
 
@@ -100,6 +135,10 @@ Developer perspective:
   Feature Extraction
   
   Model Improvement
+  
+  Detect flaws in the model/data
+  
+  Optimize model
 
   Complex mthods are not being adopted quickly because people do not understand them. Model explainers can change this and open new applications
 
@@ -109,6 +148,16 @@ User perspective:
   
   Model debudding / auditing
   
+  Trust
+  
+  More acceptable in some applications
+  
+  
+  Lear from the learning machine
+  
+  Improving models
+  
+  Legislation and the right to explanations
   
 Bias w modelach:
 
