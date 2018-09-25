@@ -67,63 +67,114 @@ Every method for model exploration is described in a separate section. In each s
 * Subsection *Code snippets*, that show how to use this method in R and python. You can skip this section if you are not interested in implementation.
 
 
-## When do we need model explainers?
+
+## White-box models vs Black-box models
+
+In this book we focus on black box models, i.e. models with complex structure, high number of coefficients that are hard to trace and understand by humans.
+
+The opposite are white box models, that have structure easy to understand even for non specialist. Two most common classess of white box models are decision or regression trees (see an example in Figure \@ref(fig:BILLCD8)) or models with additive structure, like this model for relative risk.
+
+$$
+RelativeRisk = 1 + 3.6 * [Breslow > 2] - 2 * [TILs > 0] 
+$$
+
+For white box models it is easy to understand how they are working from the model structure. It may be complicated to build the model, collect necessary data, do model validation, but once the model is derived the understanding is easy.
+
+Understanding of the model structure gives us few benefits 
+
+* For any model prediction we can easily link model prediction with variables
+* We see which variables are used in the model and which are not, thus we may question the model, which variable X is not included.
+* We may challenge the model against the domain knowledge. As wee see how each variable influence the model prediction we may verify if it's along domain knowledge.
 
 
-
-Developer perspective:
-
-  AutoML
-  
-  Feature Extraction
-  
-  Model Improvement
-
-  Complex mthods are not being adopted quickly because people do not understand them. Model explainers can change this and open new applications
-
-User perspective:
-
-  Justification of model decisions - civic rights
-  
-  Model debudding / auditing
-  
-  
-Bias w modelach:
-
-[@2017arXiv171107076L]
-
-Models may be biased. Examples for 
-[@2017arXiv171006169T]
-
-We propose a method to audit black-box risk models for potential
-bias by using model distillation.
-We demonstrate
-the methods on four public datasets: COMPAS, Lending Club,
-Stop-and-Frisk, and Chicago Police
+```{r BILLCD8, echo=FALSE, fig.cap="(fig:BILLCD8) Example tree model for melanoma risk", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/wbBILL8model.png")
+```
 
 
+Note, that being a white box model is not only about the structure, but also about the number of parameters. A classification tree with 100s of nodes is hard to understand, linear model with 100s of parameters is hard to understand.
 
-## Model Lifecycle
+Things that are natural for white box models are hard for black box models. For complex models we may not understand how and which features influence the model decision, is the model consistent with the domain knowledge. Tools presented in this book help to extract such information even from complex models.
 
+
+## Model agnostic vs Model specific
+
+Some classes of models attract higher interest than others or are developed for longer period of time. Thus some classes of models are quipped with very good tools for model exploration or visualisation. 
+Just to mention some of them:
+
+* Linear models have lots of tools for model diagnostic and validation of model assumptions. Assumptions are defined in a strict way (normality, linear structure, homogenous variance) and can be validated with normality tests or plots (qq plot), diagnostic plots, tests for model structure (RESET test), tools for identification of outliers etc.
+* More complex models with additive structure, like proportional hazards models have tools that verifies model assumptions.
+* Random Forest model is equipped with out of bag method of evaluation of performance and few tools for measuring variable importance [@R-RandomForest]. Some tools were developed to extract information about possible interactions from the model structure  [@R-randomForestExplainer]. Similar tools are developed to other ensembles of trees, like xgboost models [@R-xgboostExplainer].
+* Neural Networks have large collection of dedicated explainers that use Layer-wise Relevance Propagation technique [@BachLWRP] or Saliency Maps technique [@SaliencyMaps] or a mixed approach.
+
+List of model classes is much longer, and for every class there is a collection of tools to use. 
+But this variety of approaches leads to problems. (1) One cannot easily compare explanations for two models with different structures. 
+(2) Every time when a new architecture of new ensemble of models is proposed, we need to look for new methods of model exploration. (3) For some new models we may not have yet any tool for model explanation.
+
+This book is focused on model agnostic techniques. Thus we do not assume anything about model structure. The model will be threated as a black box and the only operation that we will be able to perform is evaluation of a model in a selected point.
+
+Hoever, even if we do not assume anything about the model, we have some assumptions about data. We assume that the model is a function of a form
+$$
+f: R^p \rightarrow R
+$$
+i.e. operates on a vector of $p$ values. This assumption is most suited with tabular data, is held for images, text data video and so on. It may not be suited to models with states, or models with memory as there the model output depends not only on model inputs.
+
+Note also that if $p$ is high dimensional then techniques described here may not be enough to fully understand models with such large number of degrees of freedom.
+
+
+## Why do we need model explainers?
 
 
 Machine Learning models have a wide range of applications in classification or regression problems. Due to the increasing computational power of computers and complexity of data sources, ML models are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
 
 In many applications we need to know, understand or prove how the input variables are used in the model. We need to know the impact of particular variables on the final model predictions. Thus we need tools that extract useful information from thousands of model parameters.
 
-![Workflow of a typical machine learning modeling. 
-A) Modeling is a process in which domain knowledge and data are turned into models. 
-B) Models are used to generate predictions. 
-C) Understanding of a model structure may increase our knowledge, and in consequence it may lead to a better model. DALEX helps here.
-D) Understanding of drivers behind a particular model’s predictions may help to correct wrong decisions, and in consequence it leads to a better model. DALEX helps here.](figure/mp_understanding.png)
+Tools for model exploration and model understanding have many applications. They may be useful during every phase of a model lifecycle.
+
+Below we summaries how such tools will be useful during the model development, model deployment or model maintenance.
 
 
+```{r modelLifetime, echo=FALSE, fig.cap="(fig:modelLifetime) Example applications of explainers in different phases of model lifetime", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/modelLifetime.png")
+```
 
-Variable importance
+**Model development**
 
-Model response as a function of a variable
+Model building or model development is a phase in which one is looking for best available model. 
 
-Model performance / diagnostic / validation
+In the Section \@ref(partialDependence) we present tools for extraction of relations between features and target variable. Such methods may be used for feature engineering (assisted learning in which elastic black box model is used to learn features for the white box model). Learning from ML models may lead to model improvment.
+
+In the Section \@ref(modelComparisons) we present tools that helps to compare models.
+
+In the Section \@ref(modelAuditing) we present tools that help to validate model, audit model residuals, identify potential strange behaviors.
+
+If for some observations we observe lack of fit, then through tools introduced in the Section \@ref(variableAttributionMethods) we may verify which variables do and which do not influence model decisions. This may help to identify some problem in the model fit and in the end will help to correct the model. 
+
+Since the AutoML methods are being more and more popular, model explainers may actually help to understand how the model identified by AutoML method is working.
+
+If we identify cases on which model is not working properly, then model explainers will help in model debugging. See an examples in the Section TODO.
+
+
+**Model deployment**
+
+Model deployment is a phase in which one wants final use trust in model decisions, understand these decisions and act accordingly. In some areas complex models are not being adopted because people do not understand nor trust them. Model explainers can change this and increase rate of aquisition of new models
+
+Since most people would not trust in recommendations, that they do not understand, the key element here is to increase understanding related to features that affect model decisions. 
+
+In the Section \@ref(variableAttributionMethods) we introduce tools that identify key features that drive model decisions. 
+
+In the Section \@ref(ceterisParibus) we introduce tools for what-if analysis of model decisions.
+
+In some areas there may be leagal expectations or regulations that requires that model predictions are explainable (see the right to explanation). See [@2017arXiv171107076L] or [@2017arXiv171006169T] for example methods that identify bias in the data.
+
+  
+
+
+**Model maintenance**
+
+Model maintenance is a phase in which one wants to make sure that model is still valid and suited to the new data. Due to concept drift or similar problems that may happen after some time, we need to monitor the model performance.
+
+In the section \@ref(partialDependence) we present tools that may compare how thw model response behaves on the new dataset. This helps to detect flaws in model assumptions and biases in the data.
 
 
 ## How model exploration is different from data exploration?
@@ -142,25 +193,6 @@ Differences:
 
 
 
-## Black-box models vs White-box models
-
-[@R-DALEX]
-
-## Model agnostic vs Model specific
-
-Tools designed to deal with specific models
-
-* [@R-randomForestExplainer]
-* [@R-xgboostExplainer]
-* Specific for neural networks
-
-Model agnostic
-
-* DALEX, lime and all other presented in this book
-
-```{r, message=FALSE, warning=FALSE}
-library("xgboostExplainer")
-```
 
 ## Glossary / Notation
 
@@ -194,11 +226,14 @@ Glossary:
 
 
 
-## Thanks to {#thanksto}
+## Acknowledgements {#thanksto}
 
-We are using the **bookdown** package [@R-bookdown] in this sample book
+Authors of the **bookdown** package [@R-bookdown]
 
-Chris Drake and Janusz Holyst
+Janusz Holyst and the RENOIR project
+
+Chris Drake for hospitality
+
 
 
 <!--chapter:end:index.Rmd-->
@@ -269,7 +304,7 @@ The other way is to use approximated explainers – techniques that find only ap
 
 <!--chapter:end:10-PredictionLevel.Rmd-->
 
-# Introduction to variable attribution methods
+# Introduction to variable attribution methods {#variableAttributionMethods}
 
 In this section we introduce method for additive decomposition of predictions. The main goal for these tools is to help understand how model output may be attributed to input variables or sets of variables. 
 
@@ -1752,7 +1787,7 @@ http://explained.ai/rf-importance/index.html
 
 Feature extraction
 
-## Partial Dependency Plots
+## Partial Dependency Plots {#partialDependence}
 
 Accumulated Local Effects (ALE) Plots
 
@@ -1776,11 +1811,11 @@ Interactions - extraction
 library(factorMerger)
 ```
 
-# Performance Diagnostic
+# Performance Diagnostic {#modelComparisons}
 
 Model selection
 
-# Residual Diagnostic
+# Residual Diagnostic {#modelAuditing}
 
 Model validation
 
