@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2018-09-23}
+    \date{2018-09-24}
 
 \usepackage{booktabs}
 
@@ -304,40 +304,128 @@ In each such section you will find.
   implementation.
 \end{itemize}
 
-\hypertarget{when-do-we-need-model-explainers}{%
-\section{When do we need model
-explainers?}\label{when-do-we-need-model-explainers}}
+\hypertarget{white-box-models-vs-black-box-models}{%
+\section{White-box models vs Black-box
+models}\label{white-box-models-vs-black-box-models}}
 
-Developer perspective:
+In this book we focus on black box models, i.e.~models with complex
+structure, high number of coefficients that are hard to trace and
+understand by humans.
 
-AutoML
+The opposite are white box models, that have structure easy to
+understand even for non specialist. Two most common classess of white
+box models are decision or regression trees (see an example in Figure
+\ref{fig:BILLCD8}) or models with additive structure, like this model
+for relative risk.
 
-Feature Extraction
+\[
+RelativeRisk = 1 + 3.6 * [Breslow > 2] - 2 * [TILs > 0] 
+\]
 
-Model Improvement
+For white box models it is easy to understand how they are working from
+the model structure. It may be complicated to build the model, collect
+necessary data, do model validation, but once the model is derived the
+understanding is easy.
 
-Complex mthods are not being adopted quickly because people do not
-understand them. Model explainers can change this and open new
-applications
+Understanding of the model structure gives us few benefits
 
-User perspective:
+\begin{itemize}
+\tightlist
+\item
+  For any model prediction we can easily link model prediction with
+  variables
+\item
+  We see which variables are used in the model and which are not, thus
+  we may question the model, which variable X is not included.
+\item
+  We may challenge the model against the domain knowledge. As wee see
+  how each variable influence the model prediction we may verify if it's
+  along domain knowledge.
+\end{itemize}
 
-Justification of model decisions - civic rights
+\begin{figure}
 
-Model debudding / auditing
+{\centering \includegraphics[width=0.5\linewidth]{figure/wbBILL8model} 
 
-Bias w modelach:
+}
 
-\citep{2017arXiv171107076L}
+\caption{(fig:BILLCD8) Example tree model for melanoma risk}\label{fig:BILLCD8}
+\end{figure}
 
-Models may be biased. Examples for \citep{2017arXiv171006169T}
+Note, that being a white box model is not only about the structure, but
+also about the number of parameters. A classification tree with 100s of
+nodes is hard to understand, linear model with 100s of parameters is
+hard to understand.
 
-We propose a method to audit black-box risk models for potential bias by
-using model distillation. We demonstrate the methods on four public
-datasets: COMPAS, Lending Club, Stop-and-Frisk, and Chicago Police
+Things that are natural for white box models are hard for black box
+models. For complex models we may not understand how and which features
+influence the model decision, is the model consistent with the domain
+knowledge. Tools presented in this book help to extract such information
+even from complex models.
 
-\hypertarget{model-lifecycle}{%
-\section{Model Lifecycle}\label{model-lifecycle}}
+\hypertarget{model-agnostic-vs-model-specific}{%
+\section{Model agnostic vs Model
+specific}\label{model-agnostic-vs-model-specific}}
+
+Some classes of models attract higher interest than others or are
+developed for longer period of time. Thus some classes of models are
+quipped with very good tools for model exploration or visualisation.
+Just to mention some of them:
+
+\begin{itemize}
+\tightlist
+\item
+  Linear models have lots of tools for model diagnostic and validation
+  of model assumptions. Assumptions are defined in a strict way
+  (normality, linear structure, homogenous variance) and can be
+  validated with normality tests or plots (qq plot), diagnostic plots,
+  tests for model structure (RESET test), tools for identification of
+  outliers etc.
+\item
+  More complex models with additive structure, like proportional hazards
+  models have tools that verifies model assumptions.
+\item
+  Random Forest model is equipped with out of bag method of evaluation
+  of performance and few tools for measuring variable importance
+  \citep{R-RandomForest}. Some tools were developed to extract
+  information about possible interactions from the model structure
+  \citep{R-randomForestExplainer}. Similar tools are developed to other
+  ensembles of trees, like xgboost models \citep{R-xgboostExplainer}.
+\item
+  Neural Networks have large collection of dedicated explainers that use
+  Layer-wise Relevance Propagation technique \citep{BachLWRP} or
+  Saliency Maps technique \citep{SaliencyMaps} or a mixed approach.
+\end{itemize}
+
+List of model classes is much longer, and for every class there is a
+collection of tools to use. But this variety of approaches leads to
+problems. (1) One cannot easily compare explanations for two models with
+different structures. (2) Every time when a new architecture of new
+ensemble of models is proposed, we need to look for new methods of model
+exploration. (3) For some new models we may not have yet any tool for
+model explanation.
+
+This book is focused on model agnostic techniques. Thus we do not assume
+anything about model structure. The model will be threated as a black
+box and the only operation that we will be able to perform is evaluation
+of a model in a selected point.
+
+Hoever, even if we do not assume anything about the model, we have some
+assumptions about data. We assume that the model is a function of a form
+\[
+f: R^p \rightarrow R
+\] i.e.~operates on a vector of \(p\) values. This assumption is most
+suited with tabular data, is held for images, text data video and so on.
+It may not be suited to models with states, or models with memory as
+there the model output depends not only on model inputs.
+
+Note also that if \(p\) is high dimensional then techniques described
+here may not be enough to fully understand models with such large number
+of degrees of freedom.
+
+\hypertarget{why-do-we-need-model-explainers}{%
+\section{Why do we need model
+explainers?}\label{why-do-we-need-model-explainers}}
 
 Machine Learning models have a wide range of applications in
 classification or regression problems. Due to the increasing
@@ -355,101 +443,143 @@ variables are used in the model. We need to know the impact of
 particular variables on the final model predictions. Thus we need tools
 that extract useful information from thousands of model parameters.
 
+Tools for model exploration and model understanding have many
+applications. They may be useful during every phase of a model
+lifecycle.
+
+Below we summaries how such tools will be useful during the model
+development, model deployment or model maintenance.
+
 \begin{figure}
-\centering
-\includegraphics{figure/mp_understanding.png}
-\caption{Workflow of a typical machine learning modeling. A) Modeling is
-a process in which domain knowledge and data are turned into models. B)
-Models are used to generate predictions. C) Understanding of a model
-structure may increase our knowledge, and in consequence it may lead to
-a better model. DALEX helps here. D) Understanding of drivers behind a
-particular model's predictions may help to correct wrong decisions, and
-in consequence it leads to a better model. DALEX helps here.}
+
+{\centering \includegraphics[width=0.5\linewidth]{figure/modelLifetime} 
+
+}
+
+\caption{(fig:modelLifetime) Example applications of explainers in different phases of model lifetime}\label{fig:modelLifetime}
 \end{figure}
 
-Variable importance
+\textbf{Model development}
 
-Model response as a function of a variable
+Model building or model development is a phase in which one is looking
+for best available model.
 
-Model performance / diagnostic / validation
+In the Section \ref{partialDependence} we present tools for extraction
+of relations between features and target variable. Such methods may be
+used for feature engineering (assisted learning in which elastic black
+box model is used to learn features for the white box model). Learning
+from ML models may lead to model improvment.
+
+In the Section \ref{modelComparisons} we present tools that helps to
+compare models.
+
+In the Section \ref{modelAuditing} we present tools that help to
+validate model, audit model residuals, identify potential strange
+behaviors.
+
+If for some observations we observe lack of fit, then through tools
+introduced in the Section \ref{variableAttributionMethods} we may verify
+which variables do and which do not influence model decisions. This may
+help to identify some problem in the model fit and in the end will help
+to correct the model.
+
+Since the AutoML methods are being more and more popular, model
+explainers may actually help to understand how the model identified by
+AutoML method is working.
+
+If we identify cases on which model is not working properly, then model
+explainers will help in model debugging. See an examples in the Section
+TODO.
+
+\textbf{Model deployment}
+
+Model deployment is a phase in which one wants final use trust in model
+decisions, understand these decisions and act accordingly. In some areas
+complex models are not being adopted because people do not understand
+nor trust them. Model explainers can change this and increase rate of
+aquisition of new models
+
+Since most people would not trust in recommendations, that they do not
+understand, the key element here is to increase understanding related to
+features that affect model decisions.
+
+In the Section \ref{variableAttributionMethods} we introduce tools that
+identify key features that drive model decisions.
+
+In the Section \ref{ceterisParibus} we introduce tools for what-if
+analysis of model decisions.
+
+In some areas there may be leagal expectations or regulations that
+requires that model predictions are explainable (see the right to
+explanation). See \citep{2017arXiv171107076L} or
+\citep{2017arXiv171006169T} for example methods that identify bias in
+the data.
+
+\textbf{Model maintenance}
+
+Model maintenance is a phase in which one wants to make sure that model
+is still valid and suited to the new data. Due to concept drift or
+similar problems that may happen after some time, we need to monitor the
+model performance.
+
+In the section \ref{partialDependence} we present tools that may compare
+how thw model response behaves on the new dataset. This helps to detect
+flaws in model assumptions and biases in the data.
 
 \hypertarget{how-model-exploration-is-different-from-data-exploration}{%
 \section{How model exploration is different from data
 exploration?}\label{how-model-exploration-is-different-from-data-exploration}}
 
-Similarities:
+Exploration and visualization of models is not that known as exploration
+and visualization of data. As we will see in following chapters in both
+cases we may use similar charts and similar way to express ideas. This
+is because many people are already familiar with techniques for data
+visualization and when we do model visualization we want to take
+advantage of this knowledge.
+
+Both in data visualization and in model visualization we use graphical
+representation to deliver some messages quicker in a form that is easier
+to digest. Despite all similarites we need to keep in mind few key
+differences between these two wrods.
 
 \begin{itemize}
 \tightlist
 \item
-  Models and data are related to some truth that we want to understand
+  Data is generated by some unknown phenomena and with data exploration
+  and visualization we want to understand this phenomena. Models are
+  created based on the data but in most cases we do not know how close
+  are these models to unknown phenomena. So we do model exploration to
+  validate if the model is correct. If the model is valid. In most cases
+  we do not validate data if they are correct. So we are more skeptical
+  about models than about data.
 \item
-  We use visuals to quicker understand complex relations
+  Data comes from some population; we treat data as a random sample, and
+  there is some inherited randomness related to the sampling. On the
+  opposite, models are just functions. Most models are not stochastic
+  (or at least some models are not stochastic) and the randomness (if
+  any) come from the fitting procedure not from the sampling.
+\item
+  Models may be inaccurate or biased. When we ask question like ,,How
+  the model is working?'`we also ask ,,Is the model accurate, can I
+  trust it, does it behave well, how much I can trust it?''. Similar
+  question related to data do not question the data but question our
+  understating of the data.
 \end{itemize}
 
-Differences:
-
-\begin{itemize}
-\tightlist
-\item
-  Data comes from some population; we treat them as a random sample. And
-  since there is a sample there is also some randomness
-\item
-  Models are just functions. Most models are not stochastic and we
-  consider only deterministic models.
-\item
-  We believe that data is noisy, but there is truth there. Data cannot
-  be bad of misfitted, may be biased. Models can be bad, misfitted,
-  unaccurate
-\end{itemize}
-
-\hypertarget{black-box-models-vs-white-box-models}{%
-\section{Black-box models vs White-box
-models}\label{black-box-models-vs-white-box-models}}
-
-\citep{R-DALEX}
-
-\hypertarget{model-agnostic-vs-model-specific}{%
-\section{Model agnostic vs Model
-specific}\label{model-agnostic-vs-model-specific}}
-
-Tools designed to deal with specific models
-
-\begin{itemize}
-\tightlist
-\item
-  \citep{R-randomForestExplainer}
-\item
-  \citep{R-xgboostExplainer}
-\item
-  Specific for neural networks
-\end{itemize}
-
-Model agnostic
-
-\begin{itemize}
-\tightlist
-\item
-  DALEX, lime and all other presented in this book
-\end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"xgboostExplainer"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+To summaries. We may use similar techniques. But they are used to answer
+different questions.
 
 \hypertarget{glossary-notation}{%
 \section{Glossary / Notation}\label{glossary-notation}}
 
-model healthcheck
-
 Let \(f_{M}(x): \mathcal R^{d} \rightarrow \mathcal R\) denote a
 predictive model, i.e.~function that takes \(d\) dimensional vector and
-calculate numerical score. In section in which we work with larger
-number of models we use subscript \(M\) to index models. But to simplify
-notation, this subscript is omitted if profiles for only one model are
-considered.
+calculate numerical score. Dimenstions of the vector \(x\) refer to
+different variables (aka features).
+
+In section in which we work with larger number of models we use
+subscript \(M\) to index models. But to simplify notation, this
+subscript is omitted if profiles for only one model are considered.
 
 Symbol \(x \in \mathcal R^d\) refers to a point in the feature space. We
 use subscript \(x_i\) to refer to a different data points and
@@ -460,55 +590,44 @@ coordinate \(j\) equal to value \(z\). I.e.
 \(\forall_{i \neq {j}} x^i = x^{*,i}\) and \(x^j = z\). In other words
 \(x|^j=z\) denote a \(x\) with \(j\)th coordinate changed to \(z\).
 
-Now we can define Ceteris Paribus Profile for model \(f\), variable
-\(j\) and point \(x\) as
-
-\[
-CP^{f, j, x}(z) := f(x|^j = z).
-\] I.e. CP profile is a model response obtained for observations created
-based on \(x\) with \(j\) coordinated changes and all other coordinates
-kept unchanged.
-
-It is convenient to use an alternative name for this plot: What-If
-Plots. CP profiles show what would happen if only a single variable is
-changed.
-
-Figure 5.1 shows an example of Ceteris Paribus profile. The black dot
-stands for prediction for a single observation. Grey line show how the
-model response would change if in this single observation coordinate
-\texttt{surface} will be changes to selected value. From this profile
-one may read that the model response is non monotonic. If
-\texttt{construction.year} for this observation would be below 1935 the
-model response would be higher, but if construction year were between
-1935 and 1995 the model response would be lower.
-
-Glossary:
-
 \begin{itemize}
 \tightlist
 \item
-  Black-box model
+  \emph{Black-box model} is a model with structure that is hard to
+  understand for humans. Usually it refers to the number of model
+  parameters. As different humans may be better in understanding more or
+  less complex models, there is no strict threshold that makes model a
+  black-box. But in practice for most humans this threshold is closed to
+  10 rather than 100.
 \item
-  White-box model
+  \emph{White-box model}, opposite to Black-box model, is a model that
+  is easy to understand to human. Maybe not for every human. Consider
+  small linear models and small CAR trees as white box models.
 \item
-  Feature
+  \emph{Feature} or \emph{Variable}, part of the model input space.
+  Without large loss of generality we can assume that one feature is a
+  single dimension in the input space. There are exceptions (among them:
+  polynomials, interactions between variables, nominal variables), but
+  they do not change the intuition.
 \item
-  Variable
+  \emph{Continuous variable}, a variable that can be presented as a
+  number and the ordering makes some sense (zip codes or phone numbers
+  are not considered as continuous variables). It does not need to be
+  continuous in a mathematical sense. Counting variables (number of
+  floors, steps) counts here as well.
 \item
-  Continuous variable
-\item
-  Nominal variable
-\item
-  Model-agnostic / Model specific
+  \emph{Nominal variable}, opposite to \emph{Continuous variables},
+  finite set of values that will not the threaded as a numeric
 \end{itemize}
 
 \hypertarget{thanksto}{%
-\section{Thanks to}\label{thanksto}}
+\section{Acknowledgements}\label{thanksto}}
 
-We are using the \textbf{bookdown} package \citep{R-bookdown} in this
-sample book
+Authors of the \textbf{bookdown} package \citep{R-bookdown}
 
-Chris Drake and Janusz Holyst
+Janusz Holyst and the RENOIR project
+
+Chris Drake for hospitality
 
 \hypertarget{prediction-level-explanations}{%
 \chapter*{Prediction level
@@ -664,9 +783,9 @@ transparency is lower performance. The other way is to use approximated
 explainers -- techniques that find only approximated answers, but work
 for any black box model. Here we present such techniques.
 
-\hypertarget{introduction-to-variable-attribution-methods}{%
+\hypertarget{variableAttributionMethods}{%
 \chapter{Introduction to variable attribution
-methods}\label{introduction-to-variable-attribution-methods}}
+methods}\label{variableAttributionMethods}}
 
 In this section we introduce method for additive decomposition of
 predictions. The main goal for these tools is to help understand how
@@ -1022,12 +1141,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.35%
+##         OOB estimate of  error rate: 27.41%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2272  383      200   0.2042032
-## ok         537 1244      440   0.4398919
-## promoted   202  384     2185   0.2114760
+## fired     2277  380      198   0.2024518
+## ok         531 1243      447   0.4403422
+## promoted   199  396     2176   0.2147239
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1069,7 +1188,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.776 0.224        0
+## 1   0.8 0.196    0.004
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1096,13 +1215,13 @@ variable attributions.
 
 \begin{verbatim}
 ##                  contribution
-## (Intercept)             0.376
+## (Intercept)             0.377
 ## * hours = 42            0.240
-## * salary = 2           -0.209
-## * evaluation = 2        0.026
-## * age = 58              0.071
-## * gender = male         0.272
-## final_prognosis         0.776
+## * salary = 2           -0.206
+## * evaluation = 2        0.007
+## * age = 58              0.099
+## * gender = male         0.283
+## final_prognosis         0.800
 ## baseline:  0
 \end{verbatim}
 
@@ -1114,7 +1233,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-8-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-7-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -1125,7 +1244,7 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-9-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-8-1.pdf}
 
 \hypertarget{break-down-for-interactions}{%
 \chapter{Break Down for
@@ -1309,12 +1428,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.51%
+##         OOB estimate of  error rate: 27.35%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2272  389      194   0.2042032
-## ok         532 1242      447   0.4407924
-## promoted   210  387     2174   0.2154457
+## fired     2275  379      201   0.2031524
+## ok         534 1242      445   0.4407924
+## promoted   204  383     2184   0.2118369
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1356,7 +1475,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.802 0.194    0.004
+## 1 0.774 0.224    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1385,12 +1504,12 @@ variable attributions.
 
 \begin{verbatim}
 ##                        contribution
-## (Intercept)                   0.375
-## * hours = 42                  0.237
-## * salary = 2                 -0.205
-## * age:gender = 58:male        0.401
-## * evaluation = 2             -0.006
-## final_prognosis               0.802
+## (Intercept)                   0.376
+## * hours = 42                  0.239
+## * salary = 2                 -0.206
+## * age:gender = 58:male        0.398
+## * evaluation = 2             -0.034
+## final_prognosis               0.774
 ## baseline:  0
 \end{verbatim}
 
@@ -1402,7 +1521,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-15-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-14-1.pdf}
 
 \hypertarget{shapley}{%
 \chapter{Shapley Attributions}\label{shapley}}
@@ -1498,7 +1617,7 @@ Explanations for a new observation.
 
 \begin{verbatim}
 ## Interpretation method:  Shapley 
-## Predicted value: 0.818000, Average prediction: 0.375439 (diff = 0.442561) Predicted value: 0.182000, Average prediction: 0.274985 (diff = -0.092985) Predicted value: 0.000000, Average prediction: 0.349576 (diff = -0.349576)
+## Predicted value: 0.798000, Average prediction: 0.376094 (diff = 0.421906) Predicted value: 0.200000, Average prediction: 0.273884 (diff = -0.073884) Predicted value: 0.002000, Average prediction: 0.350023 (diff = -0.348023)
 ## 
 ## Analysed predictor: 
 ## Prediction task: unknown 
@@ -1509,11 +1628,11 @@ Explanations for a new observation.
 ## 
 ## Head of results:
 ##      feature class      phi    phi.var feature.value
-## 1     gender fired  0.08802 0.09030226   gender=male
-## 2        age fired  0.16662 0.09677145      age=57.7
-## 3      hours fired  0.30782 0.11146280    hours=42.3
-## 4 evaluation fired  0.05994 0.02333192  evaluation=2
-## 5     salary fired -0.16144 0.06225908      salary=2
+## 1     gender fired  0.15600 0.09186570   gender=male
+## 2        age fired  0.12082 0.08383548      age=57.7
+## 3      hours fired  0.26154 0.10200605    hours=42.3
+## 4 evaluation fired  0.03508 0.01745337  evaluation=2
+## 5     salary fired -0.15776 0.04906184      salary=2
 ## 6     status fired  0.00000 0.00000000  status=fired
 \end{verbatim}
 
@@ -1525,7 +1644,7 @@ And the plot with Shapley attributions.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-19-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-18-1.pdf}
 
 See more examples for \texttt{iml} package in the \citep{molnar} book.
 
@@ -1761,12 +1880,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.37%
+##         OOB estimate of  error rate: 27.39%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2281  376      198   0.2010508
-## ok         537 1246      438   0.4389914
-## promoted   204  395     2172   0.2161674
+## fired     2284  377      194   0.2000000
+## ok         533 1239      449   0.4421432
+## promoted   209  387     2175   0.2150848
 \end{verbatim}
 
 \begin{Shaded}
@@ -1783,7 +1902,7 @@ package \citep{R-randomForest}.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.822 0.178        0
+## 1 0.802 0.198        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1804,35 +1923,35 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.822 0.1243753       0.2577293
-## 2 classification    1    fired      0.822 0.1243753       0.2577293
-## 3 classification    1    fired      0.822 0.1243753       0.2577293
-## 4 classification    1       ok      0.178 0.1312786       0.1917093
-## 5 classification    1       ok      0.178 0.1312786       0.1917093
-## 6 classification    1       ok      0.178 0.1312786       0.1917093
-## 7 classification    1 promoted      0.000 0.2813100       0.5259333
-## 8 classification    1 promoted      0.000 0.2813100       0.5259333
-## 9 classification    1 promoted      0.000 0.2813100       0.5259333
+## 1 classification    1    fired      0.802 0.1326693       0.2601045
+## 2 classification    1    fired      0.802 0.1326693       0.2601045
+## 3 classification    1    fired      0.802 0.1326693       0.2601045
+## 4 classification    1       ok      0.198 0.1328936       0.2201385
+## 5 classification    1       ok      0.198 0.1328936       0.2201385
+## 6 classification    1       ok      0.198 0.1328936       0.2201385
+## 7 classification    1 promoted      0.000 0.2663979       0.5158718
+## 8 classification    1 promoted      0.000 0.2663979       0.5158718
+## 9 classification    1 promoted      0.000 0.2663979       0.5158718
 ##   model_prediction    feature feature_value feature_weight
-## 1        0.6320203        age          57.7    0.012187234
-## 2        0.6320203      hours          42.3    0.254980412
-## 3        0.6320203 evaluation           2.0    0.107123343
-## 4        0.4586087        age          57.7   -0.013571681
-## 5        0.4586087 evaluation           2.0    0.206925712
-## 6        0.4586087     salary           2.0    0.073545355
-## 7        0.0077570     gender           2.0   -0.008969469
-## 8        0.0077570 evaluation           2.0   -0.313247831
-## 9        0.0077570      hours          42.3   -0.195959033
+## 1      0.647513838     gender           2.0     0.01900717
+## 2      0.647513838      hours          42.3     0.27104112
+## 3      0.647513838 evaluation           2.0     0.09736102
+## 4      0.340315741        age          57.7    -0.01174598
+## 5      0.340315741 evaluation           2.0     0.20265622
+## 6      0.340315741      hours          42.3    -0.07073304
+## 7      0.002286556        age          57.7    -0.01355935
+## 8      0.002286556 evaluation           2.0    -0.30029087
+## 9      0.002286556      hours          42.3    -0.19973507
 ##           feature_desc                      data          prediction
-## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 7        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
-## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 1        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
+## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.802, 0.198, 0.000
 \end{verbatim}
 
 \begin{Shaded}
@@ -1841,7 +1960,7 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-23-1.pdf}
 
 \hypertarget{the-live-package}{%
 \subsection{\texorpdfstring{\textbf{The live
@@ -1874,7 +1993,7 @@ package}}{The live package}}\label{the-live-package}}
 ##  Name:  regr.lm 
 ##  Variable selection wasn't performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.991
+##  R-squared: 0.9834
 \end{verbatim}
 
 \begin{Shaded}
@@ -1883,7 +2002,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1891,7 +2010,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsection{\texorpdfstring{\textbf{The iml
@@ -1920,12 +2039,12 @@ package}}{The iml package}}\label{the-iml-package}}
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.060249245       1.0  0.06024925       male gender=male   gender=male
-## 2  0.005037601      57.7  0.29066958       57.7         age      age=57.7
-## 3 -0.090384660      42.3 -3.82327111       42.3       hours    hours=42.3
-## 4 -0.503347606       2.0 -1.00669521          2  evaluation  evaluation=2
-## 5 -0.029501169       2.0 -0.05900234          2      salary      salary=2
-## 6 -0.020607582       1.0 -0.02060758       male gender=male   gender=male
+## 1  0.065049360       1.0  0.06504936       male gender=male   gender=male
+## 2  0.005639541      57.7  0.32540150       57.7         age      age=57.7
+## 3 -0.090095457      42.3 -3.81103781       42.3       hours    hours=42.3
+## 4 -0.504226839       2.0 -1.00845368          2  evaluation  evaluation=2
+## 5 -0.033152006       2.0 -0.06630401          2      salary      salary=2
+## 6 -0.018448882       1.0 -0.01844888       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -1941,7 +2060,7 @@ package}}{The iml package}}\label{the-iml-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-26-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 \hypertarget{ceterisParibus}{%
 \chapter{Ceteris Paribus Principle}\label{ceterisParibus}}
@@ -2352,8 +2471,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 484581.2
-##                     % Var explained: 41
+##           Mean of squared residuals: 485220.9
+##                     % Var explained: 40.92
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -2408,7 +2527,7 @@ Certeris Paribus profiles explore model around a single point.
 
 \begin{verbatim}
 ##        1 
-## 2310.334
+## 2341.515
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2434,12 +2553,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3100.458 construction.year
-## 1.1              1921        5     142     8 3129.670 construction.year
-## 1.2              1922        5     142     8 3119.952 construction.year
-## 1.3              1923        5     142     8 3090.484 construction.year
-## 1.4              1923        5     142     8 3090.484 construction.year
-## 1.5              1924        5     142     8 3099.736 construction.year
+## 1                1920        5     142     8 3087.961 construction.year
+## 1.1              1921        5     142     8 3113.750 construction.year
+## 1.2              1922        5     142     8 3100.954 construction.year
+## 1.3              1923        5     142     8 3072.724 construction.year
+## 1.4              1923        5     142     8 3072.724 construction.year
+## 1.5              1924        5     142     8 3086.026 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -2451,7 +2570,7 @@ interest.
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor   _yhat_      _label_
-## 1              1965        5     142     8 2310.334 randomForest
+## 1              1965        5     142     8 2341.515 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -2467,7 +2586,7 @@ visible in the plot.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-32-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-31-1.pdf}
 
 One of very useful features of \texttt{ceterisParibus} explainers is
 that profiles for two or more models may be superimposed in a single
@@ -2497,7 +2616,7 @@ color as a key for model.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-33-1.pdf}
 
 \textbf{Oscillations}
 
@@ -2514,10 +2633,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     683.5261
-## 4          no.rooms     1     417.6918
-## 3             floor     1     333.7353
-## 1 construction.year     1     265.0362
+## 2           surface     1     645.4397
+## 4          no.rooms     1     399.8738
+## 3             floor     1     321.7802
+## 1 construction.year     1     249.1199
 \end{verbatim}
 
 \begin{Shaded}
@@ -2526,7 +2645,7 @@ for CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
 
 \textbf{2D Ceteris Paribus profiles}
 
@@ -2540,7 +2659,7 @@ And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-36-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
 
 \hypertarget{model-level-explanations}{%
 \chapter*{Model level explanations}\label{model-level-explanations}}
@@ -2653,8 +2772,8 @@ March 26, 2018.
 
 Feature extraction
 
-\hypertarget{partial-dependency-plots}{%
-\section{Partial Dependency Plots}\label{partial-dependency-plots}}
+\hypertarget{partialDependence}{%
+\section{Partial Dependency Plots}\label{partialDependence}}
 
 Accumulated Local Effects (ALE) Plots
 
@@ -2681,13 +2800,13 @@ Interactions - extraction
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{performance-diagnostic}{%
-\chapter{Performance Diagnostic}\label{performance-diagnostic}}
+\hypertarget{modelComparisons}{%
+\chapter{Performance Diagnostic}\label{modelComparisons}}
 
 Model selection
 
-\hypertarget{residual-diagnostic}{%
-\chapter{Residual Diagnostic}\label{residual-diagnostic}}
+\hypertarget{modelAuditing}{%
+\chapter{Residual Diagnostic}\label{modelAuditing}}
 
 Model validation
 
