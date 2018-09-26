@@ -126,7 +126,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2018-09-24}
+    \date{2018-09-25}
 
 \usepackage{booktabs}
 
@@ -569,6 +569,12 @@ differences between these two wrods.
 To summaries. We may use similar techniques. But they are used to answer
 different questions.
 
+\hypertarget{code-snippets}{%
+\section{Code snippets}\label{code-snippets}}
+
+TODO: Here we should tell why we present examples for DALEX. And mention
+that there are also other functions that can be used.
+
 \hypertarget{glossary-notation}{%
 \section{Glossary / Notation}\label{glossary-notation}}
 
@@ -639,8 +645,9 @@ explanations}\label{prediction-level-explanations}}
 
 Prediction level explainers help to understand how the model works for a
 single prediction. This is the main difference from the model level
-explainers that were focused on the model in general. Prediction level
-explainers are always in context of a single observation.
+explainers that were focused on the model as a whole and on model
+population for whole population. Prediction level explainers are working
+in the context of single observations.
 
 Think about following use-cases
 
@@ -648,90 +655,82 @@ Think about following use-cases
 \tightlist
 \item
   One wants to attribute effects of variables to a model predictions.
-  Think about model for hart attack. Having a final score for a patient
-  one wants to understand how much of this score come from smoking or
-  age or gender.
+  Think about model for heart accident Having a final score for a
+  particular patient one wants to understand how much of this score can
+  be attributed to smoking or age or gender.
 \item
   One wants to understand how the model response would change if some
-  inputs are changed. Think about model for hart attack. How the model
-  response would change if a patient cuts the number of smoked
-  cigarettes by half.
+  inputs are changed. Again, think about model for heart accident How
+  the model response would change if a patient cuts the number of
+  cigarettes per day by half. Or if he introduces a low-carbon diet.
 \item
   Model is not working correctly for a particular point and one wants to
-  understand why predictions for this point are wrong.
+  understand why predictions for this point are wrong. Think about
+  patient that had heart accident but his risk score is very low. One
+  wants to understand which factors may be overlooked.
 \end{itemize}
 
-\hypertarget{variable-attribution-vs-what-if-analysis}{%
-\section{Variable attribution vs What-If
-analysis}\label{variable-attribution-vs-what-if-analysis}}
-
-TODO: varaible attribution is not sparse, no reason for them to be like
-that
-
-TODO: Three approaches: variable attribution, local model,
-
-TODO: condvis \citep{JSSv081i05}
-
-Enslaving the Algorithm: From a `Right to an Explanation' to a `Right to
-Better Decisions'? \citep{Edwards_Veale_2018}
-
-TODO: Sparse model approximation / variable selection / feature ranking
+\hypertarget{approaches-to-prediction-explanations}{%
+\section{Approaches to prediction
+explanations}\label{approaches-to-prediction-explanations}}
 
 There are many different tools that may be used to explore model around
-a single data point and in following sections we will describe the most
-popular approaches. They can be divided into two classes.
+a single point \(x^*\). Model is a function that takes \(p\) dimensional
+vector as an input. Thus to plot this function we would need \(p+1\)
+dimensions.
+
+In following sections we will describe the most popular approaches to
+exploration of such function. They can be divided into three classes.
+
+An toy example with \(p=2\) is presented in Figure
+\ref{fig:cutsSurfaceReady}. We will use it as an illustration of key
+ideas.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.6\linewidth]{figure/cuts_surface_ready_punkt} 
+
+}
+
+\caption{(fig:cutsSurfaceReady) Model response surface. Here the model is a function of two variables.  We are interested in understanding the response of a model in a single point x*}\label{fig:cutsSurfaceReady}
+\end{figure}
 
 \begin{itemize}
 \tightlist
 \item
-  Analysis of the model curvature. Here we treat the model as a function
-  and we are interested in the curvature of this function around the
-  point of interest (see Figure \ref{fig:modelResponseCurve}). In the
-  Section \ref{LIME} we present the LIME method that approximates the
-  black-box model in a point of interest while in section
-  \ref{ceterisParibus} we present Ceteris Paribus profiles that are more
-  focused on conditional changes of model response given only one
-  coordinate is modified.
+  One approach to exploration of model response is to investigate how
+  the model response would change if single variable in the model input
+  would change. This way we may observe profiles seen as a function of a
+  single variable. Such profiles are usually called Ceteris Paribus
+  Profiles. We will present them in detail in the Section
+  \ref{ceterisParibus}. This is useful for What-If scenarios. See an
+  example in Figure \ref{fig:cutsTechnikiReady} panel A.
 \item
-  Analysis of the probabilistic behavior of the model. Here we are
-  interested in decomposition of the model response to parts that can be
-  attributed to particular features.
+  Other approach is to analyze model curvature around point of interest.
+  Again we treat the model as a function and we are interested in the
+  local behavior of this function around the point of interest. We
+  approximate the black-box model with a simpler white-box model around
+  point \(x^*\). See an example in Figure \ref{fig:cutsTechnikiReady}
+  panel B. In the Section \ref{LIME} we present the LIME method that
+  exploits the concept of local model.
+\item
+  Yet another approach is to analyze how the model response in point
+  \(x^*\) is different from the average model response. And how the
+  difference can be distributed between model behavior along different
+  dimensions. See an example in Figure \ref{fig:cutsTechnikiReady} panel
+  C. In the Section \ref{variableAttributionMethods} we present two
+  methods for variable contributions, sequential conditioning and
+  average conditioning (called also Shapley values).
 \end{itemize}
 
 \begin{figure}
-\includegraphics[width=0.7\linewidth]{figure/model_response} \caption{(fig:modelResponseCurve) Model response surface. We are interested in understanding the model behavior in a single point}\label{fig:modelResponseCurve}
+
+{\centering \includegraphics[width=0.99\linewidth]{figure/cuts_techniki_ready} 
+
+}
+
+\caption{(fig:cutsTechnikiReady) Intuitions behind different approached to prediction level explainers. Panel A presents an idea behind What-If analysis with Ceteris Paribus profiles. Keeping all other variables unchanged we trace model response along changes in a single variable. Panel B presents an idea behind local models like LIME. A simpler white-box model is fitted around the point of interest. It describes the local behaviour of the complex model. Panel C presents an idea behind variable attributions. Additive effects of each variable show how the model response differs from population average.}\label{fig:cutsTechnikiReady}
 \end{figure}
-
-\hypertarget{when-to-use}{%
-\section{When to use?}\label{when-to-use}}
-
-There are several use-cases for such explainers. Think about following.
-
-\begin{itemize}
-\tightlist
-\item
-  Model improvement. If model works particular bad for a selected
-  observation (the residual is very high) then investigation of model
-  responses for miss fitted points may give some hints how to improve
-  the model. For individual predictions it is easier to notice that
-  selected variable should have different a effect.
-\item
-  Additional domain specific validation. Understanding which factors are
-  important for model predictions helps to be critical about model
-  response. If model contributions are against domain knowledge then we
-  may be more skeptical and willing to try another model. On the other
-  hand, if the model response is aligned with domain knowledge we may
-  trust more in these responses. Such trust is important in decisions
-  that may lead to serious consequences like predictive models in
-  medicine.
-\item
-  Model selection. Having multiple candidate models one may select the
-  final response based on model explanations. Even if one model is
-  better in terms of global model performance it may happen that locally
-  other model is better fitted. This moves us towards model
-  consultations that identify different options and allow human to
-  select one of them.
-\end{itemize}
 
 \hypertarget{three-single-laws}{%
 \section{A bit of philosophy: Three Laws for Prediction Level
@@ -752,8 +751,8 @@ politics, education, judiciary and many other areas. Black box
 predictive models have far larger influence on our lives than physical
 robots. Yet, applications of such models are left unregulated despite
 many examples of their potential harmfulness. See \emph{Weapons of Math
-Destruction} by Cathy O'Neil for an excellent overview of potential
-problems.
+Destruction} by Cathy O'Neil \citep{ONeil} for an excellent overview of
+selected problems.
 
 It's clear that we need to control algorithms that may affect us. Such
 control is in our civic rights. Here we propose three requirements that
@@ -1141,12 +1140,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.36%
+##         OOB estimate of  error rate: 27.59%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2272  380      203   0.2042032
-## ok         536 1242      443   0.4407924
-## promoted   201  384     2186   0.2111151
+## fired     2259  398      198   0.2087566
+## ok         526 1239      456   0.4421432
+## promoted   197  390     2184   0.2118369
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1188,7 +1187,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1   0.8 0.198    0.002
+## 1 0.806 0.194        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1215,13 +1214,13 @@ variable attributions.
 
 \begin{verbatim}
 ##                  contribution
-## (Intercept)             0.376
-## * hours = 42            0.240
-## * salary = 2           -0.209
-## * evaluation = 2        0.021
-## * age = 58              0.098
-## * gender = male         0.275
-## final_prognosis         0.800
+## (Intercept)             0.372
+## * hours = 42            0.238
+## * salary = 2           -0.205
+## * evaluation = 2        0.008
+## * age = 58              0.103
+## * gender = male         0.290
+## final_prognosis         0.806
 ## baseline:  0
 \end{verbatim}
 
@@ -1428,12 +1427,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.35%
+##         OOB estimate of  error rate: 27.25%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2267  393      195   0.2059545
-## ok         532 1248      441   0.4380910
-## promoted   198  387     2186   0.2111151
+## fired     2276  384      195   0.2028021
+## ok         536 1249      436   0.4376407
+## promoted   189  398     2184   0.2118369
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1474,8 +1473,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired    ok promoted
-## 1 0.792 0.206    0.002
+##   fired   ok promoted
+## 1 0.808 0.19    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1504,12 +1503,12 @@ variable attributions.
 
 \begin{verbatim}
 ##                        contribution
-## (Intercept)                   0.375
-## * hours = 42                  0.237
-## * salary = 2                 -0.205
-## * age:gender = 58:male        0.400
-## * evaluation = 2             -0.015
-## final_prognosis               0.792
+## (Intercept)                   0.376
+## * hours = 42                  0.238
+## * salary = 2                 -0.206
+## * age:gender = 58:male        0.404
+## * evaluation = 2             -0.003
+## final_prognosis               0.808
 ## baseline:  0
 \end{verbatim}
 
@@ -1617,7 +1616,7 @@ Explanations for a new observation.
 
 \begin{verbatim}
 ## Interpretation method:  Shapley 
-## Predicted value: 0.756000, Average prediction: 0.375563 (diff = 0.380437) Predicted value: 0.240000, Average prediction: 0.275009 (diff = -0.035009) Predicted value: 0.004000, Average prediction: 0.349428 (diff = -0.345428)
+## Predicted value: 0.794000, Average prediction: 0.375143 (diff = 0.418857) Predicted value: 0.204000, Average prediction: 0.275756 (diff = -0.071756) Predicted value: 0.002000, Average prediction: 0.349101 (diff = -0.347101)
 ## 
 ## Analysed predictor: 
 ## Prediction task: unknown 
@@ -1628,11 +1627,11 @@ Explanations for a new observation.
 ## 
 ## Head of results:
 ##      feature class      phi    phi.var feature.value
-## 1     gender fired  0.10788 0.07415845   gender=male
-## 2        age fired  0.13618 0.08299459      age=57.7
-## 3      hours fired  0.26922 0.12042803    hours=42.3
-## 4 evaluation fired -0.00212 0.01450237  evaluation=2
-## 5     salary fired -0.16116 0.04892171      salary=2
+## 1     gender fired  0.13008 0.09003256   gender=male
+## 2        age fired  0.18560 0.06621430      age=57.7
+## 3      hours fired  0.27256 0.11448211    hours=42.3
+## 4 evaluation fired  0.02166 0.01519588  evaluation=2
+## 5     salary fired -0.16164 0.04790096      salary=2
 ## 6     status fired  0.00000 0.00000000  status=fired
 \end{verbatim}
 
@@ -1880,12 +1879,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.23%
+##         OOB estimate of  error rate: 27.27%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2292  375      188   0.1971979
-## ok         537 1248      436   0.4380910
-## promoted   203  398     2170   0.2168892
+## fired     2283  376      196   0.2003503
+## ok         530 1243      448   0.4403422
+## promoted   205  385     2181   0.2129195
 \end{verbatim}
 
 \begin{Shaded}
@@ -1902,7 +1901,7 @@ package \citep{R-randomForest}.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.744 0.252    0.004
+## 1   0.8 0.196    0.004
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1923,35 +1922,35 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.744 0.1210883       0.2577173
-## 2 classification    1    fired      0.744 0.1210883       0.2577173
-## 3 classification    1    fired      0.744 0.1210883       0.2577173
-## 4 classification    1       ok      0.252 0.1357347       0.2117420
-## 5 classification    1       ok      0.252 0.1357347       0.2117420
-## 6 classification    1       ok      0.252 0.1357347       0.2117420
-## 7 classification    1 promoted      0.004 0.2864840       0.5305676
-## 8 classification    1 promoted      0.004 0.2864840       0.5305676
-## 9 classification    1 promoted      0.004 0.2864840       0.5305676
+## 1 classification    1    fired      0.800 0.1396411       0.2538017
+## 2 classification    1    fired      0.800 0.1396411       0.2538017
+## 3 classification    1    fired      0.800 0.1396411       0.2538017
+## 4 classification    1       ok      0.196 0.1432531       0.2199446
+## 5 classification    1       ok      0.196 0.1432531       0.2199446
+## 6 classification    1       ok      0.196 0.1432531       0.2199446
+## 7 classification    1 promoted      0.004 0.2958015       0.5302182
+## 8 classification    1 promoted      0.004 0.2958015       0.5302182
+## 9 classification    1 promoted      0.004 0.2958015       0.5302182
 ##   model_prediction    feature feature_value feature_weight
-## 1       0.61722434        age          57.7   -0.008805929
-## 2       0.61722434      hours          42.3    0.248865720
-## 3       0.61722434 evaluation           2.0    0.119447260
-## 4       0.36348877        age          57.7    0.006871459
-## 5       0.36348877 evaluation           2.0    0.212141203
-## 6       0.36348877      hours          42.3   -0.067265930
-## 7       0.01931097        age          57.7    0.001930615
-## 8       0.01931097 evaluation           2.0   -0.331658381
-## 9       0.01931097      hours          42.3   -0.181528821
+## 1        0.6337665        age          57.7   -0.010400836
+## 2        0.6337665      hours          42.3    0.274371574
+## 3        0.6337665 evaluation           2.0    0.115994024
+## 4        0.3484818        age          57.7    0.002087662
+## 5        0.3484818 evaluation           2.0    0.212595301
+## 6        0.3484818      hours          42.3   -0.086145791
+## 7        0.0105041     gender           2.0   -0.002908031
+## 8        0.0105041 evaluation           2.0   -0.328662889
+## 9        0.0105041      hours          42.3   -0.188143152
 ##           feature_desc                      data          prediction
-## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
-## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.744, 0.252, 0.004
+## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 7        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
+## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.800, 0.196, 0.004
 \end{verbatim}
 
 \begin{Shaded}
@@ -1993,7 +1992,7 @@ package}}{The live package}}\label{the-live-package}}
 ##  Name:  regr.lm 
 ##  Variable selection wasn't performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.9609
+##  R-squared: 0.9814
 \end{verbatim}
 
 \begin{Shaded}
@@ -2039,12 +2038,12 @@ package}}{The iml package}}\label{the-iml-package}}
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.060938977       1.0  0.06093898       male gender=male   gender=male
-## 2  0.005270869      57.7  0.30412915       57.7         age      age=57.7
-## 3 -0.090228194      42.3 -3.81665262       42.3       hours    hours=42.3
-## 4 -0.513921982       2.0 -1.02784396          2  evaluation  evaluation=2
-## 5 -0.032890479       2.0 -0.06578096          2      salary      salary=2
-## 6 -0.010774607       1.0 -0.01077461       male gender=male   gender=male
+## 1  0.073398706       1.0  0.07339871       male gender=male   gender=male
+## 2  0.005556429      57.7  0.32060598       57.7         age      age=57.7
+## 3 -0.089888815      42.3 -3.80229688       42.3       hours    hours=42.3
+## 4 -0.500369411       2.0 -1.00073882          2  evaluation  evaluation=2
+## 5 -0.028623351       2.0 -0.05724670          2      salary      salary=2
+## 6 -0.012760505       1.0 -0.01276050       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -2429,6 +2428,9 @@ presented in this chapter. It is available on CRAN and GitHub. Find more
 examples at the website of this package
 \texttt{https://pbiecek.github.io/ceterisParibus/}.
 
+A very interesting tool for moedl explorartion with similar principle is
+implemented in the \texttt{condvis} package \citep{JSSv081i05}.
+
 \textbf{Model preparation}
 
 In this section we will present examples based on the
@@ -2472,8 +2474,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 485483.4
-##                     % Var explained: 40.89
+##           Mean of squared residuals: 482861
+##                     % Var explained: 41.21
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -2527,8 +2529,8 @@ Certeris Paribus profiles explore model around a single point.
 \end{Shaded}
 
 \begin{verbatim}
-##       1 
-## 2315.26
+##        1 
+## 2342.833
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2554,12 +2556,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3096.791 construction.year
-## 1.1              1921        5     142     8 3122.493 construction.year
-## 1.2              1922        5     142     8 3121.561 construction.year
-## 1.3              1923        5     142     8 3092.827 construction.year
-## 1.4              1923        5     142     8 3092.827 construction.year
-## 1.5              1924        5     142     8 3083.920 construction.year
+## 1                1920        5     142     8 3070.725 construction.year
+## 1.1              1921        5     142     8 3093.451 construction.year
+## 1.2              1922        5     142     8 3073.149 construction.year
+## 1.3              1923        5     142     8 3057.999 construction.year
+## 1.4              1923        5     142     8 3057.999 construction.year
+## 1.5              1924        5     142     8 3084.691 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -2570,8 +2572,8 @@ interest.
 ## 
 ## 
 ## Top observations:
-##   construction.year no.rooms surface floor  _yhat_      _label_
-## 1              1965        5     142     8 2315.26 randomForest
+##   construction.year no.rooms surface floor   _yhat_      _label_
+## 1              1965        5     142     8 2342.833 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -2634,10 +2636,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     662.0231
-## 4          no.rooms     1     418.1700
-## 3             floor     1     339.2508
-## 1 construction.year     1     256.9103
+## 2           surface     1     631.9128
+## 4          no.rooms     1     437.2496
+## 3             floor     1     328.6568
+## 1 construction.year     1     233.3454
 \end{verbatim}
 
 \begin{Shaded}
@@ -2661,6 +2663,50 @@ And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
 \end{Shaded}
 
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
+
+\hypertarget{comparision-of-prediction-level-explainers}{%
+\chapter{Comparision of prediction level
+explainers}\label{comparision-of-prediction-level-explainers}}
+
+TODO
+
+compare pros and cons of different techniques
+
+\hypertarget{when-to-use}{%
+\section{When to use?}\label{when-to-use}}
+
+There are several use-cases for such explainers. Think about following.
+
+\begin{itemize}
+\tightlist
+\item
+  Model improvement. If model works particular bad for a selected
+  observation (the residual is very high) then investigation of model
+  responses for miss fitted points may give some hints how to improve
+  the model. For individual predictions it is easier to notice that
+  selected variable should have different a effect.
+\item
+  Additional domain specific validation. Understanding which factors are
+  important for model predictions helps to be critical about model
+  response. If model contributions are against domain knowledge then we
+  may be more skeptical and willing to try another model. On the other
+  hand, if the model response is aligned with domain knowledge we may
+  trust more in these responses. Such trust is important in decisions
+  that may lead to serious consequences like predictive models in
+  medicine.
+\item
+  Model selection. Having multiple candidate models one may select the
+  final response based on model explanations. Even if one model is
+  better in terms of global model performance it may happen that locally
+  other model is better fitted. This moves us towards model
+  consultations that identify different options and allow human to
+  select one of them.
+\end{itemize}
+
+Enslaving the Algorithm: From a `Right to an Explanation' to a `Right to
+Better Decisions'? \citep{Edwards_Veale_2018}
+
+TODO: Sparse model approximation / variable selection / feature ranking
 
 \hypertarget{model-level-explanations}{%
 \chapter*{Model level explanations}\label{model-level-explanations}}
@@ -2851,18 +2897,24 @@ Model validation
 \section{Hire or Fire? HR in Call Center}\label{HRdataset}}
 
 In this chapter we present an artificial dataset from Human Resources
-department in a Call Center to present pros and cons for different
-techniques of prediction level explainers.
+department in a Call Center.
 
 The dataset is available in the \texttt{DALEX} package \citep{R-DALEX}.
-Each row corresponds to a single employee from a call center. Features
+Each row corresponds to a single employee in a call center. Features
 like gender, age, average number of working hours per week, grade from
 the last evaluation and level of salary are used as predictive features.
 
 The goal here is to first build a model, that will guess when to fire
 and when to promote an employer, so it's a classification problem with
-three classes. But having a model we will use prediction level
-explainers to better understand how the model works for selected cases.
+three classes.
+
+Why we need such model? We want to have objective decisions. That will
+not be subject to personal preferences of a manager. But is it possible
+to have an objective model? Would it be fair or it will just replicate
+some unfairness?
+
+We will use this example to show how to use prediction level explainers
+to better understand how the model works for selected cases.
 
 \begin{Shaded}
 \begin{Highlighting}[]

@@ -192,6 +192,12 @@ Despite all similarites we need to keep in mind few key differences between thes
 To summaries. We may use similar techniques. But they are used to answer different questions.
 
 
+## Code snippets
+
+TODO: Here we should tell why we present examples for DALEX.
+And mention that there are also other functions that can be used.
+
+
 
 ## Glossary / Notation
 
@@ -228,53 +234,44 @@ Chris Drake for hospitality
 
 # Introduction {#PredictionExplainers}
 
-Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model in general. Prediction level explainers are always in context of a single observation.
+Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model as a whole and on model population for whole population. Prediction level explainers are working in the context of single observations.
 
 Think about following use-cases
 
-- One wants to attribute effects of variables to a model predictions. Think about model for hart attack. Having a final score for a patient one wants to understand how much of this score come from smoking or age or gender. 
-- One wants to understand how the model response would change if some inputs are changed. Think about model for hart attack. How the model response would change if a patient cuts the number of smoked cigarettes by half.
-- Model is not working correctly for a particular point and one wants to understand why predictions for this point are wrong. 
-
-## Variable attribution vs What-If analysis
-
-TODO: varaible attribution is not sparse, no reason for them to be like that
-
-TODO: Three approaches: variable attribution, local model, 
-
-TODO: condvis [@JSSv081i05]
-
-Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to Better Decisions’?
-[@Edwards_Veale_2018]
-
-TODO: Sparse model approximation / variable selection / feature ranking
+- One wants to attribute effects of variables to a model predictions. Think about model for heart accident Having a final score for a particular patient one wants to understand how much of this score can be attributed to smoking or age or gender. 
+- One wants to understand how the model response would change if some inputs are changed. Again, think about model for heart accident How the model response would change if a patient cuts the number of cigarettes per day by half. Or if he introduces a low-carbon diet.
+- Model is not working correctly for a particular point and one wants to understand why predictions for this point are wrong. Think about patient that had heart accident but his risk score is very low. One wants to understand which factors may be overlooked.
 
 
+## Approaches to prediction explanations
 
+There are many different tools that may be used to explore model around a single point $x^*$. Model is a function that takes $p$ dimensional vector as an input. Thus to plot this function we would need $p+1$ dimensions. 
 
-There are many different tools that may be used to explore model around a single data point and in following sections we will describe the most popular approaches. They can be divided into two classes.
+In following sections we will describe the most popular approaches to exploration of such function. They can be divided into three classes. 
 
-* Analysis of the model curvature. Here we treat the model as a function and we are interested in the curvature of this function around the point of interest (see Figure \@ref(fig:modelResponseCurve)). In the Section \@ref(LIME) we present the LIME method that approximates the black-box model in a point of interest while in section \@ref(ceterisParibus) we present Ceteris Paribus profiles that are more focused on conditional changes of model response given only one coordinate is modified. 
-* Analysis of the probabilistic behavior of the model. Here we are interested in decomposition of the model response to parts that can be attributed to particular features.
+An toy example with $p=2$ is presented in Figure \@ref(fig:cutsSurfaceReady). We will use it as an illustration of key ideas.
 
-
-```{r modelResponseCurve, echo=FALSE, fig.cap="(fig:modelResponseCurve) Model response surface. We are interested in understanding the model behavior in a single point", out.width = '70%'}
-knitr::include_graphics("figure/model_response.png")
+```{r cutsSurfaceReady, echo=FALSE, fig.cap="(fig:cutsSurfaceReady) Model response surface. Here the model is a function of two variables.  We are interested in understanding the response of a model in a single point x*", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/cuts_surface_ready_punkt.png")
 ```
 
-## When to use? 
 
-There are several use-cases for such explainers. Think about following.
+* One approach to exploration of model response is to investigate how the model response would change if single variable in the model input would change. This way we may observe profiles seen as a function of a single variable. Such profiles are usually called Ceteris Paribus Profiles. We will present them in detail in the Section \@ref(ceterisParibus).
+This is useful for What-If scenarios.  See an example in Figure \@ref(fig:cutsTechnikiReady) panel A. 
+* Other approach is to analyze model curvature around point of interest. Again we treat the model as a function and we are interested in the local behavior of this function around the point of interest. We approximate the black-box model with a simpler white-box model around point $x^*$. See an example in Figure \@ref(fig:cutsTechnikiReady) panel B. In the Section \@ref(LIME) we present the LIME method that exploits the concept of local model. 
+* Yet another approach is to analyze how the model response in point $x^*$ is different from the average model response. And how the difference can be distributed between model behavior along different dimensions. See an example in Figure \@ref(fig:cutsTechnikiReady) panel C. In the Section \@ref(variableAttributionMethods) we present two methods for variable contributions, sequential conditioning and average conditioning (called also Shapley values). 
 
-* Model improvement. If model works particular bad for a selected observation (the residual is very high) then investigation of model responses for miss fitted points may give some hints how to improve the model. For individual predictions it is easier to notice that selected variable should have different a effect.
-* Additional domain specific validation. Understanding which factors are important for model predictions helps to be critical about model response. If model contributions are against domain knowledge then we may be more skeptical and willing to try another model. On the other hand, if the model response is aligned with domain knowledge we may trust more in these responses. Such trust is important in decisions that may lead to serious consequences like predictive models in medicine.
-* Model selection. Having multiple candidate models one may select the final response based on model explanations. Even if one model is better in terms of global model performance it may happen that locally other model is better fitted. This moves us towards model consultations that identify different options and allow human to select one of them. 
+
+```{r cutsTechnikiReady, echo=FALSE, fig.cap="(fig:cutsTechnikiReady) Intuitions behind different approached to prediction level explainers. Panel A presents an idea behind What-If analysis with Ceteris Paribus profiles. Keeping all other variables unchanged we trace model response along changes in a single variable. Panel B presents an idea behind local models like LIME. A simpler white-box model is fitted around the point of interest. It describes the local behaviour of the complex model. Panel C presents an idea behind variable attributions. Additive effects of each variable show how the model response differs from population average.", out.width = '99%', fig.align='center'}
+knitr::include_graphics("figure/cuts_techniki_ready.png")
+```
+
 
 ## A bit of philosophy: Three Laws for Prediction Level Explanations {#three-single-laws}
 
 76 years ago Isaac Asimov devised [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 1) a robot may not injure a human being, 2) a robot must obey the orders given it by human beings and 3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
 
-Today we are surrounded by complex predictive algorithms used for decision making. Machine learning models are used in health care, politics, education, judiciary and many other areas. Black box predictive models have far larger influence on our lives than physical robots. Yet, applications of such models are left unregulated despite many examples of their potential harmfulness. See *Weapons of Math Destruction* by Cathy O'Neil for an excellent overview of potential problems.
+Today we are surrounded by complex predictive algorithms used for decision making. Machine learning models are used in health care, politics, education, judiciary and many other areas. Black box predictive models have far larger influence on our lives than physical robots. Yet, applications of such models are left unregulated despite many examples of their potential harmfulness. See *Weapons of Math Destruction* by Cathy O'Neil [@ONeil] for an excellent overview of selected problems.
 
 It's clear that we need to control algorithms that may affect us. Such control is in our civic rights. Here we propose three requirements that any predictive model should fulfill.
 
@@ -285,6 +282,7 @@ It's clear that we need to control algorithms that may affect us. Such control i
 There are two ways to comply with these requirements. 
 One is to use only models that fulfill these conditions by design. White-box models like linear regression or decision trees. In many cases the price for transparency is lower performance. 
 The other way is to use approximated explainers – techniques that find only approximated answers, but work for any black box model. Here we present such techniques.
+
 
 
 
@@ -1294,6 +1292,8 @@ Ceteris Paribus principle gives a uniform and extendable approach to model explo
 
 In this section we present key features of the `ceterisParibus` package for R [@R-ceterisParibus]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://pbiecek.github.io/ceterisParibus/`.
 
+A very interesting tool for moedl explorartion with similar principle is implemented in the `condvis` package [@JSSv081i05].
+
 **Model preparation**
 
 In this section we will present examples based on the `apartments` dataset. See section TODO for more details.
@@ -1486,204 +1486,34 @@ plot(cp_rf_neighbours,
 
 
 
-
-
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-###########
-#
-# This is not used anymore
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
-
-wi_rf_2d %>% 
-  filter(vname1 == "construction.year", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-wi_mat[100,] = NA
-wi_mat[,100] = NA
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-
-
-wi_rf_2d %>% 
-  filter(vname1 == "surface", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-#wireframe(wi_ma
-
-library("ceterisParibus")
-library("randomForest")
-set.seed(59)
-
-model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-pred1 <- function(m, x)   predict(m, x, type = "prob")[,1]
-explainer_rf_fired <- explain(model, data = HR[,1:5],
-   y = HR$status == "fired",
-   predict_function = pred1, label = "fired")
-
-pred2 <- function(m, x)   predict(m, x, type = "prob")[,2]
-explainer_rf_ok <- explain(model, data = HR[,1:5],
-   y = HR$status == "ok",
-   predict_function = pred2, label = "ok")
-
-pred3 <- function(m, x)   predict(m, x, type = "prob")[,3]
-explainer_rf_promoted <- explain(model, data = HR[,1:5],
-   y = HR$status == "promoted",
-   predict_function = pred3, label = "promoted")
-
-
-new_emp <- HR[1, ]
-new_emp
-
-
-cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired", variables = "hours")
-cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok", variables = "hours")
-cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted", variables = "hours")
-
-plot(cp_rf_fired, cp_rf_ok, cp_rf_promoted, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
-               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
-     as.gg = TRUE) + theme_bw() +ylab("y hat") + xlab("")
-
-plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
-               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
-     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
-
-
-
-cp_rf_fired <- ceteris_paribus(explainer_rf_fired, new_emp, y = new_emp$status == "fired")
-cp_rf_ok <- ceteris_paribus(explainer_rf_ok, new_emp, y = new_emp$status == "ok")
-cp_rf_promoted <- ceteris_paribus(explainer_rf_promoted, new_emp, y = new_emp$status == "promoted")
-
-plot(cp_rf_fired, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
-               alpha = 1, size_points = 3, color = "_label_", color_points = "black",
-     as.gg = TRUE) + theme_bw() + theme(legend.position = "none") + ylab("y hat") + xlab("")
-
-
-
-wi_rf_2d <- what_if_2d(explainer_rf_fired, observation = new_emp)
-wi_rf_2d
-
-library("dplyr")
-library("tidyr")
-wi_rf_2d %>% 
-  filter(vname1 == "age", vname2 == "salary") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-library("lattice")
-wireframe(wi_mat, shade = TRUE, xlab="age", ylab="salary", zlab="y hat")
-
-
-wi_rf_2d %>% 
-  filter(vname1 == "age", vname2 == "hours") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="age", ylab="hours", zlab="y hat")
-
-
-plot(wi_rf_2d)
-
-
-
-
-
-# -------------
-
-apartments_rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
-      no.rooms + district, data = apartments)
-
-explainer_rf <- explain(apartments_rf_model,
-      data = apartmentsTest[,2:6], y = apartmentsTest$m2.price)
-
-new_apartment <- apartmentsTest[100, ]
-new_apartment
-
-new_apartment$construction.year = 1965
-new_apartment$no.rooms = 5
-
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment)
-
-wi_rf_2d %>% 
-  filter(vname1 == "construction.year", vname2 == "surface") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="construction.year", ylab="surface", zlab="y hat")
-
-
-plot(wi_rf_2d)
-
-plot(wi_rf_2d)+ theme_bw() + scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) 
-
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, selected_variables = c("surface","floor"))
-plot(wi_rf_2d, bins = 0)+ theme_bw() + xlab("surface") + ylab("floor") +scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) 
-
-
-
-cp_rf_y1 <- ceteris_paribus(explainer_rf, new_apartment, y = new_apartment$m2.price, variables = c("construction.year", "floor"))
-# plot(cp_rf_y1, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
-#                alpha = 1, size_points = 3, color = "_vname_", color_points = "black")
-plot(cp_rf_y1, show_profiles = TRUE, show_observations = TRUE, show_rugs = FALSE,
-               alpha = 1, size_points = 3, color = "_vname_", color_points = "black",
-     as.gg = TRUE) + theme_bw() + 
-  theme(legend.position = "none") + scale_y_reverse(name = "y hat") + xlab("")
-
-
-
-
-wi_rf_2d <- what_if_2d(explainer_rf, observation = new_apartment, grid_points = 201, selected_variables = c("construction.year", "floor"))
-
-wi_rf_2d %>% 
-  filter(vname1 == "construction.year", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-wi_mat[100,] = NA
-wi_mat[,100] = NA
-wireframe(-wi_mat, shade = TRUE, xlab="construction.year", ylab="floor", zlab="y hat")
-
-
-
-wi_rf_2d %>% 
-  filter(vname1 == "surface", vname2 == "floor") %>%
-  select(y_hat, new_x1, new_x2) %>%
-  spread(new_x2, y_hat) -> wi_mat
-wi_mat <- as.matrix(wi_mat[, -1])
-attr(wi_mat, "dimnames") = NULL
-
-#wireframe(wi_mat[101:1,101:1], shade = TRUE, xlab="surface", ylab="floor", zlab="y hat")
-
-#wireframe(wi_mat[101:1,101:1], xlab="surface", ylab="floor", zlab="y hat")
-
-#plot(wi_rf_2d, add_raster = FALSE, bins = 5) + theme_dark()
-
-
-```
-
-
 <!--chapter:end:17-ceterisParibus.Rmd-->
+
+# Comparision of prediction level explainers
+
+TODO 
+
+compare pros and cons of different techniques
+
+## When to use? 
+
+There are several use-cases for such explainers. Think about following.
+
+* Model improvement. If model works particular bad for a selected observation (the residual is very high) then investigation of model responses for miss fitted points may give some hints how to improve the model. For individual predictions it is easier to notice that selected variable should have different a effect.
+* Additional domain specific validation. Understanding which factors are important for model predictions helps to be critical about model response. If model contributions are against domain knowledge then we may be more skeptical and willing to try another model. On the other hand, if the model response is aligned with domain knowledge we may trust more in these responses. Such trust is important in decisions that may lead to serious consequences like predictive models in medicine.
+* Model selection. Having multiple candidate models one may select the final response based on model explanations. Even if one model is better in terms of global model performance it may happen that locally other model is better fitted. This moves us towards model consultations that identify different options and allow human to select one of them. 
+
+
+
+
+Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to Better Decisions’?
+[@Edwards_Veale_2018]
+
+TODO: Sparse model approximation / variable selection / feature ranking
+
+
+
+
+<!--chapter:end:19-PredictionLevelSummary.Rmd-->
 
 # Model level explanations {-}
 
@@ -1840,12 +1670,15 @@ library(modelDown)
 
 ## Hire or Fire? HR in Call Center {#HRdataset}
 
-In this chapter we present an artificial dataset from Human Resources department in a Call Center to present pros and cons for different techniques of prediction level explainers. 
+In this chapter we present an artificial dataset from Human Resources department in a Call Center. 
 
-The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee from a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee in a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
 
 The goal here is to first build a model, that will guess when to fire and when to promote an employer, so it's a classification problem with three classes. 
-But having a model we will use prediction level explainers to better understand how the model works for selected cases.
+
+Why we need such model? We want to have objective decisions. That will not be subject to personal preferences of a manager. But is it possible to have an objective model? Would it be fair or it will just replicate some unfairness?
+
+We will use this example to show how to use prediction level explainers to better understand how the model works for selected cases.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
