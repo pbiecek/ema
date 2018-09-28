@@ -790,8 +790,8 @@ explainers -- techniques that find only approximated answers, but work
 for any black box model. Here we present such techniques.
 
 \hypertarget{variableAttributionMethods}{%
-\section{Introduction to variable
-attribution}\label{variableAttributionMethods}}
+\section{Variable attribution for linear
+models}\label{variableAttributionMethods}}
 
 In this section we introduce the concept and the intuition behind
 additive decompositions of model predictions. The main goal for these
@@ -828,8 +828,8 @@ be easily extended to additive models and generalized linear models. For
 other models it is not trivial how to do so, some approaches are be
 presented in next sections.
 
-\hypertarget{VAlinMod}{%
-\subsection{Intuition for linear models}\label{VAlinMod}}
+\hypertarget{intuition}{%
+\subsection{Intuition}\label{intuition}}
 
 Fiited linear model with coefficients
 \(\beta = (\beta_0, \beta_1, .., \beta_p)\) has following form.
@@ -986,20 +986,26 @@ In this section we will present an example for logistic regression based
 on the \texttt{HR} dataset. See the Section \ref{HRdataset} for more
 details.
 
+First we build a logistic regression model for binary variable
+\texttt{status\ ==\ "fired"}. Here are fitted model coefficients.
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
-\NormalTok{model_fired <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(status }\OperatorTok{==}\StringTok{ "fired"} \OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ HR)}
+\NormalTok{model_fired <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(status }\OperatorTok{==}\StringTok{ "fired"} \OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ HR, }\DataTypeTok{family =} \StringTok{"binomial"}\NormalTok{)}
 \KeywordTok{coef}\NormalTok{(model_fired)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
 ##  (Intercept)   gendermale          age        hours   evaluation 
-##  1.433707635 -0.013301239 -0.000251414 -0.016127602 -0.074025754 
+##  5.737945729 -0.066803609 -0.001503314 -0.102021120 -0.425793369 
 ##       salary 
-## -0.002875354
+## -0.015740080
 \end{verbatim}
+
+We want to calculate variable attributions for a particular point. Here
+we define this point.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1008,24 +1014,31 @@ details.
                       \DataTypeTok{hours =} \FloatTok{42.3}\NormalTok{,}
                       \DataTypeTok{evaluation =} \DecValTok{2}\NormalTok{,}
                       \DataTypeTok{salary =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
+For linear and generalized linear models we may specify argument
+\texttt{type\ =\ "terms"} that extracts variable contributions.
+
+\begin{Shaded}
+\begin{Highlighting}[]
 \KeywordTok{predict}\NormalTok{(model_fired, new_observation, }\DataTypeTok{type =} \StringTok{"terms"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##         gender          age    hours evaluation     salary
-## 1 -0.006693844 -0.004449734 0.119439 0.09644008 0.00133123
+##        gender         age     hours evaluation      salary
+## 1 -0.03361889 -0.02660691 0.7555555  0.5547197 0.007287334
 ## attr(,"constant")
-## [1] 0.3638333
+## [1] -0.8714962
 \end{verbatim}
 
-Below we show how to do this, and we also present a easy to use wrapper
-that takes advantage of \texttt{DALEX} package.
+Below we show how to do this with the \texttt{DALEX} package.
+Additionaly we may easily plot contributions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
 
 \NormalTok{explainer_fired <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model_fired,}
                  \DataTypeTok{data =}\NormalTok{ HR,}
@@ -1040,20 +1053,20 @@ that takes advantage of \texttt{DALEX} package.
 \begin{verbatim}
 ##                   variable contribution variable_name variable_value
 ## 1              (Intercept)  0.000000000     Intercept              1
-## hours         hours = 42.3  0.119438979         hours           42.3
-## evaluation  evaluation = 2  0.096440077    evaluation              2
-## gender       gender = male -0.006693844        gender           male
-## age             age = 57.7 -0.004449734           age           57.7
-## salary          salary = 2  0.001331230        salary              2
-## 11         final_prognosis  0.206066707                             
+## hours         hours = 42.3  0.755555494         hours           42.3
+## evaluation  evaluation = 2  0.554719716    evaluation              2
+## gender       gender = male -0.033618893        gender           male
+## age             age = 57.7 -0.026606908           age           57.7
+## salary          salary = 2  0.007287334        salary              2
+## 11         final_prognosis  1.257336743                             
 ##            cummulative sign position label
 ## 1            0.0000000    0        1 fired
-## hours        0.1194390    1        2 fired
-## evaluation   0.2158791    1        3 fired
-## gender       0.2091852   -1        4 fired
-## age          0.2047355   -1        5 fired
-## salary       0.2060667    1        6 fired
-## 11           0.2060667    X        7 fired
+## hours        0.7555555    1        2 fired
+## evaluation   1.3102752    1        3 fired
+## gender       1.2766563   -1        4 fired
+## age          1.2500494   -1        5 fired
+## salary       1.2573367    1        6 fired
+## 11           1.2573367    X        7 fired
 \end{verbatim}
 
 \begin{Shaded}
@@ -1062,19 +1075,60 @@ that takes advantage of \texttt{DALEX} package.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-2-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-4-1.pdf}
 
-\hypertarget{modelAgnosticAttribution}{%
-\subsection{Model agnostic approaches}\label{modelAgnosticAttribution}}
+\hypertarget{breakDown}{%
+\section{Sequential variable attributions}\label{breakDown}}
 
-In the Section \ref{VAlinMod} we introduced a method for calculation of
-variable attributions for linear models. This method is accurate, based
-directly on the structure of the model. But for most popular machine
-learning models we cannot assume that they are linear nor even additive.
+In the Section \ref{variableAttributionMethods} we introduced a method
+for calculation of variable attributions for linear models. This method
+is accurate, based directly on the structure of the model. But for most
+popular machine learning models we cannot assume that they are linear
+nor even additive.
 
-In next sections we introduce a model agnostic approach. Note that even
-if the model itself is not additive, the model attribution will be
-additive.
+\hypertarget{intuition-1}{%
+\subsection{Intuition}\label{intuition-1}}
+
+For any model we may repeat the intuition presented in Section
+\ref{variableAttributionMethods} to calculate variable contribution as
+shifts in expected model response after conditioning over consecutive
+variables. This intuition is presented in Figure \ref{BDPrice4}.
+
+Panel A shows distribution of model responses. The row
+\texttt{all\ data} shows the model response of the original dataset. The
+red dot stands for average is is an estimate of expencted model response
+\(E [f(x)]\).
+
+Since we want to calculate effects of particular values of selected
+variables we then condition over these variables in a sequential manner.
+The next row in panel A corresponds to average model prediction for
+observations with variable \texttt{surface} fixed to value \texttt{35}.
+The next for corresponds to average model prediction with variables
+\texttt{surface} set to \texttt{35} and \texttt{floor} set to
+\texttt{1}, and so on. The top row corresponds to model response for
+\(x^*\).
+
+Black lines in the panel A show how prediction for a single point
+changes after coordinate \(i\) is repaced by the \(x^*_i\). But finaly
+we are not interestes in particular changes, not even in distributions
+but only in averages - expected model responses.
+
+The most minimal form that shows important information is presented in
+the panel C. Positive values are presented with green bars while
+negative differences are marked with yellow bar. They sum up to final
+model prediction, which is denoted by a grey bar in this example.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.7\linewidth]{figure/bd_price_4} 
+
+}
+
+\caption{(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. }\label{fig:BDPrice4}
+\end{figure}
+
+\hypertarget{method-1}{%
+\subsection{Method}\label{method-1}}
 
 Again, let \(v(f, x^*, i)\) stands for the contribution of variable
 \(x_i\) on prediction of model \(f()\) in point \(x^*\).
@@ -1117,19 +1171,13 @@ related to the lack of additivness of the model \(f()\). Propositions
 presented in next two sections present different solutions for this
 problem.
 
-\hypertarget{breakDown}{%
-\section{Sequential variable attributions}\label{breakDown}}
-
 The approach for variable attribution presented in the Section
 \ref{modelAgnosticAttribution} has the property of \emph{local
 accuracy}, but variable contributions depends on the variable ordering.
 
-The Break Down method solves this problem by using two-step procedure.
-In the first step variables are ordered and in the second step the
+The easiest way to solve this problem is to use two-step procedure. In
+the first step variables are ordered and in the second step the
 consecutive conditioning is applied to ordered variables.
-
-\hypertarget{the-algorithm}{%
-\subsection{The Algorithm}\label{the-algorithm}}
 
 First step of this algorithm is to determine the order of variables for
 conditioning. It seems to be reasonable to include first variables that
@@ -1193,41 +1241,6 @@ variable & cumulative & contribution\tabularnewline
 final\_prognosis & 0.778000 & 0.778000\tabularnewline
 \bottomrule
 \end{longtable}
-
-\hypertarget{break-down-plots}{%
-\subsection{Break Down Plots}\label{break-down-plots}}
-
-Once we calculated variable attributions we may plot them in an
-intuitive form. This intuition behind Break Down Plots is described in
-Figure \ref{BDPrice4}.
-
-The variable ordering determined in the first step of Break Down
-Algorithm is reflected by the ordering of variables in rows of the plot.
-
-The last row of a plot shows the \(baseline\), i.e.~an average model
-prediction. The next row corresponds to average model prediction for
-observations with variable \texttt{surface} fixed to value \texttt{35}.
-The next for corresponds to average model prediction with variables
-\texttt{surface} set to \texttt{35} and \texttt{floor} set to
-\texttt{1}, and so on. The first row corresponds to model response for
-\(x^*\).
-
-In panels A and B violines show distribution of model predictions for
-selected points, while red dots stands for averages.
-
-The most minimal form that shows important information is presented in
-the panel C. Positive values are presented with green bars while
-negative differences are marked with yellow bar. They sum up to final
-model prediction, which is denoted by a grey bar in this example.
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.7\linewidth]{figure/bd_price_4} 
-
-}
-
-\caption{(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. }\label{fig:BDPrice4}
-\end{figure}
 
 \hypertarget{pros-and-cons-1}{%
 \subsection{Pros and cons}\label{pros-and-cons-1}}
@@ -1301,12 +1314,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.58%
+##         OOB estimate of  error rate: 27.17%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2271  383      201   0.2045534
-## ok         534 1233      454   0.4448447
-## promoted   209  383     2179   0.2136413
+## fired     2271  388      196   0.2045534
+## ok         536 1257      428   0.4340387
+## promoted   203  381     2187   0.2107542
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1348,7 +1361,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.818 0.182        0
+## 1 0.804 0.194    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1375,13 +1388,13 @@ variable attributions.
 
 \begin{verbatim}
 ##                  contribution
-## (Intercept)             0.376
-## * hours = 42            0.242
-## * salary = 2           -0.205
-## * evaluation = 2        0.015
-## * age = 58              0.091
-## * gender = male         0.298
-## final_prognosis         0.818
+## (Intercept)             0.375
+## * hours = 42            0.241
+## * salary = 2           -0.202
+## * evaluation = 2        0.023
+## * age = 58              0.075
+## * gender = male         0.292
+## final_prognosis         0.804
 ## baseline:  0
 \end{verbatim}
 
@@ -1393,7 +1406,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-8-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-9-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -1404,7 +1417,7 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-9-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-10-1.pdf}
 
 \hypertarget{sequential-variable-attribution-with-interactions}{%
 \section{Sequential variable attribution with
@@ -1422,8 +1435,28 @@ decomposition plots. Here we present an algorithm for pairs of
 variables, but it can be easily generalized to larger number of
 variables.
 
-\hypertarget{the-algorithm-1}{%
-\subsection{The Algorithm}\label{the-algorithm-1}}
+\hypertarget{intuition-2}{%
+\subsection{Intuition}\label{intuition-2}}
+
+The key idea here is to identify interactions between variables. This
+can be done in two steps.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  First we determine variable contributions for each variable
+  independently.
+\item
+  Second, we calculate effect for pair of variables. If this effect is
+  different than the sum of consecutive variables then it may be an
+  interaction.
+\end{enumerate}
+
+TODO: easy example for interaction
+
+\hypertarget{method-2}{%
+\subsection{Method}\label{method-2}}
 
 This algorithm is also composed out of two steps. In the first step
 variables and pairs of variables are ordered in terms of their
@@ -1511,8 +1544,8 @@ final\_prognosis & 0.778000 & 0.778000\tabularnewline
 \bottomrule
 \end{longtable}
 
-\hypertarget{break-down-plots-1}{%
-\subsection{Break Down Plots}\label{break-down-plots-1}}
+\hypertarget{break-down-plots}{%
+\subsection{Break Down Plots}\label{break-down-plots}}
 
 Break Down Plots for interactions are similar in structure as plots for
 single variables. The only difference is that in some rows pair of
@@ -1588,12 +1621,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.44%
+##         OOB estimate of  error rate: 27.36%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2276  386      193   0.2028021
-## ok         535 1233      453   0.4448447
-## promoted   198  388     2185   0.2114760
+## fired     2289  376      190   0.1982487
+## ok         537 1243      441   0.4403422
+## promoted   218  385     2168   0.2176110
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1635,7 +1668,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.816 0.182    0.002
+## 1 0.792 0.208        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1664,12 +1697,12 @@ variable attributions.
 
 \begin{verbatim}
 ##                        contribution
-## (Intercept)                   0.375
-## * hours = 42                  0.240
-## * salary = 2                 -0.207
-## * age:gender = 58:male        0.407
+## (Intercept)                   0.377
+## * hours = 42                  0.243
+## * salary = 2                 -0.212
+## * age:gender = 58:male        0.384
 ## * evaluation = 2              0.001
-## final_prognosis               0.816
+## final_prognosis               0.792
 ## baseline:  0
 \end{verbatim}
 
@@ -1702,8 +1735,16 @@ comes with a NIPS 2017 paper \citep{SHAP} and python library SHAP
 introduced also efficient algorithm for tree-based models, see
 \citep{TreeSHAP}.
 
-\hypertarget{the-algorithm-2}{%
-\subsection{The Algorithm}\label{the-algorithm-2}}
+\hypertarget{intuition-3}{%
+\subsection{Intuition}\label{intuition-3}}
+
+Since in sequential attribution effect depends on the ordering. Here the
+idea is to average across all possible orderings.
+
+TODO: a nice example
+
+\hypertarget{method-3}{%
+\subsection{Method}\label{method-3}}
 
 The name \emph{Shapley Values} comes from the solution in cooperative
 game theory attributed to Lloyd Shapley. The original problem was to
@@ -1733,6 +1774,48 @@ number of variables. Such complexity makes this method impractical for
 most cases. Fortunately it is enough to assess this value.
 \citep{Strumbelj2014} proposed to use sampling. \citep{TreeSHAP}
 proposed fast implementations for tree based ensembles.
+
+\hypertarget{example-hire-or-fire-2}{%
+\subsection{Example: Hire or Fire?}\label{example-hire-or-fire-2}}
+
+\hypertarget{pros-and-cons-3}{%
+\subsection{Pros and cons}\label{pros-and-cons-3}}
+
+Shapley Values give a uniform approach to decompose model prediction
+into parts that can be attributed additively to variables. Below we
+summarize key strengths and weaknesses of this approach.
+
+\textbf{Pros}
+
+\begin{itemize}
+\tightlist
+\item
+  There is a nice theory based on cooperative games.
+\item
+  \citep{SHAP} shows that this method unifies different approaches to
+  additive features attribution.
+\item
+  There is efficient implementation available for Python.
+\item
+  \citep{SHAP} shows more desired properties of this method, like
+  symmetry or additivity.
+\end{itemize}
+
+\textbf{Cons}
+
+\begin{itemize}
+\tightlist
+\item
+  The exact calculation of Shapley values is time consuming.
+\item
+  If the model is not additive, then the Shaply scores may be
+  misleading. And there is no way to determine if model is far from
+  additiveness.
+\end{itemize}
+
+Note that fully additive model solutions presented in sections
+\ref{modelAgnosticAttribution}, \ref{breakDown} and \ref{shapley} lead
+to same variable contributions.
 
 \hypertarget{code-snippets-for-r-2}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r-2}}
@@ -1777,7 +1860,7 @@ Explanations for a new observation.
 
 \begin{verbatim}
 ## Interpretation method:  Shapley 
-## Predicted value: 0.794000, Average prediction: 0.375177 (diff = 0.418823) Predicted value: 0.206000, Average prediction: 0.275412 (diff = -0.069412) Predicted value: 0.000000, Average prediction: 0.349411 (diff = -0.349411)
+## Predicted value: 0.804000, Average prediction: 0.375132 (diff = 0.428868) Predicted value: 0.194000, Average prediction: 0.275316 (diff = -0.081316) Predicted value: 0.002000, Average prediction: 0.349552 (diff = -0.347552)
 ## 
 ## Analysed predictor: 
 ## Prediction task: unknown 
@@ -1788,11 +1871,11 @@ Explanations for a new observation.
 ## 
 ## Head of results:
 ##      feature class      phi    phi.var feature.value
-## 1     gender fired  0.12724 0.06252071   gender=male
-## 2        age fired  0.18430 0.07250896      age=57.7
-## 3      hours fired  0.18226 0.08757436    hours=42.3
-## 4 evaluation fired  0.02998 0.01238525  evaluation=2
-## 5     salary fired -0.12410 0.04154435      salary=2
+## 1     gender fired  0.16852 0.08808748   gender=male
+## 2        age fired  0.14468 0.08909893      age=57.7
+## 3      hours fired  0.19386 0.10713505    hours=42.3
+## 4 evaluation fired  0.01700 0.01551762  evaluation=2
+## 5     salary fired -0.13380 0.03464182      salary=2
 ## 6     status fired  0.00000 0.00000000  status=fired
 \end{verbatim}
 
@@ -1807,45 +1890,6 @@ And the plot with Shapley attributions.
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-19-1.pdf}
 
 See more examples for \texttt{iml} package in the \citep{molnar} book.
-
-\hypertarget{pros-and-cons-3}{%
-\subsection{Pros and cons}\label{pros-and-cons-3}}
-
-Shapley Values give a uniform approach to decompose model prediction
-into parts that can be attributed additively to variables. Below we
-summarize key strengths and weaknesses of this approach.
-
-\textbf{Pros}
-
-\begin{itemize}
-\tightlist
-\item
-  There is a nice theory based on cooperative games.
-\item
-  \citep{SHAP} shows that this method unifies different approaches to
-  additive features attribution.
-\item
-  There is efficient implementation available for Python.
-\item
-  \citep{SHAP} shows more desired properties of this method, like
-  symmetry or additivity.
-\end{itemize}
-
-\textbf{Cons}
-
-\begin{itemize}
-\tightlist
-\item
-  The exact calculation of Shapley values is time consuming.
-\item
-  If the model is not additive, then the Shaply scores may be
-  misleading. And there is no way to determine if model is far from
-  additiveness.
-\end{itemize}
-
-Note that fully additive model solutions presented in sections
-\ref{modelAgnosticAttribution}, \ref{breakDown} and \ref{shapley} lead
-to same variable contributions.
 
 \hypertarget{LIME}{%
 \section{Local approximations with white-box model}\label{LIME}}
@@ -1877,8 +1921,11 @@ This methods and it's clones are now implemented in various R and python
 packages, see for example \citep{R-lime}, \citep{R-live} or
 \citep{R-iml}.
 
-\hypertarget{the-algorithm-3}{%
-\subsection{The Algorithm}\label{the-algorithm-3}}
+\hypertarget{intuition-4}{%
+\subsection{Intuition}\label{intuition-4}}
+
+\hypertarget{method-4}{%
+\subsection{Method}\label{method-4}}
 
 The LIME method, and its clones, has following properties:
 
@@ -1948,8 +1995,8 @@ Any model that is easy to interpret may be fitted to this data, like
 decision tree or rule based system. However in practice the most common
 family of models are linear models.
 
-\hypertarget{example-hire-or-fire-2}{%
-\subsection{Example: Hire or Fire?}\label{example-hire-or-fire-2}}
+\hypertarget{example-hire-or-fire-3}{%
+\subsection{Example: Hire or Fire?}\label{example-hire-or-fire-3}}
 
 \hypertarget{pros-and-cons-4}{%
 \subsection{Pros and cons}\label{pros-and-cons-4}}
@@ -2040,12 +2087,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.09%
+##         OOB estimate of  error rate: 27.46%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2282  379      194   0.2007005
-## ok         535 1252      434   0.4362900
-## promoted   203  381     2187   0.2107542
+## fired     2264  387      204   0.2070053
+## ok         530 1251      440   0.4367402
+## promoted   202  392     2177   0.2143630
 \end{verbatim}
 
 \begin{Shaded}
@@ -2062,7 +2109,7 @@ package \citep{R-randomForest}.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.814 0.186        0
+## 1  0.78 0.218    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -2083,35 +2130,35 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.814 0.1229946       0.2546051
-## 2 classification    1    fired      0.814 0.1229946       0.2546051
-## 3 classification    1    fired      0.814 0.1229946       0.2546051
-## 4 classification    1       ok      0.186 0.1304448       0.1951917
-## 5 classification    1       ok      0.186 0.1304448       0.1951917
-## 6 classification    1       ok      0.186 0.1304448       0.1951917
-## 7 classification    1 promoted      0.000 0.2805507       0.5185327
-## 8 classification    1 promoted      0.000 0.2805507       0.5185327
-## 9 classification    1 promoted      0.000 0.2805507       0.5185327
+## 1 classification    1    fired      0.780 0.1220752       0.2681786
+## 2 classification    1    fired      0.780 0.1220752       0.2681786
+## 3 classification    1    fired      0.780 0.1220752       0.2681786
+## 4 classification    1       ok      0.218 0.1402633       0.1814953
+## 5 classification    1       ok      0.218 0.1402633       0.1814953
+## 6 classification    1       ok      0.218 0.1402633       0.1814953
+## 7 classification    1 promoted      0.002 0.2837654       0.5186036
+## 8 classification    1 promoted      0.002 0.2837654       0.5186036
+## 9 classification    1 promoted      0.002 0.2837654       0.5186036
 ##   model_prediction    feature feature_value feature_weight
-## 1       0.61862898        age          57.7    0.005194753
-## 2       0.61862898      hours          42.3    0.251631538
-## 3       0.61862898 evaluation           2.0    0.107197608
-## 4       0.47867654        age          57.7    0.001078514
-## 5       0.47867654 evaluation           2.0    0.205799604
-## 6       0.47867654     salary           2.0    0.076606691
-## 7       0.01177354        age          57.7   -0.005761382
-## 8       0.01177354 evaluation           2.0   -0.314681561
-## 9       0.01177354      hours          42.3   -0.186316215
+## 1        0.6200647        age          57.7   -0.002028701
+## 2        0.6200647      hours          42.3    0.252460805
+## 3        0.6200647 evaluation           2.0    0.101453929
+## 4        0.4656301        age          57.7   -0.001193088
+## 5        0.4656301 evaluation           2.0    0.211869656
+## 6        0.4656301     salary           2.0    0.073458228
+## 7        0.0161014        age          57.7    0.002710018
+## 8        0.0161014 evaluation           2.0   -0.312410590
+## 9        0.0161014      hours          42.3   -0.192801669
 ##           feature_desc                      data          prediction
-## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
-## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
+## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.780, 0.218, 0.002
 \end{verbatim}
 
 \begin{Shaded}
@@ -2153,7 +2200,7 @@ package}}{The live package}}\label{the-live-package}}
 ##  Name:  regr.lm 
 ##  Variable selection wasn't performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.9878
+##  R-squared: 0.9769
 \end{verbatim}
 
 \begin{Shaded}
@@ -2199,12 +2246,12 @@ package}}{The iml package}}\label{the-iml-package}}
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.077930745       1.0  0.07793075       male gender=male   gender=male
-## 2  0.006003993      57.7  0.34643038       57.7         age      age=57.7
-## 3 -0.089612079      42.3 -3.79059092       42.3       hours    hours=42.3
-## 4 -0.509699795       2.0 -1.01939959          2  evaluation  evaluation=2
-## 5 -0.033895536       2.0 -0.06779107          2      salary      salary=2
-## 6 -0.023991872       1.0 -0.02399187       male gender=male   gender=male
+## 1  0.074802244       1.0  0.07480224       male gender=male   gender=male
+## 2  0.005587874      57.7  0.32242031       57.7         age      age=57.7
+## 3 -0.090298415      42.3 -3.81962294       42.3       hours    hours=42.3
+## 4 -0.506047438       2.0 -1.01209488          2  evaluation  evaluation=2
+## 5 -0.031261520       2.0 -0.06252304          2      salary      salary=2
+## 6 -0.018328576       1.0 -0.01832858       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -2635,8 +2682,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 489606.1
-##                     % Var explained: 40.38
+##           Mean of squared residuals: 486286.2
+##                     % Var explained: 40.79
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -2690,8 +2737,8 @@ Certeris Paribus profiles explore model around a single point.
 \end{Shaded}
 
 \begin{verbatim}
-##       1 
-## 2323.42
+##        1 
+## 2333.126
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2717,12 +2764,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3108.135 construction.year
-## 1.1              1921        5     142     8 3130.854 construction.year
-## 1.2              1922        5     142     8 3119.585 construction.year
-## 1.3              1923        5     142     8 3085.055 construction.year
-## 1.4              1923        5     142     8 3085.055 construction.year
-## 1.5              1924        5     142     8 3082.138 construction.year
+## 1                1920        5     142     8 3071.590 construction.year
+## 1.1              1921        5     142     8 3116.438 construction.year
+## 1.2              1922        5     142     8 3108.789 construction.year
+## 1.3              1923        5     142     8 3084.559 construction.year
+## 1.4              1923        5     142     8 3084.559 construction.year
+## 1.5              1924        5     142     8 3093.884 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -2733,8 +2780,8 @@ interest.
 ## 
 ## 
 ## Top observations:
-##   construction.year no.rooms surface floor  _yhat_      _label_
-## 1              1965        5     142     8 2323.42 randomForest
+##   construction.year no.rooms surface floor   _yhat_      _label_
+## 1              1965        5     142     8 2333.126 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -2797,10 +2844,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     638.9258
-## 4          no.rooms     1     432.0161
-## 3             floor     1     332.9774
-## 1 construction.year     1     246.7261
+## 2           surface     1     626.4580
+## 4          no.rooms     1     446.4040
+## 3             floor     1     331.0066
+## 1 construction.year     1     244.2179
 \end{verbatim}
 
 \begin{Shaded}
@@ -2895,17 +2942,7 @@ Rights:
 \hypertarget{example-price-prediction}{%
 \subsection{Example: Price prediction}\label{example-price-prediction}}
 
-\citep{R-DALEX}
-
-\citep{R-e1071}
-
-\citep{R-factorMerger}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"factorMerger"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+\citep{R-e1071} \citep{R-factorMerger}
 
 In this chapter we show examples for three predictive models trained on
 \texttt{apartments} dataset from the \texttt{DALEX} package. Random
@@ -2983,17 +3020,9 @@ Feature extraction
 \hypertarget{partialDependence}{%
 \subsection{Partial Dependency Plots}\label{partialDependence}}
 
-Accumulated Local Effects (ALE) Plots
+\citep{RJ2017016} \citep{MAGIX}
 
-\citep{RJ2017016} \citep{R-ALEPlot}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(ALEPlot)}
-\end{Highlighting}
-\end{Shaded}
-
-\citep{MAGIX}
+Accumulated Local Effects (ALE) Plots \citep{R-ALEPlot}
 
 Interactions - extraction
 
@@ -3031,21 +3060,7 @@ Model validation
 
 \citep{R-randomForestExplainer} \citep{R-ICEbox} \citep{R-ALEPlot}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(randomForestExplainer)}
-\KeywordTok{library}\NormalTok{(ICEbox)}
-\KeywordTok{library}\NormalTok{(ALEPlot)}
-\end{Highlighting}
-\end{Shaded}
-
 \citep{R-modelDown}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(modelDown)}
-\end{Highlighting}
-\end{Shaded}
 
 \hypertarget{appendixes}{%
 \section*{Appendixes}\label{appendixes}}

@@ -1,4 +1,4 @@
-# Introduction to variable attribution {#variableAttributionMethods}
+# Variable attribution for linear models {#variableAttributionMethods}
 
 In this section we introduce the concept and the intuition behind additive decompositions of model predictions. The main goal for these tools is to help to understand how model output may be decomposed into parts, that can be attributed to input features. 
 
@@ -14,7 +14,7 @@ Think of following use cases:
 In every usecase one needs to attribute part of the model response to a single variable. This can be done directly for linear models, so in the section \@ref(VAlinMod) we show how to do this for linar models and may be easily extended to additive models and generalized linear models. For other models it is not trivial how to do so, some approaches are be presented in next sections.
 
 
-## Intuition  for linear models {#VAlinMod}
+## Intuition  
 
 Fiited linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
 
@@ -118,25 +118,34 @@ Variable attributions for linear models may be directly extracted from the `pred
 
 In this section we will present an example for logistic regression based on the `HR` dataset. See the Section \@ref(HRdataset) for more details.
 
+First we build a logistic regression model for binary variable `status == "fired"`. Here are fitted model coefficients.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-model_fired <- glm(status == "fired" ~ ., data = HR)
+model_fired <- glm(status == "fired" ~ ., data = HR, family = "binomial")
 coef(model_fired)
+```
 
+We want to calculate variable attributions for a particular point. Here we define this point.
+
+```{r, warning=FALSE, message=FALSE}
 new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
                       age = 57.7,
                       hours = 42.3,
                       evaluation = 2,
                       salary = 2)
+```
 
+For linear and generalized linear models we may specify argument `type = "terms"` that extracts variable contributions.
+
+```{r, warning=FALSE, message=FALSE}
 predict(model_fired, new_observation, type = "terms")
 ```
 
-Below we show how to do this, and we also present a easy to use wrapper that takes advantage of `DALEX` package.
+Below we show how to do this with the `DALEX` package. Additionaly we may easily plot contributions.
 
 ```{r, warning=FALSE, message=FALSE}
-library("breakDown")
+library("DALEX")
 
 explainer_fired <- explain(model_fired,
                  data = HR,
@@ -146,9 +155,5 @@ explainer_fired <- explain(model_fired,
 attribution <- single_prediction(explainer_fired, new_observation)
 attribution
 plot(attribution)
-
 ```
-
-
-
 
