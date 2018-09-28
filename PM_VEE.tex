@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2018-09-27}
+    \date{2018-09-28}
 
 \usepackage{booktabs}
 
@@ -653,8 +653,8 @@ explanations}\label{prediction-level-explanations}}
 Prediction level explainers help to understand how the model works for a
 single prediction. This is the main difference from the model level
 explainers that were focused on the model as a whole and on model
-population for whole population. Prediction level explainers are working
-in the context of single observations.
+population for whole population. Prediction level explainers work in the
+context of single observations.
 
 Think about following use-cases
 
@@ -686,9 +686,6 @@ a single point \(x^*\). Model is a function that takes \(p\) dimensional
 vector as an input. Thus to plot this function we would need \(p+1\)
 dimensions.
 
-In following sections we will describe the most popular approaches to
-exploration of such function. They can be divided into three classes.
-
 An toy example with \(p=2\) is presented in Figure
 \ref{fig:cutsSurfaceReady}. We will use it as an illustration of key
 ideas.
@@ -701,6 +698,9 @@ ideas.
 
 \caption{(fig:cutsSurfaceReady) Model response surface. Here the model is a function of two variables.  We are interested in understanding the response of a model in a single point x*}\label{fig:cutsSurfaceReady}
 \end{figure}
+
+In following sections we will describe the most popular approaches to
+exploration of such function. They can be divided into three classes.
 
 \begin{itemize}
 \tightlist
@@ -790,17 +790,20 @@ explainers -- techniques that find only approximated answers, but work
 for any black box model. Here we present such techniques.
 
 \hypertarget{variableAttributionMethods}{%
-\section{Introduction to variable attribution
-methods}\label{variableAttributionMethods}}
+\section{Introduction to variable
+attribution}\label{variableAttributionMethods}}
 
-In this section we introduce method for additive decomposition of
-predictions. The main goal for these tools is to help understand how
-model output may be attributed to input variables or sets of variables.
+In this section we introduce the concept and the intuition behind
+additive decompositions of model predictions. The main goal for these
+tools is to help to understand how model output may be decomposed into
+parts, that can be attributed to input features.
 
 Presented explainers are linked with the first law introduced in Section
 \ref{three-single-laws}, i.e.~law for prediction's justifications. Note
-that there are more tools for variable attribution, some of them will be
-presented in next sections.
+that there is a collection of tools for variable attribution. In this
+section we are focused on the general idea and examples for linear
+models. Model agnostic approaches will be presented in sections
+\ref{breakDown} and \ref{shapley}.
 
 Think of following use cases:
 
@@ -818,16 +821,17 @@ Think of following use cases:
   factors like gender, age or number of kids influence model decisions.
 \end{itemize}
 
-In the section \ref{VAlinMod} we will introduce key concepts and
-intuitions beyond variable attribution based on linear models. This
-approach may be easily applied to additive models and generalized linear
-models. In sections \ref{breakDown} and \ref{shapley} we will present
-model agnostic extentions of this concept.
+In every usecase one needs to attribute part of the model response to a
+single variable. This can be done directly for linear models, so in the
+section \ref{VAlinMod} we show how to do this for linar models and may
+be easily extended to additive models and generalized linear models. For
+other models it is not trivial how to do so, some approaches are be
+presented in next sections.
 
 \hypertarget{VAlinMod}{%
-\subsection{Variable attribution for linear models}\label{VAlinMod}}
+\subsection{Intuition for linear models}\label{VAlinMod}}
 
-Linear model with coefficients
+Fiited linear model with coefficients
 \(\beta = (\beta_0, \beta_1, .., \beta_p)\) has following form.
 
 \[
@@ -836,56 +840,52 @@ f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
 \(x = (x_1, x_2, \ldots, x_p)\).
 
 From a global perspective of a model, we are usually interested in
-questions like, how good is the model, which variables are significant
-or how accurate are model predictions.
+questions like, how good is the model (questions about \(R^2\)), which
+variables are significant (tests for significance of \(\beta_i \neq 0\))
+or how accurate are model predictions (confidence intervals for
+predictions).
 
-But in this chapter we are focues in a local perspective, i.e.~for a
+But in this chapter we are focued on a local perspective, i.e.~for a
 single observation \(x^*\) how to measure the contribution of a variable
 \(x_i\) on model prediction \(f(x^*)\).
 
-Let \(v(f, x^*, i)\) stands for the contribution of variable \(x_i\) on
-prediction of model \(f()\) in point \(x^*\). For linear models it is
-easy to define such contribution as \[
-v(f, x^*, i) = f(x^*) - E[f(x)|x_{-1} = x^*_{-1}] = \beta_i x^*_i  - E \beta_i X_i
-\] where the expected value can be estimated from the data \[
+The contribution of a variable \(x_i\) shall be related to
+\(x^*_i\beta_i\) as variable \(x_i\) occur only in this term. As we will
+see below, it is easier to interpret variable contribution if the
+\(x_i\) is centered.
+
+This lead for a intuitive formula for variable attribution for model
+\(f\), variable \(x_i\) in the point \(x^*\) \[
+v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
+\]
+
+\hypertarget{method}{%
+\subsection{Method}\label{method}}
+
+We want to calculate \(v(f, x^*, i)\), which is the contribution of
+variable \(x_i\) on prediction of model \(f()\) in point \(x^*\).
+
+Geneal approach for calculation of variable attributions would be to
+measure how much the expected model response would change after
+conditioning on \(x_i = x_i^*\).
+
+\[
+v(f, x^*, i) = E[f(x) | x_i = x_i^*] - E[f(x)]
+\]
+
+For linear models, if coordinates of \(x\) are independent, this is
+equivalent of
+
+\[
+v(f, x^*, i) = f(x^*) - E[f(x)|x_{-i} = x^*_{-i}] = \beta_i x^*_i  - E \beta_i X_i.
+\] Expected value can be estimated as averages, and this leads to\\
+\[
 v(f, x^*, i) = \beta_i x^*_i - \beta_i \bar x_i = \beta_i (x^*_i - \bar x_i)
 \]
 
 The logic behind the attribution is the following. Contribution of
 variable \(x_i\) is the difference between model response for value
 \(x_i^*\) minus the average model response.
-
-\hypertarget{wine-quality-example}{%
-\subsubsection{Wine quality example}\label{wine-quality-example}}
-
-It may be a surprise, that the attribution for variable \(x_i\) is not
-the \(\beta_i x_i\). But, please consider following example. Figure
-\ref{fig:attribution1} shows the relation between alcohol and wine
-quality, based on the wine dataset \citep{wine2009}. The corresponding
-linear model is
-
-\[
-quality(alcohol) = 2.5820 + 0.3135 * alcohol
-\]
-
-The weakest wine in this dataset has 8\% of alcohol, average alcohol
-concentration is 10.51, so the contribution of alcohol to the model
-prediction is \(0.3135 *(8-10.51) = -0.786885\). It means that low value
-of alcohol for this wine (8\%) lower the prediction of quality by
-\(-0.786885\).
-
-Note, that it would be confusing to forget about normalisation and say,
-that for the alcohol contribution on quality is \(0.3135*8 = 2.508\) as
-this is high positive value.
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.5\linewidth]{figure/attribution_1} 
-
-}
-
-\caption{(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model}\label{fig:attribution1}
-\end{figure}
 
 Note that the linear model ma be rewritten in a following way
 
@@ -905,10 +905,164 @@ from the average response.
 
 There is a gap between expected value of \(X_i\) and average calculated
 on some dataset \(\bar x_i\). The latter depends on the data used for
-calculation of averages. For the sake of simplicity we do not emphasise
+calculation of averages. For the sake of simplicity we do not emphasize
 these differences. To live with this just assume that we have access to
 a very large validation data that allows us to calculate \(\bar x_i\)
 very accurately.
+
+Also we assumed that coordinated of \(x\) are independent, which may not
+be the case. We will return to this problem later, during the discussion
+related to interactions.
+
+\hypertarget{example-wine-quality}{%
+\subsection{Example: Wine quality}\label{example-wine-quality}}
+
+It may be a surprise, that the attribution for variable \(x_i\) is not
+the \(\beta_i x_i\). To understand this, consider following example.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.5\linewidth]{figure/attribution_1} 
+
+}
+
+\caption{(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model}\label{fig:attribution1}
+\end{figure}
+
+Figure \ref{fig:attribution1} shows the relation between alcohol and
+wine quality, based on the wine dataset \citep{wine2009}. The
+corresponding linear model is
+
+\[
+quality(alcohol) = 2.5820 + 0.3135 * alcohol
+\]
+
+The weakest wine in this dataset has 8\% of alcohol, average alcohol
+concentration is 10.51, so the contribution of alcohol to the model
+prediction is \(0.3135 *(8-10.51) = -0.786885\). It means that low value
+of alcohol for this wine (8\%) lower the prediction of quality by
+\(-0.786885\).
+
+Note, that it would be confusing to use \(x_i\beta_i\) as alcohol
+contribution on quality would be \(0.3135*8 = 2.508\). This would not
+reflect the intuition that for positive relation, the smaller is the
+alcohol concentration the lower should be the quality of wine.
+
+\hypertarget{pros-and-cons}{%
+\subsection{Pros and Cons}\label{pros-and-cons}}
+
+Here we summarise pros and cons of this approach.
+
+\textbf{Pros}
+
+\begin{itemize}
+\tightlist
+\item
+  Presented variable attribution for linear model is not an
+  approximation, it is directly linked with the structure of a model.
+\item
+  It is easier to understand attributions that are not linked with scale
+  nor location of \(x_i\) as the standard \(\beta_i\) are.
+\end{itemize}
+
+\textbf{Cons}
+
+\begin{itemize}
+\tightlist
+\item
+  It works only for linear models.
+\item
+  This do not reduce model complexity. Just present model coefficients
+  in a different way.
+\end{itemize}
+
+\hypertarget{code-snippets-1}{%
+\subsection{Code snippets}\label{code-snippets-1}}
+
+Variable attributions for linear models may be directly extracted from
+the \texttt{predict()} function for linear models.
+
+In this section we will present an example for logistic regression based
+on the \texttt{HR} dataset. See the Section \ref{HRdataset} for more
+details.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\NormalTok{model_fired <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(status }\OperatorTok{==}\StringTok{ "fired"} \OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ HR)}
+\KeywordTok{coef}\NormalTok{(model_fired)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  (Intercept)   gendermale          age        hours   evaluation 
+##  1.433707635 -0.013301239 -0.000251414 -0.016127602 -0.074025754 
+##       salary 
+## -0.002875354
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{new_observation <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{gender =} \KeywordTok{factor}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\StringTok{"female"}\NormalTok{)),}
+                      \DataTypeTok{age =} \FloatTok{57.7}\NormalTok{,}
+                      \DataTypeTok{hours =} \FloatTok{42.3}\NormalTok{,}
+                      \DataTypeTok{evaluation =} \DecValTok{2}\NormalTok{,}
+                      \DataTypeTok{salary =} \DecValTok{2}\NormalTok{)}
+
+\KeywordTok{predict}\NormalTok{(model_fired, new_observation, }\DataTypeTok{type =} \StringTok{"terms"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##         gender          age    hours evaluation     salary
+## 1 -0.006693844 -0.004449734 0.119439 0.09644008 0.00133123
+## attr(,"constant")
+## [1] 0.3638333
+\end{verbatim}
+
+Below we show how to do this, and we also present a easy to use wrapper
+that takes advantage of \texttt{DALEX} package.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown"}\NormalTok{)}
+
+\NormalTok{explainer_fired <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model_fired,}
+                 \DataTypeTok{data =}\NormalTok{ HR,}
+                 \DataTypeTok{y =}\NormalTok{ HR}\OperatorTok{$}\NormalTok{status }\OperatorTok{==}\StringTok{ "fired"}\NormalTok{,}
+                 \DataTypeTok{label =} \StringTok{"fired"}\NormalTok{)}
+
+\NormalTok{attribution <-}\StringTok{ }\KeywordTok{single_prediction}\NormalTok{(explainer_fired, new_observation)}
+\NormalTok{attribution}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                   variable contribution variable_name variable_value
+## 1              (Intercept)  0.000000000     Intercept              1
+## hours         hours = 42.3  0.119438979         hours           42.3
+## evaluation  evaluation = 2  0.096440077    evaluation              2
+## gender       gender = male -0.006693844        gender           male
+## age             age = 57.7 -0.004449734           age           57.7
+## salary          salary = 2  0.001331230        salary              2
+## 11         final_prognosis  0.206066707                             
+##            cummulative sign position label
+## 1            0.0000000    0        1 fired
+## hours        0.1194390    1        2 fired
+## evaluation   0.2158791    1        3 fired
+## gender       0.2091852   -1        4 fired
+## age          0.2047355   -1        5 fired
+## salary       0.2060667    1        6 fired
+## 11           0.2060667    X        7 fired
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot}\NormalTok{(attribution)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-2-1.pdf}
 
 \hypertarget{modelAgnosticAttribution}{%
 \subsection{Model agnostic approaches}\label{modelAgnosticAttribution}}
@@ -964,7 +1118,7 @@ presented in next two sections present different solutions for this
 problem.
 
 \hypertarget{breakDown}{%
-\section{Sequential Additive Attributions}\label{breakDown}}
+\section{Sequential variable attributions}\label{breakDown}}
 
 The approach for variable attribution presented in the Section
 \ref{modelAgnosticAttribution} has the property of \emph{local
@@ -1075,8 +1229,8 @@ model prediction, which is denoted by a grey bar in this example.
 \caption{(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. }\label{fig:BDPrice4}
 \end{figure}
 
-\hypertarget{pros-and-cons}{%
-\subsection{Pros and cons}\label{pros-and-cons}}
+\hypertarget{pros-and-cons-1}{%
+\subsection{Pros and cons}\label{pros-and-cons-1}}
 
 Break Down approach is model agnostic, can be applied to any predictive
 model that returns a single number. It leads to additive variable
@@ -1147,12 +1301,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.48%
+##         OOB estimate of  error rate: 27.58%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2278  387      190   0.2021016
-## ok         529 1245      447   0.4394417
-## promoted   206  397     2168   0.2176110
+## fired     2271  383      201   0.2045534
+## ok         534 1233      454   0.4448447
+## promoted   209  383     2179   0.2136413
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1194,7 +1348,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.828 0.168    0.004
+## 1 0.818 0.182        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1222,12 +1376,12 @@ variable attributions.
 \begin{verbatim}
 ##                  contribution
 ## (Intercept)             0.376
-## * hours = 42            0.240
-## * salary = 2           -0.207
-## * evaluation = 2        0.014
-## * age = 58              0.100
-## * gender = male         0.305
-## final_prognosis         0.828
+## * hours = 42            0.242
+## * salary = 2           -0.205
+## * evaluation = 2        0.015
+## * age = 58              0.091
+## * gender = male         0.298
+## final_prognosis         0.818
 ## baseline:  0
 \end{verbatim}
 
@@ -1239,7 +1393,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-7-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-8-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -1250,11 +1404,11 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-8-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-9-1.pdf}
 
-\hypertarget{sequential-attributions-with-interactions}{%
-\section{Sequential attributions with
-interactions}\label{sequential-attributions-with-interactions}}
+\hypertarget{sequential-variable-attribution-with-interactions}{%
+\section{Sequential variable attribution with
+interactions}\label{sequential-variable-attribution-with-interactions}}
 
 In the Section \ref{breakDown} we presented model agnostic approach for
 additive decomposition of a model prediction for a single observation.
@@ -1374,8 +1528,8 @@ variable is listed in a single row. See an example in Figure
 \caption{(fig:bdInter1) Break Down Plot for variable attrbution with interactions }\label{fig:bdInter1}
 \end{figure}
 
-\hypertarget{pros-and-cons-1}{%
-\subsection{Pros and cons}\label{pros-and-cons-1}}
+\hypertarget{pros-and-cons-2}{%
+\subsection{Pros and cons}\label{pros-and-cons-2}}
 
 Break Down for interactions shares many features of Break Down for
 single variables. Below we summarize unique strengths and weaknesses of
@@ -1434,12 +1588,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.59%
+##         OOB estimate of  error rate: 27.44%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2266  392      197   0.2063047
-## ok         537 1243      441   0.4403422
-## promoted   206  392     2173   0.2158066
+## fired     2276  386      193   0.2028021
+## ok         535 1233      453   0.4448447
+## promoted   198  388     2185   0.2114760
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown} package is performed in
@@ -1480,8 +1634,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired   ok promoted
-## 1 0.808 0.19    0.002
+##   fired    ok promoted
+## 1 0.816 0.182    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1510,12 +1664,12 @@ variable attributions.
 
 \begin{verbatim}
 ##                        contribution
-## (Intercept)                   0.376
-## * hours = 42                  0.236
-## * salary = 2                 -0.202
-## * age:gender = 58:male        0.396
-## * evaluation = 2              0.002
-## final_prognosis               0.808
+## (Intercept)                   0.375
+## * hours = 42                  0.240
+## * salary = 2                 -0.207
+## * age:gender = 58:male        0.407
+## * evaluation = 2              0.001
+## final_prognosis               0.816
 ## baseline:  0
 \end{verbatim}
 
@@ -1527,10 +1681,10 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-14-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-15-1.pdf}
 
 \hypertarget{shapley}{%
-\section{Average Additive Attributions}\label{shapley}}
+\section{Average variable attributions}\label{shapley}}
 
 In the Section \ref{modelAgnosticAttribution} we show the problem
 related to the ordering of variables. In the Section \ref{breakDown} we
@@ -1623,7 +1777,7 @@ Explanations for a new observation.
 
 \begin{verbatim}
 ## Interpretation method:  Shapley 
-## Predicted value: 0.814000, Average prediction: 0.375862 (diff = 0.438138) Predicted value: 0.178000, Average prediction: 0.274805 (diff = -0.096805) Predicted value: 0.008000, Average prediction: 0.349333 (diff = -0.341333)
+## Predicted value: 0.794000, Average prediction: 0.375177 (diff = 0.418823) Predicted value: 0.206000, Average prediction: 0.275412 (diff = -0.069412) Predicted value: 0.000000, Average prediction: 0.349411 (diff = -0.349411)
 ## 
 ## Analysed predictor: 
 ## Prediction task: unknown 
@@ -1634,11 +1788,11 @@ Explanations for a new observation.
 ## 
 ## Head of results:
 ##      feature class      phi    phi.var feature.value
-## 1     gender fired  0.09940 0.05790792   gender=male
-## 2        age fired  0.20062 0.09420886      age=57.7
-## 3      hours fired  0.27686 0.11628859    hours=42.3
-## 4 evaluation fired  0.03588 0.01231215  evaluation=2
-## 5     salary fired -0.13556 0.02869847      salary=2
+## 1     gender fired  0.12724 0.06252071   gender=male
+## 2        age fired  0.18430 0.07250896      age=57.7
+## 3      hours fired  0.18226 0.08757436    hours=42.3
+## 4 evaluation fired  0.02998 0.01238525  evaluation=2
+## 5     salary fired -0.12410 0.04154435      salary=2
 ## 6     status fired  0.00000 0.00000000  status=fired
 \end{verbatim}
 
@@ -1650,12 +1804,12 @@ And the plot with Shapley attributions.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-18-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-19-1.pdf}
 
 See more examples for \texttt{iml} package in the \citep{molnar} book.
 
-\hypertarget{pros-and-cons-2}{%
-\subsection{Pros and cons}\label{pros-and-cons-2}}
+\hypertarget{pros-and-cons-3}{%
+\subsection{Pros and cons}\label{pros-and-cons-3}}
 
 Shapley Values give a uniform approach to decompose model prediction
 into parts that can be attributed additively to variables. Below we
@@ -1797,8 +1951,8 @@ family of models are linear models.
 \hypertarget{example-hire-or-fire-2}{%
 \subsection{Example: Hire or Fire?}\label{example-hire-or-fire-2}}
 
-\hypertarget{pros-and-cons-3}{%
-\subsection{Pros and cons}\label{pros-and-cons-3}}
+\hypertarget{pros-and-cons-4}{%
+\subsection{Pros and cons}\label{pros-and-cons-4}}
 
 Local approximations are model agnostic, can be applied to any
 predictive model. Below we summarize key strengths and weaknesses of
@@ -1886,12 +2040,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.55%
+##         OOB estimate of  error rate: 27.09%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2268  392      195   0.2056042
-## ok         532 1247      442   0.4385412
-## promoted   212  389     2170   0.2168892
+## fired     2282  379      194   0.2007005
+## ok         535 1252      434   0.4362900
+## promoted   203  381     2187   0.2107542
 \end{verbatim}
 
 \begin{Shaded}
@@ -1907,8 +2061,8 @@ package \citep{R-randomForest}.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired   ok promoted
-## 1  0.77 0.23        0
+##   fired    ok promoted
+## 1 0.814 0.186        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1929,35 +2083,35 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired       0.77 0.1264835       0.2556075
-## 2 classification    1    fired       0.77 0.1264835       0.2556075
-## 3 classification    1    fired       0.77 0.1264835       0.2556075
-## 4 classification    1       ok       0.23 0.1270792       0.2177234
-## 5 classification    1       ok       0.23 0.1270792       0.2177234
-## 6 classification    1       ok       0.23 0.1270792       0.2177234
-## 7 classification    1 promoted       0.00 0.2770136       0.5266884
-## 8 classification    1 promoted       0.00 0.2770136       0.5266884
-## 9 classification    1 promoted       0.00 0.2770136       0.5266884
+## 1 classification    1    fired      0.814 0.1229946       0.2546051
+## 2 classification    1    fired      0.814 0.1229946       0.2546051
+## 3 classification    1    fired      0.814 0.1229946       0.2546051
+## 4 classification    1       ok      0.186 0.1304448       0.1951917
+## 5 classification    1       ok      0.186 0.1304448       0.1951917
+## 6 classification    1       ok      0.186 0.1304448       0.1951917
+## 7 classification    1 promoted      0.000 0.2805507       0.5185327
+## 8 classification    1 promoted      0.000 0.2805507       0.5185327
+## 9 classification    1 promoted      0.000 0.2805507       0.5185327
 ##   model_prediction    feature feature_value feature_weight
-## 1       0.63459471        age          57.7    0.004077577
-## 2       0.63459471      hours          42.3    0.262003134
-## 3       0.63459471 evaluation           2.0    0.112906479
-## 4       0.35198811        age          57.7   -0.005789949
-## 5       0.35198811 evaluation           2.0    0.202680426
-## 6       0.35198811      hours          42.3   -0.062625777
-## 7       0.01345284        age          57.7    0.001716108
-## 8       0.01345284 evaluation           2.0   -0.315653254
-## 9       0.01345284      hours          42.3   -0.199298399
-##           feature_desc                      data       prediction
-## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
-## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.77, 0.23, 0.00
+## 1       0.61862898        age          57.7    0.005194753
+## 2       0.61862898      hours          42.3    0.251631538
+## 3       0.61862898 evaluation           2.0    0.107197608
+## 4       0.47867654        age          57.7    0.001078514
+## 5       0.47867654 evaluation           2.0    0.205799604
+## 6       0.47867654     salary           2.0    0.076606691
+## 7       0.01177354        age          57.7   -0.005761382
+## 8       0.01177354 evaluation           2.0   -0.314681561
+## 9       0.01177354      hours          42.3   -0.186316215
+##           feature_desc                      data          prediction
+## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
+## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.814, 0.186, 0.000
 \end{verbatim}
 
 \begin{Shaded}
@@ -1966,7 +2120,7 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-23-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-1.pdf}
 
 \hypertarget{the-live-package}{%
 \subsubsection{\texorpdfstring{\textbf{The live
@@ -1999,7 +2153,7 @@ package}}{The live package}}\label{the-live-package}}
 ##  Name:  regr.lm 
 ##  Variable selection wasn't performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.9755
+##  R-squared: 0.9878
 \end{verbatim}
 
 \begin{Shaded}
@@ -2008,7 +2162,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2016,7 +2170,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-24-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsubsection{\texorpdfstring{\textbf{The iml
@@ -2045,12 +2199,12 @@ package}}{The iml package}}\label{the-iml-package}}
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.058241940       1.0  0.05824194       male gender=male   gender=male
-## 2  0.005759977      57.7  0.33235067       57.7         age      age=57.7
-## 3 -0.089479593      42.3 -3.78498677       42.3       hours    hours=42.3
-## 4 -0.500435560       2.0 -1.00087112          2  evaluation  evaluation=2
-## 5 -0.033960652       2.0 -0.06792130          2      salary      salary=2
-## 6 -0.024751137       1.0 -0.02475114       male gender=male   gender=male
+## 1  0.077930745       1.0  0.07793075       male gender=male   gender=male
+## 2  0.006003993      57.7  0.34643038       57.7         age      age=57.7
+## 3 -0.089612079      42.3 -3.79059092       42.3       hours    hours=42.3
+## 4 -0.509699795       2.0 -1.01939959          2  evaluation  evaluation=2
+## 5 -0.033895536       2.0 -0.06779107          2      salary      salary=2
+## 6 -0.023991872       1.0 -0.02399187       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -2066,7 +2220,7 @@ package}}{The iml package}}\label{the-iml-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-26-1.pdf}
 
 \hypertarget{ceterisParibus}{%
 \section{What-If analysis with the Ceteris Paribus
@@ -2381,8 +2535,8 @@ model response is biased around the observation of interest.
 \caption{(fig:CPfidelityBoxplot) Distribution of residuals for whole validation data (grey boxplot) and for selected closes 15 neighbors (red boxplot).}\label{fig:CPfidelityBoxplot}
 \end{figure}
 
-\hypertarget{pros-and-cons-4}{%
-\subsection{Pros and cons}\label{pros-and-cons-4}}
+\hypertarget{pros-and-cons-5}{%
+\subsection{Pros and cons}\label{pros-and-cons-5}}
 
 Ceteris Paribus principle gives a uniform and extendable approach to
 model exploration. Below we summarize key strengths and weaknesses of
@@ -2481,8 +2635,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 484958.1
-##                     % Var explained: 40.95
+##           Mean of squared residuals: 489606.1
+##                     % Var explained: 40.38
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -2537,7 +2691,7 @@ Certeris Paribus profiles explore model around a single point.
 
 \begin{verbatim}
 ##       1 
-## 2312.72
+## 2323.42
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2563,12 +2717,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3110.445 construction.year
-## 1.1              1921        5     142     8 3149.204 construction.year
-## 1.2              1922        5     142     8 3126.361 construction.year
-## 1.3              1923        5     142     8 3086.512 construction.year
-## 1.4              1923        5     142     8 3086.512 construction.year
-## 1.5              1924        5     142     8 3097.291 construction.year
+## 1                1920        5     142     8 3108.135 construction.year
+## 1.1              1921        5     142     8 3130.854 construction.year
+## 1.2              1922        5     142     8 3119.585 construction.year
+## 1.3              1923        5     142     8 3085.055 construction.year
+## 1.4              1923        5     142     8 3085.055 construction.year
+## 1.5              1924        5     142     8 3082.138 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -2580,7 +2734,7 @@ interest.
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor  _yhat_      _label_
-## 1              1965        5     142     8 2312.72 randomForest
+## 1              1965        5     142     8 2323.42 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -2596,7 +2750,7 @@ visible in the plot.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-31-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-32-1.pdf}
 
 One of very useful features of \texttt{ceterisParibus} explainers is
 that profiles for two or more models may be superimposed in a single
@@ -2626,7 +2780,7 @@ color as a key for model.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-33-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
 
 \textbf{Oscillations}
 
@@ -2643,10 +2797,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     611.1841
-## 4          no.rooms     1     448.4386
-## 3             floor     1     337.0254
-## 1 construction.year     1     266.0675
+## 2           surface     1     638.9258
+## 4          no.rooms     1     432.0161
+## 3             floor     1     332.9774
+## 1 construction.year     1     246.7261
 \end{verbatim}
 
 \begin{Shaded}
@@ -2655,7 +2809,7 @@ for CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
 
 \textbf{2D Ceteris Paribus profiles}
 
@@ -2669,7 +2823,7 @@ And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-36-1.pdf}
 
 \hypertarget{comparision-of-prediction-level-explainers}{%
 \section{Comparision of prediction level

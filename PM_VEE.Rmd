@@ -239,7 +239,7 @@ Chris Drake for hospitality
 
 # Introduction {#PredictionExplainers}
 
-Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model as a whole and on model population for whole population. Prediction level explainers are working in the context of single observations.
+Prediction level explainers help to understand how the model works for a single prediction. This is the main difference from the model level explainers that were focused on the model as a whole and on model population for whole population. Prediction level explainers work in the context of single observations.
 
 Think about following use-cases
 
@@ -252,13 +252,13 @@ Think about following use-cases
 
 There are many different tools that may be used to explore model around a single point $x^*$. Model is a function that takes $p$ dimensional vector as an input. Thus to plot this function we would need $p+1$ dimensions. 
 
-In following sections we will describe the most popular approaches to exploration of such function. They can be divided into three classes. 
-
 An toy example with $p=2$ is presented in Figure \@ref(fig:cutsSurfaceReady). We will use it as an illustration of key ideas.
 
 ```{r cutsSurfaceReady, echo=FALSE, fig.cap="(fig:cutsSurfaceReady) Model response surface. Here the model is a function of two variables.  We are interested in understanding the response of a model in a single point x*", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/cuts_surface_ready_punkt.png")
 ```
+
+In following sections we will describe the most popular approaches to exploration of such function. They can be divided into three classes. 
 
 
 * One approach to exploration of model response is to investigate how the model response would change if single variable in the model input would change. This way we may observe profiles seen as a function of a single variable. Such profiles are usually called Ceteris Paribus Profiles. We will present them in detail in the Section \@ref(ceterisParibus).
@@ -293,11 +293,12 @@ The other way is to use approximated explainers – techniques that find only ap
 
 <!--chapter:end:10-PredictionLevel.Rmd-->
 
-# Introduction to variable attribution methods {#variableAttributionMethods}
+# Introduction to variable attribution {#variableAttributionMethods}
 
-In this section we introduce method for additive decomposition of predictions. The main goal for these tools is to help understand how model output may be attributed to input variables or sets of variables. 
+In this section we introduce the concept and the intuition behind additive decompositions of model predictions. The main goal for these tools is to help to understand how model output may be decomposed into parts, that can be attributed to input features. 
 
-Presented explainers are linked with the first law introduced in Section \@ref(three-single-laws), i.e. law for prediction’s justifications. Note that there are more tools for variable attribution, some of them will be presented in next sections.
+Presented explainers are linked with the first law introduced in Section \@ref(three-single-laws), i.e. law for prediction’s justifications. Note that there is a collection of tools for variable attribution. In this section we are focused on the general idea and examples for linear models. Model agnostic approaches will be presented in sections \@ref(breakDown) and \@ref(shapley).
+
 
 Think of following use cases:
 
@@ -305,14 +306,12 @@ Think of following use cases:
 * Think about a model for apartment prices. An investor wants to know how much of the final price may be attributed to the location of an apartment.
 * Think about a model for credit scoring. A customer wants to know if factors like gender, age or number of kids influence model decisions.
 
-In the section \@ref(VAlinMod) we will introduce key concepts and intuitions beyond variable attribution based on linear models. This approach may be easily applied to additive models and generalized linear models. 
-In sections \@ref(breakDown) and \@ref(shapley) we will present model agnostic extentions of this concept.
+In every usecase one needs to attribute part of the model response to a single variable. This can be done directly for linear models, so in the section \@ref(VAlinMod) we show how to do this for linar models and may be easily extended to additive models and generalized linear models. For other models it is not trivial how to do so, some approaches are be presented in next sections.
 
 
-## Variable attribution for linear models {#VAlinMod}
+## Intuition  for linear models {#VAlinMod}
 
-
-Linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
+Fiited linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
 
 $$
 f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
@@ -320,15 +319,33 @@ $$
 In other words, model response is the sum of weighted elements of $x = (x_1, x_2, \ldots, x_p)$. 
 
 
-From a global perspective of a model, we are usually interested in questions like, how good is the model, which variables are significant or how accurate are model predictions.
+From a global perspective of a model, we are usually interested in questions like, how good is the model (questions about $R^2$), which variables are significant (tests for significance of $\beta_i \neq 0$) or how accurate are model predictions (confidence intervals for predictions).
 
-But in this chapter we are focues in a local perspective, i.e. for a single observation $x^*$ how to measure the contribution of  a variable $x_i$ on model prediction $f(x^*)$.
+But in this chapter we are focued on a local perspective, i.e. for a single observation $x^*$ how to measure the contribution of  a variable $x_i$ on model prediction $f(x^*)$.
 
-Let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. For linear models it is easy to define such contribution as
+The contribution of a variable $x_i$ shall be related to $x^*_i\beta_i$ as variable $x_i$ occur only in this term. As we will see below, it is easier to interpret variable contribution if the $x_i$ is centered. 
+
+This lead for a intuitive formula for variable attribution for model $f$, variable $x_i$ in the point $x^*$
 $$
-v(f, x^*, i) = f(x^*) - E[f(x)|x_{-1} = x^*_{-1}] = \beta_i x^*_i  - E \beta_i X_i
+v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
 $$
-where the expected value can be estimated from the data
+
+## Method
+
+We want to calculate $v(f, x^*, i)$, which is the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. 
+
+Geneal approach for calculation of variable attributions would be to measure how much the expected model response would change after conditioning on $x_i = x_i^*$.
+
+$$
+v(f, x^*, i) = E[f(x) | x_i = x_i^*] - E[f(x)]
+$$
+
+For linear models, if coordinates of $x$ are independent, this is equivalent of
+
+$$
+v(f, x^*, i) = f(x^*) - E[f(x)|x_{-i} = x^*_{-i}] = \beta_i x^*_i  - E \beta_i X_i.
+$$
+Expected value can be estimated as averages, and this leads to  
 $$
 v(f, x^*, i) = \beta_i x^*_i - \beta_i \bar x_i = \beta_i (x^*_i - \bar x_i)
 $$
@@ -336,45 +353,7 @@ $$
 The logic behind the attribution is the following. 
 Contribution of variable $x_i$ is the difference between model response for value $x_i^*$ minus the average model response.
 
-### Wine quality example
-
-It may be a surprise, that the attribution for variable $x_i$ is not the $\beta_i x_i$.
-But, please consider following example. 
-Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The corresponding linear model is
-
-$$
-quality(alcohol) = 2.5820 + 0.3135 * alcohol
-$$
-
-The weakest wine in this dataset has 8\% of alcohol, average alcohol concentration is 10.51, so the contribution of alcohol to the model prediction is $0.3135  *(8-10.51) = -0.786885$. It means that low value of alcohol for this wine (8\%) lower the prediction of quality by $-0.786885$.
-
-Note, that it would be confusing to forget about normalisation and say, that for the alcohol contribution on quality is $0.3135*8 = 2.508$ as this is high positive value.
-
-
-
-```{r attribution1, echo=FALSE, fig.cap="(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model", out.width = '50%', fig.align='center'}
-knitr::include_graphics("figure/attribution_1.png")
-```
-
-
-```{r, echo=FALSE, eval=FALSE}
-library(breakDown)
-library(ggplot2)
-
-lm(quality ~ alcohol, wine)
-plot(quality ~ alcohol, wine)
-ggplot(wine, aes(alcohol, quality)) +
-  geom_point() + 
-  geom_smooth(method="lm", se=FALSE, size=2, color="red") + theme_bw() + xlab("alcohol [%]") + 
-  ylab("wine quality")
-
-```
-
-
-
-
 Note that the linear model ma be rewritten in a following way
-
 
 $$
 f(x) = baseline + (x_1 - \bar x_1) \beta_1 + ... + (x_p - \bar x_p) \beta_p
@@ -389,7 +368,87 @@ Here $baseline$ is an average model response and variable contributions show how
 
 ** NOTE for careful readers **
 
-There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasise these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasize these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+
+Also we assumed that coordinated of $x$ are independent, which may not be the case. We will return to this problem later, during the discussion related to interactions.
+
+## Example: Wine quality
+
+It may be a surprise, that the attribution for variable $x_i$ is not the $\beta_i x_i$. To understand this, consider following example. 
+
+```{r attribution1, echo=FALSE, fig.cap="(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/attribution_1.png")
+```
+
+
+Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The corresponding linear model is
+
+$$
+quality(alcohol) = 2.5820 + 0.3135 * alcohol
+$$
+
+The weakest wine in this dataset has 8\% of alcohol, average alcohol concentration is 10.51, so the contribution of alcohol to the model prediction is $0.3135  *(8-10.51) = -0.786885$. It means that low value of alcohol for this wine (8\%) lower the prediction of quality by $-0.786885$.
+
+Note, that it would be confusing to use $x_i\beta_i$ as alcohol contribution on quality would be $0.3135*8 = 2.508$. This would not reflect the intuition that for positive relation, the smaller is the alcohol concentration the lower should be the quality of wine.
+
+
+## Pros and Cons
+
+Here we summarise pros and cons of this approach.
+
+**Pros**
+
+- Presented variable attribution for linear model is not an approximation, it is directly linked with the structure of a model.
+- It is easier to understand attributions that are not linked with scale nor location of $x_i$ as the standard $\beta_i$ are.
+
+**Cons**
+
+- It works only for linear models. 
+- This do not reduce model complexity. Just present model coefficients in a different way.
+
+
+## Code snippets
+
+Variable attributions for linear models may be directly extracted from the `predict()` function for linear models. 
+
+In this section we will present an example for logistic regression based on the `HR` dataset. See the Section \@ref(HRdataset) for more details.
+
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+model_fired <- glm(status == "fired" ~ ., data = HR)
+coef(model_fired)
+
+new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+predict(model_fired, new_observation, type = "terms")
+```
+
+Below we show how to do this, and we also present a easy to use wrapper that takes advantage of `DALEX` package.
+
+```{r, warning=FALSE, message=FALSE}
+library("breakDown")
+
+explainer_fired <- explain(model_fired,
+                 data = HR,
+                 y = HR$status == "fired",
+                 label = "fired")
+
+attribution <- single_prediction(explainer_fired, new_observation)
+attribution
+plot(attribution)
+
+```
+
+
+
+
+
+<!--chapter:end:12-linearModels.Rmd-->
 
 ## Model agnostic approaches {#modelAgnosticAttribution}
 
@@ -482,9 +541,7 @@ ggplot(df, aes(E, id)) +
 
 
 
-<!--chapter:end:12-linearModels.Rmd-->
-
-# Sequential Additive Attributions {#breakDown}
+# Sequential variable attributions {#breakDown}
 
 The approach for variable attribution presented in the Section \@ref(modelAgnosticAttribution) has the property of *local accuracy*, but variable contributions depends on the variable ordering.
 
@@ -672,7 +729,7 @@ plot(bd_rf) + theme_bw()+ scale_y_continuous("price per square meter", expand = 
 
 
 
-# Sequential attributions with interactions
+# Sequential variable attribution with interactions
 
 In the Section \@ref(breakDown) we presented model agnostic approach for additive decomposition of a model prediction for a single observation. 
 
@@ -843,7 +900,7 @@ plot(bd_rf)
 
 <!--chapter:end:13-breakDown.Rmd-->
 
-# Average Additive Attributions {#shapley}
+# Average variable attributions {#shapley}
 
 In the Section \@ref(modelAgnosticAttribution) we show the problem related to the ordering of variables. In the Section \@ref(breakDown) we show an approach in which the ordering was determined based on single step assessment of variable importance.
 
