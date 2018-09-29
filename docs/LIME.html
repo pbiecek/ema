@@ -187,10 +187,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul></li>
 <li class="chapter" data-level="8" data-path="ceterisParibus.html"><a href="ceterisParibus.html"><i class="fa fa-check"></i><b>8</b> What-If analysis with the Ceteris Paribus Principle</a><ul>
 <li class="chapter" data-level="8.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#introduction-1"><i class="fa fa-check"></i><b>8.1</b> Introduction</a></li>
-<li class="chapter" data-level="8.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#ceterisParibus1d"><i class="fa fa-check"></i><b>8.2</b> 1D profiles</a></li>
-<li class="chapter" data-level="8.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#oscillations"><i class="fa fa-check"></i><b>8.3</b> Profile oscillations</a></li>
-<li class="chapter" data-level="8.4" data-path="ceterisParibus.html"><a href="ceterisParibus.html#d-profiles"><i class="fa fa-check"></i><b>8.4</b> 2D profiles</a></li>
-<li class="chapter" data-level="8.5" data-path="ceterisParibus.html"><a href="ceterisParibus.html#local-model-fidelity"><i class="fa fa-check"></i><b>8.5</b> Local model fidelity</a></li>
+<li class="chapter" data-level="8.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#intuition-5"><i class="fa fa-check"></i><b>8.2</b> Intuition</a></li>
+<li class="chapter" data-level="8.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#method-5"><i class="fa fa-check"></i><b>8.3</b> Method</a><ul>
+<li class="chapter" data-level="8.3.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#ceterisParibus1d"><i class="fa fa-check"></i><b>8.3.1</b> 1D profiles</a></li>
+<li class="chapter" data-level="8.3.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#oscillations"><i class="fa fa-check"></i><b>8.3.2</b> Profile oscillations</a></li>
+<li class="chapter" data-level="8.3.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#d-profiles"><i class="fa fa-check"></i><b>8.3.3</b> 2D profiles</a></li>
+</ul></li>
+<li class="chapter" data-level="8.4" data-path="ceterisParibus.html"><a href="ceterisParibus.html#local-model-fidelity"><i class="fa fa-check"></i><b>8.4</b> Local model fidelity</a></li>
+<li class="chapter" data-level="8.5" data-path="ceterisParibus.html"><a href="ceterisParibus.html#example"><i class="fa fa-check"></i><b>8.5</b> Example</a></li>
 <li class="chapter" data-level="8.6" data-path="ceterisParibus.html"><a href="ceterisParibus.html#pros-and-cons-5"><i class="fa fa-check"></i><b>8.6</b> Pros and cons</a></li>
 <li class="chapter" data-level="8.7" data-path="ceterisParibus.html"><a href="ceterisParibus.html#code-snippets-for-r-4"><i class="fa fa-check"></i><b>8.7</b> Code snippets for R</a></li>
 </ul></li>
@@ -325,12 +329,12 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.32%
+##         OOB estimate of  error rate: 27.51%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2283  378      194   0.2003503
-## ok         538 1245      438   0.4394417
-## promoted   203  393     2175   0.2150848</code></pre>
+## fired     2268  389      198   0.2056042
+## ok         526 1252      443   0.4362900
+## promoted   204  399     2168   0.2176110</code></pre>
 <div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
 <a class="sourceLine" id="cb35-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
 <a class="sourceLine" id="cb35-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
@@ -338,8 +342,8 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 <a class="sourceLine" id="cb35-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
 <a class="sourceLine" id="cb35-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb35-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
-<pre><code>##   fired   ok promoted
-## 1 0.788 0.21    0.002
+<pre><code>##   fired    ok promoted
+## 1 0.786 0.214        0
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <div id="the-lime-pacakge" class="section level3">
@@ -350,35 +354,35 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 <a class="sourceLine" id="cb37-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
 <a class="sourceLine" id="cb37-5" data-line-number="5">explanations</a></code></pre></div>
 <pre><code>##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.788 0.1221044       0.2763585
-## 2 classification    1    fired      0.788 0.1221044       0.2763585
-## 3 classification    1    fired      0.788 0.1221044       0.2763585
-## 4 classification    1       ok      0.210 0.1213017       0.2135725
-## 5 classification    1       ok      0.210 0.1213017       0.2135725
-## 6 classification    1       ok      0.210 0.1213017       0.2135725
-## 7 classification    1 promoted      0.002 0.2753792       0.5100868
-## 8 classification    1 promoted      0.002 0.2753792       0.5100868
-## 9 classification    1 promoted      0.002 0.2753792       0.5100868
+## 1 classification    1    fired      0.786 0.1172574       0.2701781
+## 2 classification    1    fired      0.786 0.1172574       0.2701781
+## 3 classification    1    fired      0.786 0.1172574       0.2701781
+## 4 classification    1       ok      0.214 0.1323787       0.1918983
+## 5 classification    1       ok      0.214 0.1323787       0.1918983
+## 6 classification    1       ok      0.214 0.1323787       0.1918983
+## 7 classification    1 promoted      0.000 0.2691513       0.5073624
+## 8 classification    1 promoted      0.000 0.2691513       0.5073624
+## 9 classification    1 promoted      0.000 0.2691513       0.5073624
 ##   model_prediction    feature feature_value feature_weight
-## 1      0.636272803        age          57.7  -0.0007874502
-## 2      0.636272803      hours          42.3   0.2485360636
-## 3      0.636272803 evaluation           2.0   0.1121656505
-## 4      0.358917523        age          57.7   0.0113322408
-## 5      0.358917523 evaluation           2.0   0.1963845029
-## 6      0.358917523      hours          42.3  -0.0623717539
-## 7      0.004846812        age          57.7  -0.0105481238
-## 8      0.004846812 evaluation           2.0  -0.3086151427
-## 9      0.004846812      hours          42.3  -0.1860767081
+## 1       0.62667092        age          57.7    0.003731414
+## 2       0.62667092      hours          42.3    0.252903583
+## 3       0.62667092 evaluation           2.0    0.099857790
+## 4       0.46202874        age          57.7   -0.012844979
+## 5       0.46202874 evaluation           2.0    0.207255551
+## 6       0.46202874     salary           2.0    0.075719909
+## 7       0.02212259     salary           2.0    0.012785880
+## 8       0.02212259 evaluation           2.0   -0.308050095
+## 9       0.02212259      hours          42.3   -0.189975618
 ##           feature_desc                      data          prediction
-## 1           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 6 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 7           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002
-## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.788, 0.210, 0.002</code></pre>
+## 1           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 6      1 &lt; salary &lt;= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 7      1 &lt; salary &lt;= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000
+## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.786, 0.214, 0.000</code></pre>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 </div>
@@ -405,7 +409,7 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##  Name:  regr.lm 
 ##  Variable selection wasn&#39;t performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.978</code></pre>
+##  R-squared: 0.9788</code></pre>
 <div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw">plot</span>(local_model)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
@@ -429,13 +433,13 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## Sampling from data.frame with 7847 rows and 5 columns.
 ## 
 ## Head of results:
-##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.076770525       1.0  0.07677052       male gender=male   gender=male
-## 2  0.004978754      57.7  0.28727408       57.7         age      age=57.7
-## 3 -0.089234796      42.3 -3.77463186       42.3       hours    hours=42.3
-## 4 -0.505950138       2.0 -1.01190028          2  evaluation  evaluation=2
-## 5 -0.031261292       2.0 -0.06252258          2      salary      salary=2
-## 6 -0.020013077       1.0 -0.02001308       male gender=male   gender=male
+##          beta x.recoded      effect x.original     feature feature.value
+## 1  0.05863244       1.0  0.05863244       male gender=male   gender=male
+## 2  0.00567124      57.7  0.32723058       57.7         age      age=57.7
+## 3 -0.08869485      42.3 -3.75179214       42.3       hours    hours=42.3
+## 4 -0.50194138       2.0 -1.00388276          2  evaluation  evaluation=2
+## 5 -0.03278979       2.0 -0.06557959          2      salary      salary=2
+## 6 -0.02623641       1.0 -0.02623641       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
