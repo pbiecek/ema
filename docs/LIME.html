@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-09-29">
+<meta name="date" content="2018-10-01">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -263,7 +263,7 @@ In the section <a href="ceterisParibus.html#ceterisParibus">8</a> we introduced 
 <p>Therefore the objective is to find a local model <span class="math inline">\(M^L\)</span> that approximates the black box model <span class="math inline">\(f\)</span> in the point <span class="math inline">\(x^*\)</span>.
 As a solution the penalized loss function is used. The white-box model that is used for explanations satisfies following condition.</p>
 <p><span class="math display">\[
-M^L(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g) 
+M^*(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g) 
 \]</span>
 where <span class="math inline">\(G\)</span> is a family of white box models (e.g. linear models), <span class="math inline">\(\Pi_{x^*}\)</span> is neighbourhood of <span class="math inline">\(x^*\)</span> and <span class="math inline">\(\Omega\)</span> stands for model complexity.</p>
 <div class="figure" style="text-align: center"><span id="fig:LIME1"></span>
@@ -329,12 +329,12 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.42%
+##         OOB estimate of  error rate: 27.22%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2272  389      194   0.2042032
-## ok         537 1242      442   0.4407924
-## promoted   201  389     2181   0.2129195</code></pre>
+## fired     2271  387      197   0.2045534
+## ok         529 1251      441   0.4367402
+## promoted   202  380     2189   0.2100325</code></pre>
 <div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
 <a class="sourceLine" id="cb35-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
 <a class="sourceLine" id="cb35-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
@@ -343,7 +343,7 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 <a class="sourceLine" id="cb35-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb35-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
 <pre><code>##   fired    ok promoted
-## 1 0.768 0.228    0.004
+## 1 0.822 0.178        0
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <div id="the-lime-pacakge" class="section level3">
@@ -354,37 +354,37 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 <a class="sourceLine" id="cb37-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
 <a class="sourceLine" id="cb37-5" data-line-number="5">explanations</a></code></pre></div>
 <pre><code>##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.768 0.1244006       0.2636064
-## 2 classification    1    fired      0.768 0.1244006       0.2636064
-## 3 classification    1    fired      0.768 0.1244006       0.2636064
-## 4 classification    1       ok      0.228 0.1175571       0.2217113
-## 5 classification    1       ok      0.228 0.1175571       0.2217113
-## 6 classification    1       ok      0.228 0.1175571       0.2217113
-## 7 classification    1 promoted      0.004 0.2846462       0.5156285
-## 8 classification    1 promoted      0.004 0.2846462       0.5156285
-## 9 classification    1 promoted      0.004 0.2846462       0.5156285
+## 1 classification    1    fired      0.822 0.1149427       0.2755843
+## 2 classification    1    fired      0.822 0.1149427       0.2755843
+## 3 classification    1    fired      0.822 0.1149427       0.2755843
+## 4 classification    1       ok      0.178 0.1176720       0.1969995
+## 5 classification    1       ok      0.178 0.1176720       0.1969995
+## 6 classification    1       ok      0.178 0.1176720       0.1969995
+## 7 classification    1 promoted      0.000 0.2480302       0.4989548
+## 8 classification    1 promoted      0.000 0.2480302       0.4989548
+## 9 classification    1 promoted      0.000 0.2480302       0.4989548
 ##   model_prediction    feature feature_value feature_weight
-## 1      0.630104656        age          57.7   9.972202e-05
-## 2      0.630104656      hours          42.3   2.480620e-01
-## 3      0.630104656 evaluation           2.0   1.183365e-01
-## 4      0.360733722        age          57.7   1.626080e-03
-## 5      0.360733722 evaluation           2.0   1.962512e-01
-## 6      0.360733722      hours          42.3  -5.885483e-02
-## 7      0.009390566     gender           2.0  -2.392975e-03
-## 8      0.009390566 evaluation           2.0  -3.147423e-01
-## 9      0.009390566      hours          42.3  -1.891026e-01
+## 1       0.62882495        age          57.7    0.009397068
+## 2       0.62882495      hours          42.3    0.248789395
+## 3       0.62882495 evaluation           2.0    0.095054213
+## 4       0.44486670        age          57.7   -0.011361898
+## 5       0.44486670 evaluation           2.0    0.194833691
+## 6       0.44486670     salary           2.0    0.064395428
+## 7       0.02015694        age          57.7    0.002181584
+## 8       0.02015694 evaluation           2.0   -0.288549792
+## 9       0.02015694      hours          42.3   -0.192429601
 ##           feature_desc                      data          prediction
-## 1           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 6 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 7        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004
-## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.768, 0.228, 0.004</code></pre>
+## 1           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 6      1 &lt; salary &lt;= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 7           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000
+## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.822, 0.178, 0.000</code></pre>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 </div>
 <div id="the-live-package" class="section level3">
 <h3><span class="header-section-number">7.5.2</span> <strong>The live package</strong></h3>
@@ -409,11 +409,11 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##  Name:  regr.lm 
 ##  Variable selection wasn&#39;t performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.9477</code></pre>
+##  R-squared: 0.9858</code></pre>
 <div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw">plot</span>(local_model)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-2.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-2.png" width="672" /></p>
 </div>
 <div id="the-iml-package" class="section level3">
 <h3><span class="header-section-number">7.5.3</span> <strong>The iml package</strong></h3>
@@ -434,12 +434,12 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.050998161       1.0  0.05099816       male gender=male   gender=male
-## 2  0.005382467      57.7  0.31056833       57.7         age      age=57.7
-## 3 -0.089831932      42.3 -3.79989072       42.3       hours    hours=42.3
-## 4 -0.507166888       2.0 -1.01433378          2  evaluation  evaluation=2
-## 5 -0.037661432       2.0 -0.07532286          2      salary      salary=2
-## 6 -0.010158401       1.0 -0.01015840       male gender=male   gender=male
+## 1  0.058614164       1.0  0.05861416       male gender=male   gender=male
+## 2  0.005184666      57.7  0.29915524       57.7         age      age=57.7
+## 3 -0.089695422      42.3 -3.79411634       42.3       hours    hours=42.3
+## 4 -0.503490890       2.0 -1.00698178          2  evaluation  evaluation=2
+## 5 -0.034636025       2.0 -0.06927205          2      salary      salary=2
+## 6 -0.020769209       1.0 -0.02076921       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -448,7 +448,7 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## 5  fired
 ## 6     ok</code></pre>
 <div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="kw">plot</span>(white_box)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
 
 </div>
 </div>

@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-09-29">
+<meta name="date" content="2018-10-01">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -378,7 +378,8 @@ Figure 8.9: (fig:CPfidelity1) Local fidelity plots. Black line shows the CP prof
 </p>
 </div>
 <p>This observation may be confirmed by plots that compare distribution of all residuals against distribution of residuals for neighbors.</p>
-<p>See Figure <a href="#CPfidelityBoxplot"><strong>??</strong></a> for an example. Here residuals for neighbors are shifted towards highest values. This suggests that the model response is biased around the observation of interest.</p>
+<p>See Figure <a href="ceterisParibus.html#fig:CPfidelityBoxplot">8.10</a> for an example. Here residuals for neighbors are shifted towards highest values. This suggests that the model response is biased around the observation of interest.</p>
+<p>TODO: diagnostic score: average quantaile of neighbours.</p>
 <div class="figure" style="text-align: center"><span id="fig:CPfidelityBoxplot"></span>
 <img src="figure/cp_fidelity_boxplot.png" alt="(fig:CPfidelityBoxplot) Distribution of residuals for whole validation data (grey boxplot) and for selected closes 15 neighbors (red boxplot)." width="70%" />
 <p class="caption">
@@ -435,8 +436,8 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 485491
-##                     % Var explained: 40.89</code></pre>
+##           Mean of squared residuals: 487001.4
+##                     % Var explained: 40.7</code></pre>
 <p>Model exploration with <code>ceterisParibus</code> package is performed in four steps.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
 <p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">c</a>)</span>.</p>
@@ -458,7 +459,7 @@ Figure 8.10: (fig:CPfidelityBoxplot) Distribution of residuals for whole validat
 ## 1              1965        5     142     8</code></pre>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="kw">predict</span>(rf_model, new_apartment)</a></code></pre></div>
 <pre><code>##        1 
-## 2324.839</code></pre>
+## 2332.762</code></pre>
 <p><strong>3. Calculate CP profiles</strong></p>
 <p>The <code>ceteris_paribus()</code> function calculates CP profiles for selected model around selected observation.</p>
 <p>By default CP profiles are calculated for all numerical variables. Use the <code>variables</code> argument to select subset of interesting variables.
@@ -469,12 +470,12 @@ The result from <code>ceteris_paribus()</code>function is a data frame with mode
 <a class="sourceLine" id="cb57-4" data-line-number="4">cp_rf</a></code></pre></div>
 <pre><code>## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3164.118 construction.year
-## 1.1              1921        5     142     8 3199.446 construction.year
-## 1.2              1922        5     142     8 3184.906 construction.year
-## 1.3              1923        5     142     8 3157.726 construction.year
-## 1.4              1923        5     142     8 3157.726 construction.year
-## 1.5              1924        5     142     8 3144.179 construction.year
+## 1                1920        5     142     8 3121.383 construction.year
+## 1.1              1921        5     142     8 3144.212 construction.year
+## 1.2              1922        5     142     8 3132.973 construction.year
+## 1.3              1923        5     142     8 3119.105 construction.year
+## 1.4              1923        5     142     8 3119.105 construction.year
+## 1.5              1924        5     142     8 3115.488 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -486,11 +487,11 @@ The result from <code>ceteris_paribus()</code>function is a data frame with mode
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor   _yhat_      _label_
-## 1              1965        5     142     8 2324.839 randomForest</code></pre>
+## 1              1965        5     142     8 2332.762 randomForest</code></pre>
 <p><strong>4. Plot CP profiles.</strong></p>
 <p>Generic <code>plot()</code> function plot CP profiles. It returns a <code>ggplot2</code> object that can be polished if needed. Use additional arguments of this function to select colors and sizes for elements visible in the plot.</p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">plot</span>(cp_rf) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 <p>One of very useful features of <code>ceterisParibus</code> explainers is that profiles for two or more models may be superimposed in a single plot. This helps in model comparisons.</p>
 <p>Let’s create a linear model for this dataset and repeat steps 1-3 for the lm model.</p>
 <div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1">lm_model &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span></a>
@@ -501,25 +502,25 @@ The result from <code>ceteris_paribus()</code>function is a data frame with mode
 <a class="sourceLine" id="cb60-6" data-line-number="6">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;construction.year&quot;</span>, <span class="st">&quot;floor&quot;</span>))</a></code></pre></div>
 <p>Now we can use function <code>plot()</code> to compare both models in a single chart. Additional argument <code>color = &quot;_label_&quot;</code> set color as a key for model.</p>
 <div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="kw">plot</span>(cp_rf, cp_lm, <span class="dt">color =</span> <span class="st">&quot;_label_&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
 <p><strong>Oscillations</strong></p>
 <p>The <code>calculate_oscillations()</code> function calculates oscillations for CP profiles.</p>
 <div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb62-1" data-line-number="1">cp_rf_all &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, new_apartment)</a>
 <a class="sourceLine" id="cb62-2" data-line-number="2">co_rf_all &lt;-<span class="st"> </span><span class="kw">calculate_oscillations</span>(cp_rf_all)</a>
 <a class="sourceLine" id="cb62-3" data-line-number="3">co_rf_all</a></code></pre></div>
 <pre><code>##             _vname_ _ids_ oscillations
-## 2           surface     1     628.6584
-## 4          no.rooms     1     428.4881
-## 3             floor     1     324.9301
-## 1 construction.year     1     263.1935</code></pre>
+## 2           surface     1     624.2193
+## 4          no.rooms     1     438.7783
+## 3             floor     1     311.3757
+## 1 construction.year     1     263.0633</code></pre>
 <div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="kw">plot</span>(co_rf_all)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
 <p><strong>2D Ceteris Paribus profiles</strong></p>
 <p>And the <code>what_if_2d()</code> function calculates 2D CP profiles.</p>
 <div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb65-1" data-line-number="1">wi_rf_2d &lt;-<span class="st"> </span><span class="kw">what_if_2d</span>(explainer_rf, <span class="dt">observation =</span> new_apartment, </a>
 <a class="sourceLine" id="cb65-2" data-line-number="2">                 <span class="dt">selected_variables =</span> <span class="kw">c</span>(<span class="st">&quot;surface&quot;</span>,<span class="st">&quot;floor&quot;</span>, <span class="st">&quot;construction.year&quot;</span>))</a>
 <a class="sourceLine" id="cb65-3" data-line-number="3"><span class="kw">plot</span>(wi_rf_2d, <span class="dt">split_ncol =</span> <span class="dv">2</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
 
 </div>
 </div>
