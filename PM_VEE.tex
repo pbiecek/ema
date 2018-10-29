@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2018-10-01}
+    \date{2018-10-29}
 
 \usepackage{booktabs}
 
@@ -1092,7 +1092,7 @@ Additionaly we may easily plot contributions.
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-5-1.pdf}
 
 \hypertarget{breakDown}{%
-\section{Sequential variable attributions}\label{breakDown}}
+\section{Variable attributions}\label{breakDown}}
 
 In the Section \ref{variableAttributionMethods} we introduced a method
 for calculation of variable attributions for linear models. This method
@@ -1299,11 +1299,11 @@ approach.
 \hypertarget{code-snippets-for-r}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r}}
 
-In this section we present key features of the \texttt{breakDown}
+In this section we present key features of the \texttt{breakDown2}
 package for R \citep{R-breakDown}. This package covers all features
 presented in this chapter. It is available on CRAN and GitHub. Find more
 examples at the website of this package
-\texttt{https://pbiecek.github.io/breakDown/}.
+\texttt{https://pbiecek.github.io/breakDown2/}.
 
 \textbf{Model preparation}
 
@@ -1313,7 +1313,7 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX2"}\NormalTok{)}
 \KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
 \NormalTok{model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(status }\OperatorTok{~}\StringTok{ }\NormalTok{gender }\OperatorTok{+}\StringTok{ }\NormalTok{age }\OperatorTok{+}\StringTok{ }\NormalTok{hours }\OperatorTok{+}\StringTok{ }\NormalTok{evaluation }\OperatorTok{+}\StringTok{ }\NormalTok{salary, }\DataTypeTok{data =}\NormalTok{ HR)}
 \NormalTok{model}
@@ -1328,15 +1328,15 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.48%
+##         OOB estimate of  error rate: 27.23%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2273  385      197   0.2038529
-## ok         536 1235      450   0.4439442
-## promoted   203  385     2183   0.2121978
+## fired     2272  383      200   0.2042032
+## ok         531 1254      436   0.4353895
+## promoted   199  388     2184   0.2118369
 \end{verbatim}
 
-Model exploration with the \texttt{breakDown} package is performed in
+Model exploration with the \texttt{breakDown2} package is performed in
 three steps.
 
 \textbf{1. Create an explainer - wrapper around model and validation
@@ -1344,15 +1344,14 @@ data.}
 
 Since all other functions work in a model agnostic fashion, first we
 need to define a wrapper around the model. Here we are using the
-\texttt{explain()} function from \texttt{DALEX} package \citep{R-DALEX}.
+\texttt{explain()} function from \texttt{DALEX2} package
+\citep{R-DALEX}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{explainer_rf_fired <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model,}
+\NormalTok{explainer_rf <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model,}
                  \DataTypeTok{data =}\NormalTok{ HR,}
-                 \DataTypeTok{y =}\NormalTok{ HR}\OperatorTok{$}\NormalTok{status }\OperatorTok{==}\StringTok{ "fired"}\NormalTok{,}
-                 \DataTypeTok{predict_function =} \ControlFlowTok{function}\NormalTok{(m,x) }\KeywordTok{predict}\NormalTok{(m,x, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)[,}\DecValTok{1}\NormalTok{],}
-                 \DataTypeTok{label =} \StringTok{"fired"}\NormalTok{)}
+                 \DataTypeTok{y =}\NormalTok{ HR}\OperatorTok{$}\NormalTok{status)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1375,25 +1374,24 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1   0.8 0.196    0.004
+## 1 0.796 0.202    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
 
 \textbf{3. Calculate Break Down decomposition}
 
-The \texttt{break\_down()} function calculates Break Down contributions
-for a selected model around a selected observation.
+The \texttt{local\_attributions()} function calculates Break Down
+contributions for a selected model around a selected observation.
 
-The result from \texttt{break\_down()} function is a data frame with
-variable attributions.
+The result from \texttt{local\_attributions()} function is a data frame
+with variable attributions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown"}\NormalTok{)}
-\NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{break_down}\NormalTok{(explainer_rf_fired,}
+\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown2"}\NormalTok{)}
+\NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{local_attributions}\NormalTok{(explainer_rf,}
 \NormalTok{                 new_observation,}
-                 \DataTypeTok{check_interactions =} \OtherTok{FALSE}\NormalTok{,}
                  \DataTypeTok{keep_distributions =} \OtherTok{TRUE}\NormalTok{)}
 
 \NormalTok{bd_rf}
@@ -1401,14 +1399,28 @@ variable attributions.
 \end{Shaded}
 
 \begin{verbatim}
-##                  contribution
-## (Intercept)             0.376
-## * hours = 42            0.239
-## * salary = 2           -0.204
-## * evaluation = 2        0.011
-## * age = 58              0.093
-## * gender = male         0.285
-## final_prognosis         0.800
+##                                         contribution
+## randomForest.fired: baseline                   0.376
+## randomForest.fired: * hours = 42               0.238
+## randomForest.fired: * evaluation = 2           0.057
+## randomForest.fired: * salary = 2              -0.257
+## randomForest.fired: * age = 58                 0.098
+## randomForest.fired: * gender = male            0.285
+## randomForest.fired: prediction                 0.796
+## randomForest.ok: baseline                      0.276
+## randomForest.ok: * hours = 42                 -0.049
+## randomForest.ok: * evaluation = 2              0.096
+## randomForest.ok: * salary = 2                  0.255
+## randomForest.ok: * age = 58                   -0.092
+## randomForest.ok: * gender = male              -0.285
+## randomForest.ok: prediction                    0.202
+## randomForest.promoted: baseline                0.348
+## randomForest.promoted: * hours = 42           -0.189
+## randomForest.promoted: * evaluation = 2       -0.153
+## randomForest.promoted: * salary = 2            0.002
+## randomForest.promoted: * age = 58             -0.006
+## randomForest.promoted: * gender = male         0.000
+## randomForest.promoted: prediction              0.002
 ## baseline:  0
 \end{verbatim}
 
@@ -1433,9 +1445,9 @@ response with additional information.
 
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-11-1.pdf}
 
-\hypertarget{sequential-variable-attribution-with-interactions}{%
-\section{Sequential variable attribution with
-interactions}\label{sequential-variable-attribution-with-interactions}}
+\hypertarget{variable-attribution-with-interactions}{%
+\section{Variable attribution with
+interactions}\label{variable-attribution-with-interactions}}
 
 In the Section \ref{breakDown} we presented model agnostic approach for
 additive decomposition of a model prediction for a single observation.
@@ -1609,10 +1621,7 @@ this approach.
 \subsection{Code snippets for R}\label{code-snippets-for-r-1}}
 
 The algorithm for Break Down for Interactions is also implemented in the
-\texttt{break\_down} function from \texttt{breakDown} package.
-
-It is enough to set argument \texttt{check\_interactions\ =\ TRUE} to
-identify interactions.
+\texttt{local\_interactions} function from \texttt{breakDown2} package.
 
 \textbf{Model preparation}
 
@@ -1620,7 +1629,7 @@ First a model needs to be trained.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX2"}\NormalTok{)}
 \KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
 \NormalTok{model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(status }\OperatorTok{~}\StringTok{ }\NormalTok{gender }\OperatorTok{+}\StringTok{ }\NormalTok{age }\OperatorTok{+}\StringTok{ }\NormalTok{hours }\OperatorTok{+}\StringTok{ }\NormalTok{evaluation }\OperatorTok{+}\StringTok{ }\NormalTok{salary, }\DataTypeTok{data =}\NormalTok{ HR)}
 \NormalTok{model}
@@ -1635,15 +1644,15 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.58%
+##         OOB estimate of  error rate: 27.44%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2266  395      194   0.2063047
-## ok         538 1246      437   0.4389914
-## promoted   212  388     2171   0.2165283
+## fired     2271  389      195   0.2045534
+## ok         528 1251      442   0.4367402
+## promoted   207  392     2172   0.2161674
 \end{verbatim}
 
-Model exploration with the \texttt{breakDown} package is performed in
+Model exploration with the \texttt{breakDown2} package is performed in
 three steps.
 
 \textbf{1. Create an explainer - wrapper around model and validation
@@ -1655,11 +1664,9 @@ need to define a wrapper around the model. Here we are using the
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{explainer_rf_fired <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model,}
+\NormalTok{explainer_rf <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model,}
                  \DataTypeTok{data =}\NormalTok{ HR,}
-                 \DataTypeTok{y =}\NormalTok{ HR}\OperatorTok{$}\NormalTok{status }\OperatorTok{==}\StringTok{ "fired"}\NormalTok{,}
-                 \DataTypeTok{predict_function =} \ControlFlowTok{function}\NormalTok{(m,x) }\KeywordTok{predict}\NormalTok{(m,x, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)[,}\DecValTok{1}\NormalTok{],}
-                 \DataTypeTok{label =} \StringTok{"fired"}\NormalTok{)}
+                 \DataTypeTok{y =}\NormalTok{ HR}\OperatorTok{$}\NormalTok{status)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1682,41 +1689,49 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.794 0.202    0.004
+## 1 0.786 0.214        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
 
 \textbf{3. Calculate Break Down decomposition}
 
-The \texttt{break\_down()} function calculates Break Down contributions
-for a selected model around a selected observation.
+The \texttt{local\_interactions()} function calculates Break Down
+contributions for a selected model around a selected observation.
 
-Note that \texttt{check\_interactions\ =\ TRUE} is needed to identify
-interactions.
-
-The result from \texttt{break\_down()} function is a data frame with
-variable attributions.
+The result from \texttt{local\_interactions()} function is a data frame
+with variable attributions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown"}\NormalTok{)}
-\NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{break_down}\NormalTok{(explainer_rf_fired,}
-\NormalTok{                 new_observation,}
-                 \DataTypeTok{check_interactions =} \OtherTok{TRUE}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown2"}\NormalTok{)}
+\NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{local_interactions}\NormalTok{(explainer_rf,}
+\NormalTok{                 new_observation)}
 
 \NormalTok{bd_rf}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##                        contribution
-## (Intercept)                   0.376
-## * hours = 42                  0.238
-## * salary = 2                 -0.211
-## * age:gender = 58:male        0.407
-## * evaluation = 2             -0.016
-## final_prognosis               0.794
+##                                               contribution
+## randomForest.fired: baseline                         0.376
+## randomForest.fired: * hours = 42                     0.240
+## randomForest.fired: * salary = 2                    -0.215
+## randomForest.fired: * age:gender = 58:male           0.398
+## randomForest.fired: * evaluation = 2                -0.013
+## randomForest.fired: prediction                       0.786
+## randomForest.ok: baseline                            0.275
+## randomForest.ok: * evaluation = 2                    0.134
+## randomForest.ok: * salary = 2                        0.159
+## randomForest.ok: * age:gender = 58:male             -0.278
+## randomForest.ok: * hours = 42                       -0.076
+## randomForest.ok: prediction                          0.214
+## randomForest.promoted: baseline                      0.349
+## randomForest.promoted: * hours = 42                 -0.191
+## randomForest.promoted: * evaluation = 2             -0.151
+## randomForest.promoted: * age:gender = 58:male       -0.005
+## randomForest.promoted: * salary = 2                 -0.001
+## randomForest.promoted: prediction                    0.000
 ## baseline:  0
 \end{verbatim}
 
@@ -1895,7 +1910,7 @@ Explanations for a new observation.
 
 \begin{verbatim}
 ## Interpretation method:  Shapley 
-## Predicted value: 0.784000, Average prediction: 0.374172 (diff = 0.409828) Predicted value: 0.212000, Average prediction: 0.275936 (diff = -0.063936) Predicted value: 0.004000, Average prediction: 0.349893 (diff = -0.345893)
+## Predicted value: 0.792000, Average prediction: 0.376501 (diff = 0.415499) Predicted value: 0.208000, Average prediction: 0.274798 (diff = -0.066798) Predicted value: 0.000000, Average prediction: 0.348700 (diff = -0.348700)
 ## 
 ## Analysed predictor: 
 ## Prediction task: unknown 
@@ -1906,11 +1921,11 @@ Explanations for a new observation.
 ## 
 ## Head of results:
 ##      feature class      phi    phi.var feature.value
-## 1     gender fired  0.16766 0.06960865   gender=male
-## 2        age fired  0.13288 0.08346661      age=57.7
-## 3      hours fired  0.26464 0.10220120    hours=42.3
-## 4 evaluation fired  0.02080 0.01871192  evaluation=2
-## 5     salary fired -0.14238 0.03433412      salary=2
+## 1     gender fired  0.11518 0.06998684   gender=male
+## 2        age fired  0.09168 0.05403505      age=57.7
+## 3      hours fired  0.39130 0.11996391    hours=42.3
+## 4 evaluation fired  0.03112 0.01266952  evaluation=2
+## 5     salary fired -0.16776 0.05692447      salary=2
 ## 6     status fired  0.00000 0.00000000  status=fired
 \end{verbatim}
 
@@ -2122,12 +2137,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.09%
+##         OOB estimate of  error rate: 27.3%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2280  377      198   0.2014011
-## ok         527 1263      431   0.4313372
-## promoted   200  393     2178   0.2140022
+## fired     2273  388      194   0.2038529
+## ok         531 1255      435   0.4349392
+## promoted   201  393     2177   0.2143630
 \end{verbatim}
 
 \begin{Shaded}
@@ -2144,7 +2159,7 @@ package \citep{R-randomForest}.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.796 0.204        0
+## 1 0.816 0.182    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -2165,35 +2180,35 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.796 0.1227567       0.2597064
-## 2 classification    1    fired      0.796 0.1227567       0.2597064
-## 3 classification    1    fired      0.796 0.1227567       0.2597064
-## 4 classification    1       ok      0.204 0.1206589       0.2021942
-## 5 classification    1       ok      0.204 0.1206589       0.2021942
-## 6 classification    1       ok      0.204 0.1206589       0.2021942
-## 7 classification    1 promoted      0.000 0.2755799       0.5131388
-## 8 classification    1 promoted      0.000 0.2755799       0.5131388
-## 9 classification    1 promoted      0.000 0.2755799       0.5131388
+## 1 classification    1    fired      0.816 0.1293086       0.2634954
+## 2 classification    1    fired      0.816 0.1293086       0.2634954
+## 3 classification    1    fired      0.816 0.1293086       0.2634954
+## 4 classification    1       ok      0.182 0.1364639       0.2159665
+## 5 classification    1       ok      0.182 0.1364639       0.2159665
+## 6 classification    1       ok      0.182 0.1364639       0.2159665
+## 7 classification    1 promoted      0.002 0.2758085       0.5205572
+## 8 classification    1 promoted      0.002 0.2758085       0.5205572
+## 9 classification    1 promoted      0.002 0.2758085       0.5205572
 ##   model_prediction    feature feature_value feature_weight
-## 1       0.63442212     gender           2.0    0.005633205
-## 2       0.63442212      hours          42.3    0.257406537
-## 3       0.63442212 evaluation           2.0    0.111675931
-## 4       0.45870922     gender           2.0   -0.016895894
-## 5       0.45870922 evaluation           2.0    0.199220482
-## 6       0.45870922     salary           2.0    0.074190386
-## 7       0.00881683        age          57.7    0.005529699
-## 8       0.00881683 evaluation           2.0   -0.309494693
-## 9       0.00881683      hours          42.3   -0.200356979
+## 1      0.641391257        age          57.7    0.009033602
+## 2      0.641391257      hours          42.3    0.269037621
+## 3      0.641391257 evaluation           2.0    0.099824658
+## 4      0.348710626        age          57.7   -0.003164799
+## 5      0.348710626 evaluation           2.0    0.211860498
+## 6      0.348710626      hours          42.3   -0.075951574
+## 7      0.009942181        age          57.7   -0.005864937
+## 8      0.009942181 evaluation           2.0   -0.311753609
+## 9      0.009942181      hours          42.3   -0.192996509
 ##           feature_desc                      data          prediction
-## 1        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 4        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
-## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.796, 0.204, 0.000
+## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
+## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.816, 0.182, 0.002
 \end{verbatim}
 
 \begin{Shaded}
@@ -2235,7 +2250,7 @@ package}}{The live package}}\label{the-live-package}}
 ##  Name:  regr.lm 
 ##  Variable selection wasn't performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.9597
+##  R-squared: 0.9845
 \end{verbatim}
 
 \begin{Shaded}
@@ -2281,12 +2296,12 @@ package}}{The iml package}}\label{the-iml-package}}
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.068571339       1.0  0.06857134       male gender=male   gender=male
-## 2  0.005624549      57.7  0.32453650       57.7         age      age=57.7
-## 3 -0.090562491      42.3 -3.83079339       42.3       hours    hours=42.3
-## 4 -0.509482134       2.0 -1.01896427          2  evaluation  evaluation=2
-## 5 -0.036494190       2.0 -0.07298838          2      salary      salary=2
-## 6 -0.016963284       1.0 -0.01696328       male gender=male   gender=male
+## 1  0.058094981       1.0  0.05809498       male gender=male   gender=male
+## 2  0.004958897      57.7  0.28612836       57.7         age      age=57.7
+## 3 -0.089340492      42.3 -3.77910282       42.3       hours    hours=42.3
+## 4 -0.500562786       2.0 -1.00112557          2  evaluation  evaluation=2
+## 5 -0.034414640       2.0 -0.06882928          2      salary      salary=2
+## 6 -0.025139926       1.0 -0.02513993       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -2711,8 +2726,8 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##           Mean of squared residuals: 487890.8
-##                     % Var explained: 40.59
+##           Mean of squared residuals: 486892.1
+##                     % Var explained: 40.71
 \end{verbatim}
 
 Model exploration with \texttt{ceterisParibus} package is performed in
@@ -2767,7 +2782,7 @@ Certeris Paribus profiles explore model around a single point.
 
 \begin{verbatim}
 ##        1 
-## 2333.967
+## 2305.159
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2793,12 +2808,12 @@ interest.
 \begin{verbatim}
 ## Top profiles    : 
 ##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3115.480 construction.year
-## 1.1              1921        5     142     8 3144.582 construction.year
-## 1.2              1922        5     142     8 3133.484 construction.year
-## 1.3              1923        5     142     8 3100.970 construction.year
-## 1.4              1923        5     142     8 3100.970 construction.year
-## 1.5              1924        5     142     8 3101.755 construction.year
+## 1                1920        5     142     8 3077.724 construction.year
+## 1.1              1921        5     142     8 3103.306 construction.year
+## 1.2              1922        5     142     8 3104.387 construction.year
+## 1.3              1923        5     142     8 3062.239 construction.year
+## 1.4              1923        5     142     8 3062.239 construction.year
+## 1.5              1924        5     142     8 3070.310 construction.year
 ##     _ids_      _label_
 ## 1       1 randomForest
 ## 1.1     1 randomForest
@@ -2810,7 +2825,7 @@ interest.
 ## 
 ## Top observations:
 ##   construction.year no.rooms surface floor   _yhat_      _label_
-## 1              1965        5     142     8 2333.967 randomForest
+## 1              1965        5     142     8 2305.159 randomForest
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
@@ -2873,10 +2888,10 @@ for CP profiles.
 
 \begin{verbatim}
 ##             _vname_ _ids_ oscillations
-## 2           surface     1     658.2776
-## 4          no.rooms     1     433.9018
-## 3             floor     1     327.8779
-## 1 construction.year     1     249.8044
+## 2           surface     1     638.8438
+## 4          no.rooms     1     473.4043
+## 3             floor     1     352.2330
+## 1 construction.year     1     256.6445
 \end{verbatim}
 
 \begin{Shaded}
@@ -3048,6 +3063,8 @@ Feature extraction
 
 \hypertarget{partialDependence}{%
 \subsection{Partial Dependency Plots}\label{partialDependence}}
+
+\citep{demsar2018}
 
 \citep{RJ2017016} \citep{MAGIX}
 

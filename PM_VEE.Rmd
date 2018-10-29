@@ -462,7 +462,7 @@ plot(attribution)
 
 <!--chapter:end:12-linearModels.Rmd-->
 
-# Sequential variable attributions {#breakDown}
+# Variable attributions {#breakDown}
 
 In the Section \@ref(variableAttributionMethods) we introduced a method for calculation of variable attributions for linear models.
 This method is accurate, based directly on the structure of the model. But for most popular machine learning models we cannot assume that they are linear nor even additive. 
@@ -597,31 +597,29 @@ Break Down approach is model agnostic, can be applied to any predictive model th
 
 ## Code snippets for R
 
-In this section we present key features of the `breakDown` package for R [@R-breakDown]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://pbiecek.github.io/breakDown/`.
+In this section we present key features of the `breakDown2` package for R [@R-breakDown]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://pbiecek.github.io/breakDown2/`.
 
 **Model preparation**
 
 In this section we will present an example based on the `HR` dataset and Random Forest model [@R-randomForest]. See the Section \@ref(HRdataset) for more details.
 
 ```{r, warning=FALSE, message=FALSE}
-library("DALEX")
+library("DALEX2")
 library("randomForest")
 model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
 model
 ```
 
-Model exploration with the `breakDown` package is performed in three steps. 
+Model exploration with the `breakDown2` package is performed in three steps. 
 
 **1. Create an explainer - wrapper around model and validation data.**
 
-Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX2` package [@R-DALEX].
 
 ```{r, warning=FALSE, message=FALSE}
-explainer_rf_fired <- explain(model,
+explainer_rf <- explain(model,
                  data = HR,
-                 y = HR$status == "fired",
-                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
-                 label = "fired")
+                 y = HR$status)
 ```
 
 **2. Select an observation of interest.** 
@@ -640,15 +638,14 @@ predict(model, new_observation, type = "prob")
 
 **3. Calculate Break Down decomposition**
 
-The `break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+The `local_attributions()` function calculates Break Down contributions for a selected model around a selected observation. 
 
-The result from `break_down()` function is a data frame with variable attributions.
+The result from `local_attributions()` function is a data frame with variable attributions.
 
 ```{r, warning=FALSE, message=FALSE}
-library("breakDown")
-bd_rf <- break_down(explainer_rf_fired,
+library("breakDown2")
+bd_rf <- local_attributions(explainer_rf,
                  new_observation,
-                 check_interactions = FALSE,
                  keep_distributions = TRUE)
 
 bd_rf
@@ -668,7 +665,7 @@ plot(bd_rf, plot_distributions = TRUE)
 
 
 
-# Sequential variable attribution with interactions
+# Variable attribution with interactions
 
 In the Section \@ref(breakDown) we presented model agnostic approach for additive decomposition of a model prediction for a single observation. 
 
@@ -779,33 +776,29 @@ Break Down for interactions shares many features of Break Down for single variab
 
 ## Code snippets for R
 
-The algorithm for Break Down for Interactions is also implemented in the `break_down` function from  `breakDown` package. 
-
-It is enough to set argument `check_interactions = TRUE`  to identify interactions.
+The algorithm for Break Down for Interactions is also implemented in the `local_interactions` function from  `breakDown2` package. 
 
 **Model preparation**
 
 First a model needs to be trained.
 
 ```{r, warning=FALSE, message=FALSE}
-library("DALEX")
+library("DALEX2")
 library("randomForest")
 model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
 model
 ```
 
-Model exploration with the `breakDown` package is performed in three steps. 
+Model exploration with the `breakDown2` package is performed in three steps. 
 
 **1. Create an explainer - wrapper around model and validation data.**
 
 Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package.
 
 ```{r, warning=FALSE, message=FALSE}
-explainer_rf_fired <- explain(model,
+explainer_rf <- explain(model,
                  data = HR,
-                 y = HR$status == "fired",
-                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
-                 label = "fired")
+                 y = HR$status)
 ```
 
 **2. Select an observation of interest.** 
@@ -824,17 +817,14 @@ predict(model, new_observation, type = "prob")
 
 **3. Calculate Break Down decomposition**
 
-The `break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+The `local_interactions()` function calculates Break Down contributions for a selected model around a selected observation. 
 
-Note that `check_interactions = TRUE` is needed to identify interactions.
-
-The result from `break_down()` function is a data frame with variable attributions.
+The result from `local_interactions()` function is a data frame with variable attributions.
 
 ```{r, warning=FALSE, message=FALSE}
-library("breakDown")
-bd_rf <- break_down(explainer_rf_fired,
-                 new_observation,
-                 check_interactions = TRUE)
+library("breakDown2")
+bd_rf <- local_interactions(explainer_rf,
+                 new_observation)
 
 bd_rf
 ```
@@ -1630,6 +1620,8 @@ http://explained.ai/rf-importance/index.html
 Feature extraction
 
 ## Partial Dependency Plots {#partialDependence}
+
+[@demsar2018]
 
 [@RJ2017016]
 [@MAGIX]
