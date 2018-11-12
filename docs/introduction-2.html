@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-10-29">
+<meta name="date" content="2018-11-12">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -203,10 +203,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul></li>
 <li class="chapter" data-level="" data-path="model-level-explanations.html"><a href="model-level-explanations.html"><i class="fa fa-check"></i>Model level explanations</a></li>
 <li class="chapter" data-level="10" data-path="introduction-2.html"><a href="introduction-2.html"><i class="fa fa-check"></i><b>10</b> Introduction</a><ul>
-<li class="chapter" data-level="10.1" data-path="introduction-2.html"><a href="introduction-2.html#a-bit-of-philosophy"><i class="fa fa-check"></i><b>10.1</b> A bit of philosophy</a></li>
-<li class="chapter" data-level="10.2" data-path="introduction-2.html"><a href="introduction-2.html#example-price-prediction"><i class="fa fa-check"></i><b>10.2</b> Example: Price prediction</a></li>
+<li class="chapter" data-level="10.1" data-path="introduction-2.html"><a href="introduction-2.html#approaches-to-model-explanations"><i class="fa fa-check"></i><b>10.1</b> Approaches to model explanations</a></li>
+<li class="chapter" data-level="10.2" data-path="introduction-2.html"><a href="introduction-2.html#a-bit-of-philosophy-three-laws-for-model-level-explanations"><i class="fa fa-check"></i><b>10.2</b> A bit of philosophy: Three Laws for Model Level Explanations</a></li>
 </ul></li>
-<li class="chapter" data-level="11" data-path="variable-importance.html"><a href="variable-importance.html"><i class="fa fa-check"></i><b>11</b> Variable Importance</a></li>
+<li class="chapter" data-level="11" data-path="variable-importance.html"><a href="variable-importance.html"><i class="fa fa-check"></i><b>11</b> Variable Importance</a><ul>
+<li class="chapter" data-level="11.1" data-path="variable-importance.html"><a href="variable-importance.html#example-price-prediction"><i class="fa fa-check"></i><b>11.1</b> Example: Price prediction</a></li>
+</ul></li>
 <li class="chapter" data-level="12" data-path="marginal-response.html"><a href="marginal-response.html"><i class="fa fa-check"></i><b>12</b> Marginal Response</a><ul>
 <li class="chapter" data-level="12.1" data-path="marginal-response.html"><a href="marginal-response.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a></li>
 <li class="chapter" data-level="12.2" data-path="marginal-response.html"><a href="marginal-response.html#merging-path-plots"><i class="fa fa-check"></i><b>12.2</b> Merging Path Plots</a></li>
@@ -218,6 +220,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="16" data-path="DataSets.html"><a href="DataSets.html"><i class="fa fa-check"></i><b>16</b> Data Sets</a><ul>
 <li class="chapter" data-level="16.1" data-path="DataSets.html"><a href="DataSets.html#HRdataset"><i class="fa fa-check"></i><b>16.1</b> Hire or Fire? HR in Call Center</a></li>
 <li class="chapter" data-level="16.2" data-path="DataSets.html"><a href="DataSets.html#apartmentsDataset"><i class="fa fa-check"></i><b>16.2</b> How much does it cost? Price prediction for a square meter</a></li>
+</ul></li>
+<li class="chapter" data-level="17" data-path="Packages.html"><a href="Packages.html"><i class="fa fa-check"></i><b>17</b> Packages</a><ul>
+<li class="chapter" data-level="17.1" data-path="Packages.html"><a href="Packages.html#arguments"><i class="fa fa-check"></i><b>17.1</b> Arguments</a></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
 <li class="divider"></li>
@@ -243,54 +248,31 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="introduction-2" class="section level1">
 <h1><span class="header-section-number">Chapter 10</span> Introduction</h1>
-<div id="a-bit-of-philosophy" class="section level2">
-<h2><span class="header-section-number">10.1</span> A bit of philosophy</h2>
-<p>Rights:</p>
-<ol style="list-style-type: decimal">
-<li>audit model residuals</li>
-<li>variable importance</li>
-<li>partial dependency plot</li>
-</ol>
+<p>Model level explainers help to understand how the model works in general, for an observed population. This is the main difference from the model level explainers that were focused on the model as a whole and on model population for whole population. Model level explainers work in the context of a population or subpopulation of observations.</p>
+<p>Think about following use-cases</p>
+<ul>
+<li>One wants to know which variables are important in the model. Think about model for heart accident in which features come from additional medical examinations. Knowing which examinations are not important one can reduce model by removing unnecessary variables.</li>
+<li>One wants to understand how a selected variable affects the model response. Think about a model for prediction of apartment prices. You know that apartment location is an important factor, but which locations are better and how much a given location is worth? Model explainers help to understand how values of a selected variable affect the model response.</li>
+<li>One wants to know if there are any unusual observations that do not fit to the model. Observations with unusually large residuals. Think about a model for survival after some very risky treatment. You would like to know if for some patients the model predictions are extremely incorrect.</li>
+</ul>
+<div id="approaches-to-model-explanations" class="section level2">
+<h2><span class="header-section-number">10.1</span> Approaches to model explanations</h2>
+<p>Model level explanations are focused on four main aspects of a model.</p>
+<ul>
+<li>Model performance. Here the question is how good is the model, is it good enough (better than some predefined threshold), is a model A better than model B?</li>
+<li>Model residuals. Is there any unusual pattern related to residuals, are they biased, are they correlated with some additional variable?</li>
+<li>Variable importance. How important are variables, which are the most important and which are not important at all?</li>
+<li>Variable effects. What is the relation between a variable and model response, can the variable be transformed to create a better model?</li>
+</ul>
 </div>
-<div id="example-price-prediction" class="section level2">
-<h2><span class="header-section-number">10.2</span> Example: Price prediction</h2>
-<p><span class="citation">(Meyer et al. <a href="#ref-R-e1071">2017</a>)</span>
-<span class="citation">(Sitko, Grudziąż, and Biecek <a href="#ref-R-factorMerger">2018</a>)</span></p>
-<p>In this chapter we show examples for three predictive models trained on <code>apartments</code> dataset from the <code>DALEX</code> package. Random Forest model (elastic but biased), Support Vector Machines model (large variance on boundaries) and Linear Model (stable but not very elastic).
-Presented examples are for regression (prediction of square meter price), but the CP profiles may be used in the same way for classification.</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb66-2" data-line-number="2"><span class="co"># Linear model trained on apartments data</span></a>
-<a class="sourceLine" id="cb66-3" data-line-number="3">model_lm &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb66-4" data-line-number="4"><span class="st">                      </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb66-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb66-6" data-line-number="6"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb66-7" data-line-number="7"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb66-8" data-line-number="8"><span class="co"># Random Forest model trained on apartments data</span></a>
-<a class="sourceLine" id="cb66-9" data-line-number="9">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb66-10" data-line-number="10"><span class="st">                      </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb66-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb66-12" data-line-number="12"><span class="kw">library</span>(<span class="st">&quot;e1071&quot;</span>)</a>
-<a class="sourceLine" id="cb66-13" data-line-number="13"><span class="co"># Support Vector Machinesr model trained on apartments data</span></a>
-<a class="sourceLine" id="cb66-14" data-line-number="14">model_svm &lt;-<span class="st"> </span><span class="kw">svm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb66-15" data-line-number="15"><span class="st">                         </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a></code></pre></div>
-<p>For these models we use <code>DALEX</code> explainers created with <code>explain()</code> function. There exapliners wrap models, predict functions and validation data.</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb67-1" data-line-number="1">explainer_lm &lt;-<span class="st"> </span><span class="kw">explain</span>(model_lm, </a>
-<a class="sourceLine" id="cb67-2" data-line-number="2">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb67-3" data-line-number="3">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_rf, </a>
-<a class="sourceLine" id="cb67-4" data-line-number="4">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb67-5" data-line-number="5">explainer_svm &lt;-<span class="st"> </span><span class="kw">explain</span>(model_svm, </a>
-<a class="sourceLine" id="cb67-6" data-line-number="6">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a></code></pre></div>
-<p>Examples presented in this chapter are generated with the <code>ceterisParibus</code> package in version 0.3.1.</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb68-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ceterisParibus&quot;</span>)</a></code></pre></div>
-</div>
-</div>
-<h3>References</h3>
-<div id="refs" class="references">
-<div id="ref-R-e1071">
-<p>Meyer, David, Evgenia Dimitriadou, Kurt Hornik, Andreas Weingessel, and Friedrich Leisch. 2017. <em>E1071: Misc Functions of the Department of Statistics, Probability Theory Group (Formerly: E1071), Tu Wien</em>. <a href="https://CRAN.R-project.org/package=e1071" class="uri">https://CRAN.R-project.org/package=e1071</a>.</p>
-</div>
-<div id="ref-R-factorMerger">
-<p>Sitko, Agnieszka, Aleksandra Grudziąż, and Przemyslaw Biecek. 2018. <em>FactorMerger: The Merging Path Plot</em>. <a href="https://CRAN.R-project.org/package=factorMerger" class="uri">https://CRAN.R-project.org/package=factorMerger</a>.</p>
+<div id="a-bit-of-philosophy-three-laws-for-model-level-explanations" class="section level2">
+<h2><span class="header-section-number">10.2</span> A bit of philosophy: Three Laws for Model Level Explanations</h2>
+<p>In the spirit of three laws introduces in the chapter <a href="PredictionExplainers.html#three-single-laws">2.2</a> here we propose three laws for model level explanations.</p>
+<ul>
+<li><strong>Variable importance.</strong> For every model we shall be able to understand which variables are important and which are not.</li>
+<li><strong>Model audit.</strong> For every model we shall be able to verify basic check like if residuals are correlated with variables and if there are unusual observations.</li>
+<li><strong>Second opinion.</strong> For every model we shall be able to compare it against other models to verify if they capture different stories about the data.</li>
+</ul>
 </div>
 </div>
             </section>
