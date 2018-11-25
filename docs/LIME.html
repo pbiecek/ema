@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-11-12">
+<meta name="date" content="2018-11-25">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -314,8 +314,8 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 <p>In this section we present example application of <code>lime</code> <span class="citation">(Pedersen and Benesty <a href="#ref-R-lime">2018</a>)</span> and <code>live</code> <span class="citation">(Staniak and Biecek <a href="#ref-R-live">2018</a>)</span> packages. Note that this method is also implemented in <code>iml</code> <span class="citation">(Molnar <a href="#ref-R-iml">2018</a><a href="#ref-R-iml">a</a>)</span> and other packages. These pacakages differ in some details and also results in different explanations.</p>
 <p><strong>Model preparation</strong></p>
 <p>In this section we will present examples based on the <code>HR</code> dataset. See the Section <a href="DataSets.html#HRdataset">16.1</a> for more details.</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
 <pre><code>##   gender      age    hours evaluation salary   status
 ## 1   male 32.58267 41.88626          3      1    fired
 ## 2 female 41.21104 36.34339          2      5    fired
@@ -324,9 +324,9 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## 5   male 21.10283 62.15464          5      3 promoted
 ## 6   male 40.11812 69.53973          2      0    fired</code></pre>
 <p>The problem here is to predict average price for square meter for an apartment. Let’s build a random forest model with <code>randomForest</code> package <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb33-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb33-3" data-line-number="3">rf_model</a></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb34-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb34-3" data-line-number="3">rf_model</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = status ~ gender + age + hours + evaluation +      salary, data = HR) 
@@ -334,78 +334,78 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.5%
+##         OOB estimate of  error rate: 27.4%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2268  395      192   0.2056042
-## ok         538 1243      440   0.4403422
-## promoted   205  388     2178   0.2140022</code></pre>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
-<a class="sourceLine" id="cb35-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
-<a class="sourceLine" id="cb35-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
-<a class="sourceLine" id="cb35-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb35-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb35-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb35-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+## fired     2274  380      201   0.2035026
+## ok         539 1235      447   0.4439442
+## promoted   199  384     2188   0.2103934</code></pre>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb36-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
+<a class="sourceLine" id="cb36-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
+<a class="sourceLine" id="cb36-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
+<a class="sourceLine" id="cb36-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb36-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb36-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb36-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
 <pre><code>##   fired    ok promoted
-## 1 0.782 0.216    0.002
+## 1 0.806 0.192    0.002
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <div id="the-lime-pacakge" class="section level3">
 <h3><span class="header-section-number">7.5.1</span> <strong>The lime pacakge</strong></h3>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
-<a class="sourceLine" id="cb37-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a>
-<a class="sourceLine" id="cb37-3" data-line-number="3">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], rf_model)</a>
-<a class="sourceLine" id="cb37-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb37-5" data-line-number="5">explanations</a></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
+<a class="sourceLine" id="cb38-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a>
+<a class="sourceLine" id="cb38-3" data-line-number="3">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], rf_model)</a>
+<a class="sourceLine" id="cb38-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb38-5" data-line-number="5">explanations</a></code></pre></div>
 <pre><code>##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.782 0.1107890       0.2745517
-## 2 classification    1    fired      0.782 0.1107890       0.2745517
-## 3 classification    1    fired      0.782 0.1107890       0.2745517
-## 4 classification    1       ok      0.216 0.1491122       0.2068585
-## 5 classification    1       ok      0.216 0.1491122       0.2068585
-## 6 classification    1       ok      0.216 0.1491122       0.2068585
-## 7 classification    1 promoted      0.002 0.2799971       0.5186064
-## 8 classification    1 promoted      0.002 0.2799971       0.5186064
-## 9 classification    1 promoted      0.002 0.2799971       0.5186064
+## 1 classification    1    fired      0.806 0.1300379       0.2535829
+## 2 classification    1    fired      0.806 0.1300379       0.2535829
+## 3 classification    1    fired      0.806 0.1300379       0.2535829
+## 4 classification    1       ok      0.192 0.1251273       0.1892168
+## 5 classification    1       ok      0.192 0.1251273       0.1892168
+## 6 classification    1       ok      0.192 0.1251273       0.1892168
+## 7 classification    1 promoted      0.002 0.2917896       0.5234322
+## 8 classification    1 promoted      0.002 0.2917896       0.5234322
+## 9 classification    1 promoted      0.002 0.2917896       0.5234322
 ##   model_prediction    feature feature_value feature_weight
-## 1        0.6123554        age          57.7   3.456731e-04
-## 2        0.6123554      hours          42.3   2.454102e-01
-## 3        0.6123554 evaluation           2.0   9.204792e-02
-## 4        0.3740969        age          57.7  -3.961597e-05
-## 5        0.3740969 evaluation           2.0   2.241228e-01
-## 6        0.3740969      hours          42.3  -5.684476e-02
-## 7        0.0135786        age          57.7  -3.067514e-04
-## 8        0.0135786 evaluation           2.0  -3.162304e-01
-## 9        0.0135786      hours          42.3  -1.884906e-01
+## 1       0.63245342     gender           2.0    0.005909490
+## 2       0.63245342      hours          42.3    0.255709364
+## 3       0.63245342 evaluation           2.0    0.117251637
+## 4       0.45914034        age          57.7   -0.001159746
+## 5       0.45914034 evaluation           2.0    0.199215613
+## 6       0.45914034     salary           2.0    0.071867712
+## 7       0.01471303        age          57.7    0.011368221
+## 8       0.01471303 evaluation           2.0   -0.317045218
+## 9       0.01471303      hours          42.3   -0.203042163
 ##           feature_desc                      data          prediction
-## 1           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 6 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 7           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002
-## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.782, 0.216, 0.002</code></pre>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+## 1        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 2 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 3      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 4           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 5      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 6      1 &lt; salary &lt;= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 7           50.0 &lt; age 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002
+## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.806, 0.192, 0.002</code></pre>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
 </div>
 <div id="the-live-package" class="section level3">
 <h3><span class="header-section-number">7.5.2</span> <strong>The live package</strong></h3>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;live&quot;</span>)</a>
-<a class="sourceLine" id="cb40-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb40-3" data-line-number="3">new_observation<span class="op">$</span>status &lt;-<span class="st"> &quot;fired&quot;</span></a>
-<a class="sourceLine" id="cb40-4" data-line-number="4">explainer_rf_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
-<a class="sourceLine" id="cb40-5" data-line-number="5">                 <span class="dt">data =</span> HR,</a>
-<a class="sourceLine" id="cb40-6" data-line-number="6">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
-<a class="sourceLine" id="cb40-7" data-line-number="7">                 <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) <span class="kw">predict</span>(m,x, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)[,<span class="dv">1</span>],</a>
-<a class="sourceLine" id="cb40-8" data-line-number="8">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
-<a class="sourceLine" id="cb40-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb40-10" data-line-number="10">local_model &lt;-<span class="st"> </span><span class="kw">local_approximation</span>(explainer_rf_fired, new_observation, </a>
-<a class="sourceLine" id="cb40-11" data-line-number="11">                    <span class="dt">target_variable_name =</span> <span class="st">&quot;status&quot;</span>, <span class="dt">n_new_obs =</span> <span class="dv">500</span>)</a>
-<a class="sourceLine" id="cb40-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb40-13" data-line-number="13">local_model</a></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;live&quot;</span>)</a>
+<a class="sourceLine" id="cb41-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb41-3" data-line-number="3">new_observation<span class="op">$</span>status &lt;-<span class="st"> &quot;fired&quot;</span></a>
+<a class="sourceLine" id="cb41-4" data-line-number="4">explainer_rf_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
+<a class="sourceLine" id="cb41-5" data-line-number="5">                 <span class="dt">data =</span> HR,</a>
+<a class="sourceLine" id="cb41-6" data-line-number="6">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
+<a class="sourceLine" id="cb41-7" data-line-number="7">                 <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) <span class="kw">predict</span>(m,x, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)[,<span class="dv">1</span>],</a>
+<a class="sourceLine" id="cb41-8" data-line-number="8">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
+<a class="sourceLine" id="cb41-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb41-10" data-line-number="10">local_model &lt;-<span class="st"> </span><span class="kw">local_approximation</span>(explainer_rf_fired, new_observation, </a>
+<a class="sourceLine" id="cb41-11" data-line-number="11">                    <span class="dt">target_variable_name =</span> <span class="st">&quot;status&quot;</span>, <span class="dt">n_new_obs =</span> <span class="dv">500</span>)</a>
+<a class="sourceLine" id="cb41-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb41-13" data-line-number="13">local_model</a></code></pre></div>
 <pre><code>## Dataset: 
 ##  Observations:  500 
 ##  Variables:  6 
@@ -414,19 +414,19 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ##  Name:  regr.lm 
 ##  Variable selection wasn&#39;t performed 
 ##  Weights present in the explanation model 
-##  R-squared: 0.7595</code></pre>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="kw">plot</span>(local_model)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-26-2.png" width="672" /></p>
+##  R-squared: 0.7339</code></pre>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">plot</span>(local_model)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-27-2.png" width="672" /></p>
 </div>
 <div id="the-iml-package" class="section level3">
 <h3><span class="header-section-number">7.5.3</span> <strong>The iml package</strong></h3>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
-<a class="sourceLine" id="cb44-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb44-3" data-line-number="3">explainer_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(rf_model, <span class="dt">data =</span> HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>])</a>
-<a class="sourceLine" id="cb44-4" data-line-number="4">white_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(explainer_rf, <span class="dt">x.interest =</span> new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], <span class="dt">k =</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb44-5" data-line-number="5">white_box</a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
+<a class="sourceLine" id="cb45-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb45-3" data-line-number="3">explainer_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(rf_model, <span class="dt">data =</span> HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>])</a>
+<a class="sourceLine" id="cb45-4" data-line-number="4">white_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(explainer_rf, <span class="dt">x.interest =</span> new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], <span class="dt">k =</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb45-5" data-line-number="5">white_box</a></code></pre></div>
 <pre><code>## Interpretation method:  LocalModel 
 ## 
 ## 
@@ -439,12 +439,12 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## 
 ## Head of results:
 ##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.043957183       1.0  0.04395718       male gender=male   gender=male
-## 2  0.005419846      57.7  0.31272514       57.7         age      age=57.7
-## 3 -0.089521483      42.3 -3.78675875       42.3       hours    hours=42.3
-## 4 -0.506150039       2.0 -1.01230008          2  evaluation  evaluation=2
-## 5 -0.030339560       2.0 -0.06067912          2      salary      salary=2
-## 6 -0.014586820       1.0 -0.01458682       male gender=male   gender=male
+## 1  0.070451023       1.0  0.07045102       male gender=male   gender=male
+## 2  0.005839379      57.7  0.33693215       57.7         age      age=57.7
+## 3 -0.090103309      42.3 -3.81136995       42.3       hours    hours=42.3
+## 4 -0.508252954       2.0 -1.01650591          2  evaluation  evaluation=2
+## 5 -0.032191570       2.0 -0.06438314          2      salary      salary=2
+## 6 -0.018323731       1.0 -0.01832373       male gender=male   gender=male
 ##   .class
 ## 1  fired
 ## 2  fired
@@ -452,8 +452,8 @@ Figure 7.1: (fig:LIME1) A schematic idea behind local model approximations. Pane
 ## 4  fired
 ## 5  fired
 ## 6     ok</code></pre>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="kw">plot</span>(white_box)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="kw">plot</span>(white_box)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
 
 </div>
 </div>

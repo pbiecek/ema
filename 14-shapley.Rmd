@@ -75,8 +75,55 @@ In this section we will present an example based on the `HR` dataset and Random 
 ```{r, message=FALSE, warning=FALSE}
 library("DALEX")
 library("randomForest")
+set.seed(123)
 model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
 ```
+
+First, we use a `shapper` package - a wrapper over SHAP python package.
+
+```{r, message=FALSE, warning=FALSE}
+library("shapper")
+Y_train <- HR$status
+x_train <- HR[ , -6]
+x_train$gender <- as.numeric(x_train$gender)
+model_rfs <- randomForest(x = x_train, y = Y_train)
+
+p_fun <- function(x, data){
+  predict(x, newdata = data, type = "prob")
+}
+
+new_observation <- data.frame(gender = 1,
+                      age = 57.7,
+                      hours = 42.3,
+                      evaluation = 2,
+                      salary = 2)
+
+x <- individual_variable_effect(x = model_rfs, data = x_train, predict_function = p_fun,
+                               new_observation = new_observation)
+
+#plot(x)
+library("ggplot2")
+
+x$`_vname_` <- reorder(x$`_vname_`, x$`_attribution_`, function(z) -sum(abs(z)))
+levels(x$`_vname_`) <- paste(sapply(1:6, substr, x="        ", start=1), levels(x$`_vname_`))
+
+ggplot(x, aes(x=`_vname_`, xend=`_vname_`, 
+              yend = `_yhat_mean_`, y = `_yhat_mean_` + `_attribution_`, 
+              color=`_sign_`)) +
+  geom_segment(arrow = arrow(length=unit(0.30,"cm"), ends="first", type = "closed")) + 
+  geom_text(aes(label = round(`_attribution_`, 2)), nudge_x = 0.45) +
+  geom_segment(aes(x = "_predicted_",xend = "_predicted_",
+                   y = `_yhat_`, yend = `_yhat_mean_`), size = 2, color="black",
+               arrow = arrow(length=unit(0.30,"cm"), ends="first", type = "closed")) + 
+  geom_text(aes(x = "_predicted_", 
+                y = `_yhat_`, label = round(`_yhat_`, 2)), nudge_x = 0.45, color="black") +
+  geom_hline(aes(yintercept = `_yhat_mean_`)) + 
+  facet_grid(`_label_`~`_ylevel_`) +
+  scale_color_manual(values =  c(`-` = "#d8b365", `0` = "#f5f5f5", `+` = "#5ab4ac", 
+                                X = "darkgrey")) +
+  coord_flip() + theme_minimal() + theme(legend.position="none") + xlab("") + ylab("")
+```
+
 
 Here we use the `iml` package, see more examples in [@imlPackage].
 

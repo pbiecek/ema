@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-11-12">
+<meta name="date" content="2018-11-25">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -255,8 +255,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>The goal here is to first build a model, that will guess when to fire and when to promote an employer, so it’s a classification problem with three classes.</p>
 <p>Why we need such model? We want to have objective decisions. That will not be subject to personal preferences of a manager. But is it possible to have an objective model? Would it be fair or it will just replicate some unfairness?</p>
 <p>We will use this example to show how to use prediction level explainers to better understand how the model works for selected cases.</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb71-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb72-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
 <pre><code>##   gender      age    hours evaluation salary   status
 ## 1   male 32.58267 41.88626          3      1    fired
 ## 2 female 41.21104 36.34339          2      5    fired
@@ -265,12 +265,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 5   male 21.10283 62.15464          5      3 promoted
 ## 6   male 40.11812 69.53973          2      0    fired</code></pre>
 <p>In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> and generalized linear model <span class="citation">(Ripley <a href="#ref-R-nnet">2016</a>)</span>.</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb73-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb73-3" data-line-number="3">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb73-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb73-5" data-line-number="5"><span class="kw">library</span>(<span class="st">&quot;nnet&quot;</span>)</a>
-<a class="sourceLine" id="cb73-6" data-line-number="6">model_glm &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
+<a class="sourceLine" id="cb74-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb74-3" data-line-number="3">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb74-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb74-5" data-line-number="5"><span class="kw">library</span>(<span class="st">&quot;nnet&quot;</span>)</a>
+<a class="sourceLine" id="cb74-6" data-line-number="6">model_glm &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
 <pre><code>## # weights:  21 (12 variable)
 ## initial  value 8620.810629 
 ## iter  10 value 7002.127738
@@ -285,8 +285,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>In this chapter we present an artificial dataset related to prediction of prices for appartments in Warsaw. This dataset wil be used to discuss pros and cons for different techniques of model level explainers.</p>
 <p>The dataset is available in the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">c</a>)</span>. Each row corresponds to a single apartment. Features like surface, number of rooms, district or floor are used as predictive features.</p>
 <p>The problem here is to predict price of a square meter for an appartment, so it’s a regression problem with continouse outcome.</p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb75-2" data-line-number="2"><span class="kw">head</span>(apartments)</a></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb76-2" data-line-number="2"><span class="kw">head</span>(apartments)</a></code></pre></div>
 <pre><code>##   m2.price construction.year surface floor no.rooms    district
 ## 1     5897              1953      25     3        1 Srodmiescie
 ## 2     1818              1992     143     9        5     Bielany
@@ -295,9 +295,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 5     3013              1992     144     6        5     Mokotow
 ## 6     5795              1926      61     6        2 Srodmiescie</code></pre>
 <p>The goal here is to predict average price for square meter for an apartment. Let’s build a random forest model with <code>randomForest</code> package <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb77-2" data-line-number="2">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb77-3" data-line-number="3">model_rf</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb78-2" data-line-number="2">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb78-3" data-line-number="3">model_rf</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = m2.price ~ construction.year + surface +      floor + no.rooms + district, data = apartments) 
@@ -308,8 +308,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ##           Mean of squared residuals: 82079.37
 ##                     % Var explained: 90.01</code></pre>
 <p>And a linear model.</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb79-1" data-line-number="1">model_lm &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb79-2" data-line-number="2">model_lm</a></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" data-line-number="1">model_lm &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb80-2" data-line-number="2">model_lm</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = m2.price ~ construction.year + surface + floor + 
