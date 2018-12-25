@@ -10,11 +10,11 @@ In this chapter we define basic ideas behind concept drift and propose some solu
 
 ## Introduction
 
-In general, concept drift means that some statistical properties of variables used in the model change over time. This may result in degenerated performance. Thus the early dectection of concept drift is very important as it is needed to adapt quickly to these changes. 
+In general, concept drift means that some statistical properties of variables used in the model change over time. This may result in degenerated performance. Thus the early detection of concept drift is very important, as it is needed to adapt quickly to these changes. 
 
 The term `concept` usually refers to target variable, but generally, it can also refer to model input of relations between variables.
 
-The most general formulation of a concept drift refers to chnges in joint distribution of $p(X, y)$. It is usefull to define also following measires.
+The most general formulation of a concept drift refers to changes in joint distribution of $p(X, y)$. It is useful to define also following measures.
 
 * Conditional Covariate Drift as change in $p(X | y)$
 * Conditional Class Drift as change in $p(y | X)$
@@ -26,7 +26,7 @@ Once the drift is detected one may re-fit the model on newer data or update the 
 
 Covariate Drift is a change in distribution of input, change in the distribution of $p(X)$. The input is a $p$-dimensional vector with variables of possible mixed types and distributions. 
 
-Here we propose a simple one-dimensional method, that can be applied to each variable separately despite of it's type. We do not rely on any formal statistical test, as the power of the test depends on sample size and for large samples the test will detect even small differences.
+Here we propose a simple one-dimensional method, that can be applied to each variable separately despite of its type. We do not rely on any formal statistical test, as the power of the test depends on sample size and for large samples the test will detect even small differences.
 
 We also consider an use-case for two samples. One sample gathers historical ,,old'' data, this may be data available during the model development (part of it may be used as training and part as test data). Second sample is the current ,,new'' data, and we want to know is the distribution of $X_{old}$ differs from the distribution of $X_{new}$. 
 
@@ -63,11 +63,96 @@ d
 ```
 
 
+## Residual Drift
+
+Perhaps the most obvious negative effect of the concept drift is that the model performance degrades over time. 
+
+But this is also something that is straightforward to verify. One can calculate distribution of residuals on new data and compare this distribution with residuals obtained on old data.
+
+Again, we have two samples, residuals calculated on the old dataset
+
+$$
+r_{old} = y_{old} - \hat y_{old} = y_{old} - f_{old}(X_{old})
+$$
+versus residuals calculated on the new dataset
+$$
+r_{new} = y_{new} - \hat y_{new} = y_{new} - f_{old}(X_{new})
+$$
+
+We can use any distance between distributions to compare $r_{new}$ and $r_{old}$, for example the non-intersection distance.
+
+## Code snippets
+
+Here we are going to use the `drifter` package.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX2")
+library("drifter")
+library("ranger")
+
+data_old <- apartments_test[1:4000,]
+data_new <- apartments_test[4001:8000,]
+
+predict_function <- function(m,x,...) predict(m, x, ...)$predictions
+model_old <- ranger(m2.price ~ ., data = apartments)
+calculate_residuals_drift(model_old,
+                      data_old, data_new,
+                      data_old$m2.price, 
+                      data_new$m2.price,
+                      predict_function = predict_function)
+```
 
 
-Two sample 
-- train two elastic moels and compare them pdp by pdp
+## Model Drift
 
-- drift in residuals
+Model Drift is a change in the relation between target variable and input variables, change in $p(y|X)$. The input is a $p$-dimensional vector with variables of possible mixed types and distributions. 
+
+Here we propose a simple one-dimensional method based on Partial Dependency Plots introduced in the Chapter \@ref(partialDependence). PDP profiles summaries marginal relation between $\hat y$ and variable $x_i$. The idea behind concept drift is to compare two models, the old model $f_{old}$ and model refitted on the new data $f_{new}$ and compare these models through PDP profiles.  
+
+For each variable we can obtain scores for drift calculated as $L_2$ distance between PDP profiles for both models.
+
+$$
+drift_{i} = \frac 1 {|Z_i|}\int_{z\in Z_i} (PDP_i(f_{old}) - PDP_i(f_{new}))^2 dz
+$$
+where $Z_i$ is the set of values for variable $x_i$ (for simplicity we assume that it's an interval) while $PDP_i(f_{new})$ is the PDP profile for variable $i$ calculated for the model $f_{new}$.
+
+## Code snippets
+
+Here we are going to use the `drifter` package.
+Instead of using `old` and `new` data here we compare model trained on data with males versus new dataset that contain data for females.
+
+But, because of the interaction of gender and age, models created on these two datasets are different.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX2")
+library("drifter")
+library("ranger")
+
+predict_function <- function(m,x,...) predict(m, x, ..., probability=TRUE)$predictions[,1]
+data_old = HR[HR$gender == "male", -1]
+data_new = HR[HR$gender == "female", -1]
+model_old <- ranger(status ~ ., data = data_old, probability = TRUE)
+model_new <- ranger(status ~ ., data = data_new, probability = TRUE)
+calculate_model_drift(model_old, model_new,
+                 HR_test,
+                 HR_test$status == "fired",
+                 max_obs = 1000,
+                 predict_function = predict_function)
+
+library("ceterisParibus2")
+prof_old <- individual_variable_profile(model_old,
+                 data = data_new,
+                 new_observation = data_new[1:1000,],
+                 label = "model_old",
+                 predict_function = predict_function)
+prof_new <- individual_variable_profile(model_new,
+                 data = data_new,
+                 new_observation = data_new[1:1000,],
+                 label = "model_new",
+                 predict_function = predict_function)
+plot(prof_old, prof_new,
+     selected_variables = "age", aggregate_profiles = mean,
+     show_observations = FALSE, color = "_label_", alpha = 1)
+```
 
 

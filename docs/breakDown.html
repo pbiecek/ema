@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-12-24">
+<meta name="date" content="2018-12-25">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -218,6 +218,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="16.1" data-path="concept-drift.html"><a href="concept-drift.html#introduction-3"><i class="fa fa-check"></i><b>16.1</b> Introduction</a></li>
 <li class="chapter" data-level="16.2" data-path="concept-drift.html"><a href="concept-drift.html#covariate-drift"><i class="fa fa-check"></i><b>16.2</b> Covariate Drift</a></li>
 <li class="chapter" data-level="16.3" data-path="concept-drift.html"><a href="concept-drift.html#code-snippets-2"><i class="fa fa-check"></i><b>16.3</b> Code snippets</a></li>
+<li class="chapter" data-level="16.4" data-path="concept-drift.html"><a href="concept-drift.html#residual-drift"><i class="fa fa-check"></i><b>16.4</b> Residual Drift</a></li>
+<li class="chapter" data-level="16.5" data-path="concept-drift.html"><a href="concept-drift.html#code-snippets-3"><i class="fa fa-check"></i><b>16.5</b> Code snippets</a></li>
+<li class="chapter" data-level="16.6" data-path="concept-drift.html"><a href="concept-drift.html#model-drift"><i class="fa fa-check"></i><b>16.6</b> Model Drift</a></li>
+<li class="chapter" data-level="16.7" data-path="concept-drift.html"><a href="concept-drift.html#code-snippets-4"><i class="fa fa-check"></i><b>16.7</b> Code snippets</a></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="appendixes.html"><a href="appendixes.html"><i class="fa fa-check"></i>Appendixes</a></li>
 <li class="chapter" data-level="17" data-path="DataSets.html"><a href="DataSets.html"><i class="fa fa-check"></i><b>17</b> Data Sets</a><ul>
@@ -434,12 +438,12 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.31%
+##         OOB estimate of  error rate: 27.48%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2280  386      189   0.2014011
-## ok         522 1249      450   0.4376407
-## promoted   205  391     2175   0.2150848</code></pre>
+## fired     2273  385      197   0.2038529
+## ok         539 1243      439   0.4403422
+## promoted   204  392     2175   0.2150848</code></pre>
 <p>Model exploration with the <code>breakDown2</code> package is performed in three steps.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
 <p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX2</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">c</a>)</span>.</p>
@@ -455,8 +459,8 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 <a class="sourceLine" id="cb12-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
 <a class="sourceLine" id="cb12-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb12-7" data-line-number="7"><span class="kw">predict</span>(model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
-<pre><code>##   fired    ok promoted
-## 1   0.8 0.196    0.004
+<pre><code>##   fired   ok promoted
+## 1  0.78 0.22        0
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <p><strong>3. Calculate Break Down decomposition</strong></p>
@@ -469,27 +473,27 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 <a class="sourceLine" id="cb14-5" data-line-number="5"></a>
 <a class="sourceLine" id="cb14-6" data-line-number="6">bd_rf</a></code></pre></div>
 <pre><code>##                                         contribution
-## randomForest.fired: baseline                   0.376
-## randomForest.fired: * hours = 42               0.236
-## randomForest.fired: * evaluation = 2           0.064
-## randomForest.fired: * salary = 2              -0.248
-## randomForest.fired: * age = 58                 0.092
-## randomForest.fired: * gender = male            0.281
-## randomForest.fired: prediction                 0.800
+## randomForest.fired: baseline                   0.375
+## randomForest.fired: * hours = 42               0.238
+## randomForest.fired: * evaluation = 2           0.053
+## randomForest.fired: * salary = 2              -0.257
+## randomForest.fired: * age = 58                 0.082
+## randomForest.fired: * gender = male            0.288
+## randomForest.fired: prediction                 0.780
 ## randomForest.ok: baseline                      0.275
-## randomForest.ok: * hours = 42                 -0.047
-## randomForest.ok: * evaluation = 2              0.092
-## randomForest.ok: * salary = 2                  0.247
-## randomForest.ok: * age = 58                   -0.088
-## randomForest.ok: * gender = male              -0.282
-## randomForest.ok: prediction                    0.196
+## randomForest.ok: * hours = 42                 -0.046
+## randomForest.ok: * evaluation = 2              0.098
+## randomForest.ok: * salary = 2                  0.255
+## randomForest.ok: * age = 58                   -0.076
+## randomForest.ok: * gender = male              -0.287
+## randomForest.ok: prediction                    0.220
 ## randomForest.promoted: baseline                0.349
-## randomForest.promoted: * hours = 42           -0.189
-## randomForest.promoted: * evaluation = 2       -0.156
-## randomForest.promoted: * salary = 2            0.001
-## randomForest.promoted: * age = 58             -0.003
-## randomForest.promoted: * gender = male         0.001
-## randomForest.promoted: prediction              0.004
+## randomForest.promoted: * hours = 42           -0.193
+## randomForest.promoted: * evaluation = 2       -0.151
+## randomForest.promoted: * salary = 2            0.002
+## randomForest.promoted: * age = 58             -0.006
+## randomForest.promoted: * gender = male        -0.001
+## randomForest.promoted: prediction              0.000
 ## baseline:  0</code></pre>
 <p>The generic <code>plot()</code> function creates a Break Down plots.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
