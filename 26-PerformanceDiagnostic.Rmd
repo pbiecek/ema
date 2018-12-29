@@ -1,0 +1,28 @@
+# Performance Diagnostic {#modelComparisons}
+
+Goal: how good is the model, which is better
+
+Model selection
+
++ ROC / RROC / LIFT
+
+```{r, warning=FALSE, message=FALSE}
+library("auditor")
+library("DALEX2")
+library("ranger")
+library("e1071")
+
+rf_model <- ranger(life_length ~ ., data = dragons)
+lm_model <- lm(life_length ~ ., data = dragons)
+svm_model <- svm(life_length ~ ., data = dragons)
+
+predict_function <- function(m,x,...) predict(m, x, ...)$predictions
+rf_au <- audit(rf_model, data = dragons, y = dragons$life_length,
+           predict.function = predict_function)
+lm_au <- audit(lm_model, data = dragons, y = dragons$life_length)
+svm_au <- audit(svm_model, data = dragons, y = dragons$life_length)
+
+plotResidualBoxplot(rf_au, lm_au, svm_au)
+plotRROC(rf_au, lm_au, svm_au)
+```
+
