@@ -1,0 +1,122 @@
+# Feature extraction {#variableEngeneering}
+
+
+[@R-factorMerger]
+
+
+[@Strobl2007] 
+[@Strobl2008] 
+- variable importance
+
+[@2018arXiv180101489F]
+
+Beware Default Random Forest Importances
+
+Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
+March 26, 2018.
+
+http://explained.ai/rf-importance/index.html
+
+
+# Marginal Response
+
+Feature extraction
+
+```{r, warning=FALSE, message=FALSE}
+library(titanic)
+library(randomForest)
+library(DALEX)
+library(dplyr)
+
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+titanic_small <- na.omit(titanic_small)
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked, 
+                         data = titanic_small)
+predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+rf_explain <- explain(rf_model, data = titanic_small, 
+                      y = titanic_small$Survived == "1", label = "RF",
+                      predict_function = predict_fuction)
+
+```
+
+## Partial Dependency Plots {#partialDependence}
+
+
+$$
+  g(x_i) = E_{X_i} [f(x^i, x^{-i}, \theta)]
+$$
+  $$
+  \hat g(x_i) = \frac 1n \sum_{j=1}^n f(x^i, x^{-i}, \hat\theta)
+$$
+  
+  
+  
+  ```{r, warning=FALSE, message=FALSE}
+library("ceterisParibus")
+
+cp_25 <- ceteris_paribus(rf_explain, 
+                         observations = titanic_small[sample(nrow(titanic_small),25), ], 
+                         variables = "Age")
+plot(cp_25, show_observations = FALSE)
+plot(cp_25, show_observations = FALSE, alpha = 0.1) + 
+  ceteris_paribus_layer(cp_25, show_observations = FALSE, aggregate_profiles = mean, alpha = 1, size = 3)
+
+
+cp_100 <- ceteris_paribus(rf_explain, 
+                          observations = titanic_small[sample(nrow(titanic_small),100), ], 
+                          variables = c("Age","Sex"))
+plot(cp_100, color = "Sex")
+
+
+cp_male <- ceteris_paribus(rf_explain, 
+                           observations = titanic_small[titanic_small$Sex == "male",], 
+                           variables = c("Age", "Sex"))
+cp_female <- ceteris_paribus(rf_explain, 
+                             observations = titanic_small[titanic_small$Sex == "female",], 
+                             variables = c("Age", "Sex"))
+
+plot(cp_male, show_observations = FALSE, aggregate_profiles = mean, color = "red3") +
+  ceteris_paribus_layer(cp_female, show_observations = FALSE, aggregate_profiles = mean, color="blue3")
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+variable_importance(rf_explain) %>% plot()
+single_variable(rf_explain, "Age") %>% plot() + ylim(0.2,0.8)
+single_variable(rf_explain, "Pclass") %>% plot() + ylim(0.2,0.8)
+single_variable(rf_explain, "Fare") %>% plot() + ylim(0.2,0.8)
+single_variable(rf_explain, "Sex") %>% plot()
+```
+
+[@demsar2018]
+
+[@RJ2017016]
+[@MAGIX]
+
+Accumulated Local Effects (ALE) Plots
+[@R-ALEPlot]
+
+
+
+Interactions - extraction
+
+## Merging Path Plots
+
+[@R-factorMerger]
+
+```{r, warning=FALSE, message=FALSE}
+library(factorMerger)
+```
+
+# Other topics
+
+
+[@R-randomForestExplainer]
+[@R-ICEbox]
+[@R-ALEPlot]
+
+[@R-modelDown]
