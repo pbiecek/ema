@@ -32,62 +32,11 @@ There is a cost of this progress. Complex models may seem to operate like ,,blac
 
 Today the true bottleneck in predictive modelling is not the lack of data, nor the lack of computational power, nor the lack of flexible models. It is the lack of tools for model validation, model exploration, and explanation of model decisions. Thus, in this book, we present a collection of methods that may be used for this purpose. As development of such methods is a very active area of research and new methods become available almost on a continuous basis, we do not aim at being exhaustive. Rather, we present the mind-set, key problems, and several example of methods that can be used in model exploration.
 
-
-**In this book, we do show**
-
-* how to determine features that affect model prediction for a single observation. In particular, we present the theory and examples of methods that can be used to explain prediction like break down plots, ceteris paribus profiles, local-model approximations, or Shapley values.
-* techniques to examine fully-trained machine-learning models as a whole. In particular, we review the theory and examples of methods that can be used to explain model performance globally, like partial-dependency plots, variable-importance plots, and others.
-* charts that can be used to present key information in a quick way. 
-* tools and methods for model comparison.
-* code snippets for R and Python that explain how to use the described methods.
-
-**In this book, we do not focus on**
-
-* any specific model. The presented techniques are model agnostic and do not make any assumptions related to model structure.
-* data exploration. There are very good books on this topic, like R for Data Science http://r4ds.had.co.nz/ or TODO
-* the process of model building. There are also very good books on this topic, see An Introduction to Statistical Learning by Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani http://www-bcf.usc.edu/~gareth/ISL/ or TODO
-* any particular tools for model building. These are discussed, for instance, in Applied Predictive Modeling By Max Kuhn and Kjell Johnson http://appliedpredictivemodeling.com/
-
-Our book is split in two parts. In the part *Prediction level explainers*, we present techniques for exploration and explanation of  model predictions for a single observation. On the other hand, in the part *Model level explainers*, we present techniques for exploration and explanation of a model as a whole. In each part, every method for model exploration is described in a separate section. The method sections have got the same strucutre: 
-* Subsection *Introduction* explains the goal of and the general idea behind the method.
-* Subsection *The Algorithm* shows mathematical or computational details related to the method. This subsection can be skipped if you are not interested in the details.
-* Subsection *Example* shows an exemplary application of the method with discussion of results.
-* Subsection *Pros and Cons* summarizes the advantages and disadvantages of the method. It also provides some guideance regarding when  to use the method.
-* Subsection *Code snippets* shows the implementation of the method in R and Python. This subsection can be skipped if you are not interested in the implementation.
-
-It is worth noting that the same concepts have often been given different names in statistics and in machine learning. Thus, before embarking on the presentation of methods, in Section 1 we try to ,,translate'' the jargons used in these two worlds. In particular, we introduce the notation and vocabulary that will be used throughout the book. In this section, we also set expectations.
-
-## Model lifecycle
-
-Figure \@ref(fig:lifecycle) shows typical lifecycle of a predictive model. Part of the lifecycle are activities that lead to the model development. First, of course, we need to understand the domain of a problem, then we need to select important features, prepare important features, select the right model structure and viola! We have the model.
-
-Once the model is created we still need to validate its performance. We need to support its deployment and maintenance.
-
-```{r lifecycle, echo=FALSE, fig.cap="(fig:lifecycle) Model lifecycle", out.width = '50%', fig.align='center'}
-knitr::include_graphics("figure/lifecycle.png")
-```
-
-As we will show, tools for model exploration, explanation and visualization may be useful in every phase of model lifecycle.
-
-* Tools presented in chapter \@ref(variableImportance) helps to understand variable importance. They can be used in phase 2 - features selection.
-* Tools presented in chapter \@ref(variableRelation) helps to understand variable effect. They can be used in phase 3 - features engineering.
-
-Once the model is created, tools for model uderstanding have in general two applications.
-
-* We can use them to contrast model behavior with our domain knowledge. This way we can validate if model behavior is consistent with our expectations / some imposed requirements.
-* We can use them to extract some new knowledge about the domain. One possible application is to train a very elastic model to the dataset and then use model explainers to better understand relation between input variables and the target variable.
-
-After model creation we may use model explainers to:
-
-* Validate the model, some tools for that are presented in chapter ....
-* Deploy the model. For deployed models we are interested in arguments agains particular decisions.
-* Maintain the model. Monitor concept drift for a model.
-
 ## White-box models vs. black-box models
 
 In this book we focus on black-box models, i.e., models with a complex structure that may involve a large number of coefficients. Such models are usually hard to trace and understand by humans.
 
-The opposite are white-box models that have a simple structure and a limited number of coefficients. The two most common classess of white-box models are decision or regression trees (see an example in Figure \@ref(fig:BILLCD8)) or models with an additive structure, like the following model for mortality risk in melanoma patients:
+Their counterpart are white-box models that have a simple structure and a limited number of coefficients. The two most common classess of white-box models are decision or regression trees (see an example in Figure \@ref(fig:BILLCD8)) or models with an additive structure, like the following model for mortality risk in melanoma patients:
 
 $$
 RelativeRisk = 1 + 3.6 * [Breslow > 2] - 2 * [TILs > 0] 
@@ -104,6 +53,22 @@ Getting the idea about the performance of a black-box model may be more challeng
 ```{r BILLCD8, echo=FALSE, fig.cap="(fig:BILLCD8) Example tree model for melanoma risk", out.width = '50%', fig.align='center'}
 knitr::include_graphics("figure/wbBILL8model.png")
 ```
+
+## How model exploration is different from data exploration?
+
+Exploration and visualization of models is not that known as exploration and visualization of data.
+
+In both data and model visualization we use a graphical representation to deliver  messages quicker in a form that is easier to digest. In fact, we may use similar charts and similar way to express ideas. This is because many people are already familiar with techniques for data visualization and we may want to take advantage of this knowledge when approaching model visualization.
+
+Despite the similarites, we need to keep in mind a few key differences between these two worlds. 
+
+First, with data exploration and visualization we want to understand the, usually unknown, mechanism generating data. Models are created based on the data, but in most cases we do not know how adequatly do these models capture the unknown mechanism. So, we use model exploration to check if the model is consistent with the data and, therefore, if it may offer a description of the mechanism. However, in most cases we do not check if data are ,,correct''. So, we are more skeptical about models than about data.
+
+Second, we usually treat data as a random sample coming from a population or from a probability distribution. Hence, data inherit randomness related to the sampling. On the other hand, models are just functions. Most models are not stochastic (or at least some models are not stochastic) and the randomness (if any) come from the fitting procedure not from the sampling. [TOMASZ: NOT SURE WHAT DO WE WANT TO SAY HERE?]
+
+Finally, models may be inaccurate or biased. When we ask a question like ,,How does the model perform?'' we essentially ask, a t the same time, ,,is the model accurate? how much I can trust it?''. With respect to data, we often do not question their accuracy or ,,trustwothiness'', but rather our understanding of the data. [TOMASZ: NOT SURE WHAT DO WE WANT TO SAY HERE?]
+
+Thus, in summary, we may use similar exploration and visualization techniques for models and data. But the techniques are used to answer different questions.
 
 ## Model-agnostic vs. model-specific approach
 
@@ -124,7 +89,7 @@ Note that the techniques considered in the book may not be sufficient to fully u
 
 ## Why do we need model explainers?
 
-Machine Learning models have a wide range of applications in classification or regression problems. Due to the increasing computational power of computers and complexity of data sources, ML models are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
+Machine-learning models (MLMs) have a wide range of applications. Due to the increasing computational power of computers and complexity of data sources, MLMs are becoming more and more sophisticated. Models created with the use of techniques such as boosting or bagging of neural networks are parametrized by thousands of coefficients. They are obscure; it is hard to trace the link between input variables and model outcomes - in fact they are treated as black boxes. They are used because of their elasticity and high performance, but their deficiency in interpretability is one of their weakest sides.
 
 In many applications we need to know, understand or prove how the input variables are used in the model. We need to know the impact of particular variables on the final model predictions. Thus we need tools that extract useful information from thousands of model parameters.
 
@@ -175,20 +140,31 @@ Model maintenance is a phase in which one wants to make sure that model is still
 
 In the section \@ref(partialDependence) we present tools that may compare how thw model response behaves on the new dataset. This helps to detect flaws in model assumptions and biases in the data.
 
+## Model lifecycle
 
-## How model exploration is different from data exploration?
+Figure \@ref(fig:lifecycle) shows typical lifecycle of a predictive model. Part of the lifecycle are activities that lead to the model development. First, of course, we need to understand the domain of a problem, then we need to select important features, prepare important features, select the right model structure and viola! We have the model.
 
-Exploration and visualization of models is not that known as exploration and visualization of data.
-As we will see in following chapters in both cases we may use similar charts and similar way to express ideas. This is because many people are already familiar with techniques for data visualization and when we do model visualization we want to take advantage of this knowledge.
+Once the model is created we still need to validate its performance. We need to support its deployment and maintenance.
 
-Both in data visualization and in model visualization we use graphical representation to deliver some messages quicker in a form that is easier to digest.
-Despite all similarites we need to keep in mind few key differences between these two wrods.
+```{r lifecycle, echo=FALSE, fig.cap="(fig:lifecycle) Model lifecycle", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/lifecycle.png")
+```
 
-* Data is generated by some unknown phenomena and with data exploration and visualization we want to understand this phenomena. Models are created based on the data but in most cases we do not know how close are these models to unknown phenomena. So we do model exploration to validate if the model is correct. If the model is valid. In most cases we do not validate data if they are correct. So we are more skeptical about models than about data.
-* Data comes from some population; we treat data as a random sample, and there is some inherited randomness related to the sampling. On the opposite, models are just functions. Most models are not stochastic (or at least some models are not stochastic) and the randomness (if any) come from the fitting procedure not from the sampling.
-* Models may be inaccurate or biased. When we ask question like ,,How the model is working?'' we also ask ,,Is the model accurate, can I trust it, does it behave well, how much I can trust it?''. Similar question related to data do not question the data but question our understating of the data.
+As we will show, tools for model exploration, explanation and visualization may be useful in every phase of model lifecycle.
 
-To summaries. We may use similar techniques. But they are used to answer different questions.
+* Tools presented in chapter \@ref(variableImportance) helps to understand variable importance. They can be used in phase 2 - features selection.
+* Tools presented in chapter \@ref(variableRelation) helps to understand variable effect. They can be used in phase 3 - features engineering.
+
+Once the model is created, tools for model uderstanding have in general two applications.
+
+* We can use them to contrast model behavior with our domain knowledge. This way we can validate if model behavior is consistent with our expectations / some imposed requirements.
+* We can use them to extract some new knowledge about the domain. One possible application is to train a very elastic model to the dataset and then use model explainers to better understand relation between input variables and the target variable.
+
+After model creation we may use model explainers to:
+
+* Validate the model, some tools for that are presented in chapter ....
+* Deploy the model. For deployed models we are interested in arguments agains particular decisions.
+* Maintain the model. Monitor concept drift for a model.
 
 
 ## Code snippets
@@ -216,6 +192,32 @@ Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subsc
 * *Nominal variable*, opposite to *Continuous variables*, finite set of values that will not the threaded as a numeric 
 
 
+## The structure of the book
+
+Our book is split in two parts. In the part *Prediction level explainers*, we present techniques for exploration and explanation of  model predictions for a single observation. On the other hand, in the part *Model level explainers*, we present techniques for exploration and explanation of a model as a whole. In each part, every method for model exploration is described in a separate section. The method sections have got the same strucutre: 
+* Subsection *Introduction* explains the goal of and the general idea behind the method.
+* Subsection *The Algorithm* shows mathematical or computational details related to the method. This subsection can be skipped if you are not interested in the details.
+* Subsection *Example* shows an exemplary application of the method with discussion of results.
+* Subsection *Pros and Cons* summarizes the advantages and disadvantages of the method. It also provides some guideance regarding when  to use the method.
+* Subsection *Code snippets* shows the implementation of the method in R and Python. This subsection can be skipped if you are not interested in the implementation.
+
+**In this book, we do show**
+
+* how to determine features that affect model prediction for a single observation. In particular, we present the theory and examples of methods that can be used to explain prediction like break down plots, ceteris paribus profiles, local-model approximations, or Shapley values.
+* techniques to examine fully-trained machine-learning models as a whole. In particular, we review the theory and examples of methods that can be used to explain model performance globally, like partial-dependency plots, variable-importance plots, and others.
+* charts that can be used to present key information in a quick way. 
+* tools and methods for model comparison.
+* code snippets for R and Python that explain how to use the described methods.
+
+**In this book, we do not focus on**
+
+* any specific model. The presented techniques are model agnostic and do not make any assumptions related to model structure.
+* data exploration. There are very good books on this topic, like R for Data Science http://r4ds.had.co.nz/ or TODO
+* the process of model building. There are also very good books on this topic, see An Introduction to Statistical Learning by Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani http://www-bcf.usc.edu/~gareth/ISL/ or TODO
+* any particular tools for model building. These are discussed, for instance, in Applied Predictive Modeling By Max Kuhn and Kjell Johnson http://appliedpredictivemodeling.com/
+
+
+It is worth noting that the same concepts have often been given different names in statistics and in machine learning. Thus, before embarking on the presentation of methods, in Section 1 we try to ,,translate'' the jargons used in these two worlds. In particular, we introduce the notation and vocabulary that will be used throughout the book. In this section, we also set expectations.
 
 ## Acknowledgements {#thanksto}
 
