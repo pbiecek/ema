@@ -18,17 +18,20 @@ graphics: yes
 
 # Introduction
 
+## The aim of the book
+
 Predictive models are used to guess (statisticians would say: predict) values of a variable of interest based on other variables. As an example, consider prediction of sales based on historical data, prediction of risk of heart disease based on patient's characteristics, or prediction of political attitudes based on facebook comments.
 
-Predictive models were constructed through the whole human history. Ancient Egyptians, for instance, used observations of rising of Sirius to predict flooding of the Nile. A more rigorous approach to model construction may be attributed to the method of least squares, published more than two centuries ago by Legendre in 1805 and by Gauss in 1809. With time, the number of applications in economy, medicine, biology,and  agriculture was growing. The term *regression* was coined by Francis Galton in 1886. Initially, it was referring to biological applications, while today it is used for various models that allow prediction of continuous variables. Prediction of nominal variables is called *classification*, and its beginning may be attributed to works of Ronald Fisher in 1936.
+Predictive models have been constructed through the whole human history. Ancient Egyptians, for instance, used observations of rising of Sirius to predict flooding of the Nile. A more rigorous approach to model construction may be attributed to the method of least squares, published more than two centuries ago by Legendre in 1805 and by Gauss in 1809. With time, the number of applications in economy, medicine, biology,and  agriculture was growing. The term *regression* was coined by Francis Galton in 1886. Initially, it was referring to biological applications, while today it is used for various models that allow prediction of continuous variables. Prediction of nominal variables is called *classification*, and its beginning may be attributed to works of Ronald Fisher in 1936.
 
 During the last century, many statistical models that can be used for predictive purposes have been developed. These include  linear models, generalized linear models, regression and classification trees, rule-based models, and many others. Developments in mathematical foundations of predictive models were boosted by increasing computational power of personal computers and availability of large datasets in the era of ,,big data'' that we have entered. 
 
 With the increasing demand for predictive models, model features such as flexibility, ability to perform internally some feature engineering, and high precision of predictions are of interest. To obtain robust models, ensembles of models are used. Techniques like bagging, boosting, or model stacking combine hundreds or thousands of small models into a one super-model. Large deep neural models have overa  bilion of parameters. 
 
-There is a cost of this progress. Complex models may seem to operate like black boxes. It may be difficult, or even impopssible, to understand how thousands of coefficients affect the model prediction. At the same time, complex models may not work as good as we would like them to do. An overview of real problems with large black-box models may be found in an excellent book of Cathy O'Neil [@ONeil] or in her TED Talk ,,*The era of blind faith in big data must end*''. There is a growing number of examples of predictive models with performance that deteriorated over time or became biased in some sense. See, for instance, the issues related to the flu epidemic predictions by the Google Flu Trends model [Lazer et al Science 2014] or the problems with cancer recommndations based on the IBM Watson model [https://www.statnews.com/2017/09/05/watson-ibm-cancer/].
+There is a cost of this progress. Complex models may seem to operate like ,,black boxes''. It may be difficult, or even impopssible, to understand how thousands of coefficients affect the model prediction. At the same time, complex models may not work as good as we would like them to do. An overview of real problems with large black-box models may be found in an excellent book of Cathy O'Neil [@ONeil] or in her TED Talk ,,*The era of blind faith in big data must end*''. There is a growing number of examples of predictive models with performance that deteriorated over time or became biased in some sense. See, for instance, the issues related to the flu epidemic predictions by the Google Flu Trends model [Lazer et al Science 2014] or the problems with cancer recommndations based on the IBM Watson model [https://www.statnews.com/2017/09/05/watson-ibm-cancer/].
 
 Today the true bottleneck in predictive modelling is not the lack of data, nor the lack of computational power, nor the lack of flexible models. It is the lack of tools for model validation, model exploration, and explanation of model decisions. Thus, in this book, we present a collection of methods that may be used for this purpose. As development of such methods is a very active area of research and new methods become available almost on a continuous basis, we do not aim at being exhaustive. Rather, we present the mind-set, key problems, and several example of methods that can be used in model exploration.
+
 
 **In this book, we do show**
 
@@ -45,7 +48,6 @@ Today the true bottleneck in predictive modelling is not the lack of data, nor t
 * the process of model building. There are also very good books on this topic, see An Introduction to Statistical Learning by Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani http://www-bcf.usc.edu/~gareth/ISL/ or TODO
 * any particular tools for model building. These are discussed, for instance, in Applied Predictive Modeling By Max Kuhn and Kjell Johnson http://appliedpredictivemodeling.com/
 
-
 Our book is split in two parts. In the part *Prediction level explainers*, we present techniques for exploration and explanation of  model predictions for a single observation. On the other hand, in the part *Model level explainers*, we present techniques for exploration and explanation of a model as a whole. In each part, every method for model exploration is described in a separate section. The method sections have got the same strucutre: 
 * Subsection *Introduction* explains the goal of and the general idea behind the method.
 * Subsection *The Algorithm* shows mathematical or computational details related to the method. This subsection can be skipped if you are not interested in the details.
@@ -54,6 +56,32 @@ Our book is split in two parts. In the part *Prediction level explainers*, we pr
 * Subsection *Code snippets* shows the implementation of the method in R and Python. This subsection can be skipped if you are not interested in the implementation.
 
 It is worth noting that the same concepts have often been given different names in statistics and in machine learning. Thus, before embarking on the presentation of methods, in Section 1 we try to ,,translate'' the jargons used in these two worlds. In particular, we introduce the notation and vocabulary that will be used throughout the book. In this section, we also set expectations.
+
+## Model lifecycle
+
+Figure \@ref(fig:lifecycle) shows typical lifecycle of a predictive model. Part of the lifecycle are activities that lead to the model development. First, of course, we need to understand the domain of a problem, then we need to select important features, prepare important features, select the right model structure and viola! We have the model.
+
+Once the model is created we still need to validate its performance. We need to support its deployment and maintenance.
+
+```{r lifecycle, echo=FALSE, fig.cap="(fig:lifecycle) Model lifecycle", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/lifecycle.png")
+```
+
+As we will show, tools for model exploration, explanation and visualization may be useful in every phase of model lifecycle.
+
+* Tools presented in chapter \@ref(variableImportance) helps to understand variable importance. They can be used in phase 2 - features selection.
+* Tools presented in chapter \@ref(variableRelation) helps to understand variable effect. They can be used in phase 3 - features engineering.
+
+Once the model is created, tools for model uderstanding have in general two applications.
+
+* We can use them to contrast model behavior with our domain knowledge. This way we can validate if model behavior is consistent with our expectations / some imposed requirements.
+* We can use them to extract some new knowledge about the domain. One possible application is to train a very elastic model to the dataset and then use model explainers to better understand relation between input variables and the target variable.
+
+After model creation we may use model explainers to:
+
+* Validate the model, some tools for that are presented in chapter ....
+* Deploy the model. For deployed models we are interested in arguments agains particular decisions.
+* Maintain the model. Monitor concept drift for a model.
 
 ## White-box models vs. black-box models
 
