@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2018-12-29">
+<meta name="date" content="2019-01-07">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -205,8 +205,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="10.1" data-path="introduction-2.html"><a href="introduction-2.html#approaches-to-model-explanations"><i class="fa fa-check"></i><b>10.1</b> Approaches to model explanations</a></li>
 <li class="chapter" data-level="10.2" data-path="introduction-2.html"><a href="introduction-2.html#a-bit-of-philosophy-three-laws-for-model-level-explanations"><i class="fa fa-check"></i><b>10.2</b> A bit of philosophy: Three Laws for Model Level Explanations</a></li>
 </ul></li>
-<li class="chapter" data-level="11" data-path="variableImportance.html"><a href="variableImportance.html"><i class="fa fa-check"></i><b>11</b> Variable Importance</a><ul>
-<li class="chapter" data-level="11.1" data-path="variableImportance.html"><a href="variableImportance.html#example-price-prediction"><i class="fa fa-check"></i><b>11.1</b> Example: Price prediction</a></li>
+<li class="chapter" data-level="11" data-path="variableImportance.html"><a href="variableImportance.html"><i class="fa fa-check"></i><b>11</b> Feature Importance</a><ul>
+<li class="chapter" data-level="11.1" data-path="variableImportance.html"><a href="variableImportance.html#the-algorithm-for-model-agnostic-variable-importance-assessment"><i class="fa fa-check"></i><b>11.1</b> The Algorithm for Model Agnostic Variable Importance Assessment</a></li>
+<li class="chapter" data-level="11.2" data-path="variableImportance.html"><a href="variableImportance.html#example-price-prediction"><i class="fa fa-check"></i><b>11.2</b> Example: Price prediction</a></li>
+<li class="chapter" data-level="11.3" data-path="variableImportance.html"><a href="variableImportance.html#more-models"><i class="fa fa-check"></i><b>11.3</b> More models</a></li>
 </ul></li>
 <li class="chapter" data-level="12" data-path="variableEngeneering.html"><a href="variableEngeneering.html"><i class="fa fa-check"></i><b>12</b> Feature extraction</a></li>
 <li class="chapter" data-level="13" data-path="marginal-response.html"><a href="marginal-response.html"><i class="fa fa-check"></i><b>13</b> Marginal Response</a><ul>
@@ -258,8 +260,66 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="marginal-response" class="section level1">
 <h1><span class="header-section-number">Chapter 13</span> Marginal Response</h1>
 <p>Feature extraction</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="kw">library</span>(titanic)</a>
+<a class="sourceLine" id="cb81-2" data-line-number="2"><span class="kw">library</span>(randomForest)</a>
+<a class="sourceLine" id="cb81-3" data-line-number="3"><span class="kw">library</span>(DALEX)</a>
+<a class="sourceLine" id="cb81-4" data-line-number="4"><span class="kw">library</span>(dplyr)</a>
+<a class="sourceLine" id="cb81-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb81-6" data-line-number="6">titanic_small &lt;-<span class="st"> </span>titanic_train[,<span class="kw">c</span>(<span class="st">&quot;Survived&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;Sex&quot;</span>, <span class="st">&quot;Age&quot;</span>, <span class="st">&quot;SibSp&quot;</span>, <span class="st">&quot;Parch&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Embarked&quot;</span>)]</a>
+<a class="sourceLine" id="cb81-7" data-line-number="7">titanic_small<span class="op">$</span>Survived &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Survived)</a>
+<a class="sourceLine" id="cb81-8" data-line-number="8">titanic_small<span class="op">$</span>Sex &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Sex)</a>
+<a class="sourceLine" id="cb81-9" data-line-number="9">titanic_small<span class="op">$</span>Embarked &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Embarked)</a>
+<a class="sourceLine" id="cb81-10" data-line-number="10">titanic_small &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic_small)</a>
+<a class="sourceLine" id="cb81-11" data-line-number="11">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(Survived <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span>Age <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span><span class="st"> </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, </a>
+<a class="sourceLine" id="cb81-12" data-line-number="12">                         <span class="dt">data =</span> titanic_small)</a>
+<a class="sourceLine" id="cb81-13" data-line-number="13">predict_fuction &lt;-<span class="st"> </span><span class="cf">function</span>(m,x) <span class="kw">predict</span>(m, x, <span class="dt">type=</span><span class="st">&quot;prob&quot;</span>)[,<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb81-14" data-line-number="14">rf_explain &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model, <span class="dt">data =</span> titanic_small, </a>
+<a class="sourceLine" id="cb81-15" data-line-number="15">                      <span class="dt">y =</span> titanic_small<span class="op">$</span>Survived <span class="op">==</span><span class="st"> &quot;1&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;RF&quot;</span>,</a>
+<a class="sourceLine" id="cb81-16" data-line-number="16">                      <span class="dt">predict_function =</span> predict_fuction)</a></code></pre></div>
 <div id="partialDependence" class="section level2">
 <h2><span class="header-section-number">13.1</span> Partial Dependency Plots</h2>
+<p><span class="math display">\[
+  g(x_i) = E_{X_i} [f(x^i, x^{-i}, \theta)]
+\]</span>
+<span class="math display">\[
+  \hat g(x_i) = \frac 1n \sum_{j=1}^n f(x^i, x^{-i}, \hat\theta)
+\]</span></p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ceterisParibus&quot;</span>)</a>
+<a class="sourceLine" id="cb82-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb82-3" data-line-number="3">cp_<span class="dv">25</span> &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
+<a class="sourceLine" id="cb82-4" data-line-number="4">                       <span class="dt">observations =</span> titanic_small[<span class="kw">sample</span>(<span class="kw">nrow</span>(titanic_small),<span class="dv">25</span>), ], </a>
+<a class="sourceLine" id="cb82-5" data-line-number="5">                       <span class="dt">variables =</span> <span class="st">&quot;Age&quot;</span>)</a>
+<a class="sourceLine" id="cb82-6" data-line-number="6"><span class="kw">plot</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" data-line-number="1"><span class="kw">plot</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">alpha =</span> <span class="fl">0.1</span>) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb83-2" data-line-number="2"><span class="kw">ceteris_paribus_layer</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">alpha =</span> <span class="dv">1</span>, <span class="dt">size =</span> <span class="dv">3</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-2.png" width="672" /></p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" data-line-number="1">cp_<span class="dv">100</span> &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
+<a class="sourceLine" id="cb84-2" data-line-number="2">                        <span class="dt">observations =</span> titanic_small[<span class="kw">sample</span>(<span class="kw">nrow</span>(titanic_small),<span class="dv">100</span>), ], </a>
+<a class="sourceLine" id="cb84-3" data-line-number="3">                        <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>,<span class="st">&quot;Sex&quot;</span>))</a>
+<a class="sourceLine" id="cb84-4" data-line-number="4"><span class="kw">plot</span>(cp_<span class="dv">100</span>, <span class="dt">color =</span> <span class="st">&quot;Sex&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-3.png" width="672" /></p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb85-1" data-line-number="1">cp_male &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
+<a class="sourceLine" id="cb85-2" data-line-number="2">                         <span class="dt">observations =</span> titanic_small[titanic_small<span class="op">$</span>Sex <span class="op">==</span><span class="st"> &quot;male&quot;</span>,], </a>
+<a class="sourceLine" id="cb85-3" data-line-number="3">                         <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Sex&quot;</span>))</a>
+<a class="sourceLine" id="cb85-4" data-line-number="4">cp_female &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
+<a class="sourceLine" id="cb85-5" data-line-number="5">                           <span class="dt">observations =</span> titanic_small[titanic_small<span class="op">$</span>Sex <span class="op">==</span><span class="st"> &quot;female&quot;</span>,], </a>
+<a class="sourceLine" id="cb85-6" data-line-number="6">                           <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Sex&quot;</span>))</a>
+<a class="sourceLine" id="cb85-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb85-8" data-line-number="8"><span class="kw">plot</span>(cp_male, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">color =</span> <span class="st">&quot;red3&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb85-9" data-line-number="9"><span class="kw">ceteris_paribus_layer</span>(cp_female, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">color=</span><span class="st">&quot;blue3&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-4.png" width="672" /></p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
+<a class="sourceLine" id="cb86-2" data-line-number="2"><span class="kw">variable_importance</span>(rf_explain) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>()</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-1.png" width="672" /></p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb87-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Age&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-2.png" width="672" /></p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb88-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Pclass&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-3.png" width="672" /></p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb89-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Fare&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-4.png" width="672" /></p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Sex&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>()</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-5.png" width="672" /></p>
 <p><span class="citation">(Demšar and Bosnić <a href="#ref-demsar2018">2018</a>)</span></p>
 <p><span class="citation">(Greenwell <a href="#ref-RJ2017016">2017</a>)</span>
 <span class="citation">(Puri et al. <a href="#ref-MAGIX">2017</a>)</span></p>
@@ -270,7 +330,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="merging-path-plots" class="section level2">
 <h2><span class="header-section-number">13.2</span> Merging Path Plots</h2>
 <p><span class="citation">(Sitko, Grudziąż, and Biecek <a href="#ref-R-factorMerger">2018</a>)</span></p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="kw">library</span>(factorMerger)</a></code></pre></div>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" data-line-number="1"><span class="kw">library</span>(factorMerger)</a></code></pre></div>
 </div>
 </div>
 <h3>References</h3>
