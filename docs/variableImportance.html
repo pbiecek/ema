@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-02-09">
+<meta name="date" content="2019-02-14">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,7 +214,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="11.3" data-path="variableImportance.html"><a href="variableImportance.html#more-models"><i class="fa fa-check"></i><b>11.3</b> More models</a></li>
 </ul></li>
 <li class="chapter" data-level="12" data-path="variableEngeneering.html"><a href="variableEngeneering.html"><i class="fa fa-check"></i><b>12</b> Feature effects</a><ul>
-<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a><ul>
+<li class="chapter" data-level="12.1.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#interactions-and-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.1</b> Interactions and Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#groups-of-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.2</b> Groups of Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#model-comparisons-with-partial-dependency-plots"><i class="fa fa-check"></i><b>12.1.3</b> Model comparisons with Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1.4" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlation-between-features"><i class="fa fa-check"></i><b>12.1.4</b> Correlation between features</a></li>
+</ul></li>
 <li class="chapter" data-level="12.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>12.2</b> Merging Path Plots</a></li>
 </ul></li>
 <li class="chapter" data-level="13" data-path="other-topics.html"><a href="other-topics.html"><i class="fa fa-check"></i><b>13</b> Other topics</a></li>
@@ -261,18 +266,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="variableImportance" class="section level1">
 <h1><span class="header-section-number">Chapter 11</span> Feature Importance</h1>
-<p>Methods presented in this chapter are useful for estimation of feature importance. There is many possible applications of such methods, for example:</p>
+<p>Methods presented in this chapter are useful for estimation of feature importance. There are many possible applications of such methods, for example:</p>
 <ul>
-<li>feature importance may be used for filtering. Features that were not important may be removed from the data before next iteration of model fitting. Removal of the noise shall lead to a better model.</li>
-<li>identification of the most important features may be used as a validation of a model against domain knowledge. Just to make sure that it’s not like a single random feature dominates model predictions.</li>
-<li>identification of the most important features may increase the domain knowledge.</li>
-<li>comparison of feature importance between different models helps to understand how different models handle particular features.</li>
+<li>Feature importance may be used for filtering. Features that were not important may be removed from the data before next iteration of model training. Removal of the noise shall lead to a better model.</li>
+<li>Identification of the most important features may be used as a validation of a model against domain knowledge. Just to make sure that it’s not like a single random feature dominates model predictions.</li>
+<li>Identification of the most important features may increase the domain knowledge.</li>
+<li>Comparison of feature importance between different models helps to understand how different models handle particular features.</li>
+<li>Ranking of feature importance helps to decide in what order we shall perform further model exploration, in what order we shall examine particular feature effects.</li>
 </ul>
-<p>There are many methods for feature importance. In general we may divide them into two groups, methods that are model specific and methods that are model agnostic.</p>
-<p>Methods like random forest, extreme gradient boosting, linear models and many others have their own ways to assess feature importance. But in this chapter we will focus on methods that are model agnostic. The may reason for that is</p>
+<p>There are many methods for assessment of feature importance. In general we may divide them into two groups, methods that are model specific and methods that are model agnostic.</p>
+<p>Some models like random forest, extreme gradient boosting, linear models and many others have their own ways to assess feature importance. Such method are linked with the particular structure of the model. In terms of linear models such specific measures are linked with normalized regression coefficients of p-values. For tree based ensembles such measures may be based on utilization of particular features in particular trees, see <span class="citation">(Paluszynska and Biecek <a href="#ref-randomForestExplainer">2017</a><a href="#ref-randomForestExplainer">a</a>)</span> or <span class="citation">(Foster <a href="#ref-xgboostExplainer">2017</a>)</span>.</p>
+<p>But in this book we are focused on methods that are model agnostic. The may reason for that is</p>
 <ul>
-<li>first, be able to apply this method to any predictive model,</li>
-<li>second, (which is maybe even more important) to be able to compare methods between models of different structure.</li>
+<li>First, be able to apply this method to any predictive model,</li>
+<li>Second, (which is maybe even more important) to be able to compare methods between models of different structure.</li>
 </ul>
 <p>Model agnostic methods cannot assume anything about the model structure and we do not want to refit a model. The method that is presented below is described in details in the <span class="citation">(Fisher, Rudin, and Dominici <a href="#ref-variableImportancePermutations">2018</a>)</span>.
 The main idea is to measure how much the model fit will decrease if a selected feature or group of features will be cancelled out. Here cancellation means perturbations like resampling from empirical distribution of just permutation.</p>
@@ -310,7 +317,7 @@ L^{-f} = \mathcal L(M(X^{-f}), y)
 <a class="sourceLine" id="cb68-3" data-line-number="3">apartments<span class="op">$</span>m2.price</a>
 <a class="sourceLine" id="cb68-4" data-line-number="4">)</a></code></pre></div>
 <pre><code>## [1] 193.8477</code></pre>
-<p>Let’s calculate feature importances</p>
+<p>Let’s calculate feature importance</p>
 <div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_rf, </a>
 <a class="sourceLine" id="cb70-2" data-line-number="2">            <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
 <a class="sourceLine" id="cb70-3" data-line-number="3">vip &lt;-<span class="st"> </span><span class="kw">variable_importance</span>(explainer_rf, </a>
@@ -398,6 +405,12 @@ Presented examples are for regression (prediction of square meter price), but th
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
+<div id="ref-randomForestExplainer">
+<p>Paluszynska, Aleksandra, and Przemyslaw Biecek. 2017a. <em>RandomForestExplainer: A Set of Tools to Understand What Is Happening Inside a Random Forest</em>. <a href="https://github.com/MI2DataLab/randomForestExplainer">https://github.com/MI2DataLab/randomForestExplainer</a>.</p>
+</div>
+<div id="ref-xgboostExplainer">
+<p>Foster, David. 2017. <em>XgboostExplainer: An R Package That Makes Xgboost Models Fully Interpretable</em>. <a href="https://github.com/AppliedDataSciencePartners/xgboostExplainer/">https://github.com/AppliedDataSciencePartners/xgboostExplainer/</a>.</p>
+</div>
 <div id="ref-variableImportancePermutations">
 <p>Fisher, Aaron, Cynthia Rudin, and Francesca Dominici. 2018. “Model Class Reliance: Variable Importance Measures for Any Machine Learning Model Class, from the ’Rashomon’ Perspective.” <em>Journal of Computational and Graphical Statistics</em>. <a href="http://arxiv.org/abs/1801.01489">http://arxiv.org/abs/1801.01489</a>.</p>
 </div>

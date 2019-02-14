@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-02-09">
+<meta name="date" content="2019-02-14">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,7 +214,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="11.3" data-path="variableImportance.html"><a href="variableImportance.html#more-models"><i class="fa fa-check"></i><b>11.3</b> More models</a></li>
 </ul></li>
 <li class="chapter" data-level="12" data-path="variableEngeneering.html"><a href="variableEngeneering.html"><i class="fa fa-check"></i><b>12</b> Feature effects</a><ul>
-<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a><ul>
+<li class="chapter" data-level="12.1.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#interactions-and-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.1</b> Interactions and Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#groups-of-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.2</b> Groups of Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#model-comparisons-with-partial-dependency-plots"><i class="fa fa-check"></i><b>12.1.3</b> Model comparisons with Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1.4" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlation-between-features"><i class="fa fa-check"></i><b>12.1.4</b> Correlation between features</a></li>
+</ul></li>
 <li class="chapter" data-level="12.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>12.2</b> Merging Path Plots</a></li>
 </ul></li>
 <li class="chapter" data-level="13" data-path="other-topics.html"><a href="other-topics.html"><i class="fa fa-check"></i><b>13</b> Other topics</a></li>
@@ -263,7 +268,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h1 class="title">Predictive Models: Visualisation, Exploration and Explanation</h1>
 <h3 class="subtitle"><em>With examples in R and Python</em></h3>
 <h4 class="author"><em>Przemyslaw Biecek and Tomasz Burzykowski</em></h4>
-<h4 class="date"><em>2019-02-09</em></h4>
+<h4 class="date"><em>2019-02-14</em></h4>
 </div>
 <div id="introduction" class="section level1">
 <h1><span class="header-section-number">Chapter 1</span> Introduction</h1>
@@ -310,7 +315,7 @@ Figure 1.1: (fig:BILLCD8) Example tree model for melanoma risk
 <ul>
 <li>Linear models have got many tools for model diagnostics and evaluation. Model assumptions are formally defined (normality, linear structure, homogenous variance) and can be checked by using normality tests or plots (normal qq-plot), diagnostic plots, tests for model structure (RESET test), tools for identification of outliers, etc.</li>
 <li>More complex models with an additive structure, like proportional hazards model, have also got many tools that can be used for checking model assumptions.</li>
-<li>Random-forest model is equipped with out-of-bag method of evaluation of performance and several tools for measuring variable importance <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>. Methods have been developed to extract information from the model structure about possible interactions <span class="citation">(Paluszynska and Biecek <a href="#ref-R-randomForestExplainer">2017</a>)</span>. Similar tools are developed for other ensembles of trees, like xgboost models <span class="citation">(Foster <a href="#ref-R-xgboostExplainer">2018</a>)</span>.</li>
+<li>Random-forest model is equipped with out-of-bag method of evaluation of performance and several tools for measuring variable importance <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>. Methods have been developed to extract information from the model structure about possible interactions <span class="citation">(Paluszynska and Biecek <a href="#ref-R-randomForestExplainer">2017</a><a href="#ref-R-randomForestExplainer">b</a>)</span>. Similar tools are developed for other ensembles of trees, like xgboost models <span class="citation">(Foster <a href="#ref-R-xgboostExplainer">2018</a>)</span>.</li>
 <li>Neural networks enjoy a large collection of dedicated explainers that use, for instance, the layer-wise relevance propagation technique <span class="citation">(Bach et al. <a href="#ref-BachLWRP">2015</a>)</span>, or saliency maps technique <span class="citation">(Simonyan, Vedaldi, and Zisserman <a href="#ref-SaliencyMaps">2013</a>)</span>, or a mixed approach.</li>
 </ul>
 <p>Of course, the list of model classes with dedicated collections of model-explanation and/or diagnostics methods is much longer. This variety of model-specific approaches does lead to issues, though. For instance, one cannot easily compare explanations for two models with different structures. Also, every time when a new architecture or a new ensemble of models is proposed, one needs to look for new methods of model exploration. Finally, for brand-new models no tools for model explanation or diagnostics may be immedaitely available.</p>
@@ -391,7 +396,9 @@ Dimenstions of the vector <span class="math inline">\(x\)</span> refer to differ
 <li><em>White-box model</em>, opposite to Black-box model, is a model that is easy to understand to human. Maybe not for every human. Consider small linear models and small CAR trees as white box models.</li>
 <li><em>Feature</em> or <em>Variable</em>, part of the model input space. Without large loss of generality we can assume that one feature is a single dimension in the input space. There are exceptions (among them: polynomials, interactions between variables, nominal variables), but they do not change the intuition.</li>
 <li><em>Continuous variable</em>, a variable that can be presented as a number and the ordering makes some sense (zip codes or phone numbers are not considered as continuous variables). It does not need to be continuous in a mathematical sense. Counting variables (number of floors, steps) counts here as well.</li>
-<li><em>Nominal variable</em>, opposite to <em>Continuous variables</em>, finite set of values that will not the threaded as a numeric</li>
+<li><em>Nominal variable</em>, opposite to <em>Continuous variables</em>, finite set of values that will not the threated as a numeric</li>
+<li><em>Model level explanations</em>, opposite to <em>Instance level explanations</em>. Techniques that are designed to extract information related to a model behaviour for a selected dataset, usualy validation dataset. Other names <em>Population level explanations</em> (when we thing about the validation dataset as a sample from some popualtion), <em>global level explanations</em> (opposite to <em>individual</em>).</li>
+<li><em>Instance level explanations</em>, opposite to <em>Model level explanations</em>. Techniques that are designed to extract information about model behaviour related to a specific observation or instance. Other names <em>Individual level</em> (oposite to <em>global</em>), <em>Prediction level</em> (as this is related to a single model prediction).</li>
 </ul>
 </div>
 <div id="the-structure-of-the-book" class="section level2">
@@ -464,7 +471,7 @@ Figure 1.4: (fig:lifecycle) Model lifecycle
 <p>Breiman, Leo, Adele Cutler, Andy Liaw, and Matthew Wiener. 2018. <em>RandomForest: Breiman and Cutler’s Random Forests for Classification and Regression</em>. <a href="https://CRAN.R-project.org/package=randomForest">https://CRAN.R-project.org/package=randomForest</a>.</p>
 </div>
 <div id="ref-R-randomForestExplainer">
-<p>Paluszynska, Aleksandra, and Przemyslaw Biecek. 2017. <em>RandomForestExplainer: Explaining and Visualizing Random Forests in Terms of Variable Importance</em>. <a href="https://CRAN.R-project.org/package=randomForestExplainer">https://CRAN.R-project.org/package=randomForestExplainer</a>.</p>
+<p>Paluszynska, Aleksandra, and Przemyslaw Biecek. 2017b. <em>RandomForestExplainer: Explaining and Visualizing Random Forests in Terms of Variable Importance</em>. <a href="https://CRAN.R-project.org/package=randomForestExplainer">https://CRAN.R-project.org/package=randomForestExplainer</a>.</p>
 </div>
 <div id="ref-R-xgboostExplainer">
 <p>Foster, David. 2018. <em>XgboostExplainer: XGBoost Model Explainer</em>.</p>

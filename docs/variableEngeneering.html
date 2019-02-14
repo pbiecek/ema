@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-02-09">
+<meta name="date" content="2019-02-14">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,7 +214,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="11.3" data-path="variableImportance.html"><a href="variableImportance.html#more-models"><i class="fa fa-check"></i><b>11.3</b> More models</a></li>
 </ul></li>
 <li class="chapter" data-level="12" data-path="variableEngeneering.html"><a href="variableEngeneering.html"><i class="fa fa-check"></i><b>12</b> Feature effects</a><ul>
-<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#partialDependence"><i class="fa fa-check"></i><b>12.1</b> Partial Dependency Plots</a><ul>
+<li class="chapter" data-level="12.1.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#interactions-and-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.1</b> Interactions and Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#groups-of-partial-dependency-profiles"><i class="fa fa-check"></i><b>12.1.2</b> Groups of Partial Dependency profiles</a></li>
+<li class="chapter" data-level="12.1.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#model-comparisons-with-partial-dependency-plots"><i class="fa fa-check"></i><b>12.1.3</b> Model comparisons with Partial Dependency Plots</a></li>
+<li class="chapter" data-level="12.1.4" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlation-between-features"><i class="fa fa-check"></i><b>12.1.4</b> Correlation between features</a></li>
+</ul></li>
 <li class="chapter" data-level="12.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>12.2</b> Merging Path Plots</a></li>
 </ul></li>
 <li class="chapter" data-level="13" data-path="other-topics.html"><a href="other-topics.html"><i class="fa fa-check"></i><b>13</b> Other topics</a></li>
@@ -261,13 +266,136 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="variableEngeneering" class="section level1">
 <h1><span class="header-section-number">Chapter 12</span> Feature effects</h1>
-<p>Methods presented in this chapter are useful for extraction information of feature effect, i.e. the way how a feature is linked with model response. There is many possible applications of such methods, for example:</p>
+<p>Methods presented in this chapter are useful for extraction information of feature effect, i.e. how a feature is linked with model response. There are many possible applications of such methods, for example:</p>
 <ul>
-<li>feature effect may be used for feature engineering. Surrogate training is a procedure in which an elastic model is trained to learn about link between a feature and the target. Then a new feature is created in a way to better utilised the feature in a simpler model.</li>
-<li>understanding how the model utilise a feature may be used as a validation of a model against domain knowledge. For example if we expect monotonic relation or linear relation then such assumptions may be testes</li>
-<li>understanding of a link between target and the feature may increase our domain knowledge.</li>
-<li>comparison of feature effects between different models may help us to understand how different models handle particular features.</li>
+<li>Feature effect may be used for feature engineering. Surrogate training is a procedure in which an elastic model is trained to learn about link between a feature and the target. Then a new feature is created in a way to better utilized the feature in a simpler model.</li>
+<li>Understanding how the model utilize a feature may be used as a validation of a model against domain knowledge. For example if we expect monotonic relation or linear relation then such assumptions may be testes</li>
+<li>Understanding of a link between target and the feature may increase our domain knowledge.</li>
+<li>Comparison of feature effects between different models may help us to understand how different models handle particular features.</li>
 </ul>
+<pre><code>## Distribution not specified, assuming bernoulli ...</code></pre>
+<div id="partialDependence" class="section level2">
+<h2><span class="header-section-number">12.1</span> Partial Dependency Plots</h2>
+<p>One of the first and the most popular tools for model understanding
+are Partial Dependence Plots (sometimes named Partial Dependence Profiles) <span class="citation">(Friedman <a href="#ref-Friedman00greedyfunction">2000</a>)</span>.</p>
+<p>PDP was introduced by Friedman in 2000 in the paper devoted to Gradient Boosting Machines (GBM) - new type of complex yet effective models. For many years PDP as sleeping beauties stay in the shadow of the boosting. It has changed in recent years.</p>
+<p>General idea is to show how the expected model response behaves as a function of a selected feature. Here the word ,,expected’’ means averaged over the population.
+We can think about them as about an average from Ceteris Paribus Profiles introduced in @ref{ceterisParibus}.</p>
+<p>Let’s see how they are constructed step by step.
+Here we will use a <em>random forest model</em> created for the <em>titanic</em> dataset. Examples are related to a single variable <em>Age</em>.</p>
+<ol style="list-style-type: decimal">
+<li>Calculate Ceteris Paribus profiles for observations from the dataset</li>
+</ol>
+<p>As it was introduced in @ref{ceterisParibus} Ceteris Paribus profiles are calculated for observations. They show how model response change is a selected variable in this observation is modified.</p>
+<p><span class="math display">\[
+CP^{f, j, x}(z) := f(x|^j = z).
+\]</span></p>
+<p>Such profiles can be calculated for example with the <code>ceteris_paribus{ingredients}</code> function.</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb82-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic_small, <span class="dt">n =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb82-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, selected_passangers)</a></code></pre></div>
+<p>So for a single model and a single variable we get a bunch of <em>what-if</em> profiles. In the figure @ref{pdp_part_1} we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.</p>
+<div class="figure">
+<img src="PM_VEE_files/figure-html/pdp_part_1-1.png" alt="Ceteris Paribus profiles for 100 observations, the Age variable and the random forest model" width="480" />
+<p class="caption">
+(#fig:pdp_part_1)Ceteris Paribus profiles for 100 observations, the Age variable and the random forest model
+</p>
+</div>
+<ol start="2" style="list-style-type: decimal">
+<li>Aggregate Ceteris Paribus into a single Partial Dependency Profile</li>
+</ol>
+<p>In the most common formulation Partial Dependency Plots are expected values for CP profiles (see <code>pdp</code> package <span class="citation">(Greenwell <a href="#ref-pdp">2017</a><a href="#ref-pdp">a</a>)</span>).</p>
+<p><span class="math display">\[
+g_i(z) = E_{x_{-i}}[ f(x|^i = z, x^{-i}) ].
+\]</span></p>
+<p>Of course, this expectation cannot be calculated directly as we do not know fully neither the distribution of <span class="math inline">\(x_{-i}\)</span> nor the <span class="math inline">\(f()\)</span>. Yet this value may be estimated by</p>
+<p><span class="math display">\[
+\hat g_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
+\]</span></p>
+<p>Such average can be calculated with the <code>aggregate_profiles{ingredients}</code> function.</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb83-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic_small, <span class="dt">n =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb83-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, selected_passangers)</a>
+<a class="sourceLine" id="cb83-4" data-line-number="4">pdp_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf, <span class="dt">selected_variables =</span> <span class="st">&quot;Age&quot;</span>)</a></code></pre></div>
+<p>So for a single model and a single variable we get a profile. See an example in figure @ref{pdp_part_2}. It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them.</p>
+<p>The average response is of course more stable (as it’s an average) and in this case is more or less a decreasing curve. It’s much easier to notice that the older the passenger is the lower the survival probability.
+Moreover it is easier to notice that the largest drop in survival changes happen for teenagers. On average the survival for adults is 30 percent points smaller than for kids.</p>
+<div class="figure">
+<img src="PM_VEE_files/figure-html/pdp_part_2-1.png" alt="Partial Dependency profile as an average for 100 observations" width="480" />
+<p class="caption">
+(#fig:pdp_part_2)Partial Dependency profile as an average for 100 observations
+</p>
+</div>
+<div id="interactions-and-partial-dependency-profiles" class="section level3">
+<h3><span class="header-section-number">12.1.1</span> Interactions and Partial Dependency profiles</h3>
+<p>As we said in the previous section, Partial Dependency is a good summary if Ceteris Paribus profiles are similar, i.e. parallel. But it may happen that the variable of interest is in interaction with some other variable. Then profiles are not parallel because the effect of variable of interest depends on some other variables.</p>
+<p>So on one hand it would be good to summaries all this Ceteris Paribus profiles with smaller number of profiles. But on another hand a single aggregate may not be enough.
+To deal with this problem we propose to cluster Ceteris Paribus profiles and check how homogenous are these profiles.</p>
+<p>The most straightforward approach would be to use a method for clustering, like k-means algorithm or hierarchical clustering, and see how these cluster of profiles behave. Once clusters are established we can aggregate within clusters in the same way as in case of Partial Dependency Plots.</p>
+<p>Such clusters can be calculated with the <code>cluster_profiles{ingredients}</code> function. We choose the hierarchical clustering with Ward linkage as it gives most stable results.</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb84-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic_small, <span class="dt">n =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb84-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, selected_passangers)</a>
+<a class="sourceLine" id="cb84-4" data-line-number="4">clust_rf &lt;-<span class="st"> </span><span class="kw">cluster_profiles</span>(cp_rf, <span class="dt">k =</span> <span class="dv">3</span>, <span class="dt">selected_variables =</span> <span class="st">&quot;Age&quot;</span>)</a></code></pre></div>
+<p>So for a single model and a single variable we get <span class="math inline">\(k\)</span> profiles. The common problem in clustering is the selection of <span class="math inline">\(k\)</span>. However in our case, as it’s an exploration, the problem is simpler, as we are interesting if <span class="math inline">\(k=1\)</span> (Partial Dependency is a good summary) or not (there are some interactions).</p>
+<p>See an example in Figure @ref{pdp_part_4}. It is easier to notice that Ceteris Paribus profiles can be groups in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.</p>
+<div class="figure">
+<img src="PM_VEE_files/figure-html/pdp_part_4-1.png" alt="Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles" width="480" />
+<p class="caption">
+(#fig:pdp_part_4)Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles
+</p>
+</div>
+</div>
+<div id="groups-of-partial-dependency-profiles" class="section level3">
+<h3><span class="header-section-number">12.1.2</span> Groups of Partial Dependency profiles</h3>
+<p>Once we see that variable of interest may be in interaction with some other variable, it is tempting to look for the factor that distinguish clusters.</p>
+<p>The most straightforward approach is to use some other variable as a grouping variable. This can be done by setting the <code>groups</code> argument in the <code>aggregate_profiles{ingredients}</code> function.</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb85-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb85-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic_small, <span class="dt">n =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb85-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_rf, selected_passangers)</a>
+<a class="sourceLine" id="cb85-4" data-line-number="4">pdp_Sex_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf, <span class="dt">selected_variables =</span> <span class="st">&quot;Age&quot;</span>,</a>
+<a class="sourceLine" id="cb85-5" data-line-number="5">                <span class="dt">groups =</span> <span class="st">&quot;Sex&quot;</span>)</a></code></pre></div>
+<p>See an example in Figure @ref{pdp_part_5}. Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
+Check how the interaction for <code>Pclass</code> (passenger class) looks like.</p>
+<div class="figure">
+<img src="PM_VEE_files/figure-html/pdp_part_5-1.png" alt="Grouped profiles with respect to the Sex variable" width="480" />
+<p class="caption">
+(#fig:pdp_part_5)Grouped profiles with respect to the Sex variable
+</p>
+</div>
+</div>
+<div id="model-comparisons-with-partial-dependency-plots" class="section level3">
+<h3><span class="header-section-number">12.1.3</span> Model comparisons with Partial Dependency Plots</h3>
+<p>Contrastive comparisons of Partial Dependency Plots are useful not only for subgroups of observations but also for model comparisons.</p>
+<p>Why one would like to compare models? There are at least three reasons for it.</p>
+<ul>
+<li><em>Agreement of models will calm us.</em> Some models are known to be more stable other to be more elastic. If profiles for models from these two classes are not far from each other we can be more convinced that elastic model is not over-fitted.</li>
+<li><em>Disagreement of models helps to improve.</em> If simpler interpretable model disagree with an elastic model, this may suggest a feature transformation that can be used to improve the interpretable model. For example if random forest learned non linear relation then it can be captures by a linear model after suitable transformation.</li>
+<li><em>Validation of boundary conditions.</em> Some models are know to have different behavior on the boundary, for largest or lowest values. Random forest is known to shrink predictions towards the average, while support vector machines are known to have larger variance at edges. Contrastive comparisons may help to understand differences in boundary behavior.</li>
+</ul>
+<p>Generic <code>plot{ingredients}</code> function handles multiple models as consecutive arguments.</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb86-2" data-line-number="2"><span class="kw">plot</span>(pdp_rf, pdp_glm, pdp_gbm, <span class="dt">selected_variables =</span> <span class="st">&quot;Age&quot;</span>, <span class="dt">color =</span> <span class="st">&quot;_label_&quot;</span>)</a></code></pre></div>
+<p>See an example in Figure @ref{pdp_part_7}. Random forest is compared with gradient boosting model and generalized linear model (logistic regression). All three models agree when it comes to a general relation between Age and Survival. Logistic regression is of course the most smooth. Gradient boosting has on average higher predictions than random forest.</p>
+<div class="figure">
+<img src="PM_VEE_files/figure-html/pdp_part_7-1.png" alt="Comparison on three predictive models with different structures." width="480" />
+<p class="caption">
+(#fig:pdp_part_7)Comparison on three predictive models with different structures.
+</p>
+</div>
+</div>
+<div id="correlation-between-features" class="section level3">
+<h3><span class="header-section-number">12.1.4</span> Correlation between features</h3>
+<p>One of the largest advantages of the Partial Dependency Profiles is that they are easy to explain, as they are just an average across Ceteris Paribus profiles. But one of the largest disadvantages lies in assumptions of CPs. Profiles are created based on assumption that it makes sense to change variable <span class="math inline">\(x^i\)</span> independently from all other variables <span class="math inline">\(x^{-i}\)</span>.</p>
+<p>But this may not have sense at all. Features like <span class="math inline">\(surface\)</span> and <span class="math inline">\(number.or.rooms\)</span> are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change <span class="math inline">\(x^{surface}\)</span> independently from <span class="math inline">\(x^{number.of.rooms}\)</span>.</p>
+<p>There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots) <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span> or Local Conditional Expectation Profiles (LCE) [TODO: referencja do pracy Rafala]?</p>
+</div>
+</div>
+<div id="merging-path-plots" class="section level2">
+<h2><span class="header-section-number">12.2</span> Merging Path Plots</h2>
+<p><span class="citation">(Demšar and Bosnić <a href="#ref-demsar2018">2018</a>)</span></p>
+<p><span class="citation">(Greenwell <a href="#ref-RJ2017016">2017</a><a href="#ref-RJ2017016">b</a>)</span>
+<span class="citation">(Puri et al. <a href="#ref-MAGIX">2017</a>)</span></p>
 <p><span class="citation">(Sitko, Grudziąż, and Biecek <a href="#ref-R-factorMerger">2018</a>)</span></p>
 <p><span class="citation">(Strobl et al. <a href="#ref-Strobl2007">2007</a>)</span>
 <span class="citation">(Strobl et al. <a href="#ref-Strobl2008">2008</a>)</span>
@@ -277,81 +405,30 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
 March 26, 2018.</p>
 <p><a href="http://explained.ai/rf-importance/index.html" class="uri">http://explained.ai/rf-importance/index.html</a></p>
-<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="kw">library</span>(titanic)</a>
-<a class="sourceLine" id="cb81-2" data-line-number="2"><span class="kw">library</span>(randomForest)</a>
-<a class="sourceLine" id="cb81-3" data-line-number="3"><span class="kw">library</span>(DALEX)</a>
-<a class="sourceLine" id="cb81-4" data-line-number="4"><span class="kw">library</span>(dplyr)</a>
-<a class="sourceLine" id="cb81-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb81-6" data-line-number="6">titanic_small &lt;-<span class="st"> </span>titanic_train[,<span class="kw">c</span>(<span class="st">&quot;Survived&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;Sex&quot;</span>, <span class="st">&quot;Age&quot;</span>, <span class="st">&quot;SibSp&quot;</span>, <span class="st">&quot;Parch&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Embarked&quot;</span>)]</a>
-<a class="sourceLine" id="cb81-7" data-line-number="7">titanic_small<span class="op">$</span>Survived &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Survived)</a>
-<a class="sourceLine" id="cb81-8" data-line-number="8">titanic_small<span class="op">$</span>Sex &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Sex)</a>
-<a class="sourceLine" id="cb81-9" data-line-number="9">titanic_small<span class="op">$</span>Embarked &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Embarked)</a>
-<a class="sourceLine" id="cb81-10" data-line-number="10">titanic_small &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic_small)</a>
-<a class="sourceLine" id="cb81-11" data-line-number="11">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(Survived <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span>Age <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span><span class="st"> </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, </a>
-<a class="sourceLine" id="cb81-12" data-line-number="12">                         <span class="dt">data =</span> titanic_small)</a>
-<a class="sourceLine" id="cb81-13" data-line-number="13">predict_fuction &lt;-<span class="st"> </span><span class="cf">function</span>(m,x) <span class="kw">predict</span>(m, x, <span class="dt">type=</span><span class="st">&quot;prob&quot;</span>)[,<span class="dv">2</span>]</a>
-<a class="sourceLine" id="cb81-14" data-line-number="14">rf_explain &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model, <span class="dt">data =</span> titanic_small, </a>
-<a class="sourceLine" id="cb81-15" data-line-number="15">                      <span class="dt">y =</span> titanic_small<span class="op">$</span>Survived <span class="op">==</span><span class="st"> &quot;1&quot;</span>, <span class="dt">label =</span> <span class="st">&quot;RF&quot;</span>,</a>
-<a class="sourceLine" id="cb81-16" data-line-number="16">                      <span class="dt">predict_function =</span> predict_fuction)</a></code></pre></div>
-<div id="partialDependence" class="section level2">
-<h2><span class="header-section-number">12.1</span> Partial Dependency Plots</h2>
-<p><span class="math display">\[
-  g(x_i) = E_{X_i} [f(x^i, x^{-i}, \theta)]
-\]</span>
-<span class="math display">\[
-  \hat g(x_i) = \frac 1n \sum_{j=1}^n f(x^i, x^{-i}, \hat\theta)
-\]</span></p>
-<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ceterisParibus&quot;</span>)</a>
-<a class="sourceLine" id="cb82-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb82-3" data-line-number="3">cp_<span class="dv">25</span> &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
-<a class="sourceLine" id="cb82-4" data-line-number="4">                       <span class="dt">observations =</span> titanic_small[<span class="kw">sample</span>(<span class="kw">nrow</span>(titanic_small),<span class="dv">25</span>), ], </a>
-<a class="sourceLine" id="cb82-5" data-line-number="5">                       <span class="dt">variables =</span> <span class="st">&quot;Age&quot;</span>)</a>
-<a class="sourceLine" id="cb82-6" data-line-number="6"><span class="kw">plot</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
-<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb83-1" data-line-number="1"><span class="kw">plot</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">alpha =</span> <span class="fl">0.1</span>) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb83-2" data-line-number="2"><span class="kw">ceteris_paribus_layer</span>(cp_<span class="dv">25</span>, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">alpha =</span> <span class="dv">1</span>, <span class="dt">size =</span> <span class="dv">3</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-2.png" width="672" /></p>
-<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb84-1" data-line-number="1">cp_<span class="dv">100</span> &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
-<a class="sourceLine" id="cb84-2" data-line-number="2">                        <span class="dt">observations =</span> titanic_small[<span class="kw">sample</span>(<span class="kw">nrow</span>(titanic_small),<span class="dv">100</span>), ], </a>
-<a class="sourceLine" id="cb84-3" data-line-number="3">                        <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>,<span class="st">&quot;Sex&quot;</span>))</a>
-<a class="sourceLine" id="cb84-4" data-line-number="4"><span class="kw">plot</span>(cp_<span class="dv">100</span>, <span class="dt">color =</span> <span class="st">&quot;Sex&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-3.png" width="672" /></p>
-<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb85-1" data-line-number="1">cp_male &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
-<a class="sourceLine" id="cb85-2" data-line-number="2">                         <span class="dt">observations =</span> titanic_small[titanic_small<span class="op">$</span>Sex <span class="op">==</span><span class="st"> &quot;male&quot;</span>,], </a>
-<a class="sourceLine" id="cb85-3" data-line-number="3">                         <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Sex&quot;</span>))</a>
-<a class="sourceLine" id="cb85-4" data-line-number="4">cp_female &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(rf_explain, </a>
-<a class="sourceLine" id="cb85-5" data-line-number="5">                           <span class="dt">observations =</span> titanic_small[titanic_small<span class="op">$</span>Sex <span class="op">==</span><span class="st"> &quot;female&quot;</span>,], </a>
-<a class="sourceLine" id="cb85-6" data-line-number="6">                           <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Sex&quot;</span>))</a>
-<a class="sourceLine" id="cb85-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb85-8" data-line-number="8"><span class="kw">plot</span>(cp_male, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">color =</span> <span class="st">&quot;red3&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb85-9" data-line-number="9"><span class="kw">ceteris_paribus_layer</span>(cp_female, <span class="dt">show_observations =</span> <span class="ot">FALSE</span>, <span class="dt">aggregate_profiles =</span> mean, <span class="dt">color=</span><span class="st">&quot;blue3&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-4.png" width="672" /></p>
-<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
-<a class="sourceLine" id="cb86-2" data-line-number="2"><span class="kw">variable_importance</span>(rf_explain) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>()</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-1.png" width="672" /></p>
-<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb87-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Age&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-2.png" width="672" /></p>
-<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb88-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Pclass&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-3.png" width="672" /></p>
-<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb89-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Fare&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>() <span class="op">+</span><span class="st"> </span><span class="kw">ylim</span>(<span class="fl">0.2</span>,<span class="fl">0.8</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-4.png" width="672" /></p>
-<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" data-line-number="1"><span class="kw">single_variable</span>(rf_explain, <span class="st">&quot;Sex&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">plot</span>()</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-5.png" width="672" /></p>
-<p><span class="citation">(Demšar and Bosnić <a href="#ref-demsar2018">2018</a>)</span></p>
-<p><span class="citation">(Greenwell <a href="#ref-RJ2017016">2017</a>)</span>
-<span class="citation">(Puri et al. <a href="#ref-MAGIX">2017</a>)</span></p>
-<p>Accumulated Local Effects (ALE) Plots
-<span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span></p>
-<p>Interactions - extraction</p>
-</div>
-<div id="merging-path-plots" class="section level2">
-<h2><span class="header-section-number">12.2</span> Merging Path Plots</h2>
 <p><span class="citation">(Sitko, Grudziąż, and Biecek <a href="#ref-R-factorMerger">2018</a>)</span></p>
-<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" data-line-number="1"><span class="kw">library</span>(factorMerger)</a></code></pre></div>
+<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb87-1" data-line-number="1"><span class="kw">library</span>(factorMerger)</a></code></pre></div>
 </div>
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
+<div id="ref-Friedman00greedyfunction">
+<p>Friedman, Jerome H. 2000. “Greedy Function Approximation: A Gradient Boosting Machine.” <em>Annals of Statistics</em> 29: 1189–1232.</p>
+</div>
+<div id="ref-pdp">
+<p>Greenwell, Brandon M. 2017a. “Pdp: An R Package for Constructing Partial Dependence Plots.” <em>The R Journal</em> 9 (1): 421–36. <a href="https://journal.r-project.org/archive/2017/RJ-2017-016/index.html">https://journal.r-project.org/archive/2017/RJ-2017-016/index.html</a>.</p>
+</div>
+<div id="ref-R-ALEPlot">
+<p>Apley, Dan. 2018. <em>ALEPlot: Accumulated Local Effects (Ale) Plots and Partial Dependence (Pd) Plots</em>. <a href="https://CRAN.R-project.org/package=ALEPlot">https://CRAN.R-project.org/package=ALEPlot</a>.</p>
+</div>
+<div id="ref-demsar2018">
+<p>Demšar, Jaka, and Zoran Bosnić. 2018. “Detecting Concept Drift in Data Streams Using Model Explanation.” <em>Expert Systems with Applications</em> 92 (February): 546–59. <a href="https://doi.org/10.1016/j.eswa.2017.10.003">https://doi.org/10.1016/j.eswa.2017.10.003</a>.</p>
+</div>
+<div id="ref-RJ2017016">
+<p>Greenwell, Brandon M. 2017b. “pdp: An R Package for Constructing Partial Dependence Plots.” <em>The R Journal</em> 9 (1): 421–36. <a href="https://journal.r-project.org/archive/2017/RJ-2017-016/index.html">https://journal.r-project.org/archive/2017/RJ-2017-016/index.html</a>.</p>
+</div>
+<div id="ref-MAGIX">
+<p>Puri, Nikaash, Piyush Gupta, Pratiksha Agarwal, Sukriti Verma, and Balaji Krishnamurthy. 2017. “MAGIX: Model Agnostic Globally Interpretable Explanations.” <em>CoRR</em> abs/1706.07160. <a href="http://arxiv.org/abs/1706.07160">http://arxiv.org/abs/1706.07160</a>.</p>
+</div>
 <div id="ref-R-factorMerger">
 <p>Sitko, Agnieszka, Aleksandra Grudziąż, and Przemyslaw Biecek. 2018. <em>FactorMerger: The Merging Path Plot</em>. <a href="https://CRAN.R-project.org/package=factorMerger">https://CRAN.R-project.org/package=factorMerger</a>.</p>
 </div>
@@ -363,18 +440,6 @@ March 26, 2018.</p>
 </div>
 <div id="ref-2018arXiv180101489F">
 <p>Fisher, A., C. Rudin, and F. Dominici. 2018. “Model Class Reliance: Variable Importance Measures for any Machine Learning Model Class, from the ‘Rashomon’ Perspective.” <em>ArXiv E-Prints</em>, January.</p>
-</div>
-<div id="ref-demsar2018">
-<p>Demšar, Jaka, and Zoran Bosnić. 2018. “Detecting Concept Drift in Data Streams Using Model Explanation.” <em>Expert Systems with Applications</em> 92 (February): 546–59. <a href="https://doi.org/10.1016/j.eswa.2017.10.003">https://doi.org/10.1016/j.eswa.2017.10.003</a>.</p>
-</div>
-<div id="ref-RJ2017016">
-<p>Greenwell, Brandon M. 2017. “pdp: An R Package for Constructing Partial Dependence Plots.” <em>The R Journal</em> 9 (1): 421–36. <a href="https://journal.r-project.org/archive/2017/RJ-2017-016/index.html">https://journal.r-project.org/archive/2017/RJ-2017-016/index.html</a>.</p>
-</div>
-<div id="ref-MAGIX">
-<p>Puri, Nikaash, Piyush Gupta, Pratiksha Agarwal, Sukriti Verma, and Balaji Krishnamurthy. 2017. “MAGIX: Model Agnostic Globally Interpretable Explanations.” <em>CoRR</em> abs/1706.07160. <a href="http://arxiv.org/abs/1706.07160">http://arxiv.org/abs/1706.07160</a>.</p>
-</div>
-<div id="ref-R-ALEPlot">
-<p>Apley, Dan. 2018. <em>ALEPlot: Accumulated Local Effects (Ale) Plots and Partial Dependence (Pd) Plots</em>. <a href="https://CRAN.R-project.org/package=ALEPlot">https://CRAN.R-project.org/package=ALEPlot</a>.</p>
 </div>
 </div>
             </section>
