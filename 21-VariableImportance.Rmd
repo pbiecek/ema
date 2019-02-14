@@ -1,44 +1,152 @@
 # Feature Importance {#variableImportance}
 
-Methods presented in this chapter are useful for estimation of feature importance. There are many possible applications of such methods, for example:
+Methods presented in this chapter are useful for assessment of feature importance. There are many possible applications of such methods, for example:
   
-* Feature importance may be used for filtering. Features that were not important may be removed from the data before next iteration of model training. Removal of the noise shall lead to a better model. 
+* Feature importance scores may be used for feature filtering. Features that are not important may be removed from the model training procedure. Removal of the noise shall lead to better models. 
 * Identification of the most important features may be used as a validation of a model against domain knowledge. Just to make sure that it's not like a single random feature dominates model predictions.
-* Identification of the most important features may increase the domain knowledge.
+* Identification of the most important features may leads to new domain knowledge. Well, we have identified important features.
 * Comparison of feature importance between different models helps to understand how different models handle particular features.
 * Ranking of feature importance helps to decide in what order we shall perform further model exploration, in what order we shall examine particular feature effects.
 
 
 There are many methods for assessment of feature importance. In general we may divide them into two groups, methods that are model specific and methods that are model agnostic.
 
-Some models like random forest, extreme gradient boosting, linear models and many others have their own ways to assess feature importance. Such method are linked with the particular structure of the model. In terms of linear models such specific measures are linked with normalized regression coefficients of p-values. For tree based ensembles such measures may be based on utilization of particular features in particular trees, see [@randomForestExplainer] or [@xgboostExplainer].
+Some models like random forest, gradient boosting, linear models and many others have their own ways to assess feature importance. Such method are linked with the particular structure of the model. In terms of linear models such specific measures are linked with normalized regression coefficients of p-values. For tree based ensembles such measures may be based on utilization of particular features in particular trees, see [@xgboostExplainer] for gradient boosting or [@randomForestExplainer] for random forest.
 
 But in this book we are focused on methods that are model agnostic. The may reason for that is 
 
-* First, be able to apply this method to any predictive model, 
-* Second, (which is maybe even more important) to be able to compare methods between models of different structure.
+* First, be able to apply this method to any predictive model or ensemble of models.
+* Second, (which is maybe even more important) to be able to compare feature importance between models despite differences in their structure.
 
 Model agnostic methods cannot assume anything about the model structure and we do not want to refit a model. The method that is presented below is described in details in the [@variableImportancePermutations]. 
 The main idea is to measure how much the model fit will decrease if a selected feature or group of features will be cancelled out. Here cancellation means perturbations like resampling from empirical distribution of just permutation.
 
-The method can be used to measure importance of single features, pairs or larger subsets. For the simplicity below we describe algorithm for single features, but it is straight forward to use it for larger subsets of features.
+The method can be used to measure importance of single features, pairs of features or larger tuples For the simplicity below we describe algorithm for single features, but it is straight forward to use it for larger subsets of features.
 
-## The Algorithm for Model Agnostic Variable Importance Assessment
+## Permutation Based Feature Importance
 
-Let $\mathcal L(M(X), y)$ be a loss function that calculates goodness of fit of a model predictions calculated for data $X$ and target $y$. 
+The idea behind is easy and in some sense borrowed from Random Forest [@R-randomForest]. If a feature is important then after permutation model performance shall drop. The larger drop the more important is the feature.
 
-1. Let $\mathcal F$ be a set of features, for each feature $f \in \mathcal F$ do steps 2-5
-2. Create a new data $X^{-f}$ with feature $f$ resampled.
-3. Calculate model predictions for the new data $X^{f*}$, they will be denoted as $M(X^{-f})$.
+Let's describe this idea in a bit more formal way. Let $\mathcal L(f(x), y)$ be a loss function that assess goodness of fit for a model $f(x)$ while let $\mathcal X$ be a set of features.
+
+1. For each feature $x_i \in \mathcal X$ do steps 2-5
+2. Create a new data $x^{*,-i}$ with feature $x_i$ resampled (or permutated).
+3. Calculate model predictions for the new data $x^{*,-i}$, they will be denoted as $f(x^{*,-i})$.
 4. Calculate loss function for models predictions on perturbed data 
 $$
-L^{-f} = \mathcal L(M(X^{-f}), y)
+L^{*,-i} = \mathcal L(f(x^{*,-i}), y)
 $$
-5. Feature importance may be calculated as difference or ration of the original loss and loss on perturbed data, i.e. $fip(f) = L^f - L$ or $fip(f) = L^f/L$. 
+5. Feature importance may be calculated as difference or ratio of the original loss and loss on perturbed data, i.e. $vip(x_i) = L^{*,-i} - L$ or $vip(x_i) = L^{*,-i} / L$. 
 
 Note that ranking of feature importance will be the same for the difference and the ratio since the loss $L$ is the same.
 
-As we will see below, on diagnostic plot it may be more useful to present loss functions for perturbed data rather than direct feature importance.
+Note also, that the main advantage of the step 5 is that feature importance is kind of normalized. But in many cases such normalization is not needed and in fact it makes more sense to present raw $L^{*,-i}$ values.
+
+
+## Example: Titanic
+
+
+```{r titanic1, warning=FALSE, message=FALSE, echo=FALSE}
+library(titanic)
+library(randomForest)
+library(DALEX)
+library(dplyr)
+
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+titanic_small <- na.omit(titanic_small)
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked, 
+                         data = titanic_small)
+predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+rf_explain <- explain(rf_model, data = titanic_small, 
+                      y = titanic_small$Survived == "1", label = "RF",
+                      predict_function = predict_fuction)
+
+
+#
+# TWORZYMY MODELE
+
+## random forest
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+                         data = titanic_small)
+predict_rf_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+explainer_rf <- explain(rf_model, data = titanic_small,
+                      y = titanic_small$Survived == "1", label = "RF",
+                      predict_function = predict_rf_fuction)
+
+## GLM
+glm_model <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+                         data = titanic_small, family = "binomial")
+explainer_glm <- explain(glm_model, data = titanic_small,
+                      y = titanic_small$Survived == "1", label = "GLM")
+
+
+## splines
+library("rms")
+rms_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+                   Parch + Fare + Embarked, titanic_small)
+predict_rms_fuction <- function(m,x) predict(m, x, type="fitted")
+explainer_rms <- explain(rms_model, data = titanic_small,
+                         y = titanic_small$Survived == "1", label = "RMS",
+                         predict_function = predict_rms_fuction)
+
+## GBM
+library("gbm")
+#titanic_gbm <- gbm(Survived == "1" ~ Age + Pclass + Sex, data = titanic_small, n.trees = 1000)
+titanic_gbm <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
+                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+predict_gbm_fuction <- function(m,x) predict(m, x,
+                                             n.trees = 15000, type = "response")
+explainer_gbm <- explain(titanic_gbm,
+                         data = titanic_small, y = titanic_small$Survived == "1",
+                         label = "GBM",
+                         predict_function = predict_gbm_fuction)
+
+```
+
+Let's use this approach to a random forest model created for the Titanic dataset. The goal is to predict passenger survival probability based on their sex, age, class, fare and some other features available in the `titanic` dataset.
+
+
+```{r titanic2, warning=FALSE, message=FALSE}
+head(titanic_small)
+```
+
+Permutation based feature importance can be calculated with the `feature_importance{ingredients}`. By default it permutes values feature by feature.
+
+Instead of showing normalized feature importance we plot both original $L$ and loss after permutation $L^{*,-i}$. This way we can read also how good was the model, and as we will see in next subsection it will be useful for model comparison.
+
+```{r titanic3, warning=FALSE, message=FALSE, fig.width=5, fig.height=2.5, fig.cap="Feature importance. Each interval presents the difference between original model performance (left end) and the performance on a dataset with a single feature perturbed"}
+library("ingredients")
+fi_rf <- feature_importance(explainer_rf) 
+plot(fi_rf) + ggtitle("Permutation based feature importance", "For Random Forest model and Titanic data")
+```
+
+It's interesting that the most important variable for Titanic data is the Sex. So it have been ,,women first'' after all. Then the three features of similar importance are passenger class (first class has higher survival), age (kids have higher survival) and fare (owners of more pricy tickets have higher survival).
+
+
+Note that drawing permutations evolves some randomness. Thus to have higher repeatability of results you may either set a seed for random number generator or replicate the procedure few times. The second approach has additional advantage, that you will learn the uncertainty behind feature importance assessment.
+
+Here we present scores for 10 repetition of the process.
+
+```{r titanic4, warning=FALSE, message=FALSE, fig.width=5, fig.height=2.5, fig.cap="Feature importance for 10 replication of feature importance assessment"}
+fi_rf10 <- replicate(10, feature_importance(explainer_rf), simplify = FALSE)
+do.call(plot, fi_rf10) + ggtitle("Permutation based feature importance", "For Random Forest model and Titanic data")
+```
+
+It is much easier to assess feature importance if they come with some assessment of the uncertainty. We can read from the plot that Age and passenger class are close to each other.
+
+Note that intervals are useful for model comparisons. In the Figure \@ref{titanic5} we can read feature importance for random forest, gradient boosting and logistic regression models. Best results are achieved by the random forest model and also this method consume more features than others. A good example is the *Fare* variable, not used in gradient boosting not logistic regression (as a feature highly correlated with passenger class) but consumed in the random forest model.
+
+```{r titanic5, warning=FALSE, message=FALSE, fig.width=5, fig.height=2.5, fig.cap="Feature importance for random forest, gradient boosting and logistic regression models"}
+fi_rf <- feature_importance(explainer_rf)
+fi_gbm <- feature_importance(explainer_gbm)
+fi_glm <- feature_importance(explainer_glm)
+
+plot(fi_rf, fi_gbm, fi_glm)
+```
+
 
 ## Example: Price prediction
 
@@ -57,7 +165,7 @@ $$
   L(x, y) = \sqrt{\frac1n \sum_{i=1}^n (x_i - y_i)^2}
 $$
   
-  ```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE}
 loss_root_mean_square(
   predict(model_rf, apartments), 
   apartments$m2.price
@@ -139,6 +247,10 @@ There is interesting difference between linear model and others in the way how i
 
 In the next chapter we will see how this is possible.
 
+
+## Level frequency
+
+What does the feature importance mean? How it is linked with a data distribution.
 
 
 
