@@ -2,6 +2,77 @@
 
 # Data Sets {#DataSets}
 
+## Predict survival on the Titanic {#TitanicDataset}
+
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` we have a very rich and precise data about passagers. This dataset is avaliable in the `titanic` dataset.
+
+
+```{r, warning=FALSE, message=FALSE}
+library("titanic")
+head(titanic_train)
+```
+
+Feature of interest is the binary variable `Survived`. Let's build some predictive models for this variable.
+
+First we need to do some data preprocessing.
+
+```{r, warning=FALSE, message=FALSE}
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+titanic_small <- na.omit(titanic_small)
+
+titanic_train[760,]
+titanic_small[760,]
+```
+
+
+### Random Forest
+
+Now we can create models. Let's start with Random Forest
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
+                           Parch + Fare + Embarked, 
+                           data = titanic_small)
+rf_model
+```
+
+### Logistic regression
+
+Logistic model is a generalized linear moedl with binomial family and logit link function.
+
+```{r, warning=FALSE, message=FALSE}
+glm_model <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+                         data = titanic_small, family = "binomial")
+summary(glm_model)
+```
+
+### Splines with RMS
+
+
+```{r, warning=FALSE, message=FALSE}
+library("rms")
+rms_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+                   Parch + Fare + Embarked, titanic_small)
+rms_model
+```
+
+### Gradient boosting
+
+
+```{r, warning=FALSE, message=FALSE}
+library("gbm")
+titanic_gbm <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
+                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+titanic_gbm
+```
+
+
+
+
 ## Hire or Fire? HR in Call Center {#HRdataset}
 
 In this chapter we present an artificial dataset from Human Resources department in a Call Center. 
