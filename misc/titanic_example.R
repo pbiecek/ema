@@ -61,4 +61,14 @@ plot(sv_glm, sv_rf, sv_gbm, sv_rms)
 
 
 
+library(breakDown2)
 
+
+
+bd_rf <- local_attributions(explainer_rf,
+                            titanic_small[1,-1],
+                            keep_distributions = TRUE)
+
+plot(bd_rf)
+plot(bd_rf, start_baseline = TRUE)
+plot(bd_rf, start_baseline = TRUE, plot_distributions = TRUE)
