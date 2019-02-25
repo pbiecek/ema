@@ -1,36 +1,24 @@
 # Variable attribution for linear models {#variableAttributionMethods}
 
-In this section we introduce the concept and the intuition behind additive decompositions of model predictions. The main goal for these tools is to help to understand how model output may be decomposed into parts, that can be attributed to input features. 
+## Introduction  
 
-Presented explainers are linked with the first law introduced in Section \@ref(three-single-laws), i.e. law for prediction’s justifications. Note that there is a collection of tools for variable attribution. In this section we are focused on the general idea and examples for linear models. Model agnostic approaches will be presented in sections \@ref(breakDown) and \@ref(shapley).
+In this chapter we introduce the concept and the intuitions underlying ,,variable attribution,'' i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:
 
+* Assume that we are interested in predicting the risk of heart attack based on person's age, sex, and smoking habits. A patient may want to know which factors have the highest impact on the his/her risk score.
+* Consider a model for prediction of apartment prices. An investor may want to know how much of the predicted price may be attributed to, for instance, the location of an apartment.
+* Consider a model for credit scoring. A customer may want to know if factors like gender, age, or number of children influence model predictions.
 
-Think of following use cases:
-
-* Think about a model for heart attack. A patient wants to know which factors have highest impact on the final heart risk score.
-* Think about a model for apartment prices. An investor wants to know how much of the final price may be attributed to the location of an apartment.
-* Think about a model for credit scoring. A customer wants to know if factors like gender, age or number of kids influence model decisions.
-
-In every usecase one needs to attribute part of the model response to a single variable. This can be done directly for linear models, so in the section \@ref(VAlinMod) we show how to do this for linar models and may be easily extended to additive models and generalized linear models. For other models it is not trivial how to do so, some approaches are be presented in next sections.
-
+In each of those cases we want to attribute a part of the model prediction to a single explanatory variable. This can be done directly for linear models. Hence, in this chapter We focus on those models. The method can be easily extended to generalized linear models. Model-agnostic approaches will be presented in Chapters \@ref(breakDown) and \@ref(shapley).
 
 ## Intuition  
 
-Fiited linear model with coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$ has following form.
+Assume a linear model with $p$ explanatory variables collected in the vector $x = (x_1, x_2, \ldots, x_p)$ and   coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$, where $\beta_0$ is the intercept. The prediction is given by the following linear combination:  
 
 $$
 f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
 $$
-In other words, model response is the sum of weighted elements of $x = (x_1, x_2, \ldots, x_p)$. 
 
-
-From a global perspective of a model, we are usually interested in questions like, how good is the model (questions about $R^2$), which variables are significant (tests for significance of $\beta_i \neq 0$) or how accurate are model predictions (confidence intervals for predictions).
-
-But in this chapter we are focued on a local perspective, i.e. for a single observation $x^*$ how to measure the contribution of  a variable $x_i$ on model prediction $f(x^*)$.
-
-The contribution of a variable $x_i$ shall be related to $x^*_i\beta_i$ as variable $x_i$ occur only in this term. As we will see below, it is easier to interpret variable contribution if the $x_i$ is centered. 
-
-This lead for a intuitive formula for variable attribution for model $f$, variable $x_i$ in the point $x^*$
+We are interested in the contribution of variable $x_i$ on model prediction $f(x^*)$ for a single observation described by $x^*$. In this case, the contribution is related to $x^*_i\beta_i$, as variable $x_i$ occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x_i$ is is centered by subtracting a constant $\hat x_i$ (usually, the mean of $x_i$). This leads the following, intuitive formula for the variable attribution:
 $$
 v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
 $$
