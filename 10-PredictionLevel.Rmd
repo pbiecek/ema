@@ -9,38 +9,16 @@ knitr::include_graphics("figure/DALEX_local.png")
 
 Instance-level explainers help to understand how a model yields a prediction for a single observation. We can think about the following situations as examples:
 
-- We may want to evaluate the effects of explanatory variables on model predictions. For instance, we may be interested in predicting the risk of heart attack based on person's age, sex, and smoking habits. A model may be used to construct a score (for instance, a linear combination of the explanatory variables representing the age, sex, and smoking habits) that could be used for the purposes of prediction. We may want to learn, for a particular patient,  how much the different variables contribute to the patient's score?
-- We may want to understand how models predictions would change if values of some of the explanatory variables changed. For instance, what would be the predicted risk of heart attack if the patient cut the number of cigarettes smked per day by half? 
-- Model is not working correctly for a particular point and one wants to understand why predictions for this point are wrong. Think about patient that had heart accident but his risk score is very low. One wants to understand which factors may be overlooked.
+- We may want to evaluate the effects of explanatory variables on model predictions. For instance, we may be interested in predicting the risk of heart attack based on person's age, sex, and smoking habits. A model may be used to construct a score (for instance, a linear combination of the explanatory variables representing  age, sex, and smoking habits) that could be used for the purposes of prediction. For a particular patient We may want to learn how much the different variables contribute to the patient's score?
+- We may want to understand how models predictions would change if values of some of the explanatory variables changed. For instance, what would be the predicted risk of heart attack if the patient cut the number of cigarettes smoked per day by half? 
+- We may discover that the model is providing incorrect predictions and we may want to find the reason. For instance, a patient with a very low risk-score experiences heart attack. What has driven that prediction?
 
+## A bit of philosophy: three Laws of instance-level explanation {#three-single-laws}
 
-## Approaches to prediction explanations
-
-There are many different tools that may be used to explore model around a single point $x^*$. Model is a function that takes $p$ dimensional vector as an input. Thus to plot this function we would need $p+1$ dimensions. 
-
-An toy example with $p=2$ is presented in Figure \@ref(fig:cutsSurfaceReady). We will use it as an illustration of key ideas.
-
-```{r cutsSurfaceReady, echo=FALSE, fig.cap="(fig:cutsSurfaceReady) Model response surface. Here the model is a function of two variables.  We are interested in understanding the response of a model in a single point x*", out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/cuts_surface_ready_punkt.png")
-```
-
-In following sections we will describe the most popular approaches to exploration of such function. They can be divided into three classes. 
-
-
-* One approach to exploration of model response is to investigate how the model response would change if single variable in the model input would change. This way we may observe profiles seen as a function of a single variable. Such profiles are usually called Ceteris Paribus Profiles. We will present them in detail in the Section \@ref(ceterisParibus).
-This is useful for What-If scenarios.  See an example in Figure \@ref(fig:cutsTechnikiReady) panel A. 
-* Other approach is to analyze model curvature around point of interest. Again we treat the model as a function and we are interested in the local behavior of this function around the point of interest. We approximate the black-box model with a simpler white-box model around point $x^*$. See an example in Figure \@ref(fig:cutsTechnikiReady) panel B. In the Section \@ref(LIME) we present the LIME method that exploits the concept of local model. 
-* Yet another approach is to analyze how the model response in point $x^*$ is different from the average model response. And how the difference can be distributed between model behavior along different dimensions. See an example in Figure \@ref(fig:cutsTechnikiReady) panel C. In the Section \@ref(variableAttributionMethods) we present two methods for variable contributions, sequential conditioning and average conditioning (called also Shapley values). 
-
-
-```{r cutsTechnikiReady, echo=FALSE, fig.cap="(fig:cutsTechnikiReady) Intuitions behind different approached to prediction level explainers. Panel A presents an idea behind What-If analysis with Ceteris Paribus profiles. Keeping all other variables unchanged we trace model response along changes in a single variable. Panel B presents an idea behind local models like LIME. A simpler white-box model is fitted around the point of interest. It describes the local behaviour of the complex model. Panel C presents an idea behind variable attributions. Additive effects of each variable show how the model response differs from population average.", out.width = '99%', fig.align='center'}
-knitr::include_graphics("figure/cuts_techniki_ready.png")
-```
-
-
-## A bit of philosophy: Three Laws for Prediction Level Explanations {#three-single-laws}
-
-76 years ago Isaac Asimov devised [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 1) a robot may not injure a human being, 2) a robot must obey the orders given it by human beings and 3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
+Seventy-six years ago Isaac Asimov forumlated [Three Laws of Robotics](https://en.wikipedia.org/wiki/Three_Laws_of_Robotics): 
+1) a robot may not injure a human being, 
+2) a robot must obey the orders given it by human beings, and 
+3) A robot must protect its own existence. These laws impact discussion around [Ethics of AI](https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence). Today’s robots, like cleaning robots, robotic pets or autonomous cars are far from being conscious enough to be under Asimov’s ethics.
 
 Today we are surrounded by complex predictive algorithms used for decision making. Machine learning models are used in health care, politics, education, judiciary and many other areas. Black box predictive models have far larger influence on our lives than physical robots. Yet, applications of such models are left unregulated despite many examples of their potential harmfulness. See *Weapons of Math Destruction* by Cathy O'Neil [@ONeil] for an excellent overview of selected problems.
 
@@ -53,6 +31,27 @@ It's clear that we need to control algorithms that may affect us. Such control i
 There are two ways to comply with these requirements. 
 One is to use only models that fulfill these conditions by design. White-box models like linear regression or decision trees. In many cases the price for transparency is lower performance. 
 The other way is to use approximated explainers – techniques that find only approximated answers, but work for any black box model. Here we present such techniques.
+
+
+## Approaches to instance-level explanations
+
+A model is a function with a $p$-dimensional vector $x$ as an argument. The plot of the value(s) of the function can be constructed in a $p+1$-dimensional space. An example with $p=2$ is presented in Figure \@ref(fig:cutsSurfaceReady). We will use it as an illustration of key ideas. The plot provides an information about the values of the function in the vicinity of point $x^*$.  
+ 
+```{r cutsSurfaceReady, echo=FALSE, fig.cap="(fig:cutsSurfaceReady) Response surface for a model that is a function of two variables. We are interested in understanding the response of a model in a single point x*", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/cuts_surface_ready_punkt.png")
+```
+
+There are many different tools that may be used to explore the predictions of the model around a single point $x^*$. In the following sections we will describe the most popular approaches. They can be divided into three classes. 
+
+* One approach is to investigate how the model prediction changes if the value of a single explanatory variable  changes. It is useful in the so-called ,,What-If'' scenarios. In particular, we can construct plots preseting the change of model-based preditions in function of a single variable. Such plots are usually called Ceteris Paribus profiles. They are presented in Section \@ref(ceterisParibus). An example is porivded in panel A of Figure \@ref(fig:cutsTechnikiReady). 
+* Another approach is to analyze the curvature of the response surface (see Figure \@ref(fig:cutsSurfaceReady)) around the point of interest $x^*$. Treating the model as a function, we are interested in the local behavior of this function around $x^*$. In case of a black-box model, we apprxiate it with a simpler white-box model around $x^*$. An example is provied in panel B of Figure \@ref(fig:cutsTechnikiReady). In the Section \@ref(LIME) we present the Local Interpretable Model-agnostic Explanations (LIME) method that exploits the concept of a ,,local model.'' 
+* Yet another approach is to analyze how the model prediction for point $x^*$ is different from the average model prediction and how the difference can be distributed among the different dimension (explanatory variables). It is often called the ,,variable attributions'' approach. An example is provided in panel C of Figure \@ref(fig:cutsTechnikiReady). In the Section \@ref(variableAttributionMethods) we present two methods implementing this approach, sequential conditioning and average conditioning (also called Shapley values). 
+
+
+```{r cutsTechnikiReady, echo=FALSE, fig.cap="(fig:cutsTechnikiReady) Illustration of different approaches to instance-level explanation. Panel A presents a What-If analysis with Ceteris Paribus profiles. The profiles plot the model response as a function of a value of a single variable, while keeping the values of all other explanatory variables fixed. Panel B illustrates the concept of local models. A simpler white-box model is fitted around the point of interest. It describes the local behaviour of the black-box model. Panel C illustrates the concept of variable attributions. Additive effects of each variable show how the model response differs from the average.", out.width = '99%', fig.align='center'}
+knitr::include_graphics("figure/cuts_techniki_ready.png")
+```
+
 
 
 
