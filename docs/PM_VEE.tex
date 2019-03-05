@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-02-28}
+    \date{2019-03-05}
 
 \usepackage{booktabs}
 
@@ -558,6 +558,363 @@ Przemek found at Chris' house in Woodland.
 This book has been prepared by using the \textbf{bookdown} package
 \citep{R-bookdown}, created thanks to the amazing work of Yihui Xie.
 
+\hypertarget{DataSetsIntro}{%
+\section{Data Sets}\label{DataSetsIntro}}
+
+We illustrate techniques introduced in this book on three datasets:
+
+\begin{itemize}
+\tightlist
+\item
+  \emph{Sinking of the RMS Titanic} as an example of binary
+  classification
+\item
+  \emph{Apartment prices} as an example of regression model
+\item
+  \emph{Hire or Fire} as an example of multi-class classification and
+  interactions
+\end{itemize}
+
+\hypertarget{TitanicDataset}{%
+\subsection{Sinking of the RMS Titanic}\label{TitanicDataset}}
+
+\begin{figure}
+\centering
+\includegraphics{figure/Titanic.jpg}
+\caption{Titanic sinking by Willy Stöwer}
+\end{figure}
+
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in
+history (during peacetime). Over 1500 people died as a consequence of
+collision with an iceberg. Thanks to projects like \emph{Encyclopedia
+titanica} \texttt{https://www.encyclopedia-titanica.org/} we have a very
+rich and precise data about passengers. This dataset is available in the
+\texttt{titanic} dataset.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"titanic"}\NormalTok{)}
+\KeywordTok{head}\NormalTok{(titanic_train, }\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   PassengerId Survived Pclass
+## 1           1        0      3
+## 2           2        1      1
+##                                                  Name    Sex Age SibSp
+## 1                             Braund, Mr. Owen Harris   male  22     1
+## 2 Cumings, Mrs. John Bradley (Florence Briggs Thayer) female  38     1
+##   Parch    Ticket    Fare Cabin Embarked
+## 1     0 A/5 21171  7.2500              S
+## 2     0  PC 17599 71.2833   C85        C
+\end{verbatim}
+
+\hypertarget{what-are-the-chances-for-survival-on-the-titanic}{%
+\subsubsection{What are the chances for survival on the
+Titanic?}\label{what-are-the-chances-for-survival-on-the-titanic}}
+
+Feature of interest is the binary variable \texttt{Survived}. Let's
+build some predictive models for this variable.
+
+First we need to do some data preprocessing. Columns with characters are
+converted to factors and rows with missing data are removed.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{titanic_small <-}\StringTok{ }\NormalTok{titanic_train[,}\KeywordTok{c}\NormalTok{(}\StringTok{"Survived"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"Sex"}\NormalTok{, }\StringTok{"Age"}\NormalTok{, }\StringTok{"SibSp"}\NormalTok{, }\StringTok{"Parch"}\NormalTok{, }\StringTok{"Fare"}\NormalTok{, }\StringTok{"Embarked"}\NormalTok{)]}
+\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Survived <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived)}
+\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Sex <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Sex)}
+\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Embarked <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Embarked)}
+\NormalTok{titanic_small <-}\StringTok{ }\KeywordTok{na.omit}\NormalTok{(titanic_small)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{data-exploration}{%
+\subsubsection{Data exploration}\label{data-exploration}}
+
+It is always a good idea to do data exploration before modeling. But
+since this book is focused on model exploration we will spend only a few
+lines on data exploration part. And we will limit ourselves to
+two-variable summaries for each variable.
+
+TODO: PBi make it readable
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived , titanic_small}\OperatorTok{$}\NormalTok{Pclass)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##       1   2   3
+##   0  64  90 270
+##   1 122  83  85
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived , titanic_small}\OperatorTok{$}\NormalTok{Sex)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##     female male
+##   0     64  360
+##   1    197   93
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived , titanic_small}\OperatorTok{$}\NormalTok{Parch)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##       0   1   2   3   4   5   6
+##   0 335  49  29   2   4   4   1
+##   1 186  61  39   3   0   1   0
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived , titanic_small}\OperatorTok{$}\NormalTok{SibSp)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##       0   1   2   3   4   5
+##   0 296  86  14   8  15   5
+##   1 175  97  11   4   3   0
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived , titanic_small}\OperatorTok{$}\NormalTok{Embarked)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##           C   Q   S
+##   0   0  51  20 353
+##   1   2  79   8 201
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{)}
+\KeywordTok{ggplot}\NormalTok{(titanic_small, }\KeywordTok{aes}\NormalTok{(Survived, Fare)) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_boxplot}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{coord_flip}\NormalTok{() }\OperatorTok{+}\StringTok{ }\KeywordTok{scale_y_log10}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ggplot}\NormalTok{(titanic_small, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{fill =}\NormalTok{ Survived, }\DataTypeTok{x=}\KeywordTok{cut}\NormalTok{(Age,}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{5}\NormalTok{,}\DecValTok{10}\NormalTok{,}\DecValTok{18}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DecValTok{50}\NormalTok{,}\DecValTok{70}\NormalTok{,}\DecValTok{100}\NormalTok{)))) }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{position =} \StringTok{"fill"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+\hypertarget{logistic-regression-is-always-a-good-choice}{%
+\subsubsection{Logistic regression is always a good
+choice}\label{logistic-regression-is-always-a-good-choice}}
+
+The feature of interest \texttt{survival} is binary, thus a natural
+choice is a logistic regression. Most of predictive features are
+categorical except age.
+
+There is no reason to expect a linear relation between age and odds of
+survival, thus for age we will use linear tail-restricted cubic splines
+available in the \texttt{rcs()} function in the \texttt{rms} package
+\citep{rms}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"rms"}\NormalTok{)}
+\NormalTok{lmr_model <-}\StringTok{ }\KeywordTok{lrm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\KeywordTok{rcs}\NormalTok{(Age) }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
+\StringTok{                   }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, titanic_small)}
+\NormalTok{lmr_model}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Logistic Regression Model
+##  
+##  lrm(formula = Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp + 
+##      Parch + Fare + Embarked, data = titanic_small)
+##  
+##                      Model Likelihood     Discrimination    Rank Discrim.    
+##                         Ratio Test           Indexes           Indexes       
+##  Obs         714    LR chi2     353.20    R2       0.527    C       0.874    
+##   FALSE      424    d.f.            12    g        2.192    Dxy     0.748    
+##   TRUE       290    Pr(> chi2) <0.0001    gr       8.957    gamma   0.749    
+##  max |deriv| 0.1                          gp       0.363    tau-a   0.361    
+##                                           Brier    0.134                     
+##  
+##             Coef    S.E.    Wald Z Pr(>|Z|)
+##  Intercept  12.1530 26.3889   0.46 0.6451  
+##  Pclass     -1.0822  0.1693  -6.39 <0.0001 
+##  Sex=male   -2.7848  0.2317 -12.02 <0.0001 
+##  Age        -0.2382  0.0472  -5.04 <0.0001 
+##  Age'        0.7961  0.2138   3.72 0.0002  
+##  Age''      -4.3833  1.5123  -2.90 0.0038  
+##  Age'''      5.1859  2.2693   2.29 0.0223  
+##  SibSp      -0.5292  0.1449  -3.65 0.0003  
+##  Parch      -0.1990  0.1344  -1.48 0.1387  
+##  Fare        0.0032  0.0029   1.11 0.2670  
+##  Embarked=C -4.6054 26.3806  -0.17 0.8614  
+##  Embarked=Q -5.3341 26.3853  -0.20 0.8398  
+##  Embarked=S -4.9968 26.3802  -0.19 0.8498  
+## 
+\end{verbatim}
+
+\hypertarget{random-forest-to-the-rescue}{%
+\subsubsection{Random Forest to the
+rescue}\label{random-forest-to-the-rescue}}
+
+In addition to a logistic regression we will use a random forest model
+with default settings. Random forest is known for good performance, is
+able to grasp low-level variable interactions and is quite stable.
+
+Here we are using the \texttt{randomForest} package
+\citep{randomForestRNews}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
+\NormalTok{rf_model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Survived }\OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }
+\StringTok{                           }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, }
+                           \DataTypeTok{data =}\NormalTok{ titanic_small)}
+\NormalTok{rf_model}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+##  randomForest(formula = Survived ~ Pclass + Sex + Age + SibSp +      Parch + Fare + Embarked, data = titanic_small) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 2
+## 
+##         OOB estimate of  error rate: 18.63%
+## Confusion matrix:
+##     0   1 class.error
+## 0 382  42   0.0990566
+## 1  91 199   0.3137931
+\end{verbatim}
+
+\hypertarget{gradient-boosting-for-interactions}{%
+\subsubsection{Gradient boosting for
+interactions}\label{gradient-boosting-for-interactions}}
+
+Last model that we will train on this dataset is the gradient boosting
+model. This family of models is known for being able to grasp deep
+interactions between variables.
+
+Here we are using the implementation from the \texttt{gbm} package
+\citep{gbm}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"gbm"}\NormalTok{)}
+\NormalTok{gbm_model <-}\StringTok{ }\KeywordTok{gbm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
+\StringTok{                     }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, }\DataTypeTok{data =}\NormalTok{ titanic_small, }\DataTypeTok{n.trees =} \DecValTok{15000}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Distribution not specified, assuming bernoulli ...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gbm_model}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## gbm(formula = Survived == "1" ~ Pclass + Sex + Age + SibSp + 
+##     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+## A gradient boosted model with bernoulli loss function.
+## 15000 iterations were performed.
+## There were 7 predictors of which 7 had non-zero influence.
+\end{verbatim}
+
+\hypertarget{model-predictions}{%
+\subsubsection{Model predictions}\label{model-predictions}}
+
+Having all three models let's see what are odds of surviving for a
+2-years old boy that travels in the 3rd class with 1 parent and 3
+siblings.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{henry <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+            \DataTypeTok{Pclass =} \DecValTok{1}\NormalTok{,}
+            \DataTypeTok{Sex =} \KeywordTok{factor}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"female"}\NormalTok{, }\StringTok{"male"}\NormalTok{)),}
+            \DataTypeTok{Age =} \DecValTok{8}\NormalTok{,}
+            \DataTypeTok{SibSp =} \DecValTok{0}\NormalTok{,}
+            \DataTypeTok{Parch =} \DecValTok{0}\NormalTok{,}
+            \DataTypeTok{Fare =} \DecValTok{72}\NormalTok{,}
+            \DataTypeTok{Embarked =} \KeywordTok{factor}\NormalTok{(}\StringTok{"C"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{""}\NormalTok{,}\StringTok{"C"}\NormalTok{,}\StringTok{"Q"}\NormalTok{,}\StringTok{"S"}\NormalTok{))}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Logistic regression model says 88.3\% for survival.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{predict}\NormalTok{(lmr_model, henry, }\DataTypeTok{type =} \StringTok{"fitted"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##         1 
+## 0.8836101
+\end{verbatim}
+
+Random forest model says 53.2\% for survival.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{predict}\NormalTok{(rf_model, henry, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##       0     1
+## 1 0.444 0.556
+## attr(,"class")
+## [1] "matrix" "votes"
+\end{verbatim}
+
+Gradient boosting model says 53.2\% for survival.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{predict}\NormalTok{(gbm_model, henry, }\DataTypeTok{type =} \StringTok{"response"}\NormalTok{, }\DataTypeTok{n.trees =} \DecValTok{15000}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.8337385
+\end{verbatim}
+
+Three different opinions. Which one should we trust? Tools introduced in
+following sections will help to understand how these models are
+different.
+
 \hypertarget{instance-level-explanation}{%
 \section*{Instance-level explanation}\label{instance-level-explanation}}
 \addcontentsline{toc}{section}{Instance-level explanation}
@@ -938,7 +1295,7 @@ Additionaly we may easily plot contributions.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-4-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-16-1.pdf}
 
 \hypertarget{breakDown}{%
 \section{Variable attributions}\label{breakDown}}
@@ -1177,12 +1534,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.27%
+##         OOB estimate of  error rate: 27.32%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2288  372      195   0.1985989
-## ok         539 1246      436   0.4389914
-## promoted   208  390     2173   0.2158066
+## fired     2272  386      197   0.2042032
+## ok         524 1256      441   0.4344890
+## promoted   199  397     2175   0.2150848
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -1223,7 +1580,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1   0.8 0.198    0.002
+## 1  0.79 0.208    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1249,25 +1606,25 @@ with variable attributions.
 
 \begin{verbatim}
 ##                                         contribution
-## randomForest.fired: baseline                   0.377
+## randomForest.fired: baseline                   0.375
 ## randomForest.fired: * hours = 42               0.239
-## randomForest.fired: * evaluation = 2           0.063
-## randomForest.fired: * salary = 2              -0.250
-## randomForest.fired: * age = 58                 0.098
-## randomForest.fired: * gender = male            0.274
-## randomForest.fired: prediction                 0.800
-## randomForest.ok: baseline                      0.274
-## randomForest.ok: * hours = 42                 -0.051
-## randomForest.ok: * evaluation = 2              0.092
-## randomForest.ok: * salary = 2                  0.249
-## randomForest.ok: * age = 58                   -0.092
-## randomForest.ok: * gender = male              -0.274
-## randomForest.ok: prediction                    0.198
+## randomForest.fired: * evaluation = 2           0.058
+## randomForest.fired: * salary = 2              -0.253
+## randomForest.fired: * age = 58                 0.083
+## randomForest.fired: * gender = male            0.288
+## randomForest.fired: prediction                 0.790
+## randomForest.ok: baseline                      0.276
+## randomForest.ok: * hours = 42                 -0.049
+## randomForest.ok: * evaluation = 2              0.096
+## randomForest.ok: * salary = 2                  0.251
+## randomForest.ok: * age = 58                   -0.079
+## randomForest.ok: * gender = male              -0.288
+## randomForest.ok: prediction                    0.208
 ## randomForest.promoted: baseline                0.349
-## randomForest.promoted: * hours = 42           -0.188
-## randomForest.promoted: * evaluation = 2       -0.155
-## randomForest.promoted: * salary = 2            0.002
-## randomForest.promoted: * age = 58             -0.006
+## randomForest.promoted: * hours = 42           -0.190
+## randomForest.promoted: * evaluation = 2       -0.153
+## randomForest.promoted: * salary = 2            0.001
+## randomForest.promoted: * age = 58             -0.004
 ## randomForest.promoted: * gender = male         0.000
 ## randomForest.promoted: prediction              0.002
 ## baseline:  0
@@ -1281,7 +1638,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-9-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-21-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -1292,7 +1649,7 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-10-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-22-1.pdf}
 
 \hypertarget{variable-attribution-with-interactions}{%
 \section{Variable attribution with
@@ -1493,12 +1850,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.35%
+##         OOB estimate of  error rate: 27.37%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2273  385      197   0.2038529
-## ok         533 1252      436   0.4362900
-## promoted   196  399     2176   0.2147239
+## fired     2263  390      202   0.2073555
+## ok         534 1252      435   0.4362900
+## promoted   195  392     2184   0.2118369
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -1537,8 +1894,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired    ok promoted
-## 1 0.794 0.202    0.004
+##   fired   ok promoted
+## 1 0.818 0.18    0.002
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1563,24 +1920,24 @@ with variable attributions.
 
 \begin{verbatim}
 ##                                               contribution
-## randomForest.fired: baseline                         0.376
-## randomForest.fired: * hours = 42                     0.238
-## randomForest.fired: * salary = 2                    -0.202
-## randomForest.fired: * age:gender = 58:male           0.402
-## randomForest.fired: * evaluation = 2                -0.020
-## randomForest.fired: prediction                       0.794
+## randomForest.fired: baseline                         0.375
+## randomForest.fired: * hours = 42                     0.240
+## randomForest.fired: * salary = 2                    -0.208
+## randomForest.fired: * age:gender = 58:male           0.414
+## randomForest.fired: * evaluation = 2                -0.003
+## randomForest.fired: prediction                       0.818
 ## randomForest.ok: baseline                            0.275
-## randomForest.ok: * evaluation = 2                    0.134
-## randomForest.ok: * salary = 2                        0.152
-## randomForest.ok: * age:gender = 58:male             -0.275
-## randomForest.ok: * hours = 42                       -0.083
-## randomForest.ok: prediction                          0.202
+## randomForest.ok: * evaluation = 2                    0.135
+## randomForest.ok: * salary = 2                        0.156
+## randomForest.ok: * age:gender = 58:male             -0.285
+## randomForest.ok: * hours = 42                       -0.102
+## randomForest.ok: prediction                          0.180
 ## randomForest.promoted: baseline                      0.349
-## randomForest.promoted: * hours = 42                 -0.191
-## randomForest.promoted: * evaluation = 2             -0.152
-## randomForest.promoted: * age:gender = 58:male       -0.003
-## randomForest.promoted: * salary = 2                  0.001
-## randomForest.promoted: prediction                    0.004
+## randomForest.promoted: * hours = 42                 -0.192
+## randomForest.promoted: * evaluation = 2             -0.151
+## randomForest.promoted: * age:gender = 58:male       -0.004
+## randomForest.promoted: * salary = 2                 -0.001
+## randomForest.promoted: prediction                    0.002
 ## baseline:  0
 \end{verbatim}
 
@@ -1592,7 +1949,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-15-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 \hypertarget{shapley}{%
 \section{Average variable attributions}\label{shapley}}
@@ -1780,7 +2137,7 @@ package.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-17-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-29-1.pdf}
 
 Here we use the \texttt{iml} package, see more examples in
 \citep{imlPackage}.
@@ -1837,7 +2194,7 @@ And the plot with Shapley attributions.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-20-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-32-1.pdf}
 
 See more examples for \texttt{iml} package in the \citep{molnar} book.
 
@@ -2117,7 +2474,7 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-37-1.pdf}
 
 \hypertarget{the-live-package}{%
 \subsubsection{\texorpdfstring{\textbf{The live
@@ -2159,7 +2516,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-26-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-38-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2167,7 +2524,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-26-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-38-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsubsection{\texorpdfstring{\textbf{The iml
@@ -2217,7 +2574,7 @@ package}}{The iml package}}\label{the-iml-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-27-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-39-1.pdf}
 
 \hypertarget{ceterisParibus}{%
 \section{What-If analysis with the Ceteris Paribus
@@ -2741,7 +3098,7 @@ visible in the plot.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-33-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-45-1.pdf}
 
 One of very useful features of \texttt{ceterisParibus} explainers is
 that profiles for two or more models may be superimposed in a single
@@ -2771,7 +3128,7 @@ color as a key for model.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-47-1.pdf}
 
 \textbf{Oscillations}
 
@@ -2800,7 +3157,7 @@ for CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-36-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-48-1.pdf}
 
 \textbf{2D Ceteris Paribus profiles}
 
@@ -2814,7 +3171,7 @@ And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-37-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-49-1.pdf}
 
 \hypertarget{comparision-of-prediction-level-explainers}{%
 \section{Comparision of prediction level
@@ -3235,7 +3592,7 @@ interval that start in a loss and ends in a loss of perturbed data.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-42-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-1.pdf}
 
 \hypertarget{more-models}{%
 \subsection{More models}\label{more-models}}
@@ -3350,7 +3707,7 @@ When we compare other features it looks like in all models the
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-45-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-57-1.pdf}
 
 There is interesting difference between linear model and others in the
 way how important is the \texttt{construction.year}. For linear model
@@ -3751,7 +4108,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-65-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3759,7 +4116,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-65-2.pdf}
 
 \hypertarget{modelAuditing}{%
 \section{Residual Diagnostic}\label{modelAuditing}}
@@ -3812,7 +4169,7 @@ Goal: verify if model is ok
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3820,7 +4177,7 @@ Goal: verify if model is ok
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-2.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3828,7 +4185,7 @@ Goal: verify if model is ok
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-3.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-3.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3836,7 +4193,7 @@ Goal: verify if model is ok
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-4.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-4.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3844,7 +4201,7 @@ Goal: verify if model is ok
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-5.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-5.pdf}
 
 \hypertarget{concept-drift}{%
 \section{Concept Drift}\label{concept-drift}}
@@ -4146,7 +4503,7 @@ these two datasets are different.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-57-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-69-1.pdf}
 
 \hypertarget{appendixes}{%
 \section*{Appendixes}\label{appendixes}}
@@ -4154,234 +4511,6 @@ these two datasets are different.
 
 \hypertarget{DataSets}{%
 \section{Data Sets}\label{DataSets}}
-
-\hypertarget{TitanicDataset}{%
-\subsection{Predict survival on the Titanic}\label{TitanicDataset}}
-
-Sinking of the RMS Titanic is one of the deadliest maritime disasters in
-history (during peacetime). Over 1500 people died as a consequence of
-collision with an iceberg. Thanks to projects like \emph{Encyclopedia
-titanica} \texttt{https://www.encyclopedia-titanica.org/} we have a very
-rich and precise data about passagers. This dataset is avaliable in the
-\texttt{titanic} dataset.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"titanic"}\NormalTok{)}
-\KeywordTok{head}\NormalTok{(titanic_train)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##   PassengerId Survived Pclass
-## 1           1        0      3
-## 2           2        1      1
-## 3           3        1      3
-## 4           4        1      1
-## 5           5        0      3
-## 6           6        0      3
-##                                                  Name    Sex Age SibSp
-## 1                             Braund, Mr. Owen Harris   male  22     1
-## 2 Cumings, Mrs. John Bradley (Florence Briggs Thayer) female  38     1
-## 3                              Heikkinen, Miss. Laina female  26     0
-## 4        Futrelle, Mrs. Jacques Heath (Lily May Peel) female  35     1
-## 5                            Allen, Mr. William Henry   male  35     0
-## 6                                    Moran, Mr. James   male  NA     0
-##   Parch           Ticket    Fare Cabin Embarked
-## 1     0        A/5 21171  7.2500              S
-## 2     0         PC 17599 71.2833   C85        C
-## 3     0 STON/O2. 3101282  7.9250              S
-## 4     0           113803 53.1000  C123        S
-## 5     0           373450  8.0500              S
-## 6     0           330877  8.4583              Q
-\end{verbatim}
-
-Feature of interest is the binary variable \texttt{Survived}. Let's
-build some predictive models for this variable.
-
-First we need to do some data preprocessing.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{titanic_small <-}\StringTok{ }\NormalTok{titanic_train[,}\KeywordTok{c}\NormalTok{(}\StringTok{"Survived"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"Sex"}\NormalTok{, }\StringTok{"Age"}\NormalTok{, }\StringTok{"SibSp"}\NormalTok{, }\StringTok{"Parch"}\NormalTok{, }\StringTok{"Fare"}\NormalTok{, }\StringTok{"Embarked"}\NormalTok{)]}
-\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Survived <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Survived)}
-\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Sex <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Sex)}
-\NormalTok{titanic_small}\OperatorTok{$}\NormalTok{Embarked <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(titanic_small}\OperatorTok{$}\NormalTok{Embarked)}
-\NormalTok{titanic_small <-}\StringTok{ }\KeywordTok{na.omit}\NormalTok{(titanic_small)}
-
-\NormalTok{titanic_train[}\DecValTok{760}\NormalTok{,]}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##     PassengerId Survived Pclass
-## 760         760        1      1
-##                                                         Name    Sex Age
-## 760 Rothes, the Countess. of (Lucy Noel Martha Dyer-Edwards) female  33
-##     SibSp Parch Ticket Fare Cabin Embarked
-## 760     0     0 110152 86.5   B77        S
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{titanic_small[}\DecValTok{760}\NormalTok{,]}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##    Survived Pclass  Sex Age SibSp Parch Fare Embarked
-## NA     <NA>     NA <NA>  NA    NA    NA   NA     <NA>
-\end{verbatim}
-
-\hypertarget{random-forest}{%
-\subsubsection{Random Forest}\label{random-forest}}
-
-Now we can create models. Let's start with Random Forest
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
-\NormalTok{rf_model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Survived }\OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }
-\StringTok{                           }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, }
-                           \DataTypeTok{data =}\NormalTok{ titanic_small)}
-\NormalTok{rf_model}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-## Call:
-##  randomForest(formula = Survived ~ Pclass + Sex + Age + SibSp +      Parch + Fare + Embarked, data = titanic_small) 
-##                Type of random forest: classification
-##                      Number of trees: 500
-## No. of variables tried at each split: 2
-## 
-##         OOB estimate of  error rate: 19.19%
-## Confusion matrix:
-##     0   1 class.error
-## 0 379  45   0.1061321
-## 1  92 198   0.3172414
-\end{verbatim}
-
-\hypertarget{logistic-regression}{%
-\subsubsection{Logistic regression}\label{logistic-regression}}
-
-Logistic model is a generalized linear moedl with binomial family and
-logit link function.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{glm_model <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(Survived }\OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked,}
-                         \DataTypeTok{data =}\NormalTok{ titanic_small, }\DataTypeTok{family =} \StringTok{"binomial"}\NormalTok{)}
-\KeywordTok{summary}\NormalTok{(glm_model)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-## Call:
-## glm(formula = Survived ~ Pclass + Sex + Age + SibSp + Parch + 
-##     Fare + Embarked, family = "binomial", data = titanic_small)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.7233  -0.6439  -0.3772   0.6288   2.4457  
-## 
-## Coefficients:
-##               Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)  17.894850 607.855474   0.029  0.97651    
-## Pclass       -1.199251   0.164619  -7.285 3.22e-13 ***
-## Sexmale      -2.638476   0.222256 -11.871  < 2e-16 ***
-## Age          -0.043350   0.008232  -5.266 1.39e-07 ***
-## SibSp        -0.363208   0.129017  -2.815  0.00487 ** 
-## Parch        -0.060270   0.123900  -0.486  0.62666    
-## Fare          0.001432   0.002531   0.566  0.57165    
-## EmbarkedC   -12.257443 607.855250  -0.020  0.98391    
-## EmbarkedQ   -13.080988 607.855452  -0.022  0.98283    
-## EmbarkedS   -12.658656 607.855228  -0.021  0.98339    
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 964.52  on 713  degrees of freedom
-## Residual deviance: 632.34  on 704  degrees of freedom
-## AIC: 652.34
-## 
-## Number of Fisher Scoring iterations: 13
-\end{verbatim}
-
-\hypertarget{splines-with-rms}{%
-\subsubsection{Splines with RMS}\label{splines-with-rms}}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"rms"}\NormalTok{)}
-\NormalTok{rms_model <-}\StringTok{ }\KeywordTok{lrm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\KeywordTok{rcs}\NormalTok{(Age) }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
-\StringTok{                   }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, titanic_small)}
-\NormalTok{rms_model}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## Logistic Regression Model
-##  
-##  lrm(formula = Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp + 
-##      Parch + Fare + Embarked, data = titanic_small)
-##  
-##                      Model Likelihood     Discrimination    Rank Discrim.    
-##                         Ratio Test           Indexes           Indexes       
-##  Obs         714    LR chi2     353.20    R2       0.527    C       0.874    
-##   FALSE      424    d.f.            12    g        2.192    Dxy     0.748    
-##   TRUE       290    Pr(> chi2) <0.0001    gr       8.957    gamma   0.749    
-##  max |deriv| 0.1                          gp       0.363    tau-a   0.361    
-##                                           Brier    0.134                     
-##  
-##             Coef    S.E.    Wald Z Pr(>|Z|)
-##  Intercept  12.1530 26.3889   0.46 0.6451  
-##  Pclass     -1.0822  0.1693  -6.39 <0.0001 
-##  Sex=male   -2.7848  0.2317 -12.02 <0.0001 
-##  Age        -0.2382  0.0472  -5.04 <0.0001 
-##  Age'        0.7961  0.2138   3.72 0.0002  
-##  Age''      -4.3833  1.5123  -2.90 0.0038  
-##  Age'''      5.1859  2.2693   2.29 0.0223  
-##  SibSp      -0.5292  0.1449  -3.65 0.0003  
-##  Parch      -0.1990  0.1344  -1.48 0.1387  
-##  Fare        0.0032  0.0029   1.11 0.2670  
-##  Embarked=C -4.6054 26.3806  -0.17 0.8614  
-##  Embarked=Q -5.3341 26.3853  -0.20 0.8398  
-##  Embarked=S -4.9968 26.3802  -0.19 0.8498  
-## 
-\end{verbatim}
-
-\hypertarget{gradient-boosting}{%
-\subsubsection{Gradient boosting}\label{gradient-boosting}}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"gbm"}\NormalTok{)}
-\NormalTok{titanic_gbm <-}\StringTok{ }\KeywordTok{gbm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
-\StringTok{                     }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, }\DataTypeTok{data =}\NormalTok{ titanic_small, }\DataTypeTok{n.trees =} \DecValTok{15000}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## Distribution not specified, assuming bernoulli ...
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{titanic_gbm}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## gbm(formula = Survived == "1" ~ Pclass + Sex + Age + SibSp + 
-##     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
-## A gradient boosted model with bernoulli loss function.
-## 15000 iterations were performed.
-## There were 7 predictors of which 7 had non-zero influence.
-\end{verbatim}
 
 \hypertarget{HRdataset}{%
 \subsection{Hire or Fire? HR in Call Center}\label{HRdataset}}
