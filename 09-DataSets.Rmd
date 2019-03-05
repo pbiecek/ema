@@ -1,0 +1,144 @@
+# Data Sets {#DataSetsIntro}
+
+We illustrate techniques introduced in this book on three datasets: 
+
+* *Sinking of the RMS Titanic* as an example of binary classification
+* *Apartment prices* as an example of regression model
+* *Hire or Fire* as an example of multi-class classification and interactions
+
+## Sinking of the RMS Titanic {#TitanicDataset}
+
+![Titanic sinking by Willy Stöwer](figure/Titanic.jpg)
+
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` we have a very rich and precise data about passengers. This dataset is available in the `titanic` dataset.
+
+
+```{r, warning=FALSE, message=FALSE}
+library("titanic")
+head(titanic_train, 2)
+```
+
+### Data cleaning
+
+Feature of interest is the binary variable `Survived`. Let's build some predictive models for this variable.
+
+First we need to do some data preprocessing. Columns with characters are converted to factors and rows with missing data are removed.
+
+```{r, warning=FALSE, message=FALSE}
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+titanic_small <- na.omit(titanic_small)
+head(titanic_small)
+```
+
+### Data exploration
+
+It is always a good idea to do data exploration before modeling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4}
+mosaicplot(table(titanic_small$Pclass, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "First class have the highest survival", ylab = "Survived", xlab = "Passenger class")
+
+mosaicplot(table(titanic_small$Sex, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "Female are more likely to survive", ylab = "Survived", xlab = "Sex")
+
+mosaicplot(table(titanic_small$Parch, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "It's better to have a parent on board", ylab = "Survived", xlab = "Number of Parents/Children Aboard")
+
+mosaicplot(table(titanic_small$SibSp, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "It's better to have one sibling on board", ylab = "Survived", xlab = "Number of Siblings/Spouses Aboard")
+
+mosaicplot(table(titanic_small$Embarked, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "", ylab = "Survived", xlab = "Embarked")
+```
+
+```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=2, echo=FALSE}
+library("ggplot2")
+ggplot(titanic_small, aes(Survived, Fare, color = Survived)) + 
+  geom_boxplot() + coord_flip() + scale_y_log10() +
+  ggtitle("The more you pay for ticket, the more likely is your survival") +
+  theme_minimal() + scale_color_manual(values = c("red4", "green4"))
+```
+
+```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, echo=FALSE}
+ggplot(titanic_small, aes(fill = Survived, x=cut(Age,c(0,2,5,10,18,30,50,70,100)))) + 
+  geom_bar(position = "fill") + xlab("Age") + ylab("Fraction of survivors") +
+  ggtitle("If you are below 5 your survival is more likely")+
+  theme_minimal() + scale_fill_manual(values = c("red4", "green4"))
+```
+
+### Logistic regression is always a good choice
+
+The feature of interest `survival` is binary, thus a natural choice is a logistic regression. Most of predictive features are categorical except age. 
+
+There is no reason to expect a linear relation between age and odds of survival, thus for age we will use linear tail-restricted cubic splines available in the `rcs()` function in the `rms` package [@rms].
+ 
+```{r, warning=FALSE, message=FALSE}
+library("rms")
+lmr_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+                   Parch + Fare + Embarked, titanic_small)
+lmr_model
+```
+
+
+### Random Forest to the rescue
+
+In addition to a logistic regression we will use a random forest model with default settings. Random forest is known for good performance, is able to grasp low-level variable interactions and is quite stable.
+
+Here we are using the `randomForest` package [@randomForestRNews].
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
+                           Parch + Fare + Embarked, 
+                           data = titanic_small)
+rf_model
+```
+
+### Gradient boosting for interactions
+
+Last model that we will train on this dataset is the gradient boosting model. This family of models is known for being able to grasp deep interactions between variables.
+
+Here we are using the implementation from the `gbm` package [@gbm].
+
+```{r, warning=FALSE, message=FALSE}
+library("gbm")
+gbm_model <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
+                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+gbm_model
+```
+
+### Model predictions
+
+Having all three models let's see what are odds of surviving for a 2-years old boy that travels in the 3rd class with 1 parent and 3 siblings.
+
+```{r, warning=FALSE, message=FALSE}
+henry <- data.frame(
+            Pclass = 1,
+            Sex = factor("male", levels = c("female", "male")),
+            Age = 8,
+            SibSp = 0,
+            Parch = 0,
+            Fare = 72,
+            Embarked = factor("C", levels = c("","C","Q","S"))
+)
+```
+
+Logistic regression model says 88.3\% for survival.
+
+```{r, warning=FALSE, message=FALSE}
+predict(lmr_model, henry, type = "fitted")
+```
+
+Random forest model says 53.2\% for survival.
+
+```{r, warning=FALSE, message=FALSE}
+predict(rf_model, henry, type = "prob")
+```
+
+Gradient boosting model says 53.2\% for survival.
+
+```{r, warning=FALSE, message=FALSE}
+predict(gbm_model, henry, type = "response", n.trees = 15000)
+```
+
+Three different opinions. Which one should we trust?
+Tools introduced in following sections will help to understand how these models are different.
+
