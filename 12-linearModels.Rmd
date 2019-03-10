@@ -1,8 +1,13 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Variable attribution for linear models {#variableAttributionMethods}
 
 ## Introduction  
 
-In this chapter we introduce the concept and the intuitions underlying ,,variable attribution,'' i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:
+In this chapter we introduce the concept and the intuitions underlying ''variable attribution,'' i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:
 
 * Assume that we are interested in predicting the risk of heart attack based on person's age, sex, and smoking habits. A patient may want to know which factors have the highest impact on the his/her risk score.
 * Consider a model for prediction of apartment prices. An investor may want to know how much of the predicted price may be attributed to, for instance, the location of an apartment.
@@ -12,109 +17,66 @@ In each of those cases we want to attribute a part of the model prediction to a 
 
 ## Intuition  
 
-Assume a linear model with $p$ explanatory variables collected in the vector $x = (x_1, x_2, \ldots, x_p)$ and   coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$, where $\beta_0$ is the intercept. The prediction is given by the following linear combination:  
+Assume a classical linear model for response $Y$ with $p$ explanatory variables collected in the vector $X = (X_1, X_2, \ldots, X_p)$ and coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$, where $\beta_0$ is the intercept. The prediction for $Y$ at point $X=x=(x_1, x_2, \ldots, x_p)$ is given by the expected value of $Y$ conditional on $X=x$. For a linear model, the expected value is given by the following linear combination:  
 
 $$
-f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
+E_Y(Y | x) = f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
 $$
-
-We are interested in the contribution of variable $x_i$ on model prediction $f(x^*)$ for a single observation described by $x^*$. In this case, the contribution is related to $x^*_i\beta_i$, as variable $x_i$ occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x_i$ is is centered by subtracting a constant $\hat x_i$ (usually, the mean of $x_i$). This leads the following, intuitive formula for the variable attribution:
+We are interested in the contribution of the $i$-th explanatory variable to model prediction $f(x^*)$ for a single observation described by $x^*$. In this case, the contribution is equal to $x^*_i\beta_i$, because the $i$-th variable occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x_i$ is is centered by subtracting a constant $\hat x_i$ (usually, the mean of $x_i$). This leads the following, intuitive formula for the variable attribution:
 $$
 v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
 $$
 
 ## Method
 
-We want to calculate $v(f, x^*, i)$, which is the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. 
-
-Geneal approach for calculation of variable attributions would be to measure how much the expected model response would change after conditioning on $x_i = x_i^*$.
-
+We want to calculate $v(f, x^*, i)$, which is the contribution of the $i$-th explanatory variable to the prediction of model $f()$ at point $x^*$. Assume that $E_Y(Y | x^*) \approx f(x^*)$, where $f(x^*)$ is the value of the model at $x^*$. A possible approach to define $v(f, x^*, i)$ is to measure how much the expected model response changes after conditioning on $x_i^*$:
 $$
-v(f, x^*, i) = E[f(x) | x_i = x_i^*] - E[f(x)]
+v(f, x^*, i) = E_Y(Y | x^*) - E_{X_i}\{E_Y[Y | (x_1^*,\ldots,x_{i-1}^*,X_i,x_{i+1}^*,x_p^*)]\}\approx f(x^*) - E_{X_i}[f(x_{-i}^*)],
 $$
-
-For linear models, if coordinates of $x$ are independent, this is equivalent of
-
+where $x_{-i}^*$ indicates that variable $X_i$ in vector $x_{-i}^*$ is treated as random. For the classical linear model, if the explanatory variables are independent, $v(f, x^*, i)$ can be expressed as follows:
 $$
-v(f, x^*, i) = f(x^*) - E[f(x)|x_{-i} = x^*_{-i}] = \beta_i x^*_i  - E \beta_i X_i.
+v(f, x^*, i) = f(x^*) - E_{X_i}[f(x_{-i}^*)] = \beta_0 + x_1^* \beta_1 + \ldots + x_p^* \beta_p - E_{X_i}[\beta_0 + x_1^* \beta_1 + \ldots +\beta_i X_i \ldots + x_p^* \beta_p] = \beta_i[x^*_i - E_{X_i}(X_i)].
 $$
-Expected value can be estimated as averages, and this leads to  
+In practice, given a dataset, the expected value of $X_i$ can be estimated by the sample mean $\bar x_i$. This leads to  
 $$
-v(f, x^*, i) = \beta_i x^*_i - \beta_i \bar x_i = \beta_i (x^*_i - \bar x_i)
+v(f, x^*, i) = \beta_i (x^*_i - \bar x_i).
 $$
-
-The logic behind the attribution is the following. 
-Contribution of variable $x_i$ is the difference between model response for value $x_i^*$ minus the average model response.
-
-Note that the linear model ma be rewritten in a following way
-
+Note that the linear-model-based prediction may be re-expressed in the following way:
 $$
-f(x) = baseline + (x_1 - \bar x_1) \beta_1 + ... + (x_p - \bar x_p) \beta_p
+f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] \equiv [average \ prediction] + \sum_{j=1}^p v(f, x^*, j).
 $$
-
-where
-$$
-baseline = \mu + \bar x_1 \beta_1 + ... + \bar x_p \beta_p.
-$$
-
-Here $baseline$ is an average model response and variable contributions show how prediction for particular $x^*$ is different from the average response. 
+Thus, the contributions of the explanatory variables are the differences between the model prediction for $x^*$ and  the average prediction.
 
 ** NOTE for careful readers **
 
-There is a gap between expected value of $X_i$ and average calculated on some dataset $\bar x_i$. The latter depends on the data used for calculation of averages. For the sake of simplicity we do not emphasize these differences. To live with this just assume that we have access to a very large validation data that allows us to calculate $\bar x_i$ very accurately.
+Obviously, sample mean $\bar x_i$ is an estimator of the expected value $E_{X_i}(X_i)$, calculated using a dataset. For the sake of simplicity we do not emphasize these differences in the notation. Also, we ignore the fact that, in practice, we never know the model coefficients and we work with an estimated model. 
 
-Also we assumed that coordinated of $x$ are independent, which may not be the case. We will return to this problem later, during the discussion related to interactions.
+Also, we assumed that the explanatory variables are independent, which may not be the case. We will return to this problem in Section [TOMASZ: INSERT REF], when we will discuss interactions.
 
 ## Example: Wine quality
 
-It may be a surprise, that the attribution for variable $x_i$ is not the $\beta_i x_i$. To understand this, consider following example. 
+Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The linear model is
+$$
+quality(alcohol) = 2.5820 + 0.3135 * alcohol.
+$$
+The weakest wine in the dataset has 8\% of alcohol, while the average alcohol concentration is 10.51\%. Thus, the contribution of alcohol to the model prediction for the weakest wine is $0.3135 \cdot (8-10.51) = -0.786885$. This  means that low concentration of alcohol for this wine (8\%) decreses the predicted quality by $-0.786885$.
+
+Note, that it would be misleading to use $x_i^*\beta_i = 0.3135*8 = 2.508$ as the alcohol contribution to the quality. The positive value of the product would not correrspond to the intuition that, in the presence of a positive relation, a smaller alcohol concentration should imply a lower quality of the wine.
 
 ```{r attribution1, echo=FALSE, fig.cap="(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model", out.width = '50%', fig.align='center'}
 knitr::include_graphics("figure/attribution_1.png")
 ```
 
-
-Figure \@ref(fig:attribution1) shows the relation between alcohol and wine quality, based on the wine dataset [@wine2009]. The corresponding linear model is
-
-$$
-quality(alcohol) = 2.5820 + 0.3135 * alcohol
-$$
-
-The weakest wine in this dataset has 8\% of alcohol, average alcohol concentration is 10.51, so the contribution of alcohol to the model prediction is $0.3135  *(8-10.51) = -0.786885$. It means that low value of alcohol for this wine (8\%) lower the prediction of quality by $-0.786885$.
-
-Note, that it would be confusing to use $x_i\beta_i$ as alcohol contribution on quality would be $0.3135*8 = 2.508$. This would not reflect the intuition that for positive relation, the smaller is the alcohol concentration the lower should be the quality of wine.
-
-
 ## Pros and Cons
 
-Here we summarise pros and cons of this approach.
-
-**Pros**
-
-- Presented variable attribution for linear model is not an approximation, it is directly linked with the structure of a model.
-- It is easier to understand attributions that are not linked with scale nor location of $x_i$ as the standard $\beta_i$ are.
-
-**Cons**
-
-- It works only for linear models. 
-- This do not reduce model complexity. Just present model coefficients in a different way.
+The proposed definition of $v(f, x^*, i)$ is linked neither with scale nor location of $X_i$; hence, it is easier to understand than, for instance, the standardized value of $\beta_i$. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. THE DEFINITION OF v() INVOLVES CENTERING.] For the classical linear model, $v(f, x^*, i)$ is not an approximation and it is directly linked with the structure of a model. An obvious diasadvantage is that the definition of $v(f, x^*, i)$ is very much linear-model based. Also, it does not, in any way, reduce the model complexity; it only presents model coefficients in a different way. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. MODEL COMPLEXITY IS WHAT IT IS. HOW CAN WE REDUCE IT?]
 
 
 ## Code snippets
 
-Variable attributions for linear models may be directly extracted from the `predict()` function for linear models. 
+In this section, we present an example of computing variable attributions using the `HR` dataset (see Section \@ref(HRdataset) for more details). 
 
-In this section we will present an example for logistic regression based on the `HR` dataset. See the Section \@ref(HRdataset) for more details.
-
-First we build a logistic regression model for binary variable `status == "fired"`. Here are fitted model coefficients.
-
-```{r, warning=FALSE, message=FALSE}
-library("DALEX")
-model_fired <- glm(status == "fired" ~ ., data = HR, family = "binomial")
-coef(model_fired)
-```
-
-We want to calculate variable attributions for a particular point. Here we define this point.
+To calculate variable attributions for a particular point, first we have got to define this point:
 
 ```{r, warning=FALSE, message=FALSE}
 new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
@@ -124,14 +86,35 @@ new_observation <- data.frame(gender = factor("male", levels = c("male", "female
                       salary = 2)
 ```
 
-For linear and generalized linear models we may specify argument `type = "terms"` that extracts variable contributions.
+Variable attributions for linear and generalized linear models may be directly extracted by applying the `predict()` function, with the argument `type = "terms"`, to an object containing results of fitting of a model. To illustrate the approach for logistic regression, we build a logistic regression model for the binary variable `status == "fired"` and extract the estimated model coefficients:
 
 ```{r, warning=FALSE, message=FALSE}
-predict(model_fired, new_observation, type = "terms")
+library("DALEX")
+model_fired <- glm(status == "fired" ~ ., data = HR, family = "binomial")
+coef(model_fired)
 ```
-
-Below we show how to do this with the `DALEX` package. Additionaly we may easily plot contributions.
-
+For the new observation, the predicted value of the logit of the probability of being fired is obtained by applying the `predict()` function:
+```{r, warning=FALSE, message=FALSE}
+as.vector(pred.inst <- predict(model_fired, new_observation)) # new pediction
+```
+On the other hand, variable attributions can be obtained by applying the `predict()` function with the `type="terms"` argument:
+```{r, warning=FALSE, message=FALSE}
+(var.attr <- predict(model_fired, new_observation, type = "terms")) # attributions
+```
+The largest contributions to the prediction come from variables ''hours'' and ''evaluation.'' Variables ''gender'' and ''age'' slightly decrease the predicted value. The sum of the attributions is equal to
+```{r, warning=FALSE, message=FALSE}
+sum(var.attr)
+```
+The attribute `constant` of object `var.attr` provides the ''average'' prediction, i.e., the predicted logit for an obsrvation defined by the means of the explanatory variables, as can be seen from the calculation below:
+```{r, warning=FALSE, message=FALSE}
+coef(model_fired)%*%c(1, mean((HR$gender=="male")), mean(HR$age), mean(HR$hours), 
+                      mean(HR$evaluation), mean(HR$salary))
+```
+Adding the ''average'' prediction to the sum of the variable attributions results in the new-observation prediction:
+```{r, warning=FALSE, message=FALSE}
+attributes(var.attr)$constant + sum(var.attr)
+```
+Below we illustrate how to implement this approach with the `DALEX` package. Toward this end, functions `explain()` and `single_prediction()` can be used. Object `model_fired` stores the definition of the logistic-regression model used earlier in this section. The contents of object `attribution` correspond to the results obtained by using function `predict()`.
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 
@@ -140,8 +123,9 @@ explainer_fired <- explain(model_fired,
                  y = HR$status == "fired",
                  label = "fired")
 
-attribution <- single_prediction(explainer_fired, new_observation)
-attribution
+(attribution <- single_prediction(explainer_fired, new_observation))
+```
+After object `attribution` has been created, a plot presenting the variable attributions can be easily constructed:
+```{r, warning=FALSE, message=FALSE}
 plot(attribution)
 ```
-
