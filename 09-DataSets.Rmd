@@ -64,7 +64,7 @@ ggplot(titanic_small, aes(fill = Survived, x=cut(Age,c(0,2,5,10,18,30,50,70,100)
   theme_minimal() + scale_fill_manual(values = c("red4", "green4"))
 ```
 
-### Logistic regression is always a good choice
+### Logistic regression is always a good choice {#model_titanic_lmr}
 
 The feature of interest `survival` is binary, thus a natural choice is a logistic regression. Most of predictive features are categorical except age. 
 
@@ -72,13 +72,13 @@ There is no reason to expect a linear relation between age and odds of survival,
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
-lmr_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+model_titanic_lmr <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
                    Parch + Fare + Embarked, titanic_small)
-lmr_model
+model_titanic_lmr
 ```
 
 
-### Random Forest to the rescue
+### Random Forest to the rescue  {#model_titanic_rf}
 
 In addition to a logistic regression we will use a random forest model with default settings. Random forest is known for good performance, is able to grasp low-level variable interactions and is quite stable.
 
@@ -86,10 +86,10 @@ Here we are using the `randomForest` package [@randomForestRNews].
 
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
+model_titanic_rf <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
                            Parch + Fare + Embarked, 
                            data = titanic_small)
-rf_model
+model_titanic_rf
 ```
 
 ### Gradient boosting for interactions
@@ -124,13 +124,13 @@ henry <- data.frame(
 Logistic regression model says 88.3\% for survival.
 
 ```{r, warning=FALSE, message=FALSE}
-predict(lmr_model, henry, type = "fitted")
+predict(model_titanic_lmr, henry, type = "fitted")
 ```
 
 Random forest model says 53.2\% for survival.
 
 ```{r, warning=FALSE, message=FALSE}
-predict(rf_model, henry, type = "prob")
+predict(model_titanic_rf, henry, type = "prob")
 ```
 
 Gradient boosting model says 53.2\% for survival.

@@ -1,8 +1,8 @@
 # What-If analysis with the Ceteris Paribus Profiles {#ceterisParibus}
 
-In this section we introduce a technique for model exploration based on Ceteris Paribus principle. The main goal for this technique is to understand how changes in the model input affects changes in the model output. Sometimes these techniques are called sensitivity analysis.
+In this section we introduce a technique for model exploration based on Ceteris Paribus principle. The main goal for this technique is to understand how changes in the single feature  affects changes in the model output. Similar approach is used in the sensitivity analysis.
 
-Presented explainers are linked with the second law introduced in Section \@ref(three-single-laws), i.e. law for prediction's speculations. This is why these explainers are also known as *What-If model analysis* or *Individual Conditional EXpectations* [@ICEbox]. It turns out that it is easier to understand how a blacx-box model is working if we can explore the model by playing with inputs. 
+Presented explainers are linked with the second law introduced in Section \@ref(three-single-laws), i.e. law for prediction's speculations. This is why these explainers are also known as *What-If model analysis* or *Individual Conditional EXpectations* [@ICEbox]. It turns out that it is easier to understand how a blacx-box model is working if we can explore the model by playing with inputs separatly, changing one in a time. 
 
 
 ## Introduction
@@ -23,20 +23,20 @@ In some sense this technique is similar to the LIME method introduced in the sec
 
 ## The Method
 
-In next sections we introduce 1D and 2D Ceteris Profiles more formally. Here we present profiles for continuous variable, but they can be easily generalized for variables of other types, like line, color or categorical variables.
+In next subsections we introduce 1D and 2D Ceteris Profiles more formally. Here we present profiles for continuous variable, but they can be easily generalized for variables of other types, like time features, spatial feature, color or categorical features.
 
 
-### 1D profiles {#ceterisParibus1d}
+### 1D Ceteris Paribus Profiles {#ceterisParibus1d}
 
-Let $f(x): \mathcal R^{d} \rightarrow \mathcal R$ denote a predictive model, i.e. function that takes $d$ dimensional vector and calculate numerical score. 
-Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subscript $x_i$ to refer to a different data points and superscript $x^j$ to refer to specific dimensions/features. Additionally, let $x^{-j}$ denote all coordinates except $j$-th and let $x|^j=z$ denote a data point $x$ with all coordinates equal to $x$ except for a coordinate $j$ equal to value $z$. I.e. $\forall_{i \neq {j}} x^i = x^{*,i}$ and $x^j = z$. In other words $x|^j=z$ denote a $x$ with $j$th coordinate changed to $z$.
+Let $f(x): \mathcal R^{d} \rightarrow \mathcal R$ stands for a predictive model, i.e. function that takes $d$ dimensional vector and calculate numerical score. 
+Symbol $x \in \mathcal R^d$ refers to a point in the feature space. We use subscript $x_i$ to refer to a specific data point/observation and superscript $x^j$ to refer to specific dimension/feature. Additionally, let $x^{-j}$ denote all coordinates except $j$-th and let $x|^j=z$ denote a data point $x$ with all coordinates equal to $x$ except for a coordinate $j$ equal to value $z$. I.e. $\forall_{i \neq {j}} x^i = x^{*,i}$ and $x^j = z$. In other words $x|^j=z$ stands for a point constructed based on $x$ with $j$th coordinate/feature changed to $z$.
 
-Now we can define uni-dimensional Ceteris Paribus Profile for model $f$, variable $j$ and point $x$ as
+Now we can define 1-dimensional Ceteris Paribus Profile for model $f$, variable $j$ and point $x$ as
 
 $$
 CP^{f, j, x}(z) := f(x|^j = z).
 $$
-I.e. CP profile is a model response obtained for observations created based on $x$ with coordinate $j$ changed and all other coordinates kept unchanged.
+I.e. Ceteris Paribus profile is a model response calculated for observations created based on $x$ with coordinate $j$ changed to range of valus typical for feature $x^j$ and all other coordinates kept unchanged.
 
 A natural way to visualise CP profiles is to use a profile plot as in Figure \@ref(fig:HRCPFiredHours).
 
@@ -50,12 +50,16 @@ knitr::include_graphics("figure/HR_cp_fired_hours.png")
 
 Since in the `HR` dataset we are struggling with model for three classes, it is a good idea to plot CP profiles for each class in the same panel. In this way we can compare effect of the `hours` on all three classes in the same time. See an example in the Figure  \@ref(fig:HRCPAllHours).
 
-```{r HRCPAllHours, echo=FALSE, fig.cap="(fig:HRCPAllHours) Ceteris Paribus profiles for three classess predicted by the Random Forest model as a function of average number of working hours", out.width = '60%', fig.align='center'}
+Of course in the multilabel classification the sum of  probabilities over all classes is equal 1. So it is redundant to plot profiles for every class. But this small redundancy helps to understand how changes in a single feature affect the model decisions.
+
+
+```{r HRCPAllHours, echo=FALSE, fig.cap="(fig:HRCPAllHours) Ceteris Paribus Profiles for three classess predicted by the Random Forest model as a function of average number of working hours", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/HR_cp_all_hours.png")
 ```
 
-Usually the model input consist many variables. CP profiles are readable even for tiny subplots, what makes them perfect for the small multiples. This way we can analysis more variables at the same time. The easiest way to do so is to plot consecutive variables on separate panels. See an example in Figure \@ref(fig:HRCPFiredAll).
+Usually the model input contains large number of variables. It's not a problem, because Ceteris Paribus Profiles are readable even for tiny subplots, created with techniques like sparklines or small multiples. This way we can show large number of variables at the same time keeping consecutive variables on separate panels. See an example in Figure \@ref(fig:HRCPFiredAll).
 
+It helps if these panels are ordered in a way, that the most important profiles are listed first. How to assess importances for CP profiles. See a next subsection.
 
 ```{r HRCPFiredAll, echo=FALSE, fig.cap="(fig:HRCPFiredAll) Ceteris Paribus profiles for all continuous variables in the HR dataset", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/HR_cp_fired_all.png")
@@ -64,20 +68,21 @@ knitr::include_graphics("figure/HR_cp_fired_all.png")
 
 ### Profile oscillations {#oscillations}
 
-Visual examination of Ceteris Paribus profiles is insightful, but for large number of features we end up with large number of panels. In order to prioritize panels that are more important we need a measure that assess an impact of a selected feature on model output.
+Visual examination of Ceteris Paribus profiles is insightful, but for large number of features we end up with large number of panels. Wall of, mostly flat, profiles can be confusing for new users.
+To prioritize panels that are more important we need a measure that assess an local impact of a selected feature on the model output. This problem is discussed also in next section, bet here we propose a solution closely linked with Ceteris Paribus profiels.
 
-Profile oscillations are one of such measures. They can be used for proper ordering of CP profiles for important features or for filtering of feature of interest.
+Profile oscillations are one of such measures. They can be used for ordering of profiles or for filtering out features that are not important for a given observation.
 CP profiles lead to a very natural and intuitive way of assessing the local feature importance for a single prediction. The intuition is: the more important is a feature the larger are fluctuations along its CP profile. If feature is not important then model response will be flat of barely changed. If variable is important the CP profile fluctuates a lot depending on a value for selected feature. 
 
 Let's write it down in a more formal way.
 
-Let $vip^{CP}_j(x)$ denotes local variable importance calculated based on a CP profile for feature $j$ in a point $x$. Let $g^j(z)$ stands for a density of feature $j$ then expected absolute oscilations are defined as 
+Let $vip^{CP}_j(x)$ denotes local feature importance calculated based on a CP profile for feature $j$ in a point $x$. Let $g^j(z)$ stands for a density/distribution of a feature $j$ then the expected absolute oscilations are defined as 
 
 $$
 vip^{CP}_j(x) = \int_{\mathcal R} |CP^{f,j,x}(z) - f(x)| g^j(z)dz.
 $$
 
-So it's an area between $f(x)$ and Ceteris Paribus profile weighted by density of feature $j$. Note that one can consider different modification of this measure, for example deviations can be calculated not as a distance from $f(x)$ but from average $\bar CP^{f,j,x}(z)$ or instead of absolute deviations one may use root from average squares.
+Intuitively $vip^{CP}_j(x)$ is an area between the model prediction $f(x)$ and the Ceteris Paribus profile $CP^{f,j,x}$ weighted by the density of the feature $j$. It is easy to propose modifications of this measure, for example deviations can be calculated not as a distance from $f(x)$ but from average $\bar CP^{f,j,x}(z)$ or instead of absolute deviations one may use root from average squares. We propose to use $vip^{CP}_j(x)$ since we found the resulting ordering the most natural.
 
 The straightforward estimator for $vip^{CP}_j(x)$ is
 
@@ -91,7 +96,7 @@ Figure \@ref(fig:CPVIPprofiles) shows the idea behind measuring oscillations. Th
 knitr::include_graphics("figure/CP_VIP_profiles.png")
 ```
 
-Figure \@ref(fig:CPVIP1) summarizes variable oscillations. Such visuals help to quickly grasp how large are model oscillations around a specific point.
+Figure \@ref(fig:CPVIP1) summarizes variable oscillations. The longer the line the larger are oscilations for a given feature. Such visuals help to quickly grasp how large are model oscillations around a specific point.
 
 ```{r CPVIP1, echo=FALSE, fig.cap="(fig:CPVIP1) Variable importance plots calculated for Ceteris Paribus profiles for observation ID: 1001", out.width = '40%', fig.align='center'}
 knitr::include_graphics("figure/cp_vip_1.png")
@@ -100,7 +105,7 @@ knitr::include_graphics("figure/cp_vip_1.png")
 
 **NOTE**
 
-Variable importance for single prediction may be very different than variable importance for the full model. 
+Feature importance calculated for a single prediction may be very different from feature importance calculated for the whole dataset. 
 
 For example, consider a model 
 $$
@@ -115,7 +120,7 @@ But local variable importance is very different. Around point $x = (0, 1)$ the i
 
 ### 2D profiles
 
-The definition of Ceteris Paribus profiles given in section \@ref(ceterisParibus1d) may be easily extended to two or more variables. Also definition of CP oscillations \@ref(oscillations) have straight forward generalization for larger number of dimensions. Such generalisations are usefull when model is non additive. Presence of pairwise interactions may be detected with 2D Ceteris Paribus plots.
+The definition of Ceteris Paribus profiles given in section \@ref(ceterisParibus1d) may be easily extended to two or more variables. Also definition of CP oscillations \@ref(oscillations) have straight forward extension for larger number of dimensions. Such extensionss are usefull to check if model is additive. Presence of pairwise interactions may be detected with 2D Ceteris Paribus plots.
 
 Let's define two-dimensional Ceteris Paribus Profile for model $f$, variables $j$ and $k$ and point $x$ as
 
@@ -130,7 +135,9 @@ A natural way to visualise 2D CP profiles is to use a level plot as in Figure \@
 knitr::include_graphics("figure/cp_2d_surf_floor.png")
 ```
 
-If number of variables is small or moderate thein it is possible to present all pairs of variables. See an example in Figure \@ref(fig:CP2Dall).
+If number of variables is small or moderate thein it is possible to present all pairs of variables. See an example in Figure \@ref(fig:CP2Dall). 
+
+Number of pairs of features grows rapidly, but we can use a simple extension of CP oscilations to define pairs-of-features importance. Then we can order pairs based on their oscilations.
 
 
 ```{r CP2Dall, echo=FALSE, fig.cap="(fig:CP2Dall) Ceteris Paribus plot for all pairs of variales.", out.width = '90%', fig.align='center'}
@@ -140,15 +147,17 @@ knitr::include_graphics("figure/cp_2d_all.png")
 
 ## Local model fidelity
 
-Ceteris Paribus profiles are also a useful tool to validate local model fidelity. 
+It turns out that a simple idea like Ceteris Paribus profiles can be useful for a local model diagnostic. Typically diagnostic is being performed for the whole model. In most cases we check how good is the model on average. But it may not be helpful for a single prediction, since in many cases a model i better in general but may give worse predictions for some selected segment of points.
+
+In this section we show how to use Ceteris Paribus profiles to validate local model fidelity. 
 It may happen that global performance of the model is good, while for some points the local fit is very bad. Local fidelity helps to understand how good is the model fit around point of interest.
 
 How does it work?
 
-The idea behind fidelity plots is to select some number of points from the validation dataset that are closes to the point of interest. 
-It's a similar approach as in k nearest neighbours. Then for these neighbours we may plot Ceteris Paribus Profiles and check how stable they are.
+The idea behind fidelity plots is to select some number of points from the validation dataset that are closest to the point of interest. 
+It's a similar approach as in k-nearest neighbours procedure. Then for selected neighbours we plot Ceteris Paribus Profiles and check how stable they are.
 
-Also, if we know true taget values for points from the validation dataset we may plot residuals to show how large are residuals.
+Also, if we know true taget labels for selected neighbours from the validation dataset we may plot residuals to show how good is the local fit of a model.
 
 An example fidelity plot is presented in Figure \@ref(fig:CPfidelity1). 
 Black line shows the CP profiles for the point of interest, while grey lines show CP profiles for neihgbors. Red intervals stand for residuals and in this example it looks like residuals for neighbours are all negative. Thus maybe model is biased around the point of interest.
@@ -169,13 +178,13 @@ knitr::include_graphics("figure/cp_fidelity_boxplot.png")
 
 ## Pros and cons
 
-Ceteris Paribus principle gives a uniform and extendable approach to model exploration. Below we summarize key strengths and weaknesses of this approach. 
+Ceteris Paribus principle gives a uniform, easy to comunicate and extendable approach to model exploration. Below we summarize key strengths and weaknesses of this approach. 
 
 **Pros**
 
-- Graphical representation of Ceteris Paribus profile is easy to understand.
-- Ceteris Paribus profiles are compact and it is easy to fit many models or many variables in a small space.
-- Ceteris Paribus profiles helps to understand how model response would change and how stable it is
+- Graphical representation of Ceteris Paribus profile is easy to understand and explain to others.
+- Ceteris Paribus profiles are compact so one can present many models or many variables in a single plot.
+- Ceteris Paribus profiles help to understand how model response would change and how stable is the model.
 - Oscillations calculated for CP profiles helps to select the most important variables.
 - 2D Ceteris Paribus profiles help to identify pairwise interactions between variables.
 
@@ -184,51 +193,64 @@ Ceteris Paribus principle gives a uniform and extendable approach to model explo
 - If variables are correlated (like surface and number of rooms) then the '*everything else kept unchanged*' approach leads to unrealistic settings.
 - Interactions between variables are not visible in 1D plots.
 - This tool is not suited for very wide data, like hundreds or thousands of variables.
-- Visualization of categorical variables is non trivial.
-
+- Visualization of categorical variables is non trivial, especially if ther eis large number of categories, like zip-code.
 
 ## Code snippets for R
 
-In this section we present key features of the `ingredients` package for R [@R-ceterisParibus]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/ingredients/`.
+In this section we present key features of the `ingredients` package for R [@R-ingredients] which is a part of the DALEXverse. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/ingredients/`.
 
-A very interesting approach for model explorartion with similar principles is implemented in the `condvis` package [@JSSv081i05].
+There are also other packages that have similar features. For example, an interesting approach for model explorartion with similar principles is implemented in the `condvis` package [@JSSv081i05].
 
 
 **Model preparation**
 
-In this section we will present examples based on the `apartments` dataset. See section TODO for more details.
+In this section we use a random forest [@R-randomForest] model `model_titanic_rf` trained for the Titanic dataset.  See the section \@ref{model_titanic_rf} for more details.
 
-```{r, warning=FALSE, message=FALSE}
-library("DALEX")
-head(apartments, 2)
-```
-
-The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
-
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("titanic")
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+levels(titanic_small$Embarked)[1] = "N"
+titanic_small <- na.omit(titanic_small)
 library("randomForest")
-rf_model <- randomForest(m2.price ~ construction.year + surface + floor +
-      no.rooms, data = apartments)
+model_titanic_rf <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
+                           Parch + Fare + Embarked, 
+                           data = titanic_small)
+
 ```
 
-Ceteris Paribus profiles with `ingredients` package are calculated in four steps. 
+Here we have a binary classification problem. We want to predict chances of survival for a selected passenger.
+
+Ceteris Paribus profiles are calculated in four steps with the `ingredients` package. 
 
 **1. Create an explainer - wrapper around model and validation data.**
 
-Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
+Models created with different libraries may have different internal structures, so first, we need to create a wrapper around the model. Here we are using the `explain()` function from the `DALEX` package [@R-DALEX]. The `explain()` function expects at least four arguments: a model, a validation data, labels for validation data and a function that returns prediction scores. Here we are using training data as validation data. We do not specify forth parameter since for `randomForest` objects it is preimplemented.
+
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-explainer_rf <- explain(rf_model, data = apartmentsTest, y = apartmentsTest$m2.price)
+explainer_titanic_rf <- explain(model_titanic_rf, data = titanic_small, y = titanic_small$Survived)
 ```
 
 **2. Define point of interest.** 
 
-Certeris Paribus profiles explore model around a single point.
+Certeris Paribus profiles explore model around a single point. Here we defined a data frame `johny_d` with a single row, it describes an 8-years old boy that travels in the first class without parents and siblings.
 
 ```{r, warning=FALSE, message=FALSE}
-new_apartment <- data.frame(construction.year = 1965, no.rooms = 5, surface = 142, floor = 8)
-predict(rf_model, new_apartment)
+johny_d <- data.frame(
+  Pclass = 1,
+  Sex = factor("male", levels = c("female", "male")),
+  Age = 8,
+  SibSp = 0,
+  Parch = 0,
+  Fare = 72,
+  Embarked = factor("C", levels = c("N","C","Q","S"))
+)
+
+predict(model_titanic_rf, johny_d, type = "prob")
 ```
 
 **3. Calculate CP profiles**
@@ -236,41 +258,52 @@ predict(rf_model, new_apartment)
 The `ceteris_paribus()` function calculates CP profiles for selected model around selected observation. 
 
 By default CP profiles are calculated for all numerical variables. Use the `variables` argument to select subset of interesting variables.
-The result from  `ceteris_paribus()`function is a data frame with model predictions for modified points around the point of interest.
+The result is a data frame with model predictions around the point of interest.
 
 ```{r, warning=FALSE, message=FALSE}
 library("ingredients")
-cp_rf <- ceteris_paribus(explainer_rf, new_apartment, 
-                            variables = c("construction.year", "floor"))
-cp_rf
+cp_titanic_rf <- ceteris_paribus(explainer_titanic_rf, johny_d, 
+                            variables = c("Age", "Fare", "Pclass", "SibSp"))
+cp_titanic_rf
 ```
 
 **4. Plot CP profiles.**
 
-Generic `plot()` function plot CP profiles. It returns a `ggplot2` object that can be polished if needed. Use additional arguments of this function to select colors and sizes for elements visible in the plot.
+Generic `plot()` function draws CP profiles. It returns a `ggplot2` object that can be polished if needed. 
+
+The resulting plot can be enriched with additional data by adding functions, `show_rugs` (adds rugs for the selected points) `show_observations` (adds observations) or `show_aggreagated_profiles` (is described in the section \@ref{variableEngeneering}). 
+
+All these functions can take additional arguments to modify size, color or linetype.
 
 ```{r, warning=FALSE, message=FALSE}
-plot(cp_rf) +
-  show_observations(cp_rf)
+plot(cp_titanic_rf) +
+  show_observations(cp_titanic_rf, 
+        variables = c("Age", "Fare", "Pclass", "SibSp")) 
 ```
 
-One of very useful features of `ceterisParibus` explainers is that profiles for two or more models may be superimposed in a single plot. This helps in model comparisons. 
+One of very useful features of `ceterisParibus` explainers is that profiles for two or more models may be superimposed in a single plot. It's sometimes called contrastive explanations and is very helpful for model comparisons. 
 
-Let's create a linear model for this dataset and repeat steps 1-3 for the lm model.
+Let's take a logistic regression model created in the section \@ref{model_titanic_lmr} and plot it along the random forest model.
 
-```{r, warning=FALSE, message=FALSE}
-lm_model <- lm(m2.price ~ construction.year + surface + floor +
-      no.rooms, data = apartments)
-explainer_lm <- explain(lm_model,
-      data = apartmentsTest, y = apartmentsTest$m2.price)
-cp_lm <- ceteris_paribus(explainer_lm, new_apartment, 
-                            variables = c("construction.year", "floor"))
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("rms")
+model_titanic_lmr <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+                   Parch + Fare + Embarked, titanic_small)
+explainer_titanic_lmr <- explain(model_titanic_lmr, data = titanic_small, y = titanic_small$Survived,
+                                 predict_function = function(m,x) predict(m,x,type = "fitted"))
+```
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+cp_titanic_lmr <- ceteris_paribus(explainer_titanic_lmr, johny_d, 
+        variables = c("Age", "Fare", "Pclass", "SibSp"))
+cp_titanic_lmr
 ```
 
 Now we can use function `plot()` to compare both models in a single chart. Additional argument `color = "_label_"` set color as a key for model.
 
 ```{r, warning=FALSE, message=FALSE}
-plot(cp_rf, cp_lm, color = "_label_")
+plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_") +
+  show_observations(cp_titanic_rf, cp_titanic_lmr,
+        variables = c("Age", "Fare", "Pclass", "SibSp")) 
 ```
 
 **Oscillations**
@@ -278,10 +311,9 @@ plot(cp_rf, cp_lm, color = "_label_")
 The `calculate_oscillations()` function calculates oscillations for CP profiles.
 
 ```{r, warning=FALSE, message=FALSE}
-cp_rf_all <- ceteris_paribus(explainer_rf, new_apartment)
-co_rf_all <- calculate_oscillations(cp_rf_all)
-co_rf_all
-plot(co_rf_all)
+co_titanic_rf <- calculate_oscillations(cp_titanic_rf)
+co_titanic_rf
+plot(co_titanic_rf)
 ```
 
 **2D Ceteris Paribus profiles**
@@ -289,95 +321,9 @@ plot(co_rf_all)
 And the `ceteris_paribus_2d()` function calculates 2D CP profiles.
 
 ```{r, warning=FALSE, message=FALSE}
-wi_rf_2d <- ceteris_paribus_2d(explainer_rf, observation = new_apartment, 
-                 selected_variables = c("surface","floor", "construction.year"))
-plot(wi_rf_2d, split_ncol = 2)
+cp2d_titanic_rf <- ceteris_paribus_2d(explainer_titanic_rf, observation = johny_d, 
+                 variables = c("Age","Fare", "Pclass"))
+plot(cp2d_titanic_rf, split_ncol = 2)
 ```
-
-
-
-
-
-
-
-
-
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-new_apartment <- apartmentsTest[348,]
-
-
-
-similar_apartments <- select_neighbours(apartmentsTest, new_apartment, n = 10)
-
-cp_rf_1 <- ceteris_paribus(explainer_rf, new_apartment, y = new_apartment$m2.price)
-
-cp_rf_neighbours <- ceteris_paribus(explainer_rf, similar_apartments, y = similar_apartments$m2.price)
-
-tmp <- attr(cp_rf_neighbours, "observations")
-tmp$`_yhat_` - tmp$`_y_`
-
-model_performance(explainer_rf)$diff
-
-df <- rbind(data.frame(group = "full data", diff = model_performance(explainer_rf)$diff),
-      data.frame(group = "neighbours", diff = tmp$`_y_` - tmp$`_yhat_` ))
-
-ggplot(df, aes(group, diff, fill = group)) +
-  geom_boxplot(coef = 100) +
-  coord_flip() + scale_fill_manual(values = c("grey", "red3")) +
-  ylab("diff = y - f(x)") + xlab("") + theme_bw() + theme(legend.position = "none")
- 
-
-boxplot(model_performance(explainer_rf)$diff, 
-        tmp$`_yhat_` - tmp$`_y_`)
-
-plot(cp_rf_neighbours, 
-     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
-     selected_variables = c("construction.year", "surface")) 
-
-plot(cp_rf_neighbours, 
-     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
-     selected_variables = "surface") 
-
-plot(cp_rf_neighbours, 
-     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
-     selected_variables = "surface") + 
-  ceteris_paribus_layer(cp_rf_1, 
-     alpha = 1, size_points =  5,
-    selected_variables = "surface")
-
-plot(cp_rf_neighbours, 
-     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
-     selected_variables = "surface") + 
-  ceteris_paribus_layer(cp_rf_1, 
-     alpha = 1, size_points =  5,
-    selected_variables = "surface", as.gg = TRUE) + 
-  theme_bw() + xlab("") + ylab("")
-
-
-plot(cp_rf_neighbours, 
-     show_residuals = TRUE, show_observations = FALSE, color_residuals = "red3", 
-     selected_variables = "construction.year") + 
-  ceteris_paribus_layer(cp_rf_1, 
-     alpha = 1, size_points =  5,
-    selected_variables = "construction.year")
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
