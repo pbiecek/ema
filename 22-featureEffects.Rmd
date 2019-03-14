@@ -109,7 +109,7 @@ set.seed(1313)
 selected_passangers <- select_sample(titanic_small, n = 100)
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
 
-plot(cp_rf, selected_variables = "Age", color = "grey") +
+plot(cp_rf, variables = "Age", color = "grey") +
   xlab("Passanger Age") + ylab("Survival probability") +
   ggtitle("Ceteris Paribus profiles", "For a random forest model / Titanic data") +
   scale_y_continuous(label=scales::percent) 
@@ -136,7 +136,7 @@ Such average can be calculated with the `aggregate_profiles{ingredients}` functi
 library("ingredients")
 selected_passangers <- select_sample(titanic_small, n = 100)
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, selected_variables = "Age")
+pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
 ```
 
 So for a single model and a single variable we get a profile. See an example in figure \@ref{pdp_part_2}. It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them. 
@@ -147,9 +147,9 @@ Moreover it is easier to notice that the largest drop in survival changes happen
 ```{r pdp_part_2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Partial Dependency profile as an average for 100 observations"}
 
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, selected_variables = "Age")
+pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
 
-plot(cp_rf, selected_variables = "Age", color = "grey") +
+plot(cp_rf, variables = "Age", color = "grey") +
    show_aggreagated_profiles(pdp_rf, size = 3) +
   xlab("Passanger Age") + ylab("Survival probability") +
   ggtitle("Partial Dependency profile", "For a random forest model / Titanic data") +
@@ -171,7 +171,7 @@ Such clusters can be calculated with the `cluster_profiles{ingredients}` functio
 library("ingredients")
 selected_passangers <- select_sample(titanic_small, n = 100)
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-clust_rf <- cluster_profiles(cp_rf, k = 3, selected_variables = "Age")
+clust_rf <- cluster_profiles(cp_rf, k = 3, variables = "Age")
 ```
 
 So for a single model and a single variable we get $k$ profiles. The common problem in clustering is the selection of $k$. However in our case, as it's an exploration, the problem is simpler, as we are interesting if $k=1$ (Partial Dependency is a good summary) or not (there are some interactions). 
@@ -180,9 +180,9 @@ See an example in Figure \@ref{pdp_part_4}. It is easier to notice that Ceteris 
 
 ```{r pdp_part_4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles"}
 
-clust_rf <- cluster_profiles(cp_rf, k = 3, selected_variables = "Age")
+clust_rf <- cluster_profiles(cp_rf, k = 3, variables = "Age")
 
-plot(cp_rf, color = "grey", selected_variables = "Age") +
+plot(cp_rf, color = "grey", variables = "Age") +
   show_aggreagated_profiles(clust_rf, color = "_label_", size = 2) +
   xlab("Passanger Age") + ylab("Survival probability") +
   ggtitle("Profiles of 3 clusters", "For a random forest model / Titanic data") +
@@ -199,7 +199,7 @@ The most straightforward approach is to use some other variable as a grouping va
 library("ingredients")
 selected_passangers <- select_sample(titanic_small, n = 100)
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_Sex_rf <- aggregate_profiles(cp_rf, selected_variables = "Age",
+pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "Age",
 				groups = "Sex")
 ```
 
@@ -208,10 +208,10 @@ Check how the interaction for `Pclass` (passenger class) looks like.
 
 ```{r pdp_part_5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Grouped profiles with respect to the Sex variable"}
 
-pdp_Sex_rf <- aggregate_profiles(cp_rf, selected_variables = "Age",
+pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "Age",
 				groups = "Sex")
 
-plot(cp_rf, color = "grey", selected_variables = "Age") +
+plot(cp_rf, color = "grey", variables = "Age") +
   show_aggreagated_profiles(pdp_Sex_rf, color = "_label_", size = 2) +
   xlab("Passanger Age") + ylab("Survival probability") +
   ggtitle("Groups of Ceteris Paribus Profiles defined by the Sex feature", "For a random forest model / Titanic data") +
@@ -233,7 +233,7 @@ Generic `plot{ingredients}` function handles multiple models as consecutive argu
 
 ```{r, eval=FALSE}
 library("ingredients")
-plot(pdp_rf, pdp_glm, pdp_gbm, selected_variables = "Age", color = "_label_")
+plot(pdp_rf, pdp_glm, pdp_gbm, variables = "Age", color = "_label_")
 ```
 
 See an example in Figure \@ref{pdp_part_7}. Random forest is compared with gradient boosting model and generalized linear model (logistic regression). All three models agree when it comes to a general relation between Age and Survival. Logistic regression is of course the most smooth. Gradient boosting has on average higher predictions than random forest.
@@ -241,15 +241,15 @@ See an example in Figure \@ref{pdp_part_7}. Random forest is compared with gradi
 ```{r pdp_part_7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Comparison on three predictive models with different structures."}
 
 cp_gbm <- ceteris_paribus(explainer_gbm, selected_passangers)
-pdp_gbm <- aggregate_profiles(cp_gbm, selected_variables = "Age")
+pdp_gbm <- aggregate_profiles(cp_gbm, variables = "Age")
 
 cp_glm <- ceteris_paribus(explainer_glm, selected_passangers)
-pdp_glm <- aggregate_profiles(cp_glm, selected_variables = "Age")
+pdp_glm <- aggregate_profiles(cp_glm, variables = "Age")
 
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, selected_variables = "Age")
+pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
 
-plot(pdp_rf, pdp_glm, pdp_gbm, selected_variables = "Age", color = "_label_", size = 2) +
+plot(pdp_rf, pdp_glm, pdp_gbm, variables = "Age", color = "_label_", size = 2) +
   xlab("Passanger Age") + ylab("Survival probability") +
   ggtitle("Partial Dependency Profiles", "For random forest / gradient boosting / logistic model") +
   ggtitle("Ceteris Paribus profiles for three models") +
