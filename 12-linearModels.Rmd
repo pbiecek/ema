@@ -7,7 +7,7 @@ output:
 
 ## Introduction  
 
-In this chapter we introduce the concept and the intuitions underlying ,,variable attribution,'' i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:
+In this chapter we introduce the concept and the intuitions underlying ''variable attribution,'' i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:
 
 * Assume that we are interested in predicting the risk of heart attack based on person's age, sex, and smoking habits. A patient may want to know which factors have the highest impact on the his/her risk score.
 * Consider a model for prediction of apartment prices. An investor may want to know how much of the predicted price may be attributed to, for instance, the location of an apartment.
@@ -69,16 +69,12 @@ knitr::include_graphics("figure/attribution_1.png")
 
 ## Pros and Cons
 
-For classical linear model, the proposed variable-attribution approach offers the following advantages:
-- The defintion of $v(f, x^*, i)$ implies that it is not an approximation and it is directly linked with the structure of a model.
-- The attibution is linked neither with scale nor location of $X_i$; hence, it is easier to understand than, for instance, the standardized value of $\beta_i$. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. THE DEFINITION OF v() INVOLVES CENTERING.]
-
-An obvious diasadvantage is that the definition of $v(f, x^*, i)$ is very much linear-model based. Also, does not, in any way, reduce the model complexity; it only presents model coefficients in a different way. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. MODEL COMPLEXITY IS WHAT IT IS. HOW CAN WE RUDCE IT?]
+The proposed definition of $v(f, x^*, i)$ is linked neither with scale nor location of $X_i$; hence, it is easier to understand than, for instance, the standardized value of $\beta_i$. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. THE DEFINITION OF v() INVOLVES CENTERING.] For the classical linear model, $v(f, x^*, i)$ is not an approximation and it is directly linked with the structure of a model. An obvious diasadvantage is that the definition of $v(f, x^*, i)$ is very much linear-model based. Also, it does not, in any way, reduce the model complexity; it only presents model coefficients in a different way. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. MODEL COMPLEXITY IS WHAT IT IS. HOW CAN WE REDUCE IT?]
 
 
 ## Code snippets
 
-In this section, we will present an example of computing variable attributions using the `HR` dataset (see Section \@ref(HRdataset) for more details). 
+In this section, we present an example of computing variable attributions using the `HR` dataset (see Section \@ref(HRdataset) for more details). 
 
 To calculate variable attributions for a particular point, first we have got to define this point:
 
@@ -90,17 +86,35 @@ new_observation <- data.frame(gender = factor("male", levels = c("male", "female
                       salary = 2)
 ```
 
-Variable attributions for linear and generalized linear models may be directly extracted by applying the `predict()` function, with the argument `type = "terms"`, to an object containing results of fitting of a mode. To illustrate the approach for a logistic regression, we build a logistic regression model for binary variable `status == "fired"` and extract the estimated model coefficients:
+Variable attributions for linear and generalized linear models may be directly extracted by applying the `predict()` function, with the argument `type = "terms"`, to an object containing results of fitting of a model. To illustrate the approach for logistic regression, we build a logistic regression model for the binary variable `status == "fired"` and extract the estimated model coefficients:
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 model_fired <- glm(status == "fired" ~ ., data = HR, family = "binomial")
 coef(model_fired)
-predict(model_fired, new_observation, type = "terms")
 ```
-
-Below we illustrate how to do this with the `DALEX` package. The use of the package allows for an easy construction of a plot presenting the variable attributions.
-
+For the new observation, the predicted value of the logit of the probability of being fired is obtained by applying the `predict()` function:
+```{r, warning=FALSE, message=FALSE}
+as.vector(pred.inst <- predict(model_fired, new_observation)) # new pediction
+```
+On the other hand, variable attributions can be obtained by applying the `predict()` function with the `type="terms"` argument:
+```{r, warning=FALSE, message=FALSE}
+(var.attr <- predict(model_fired, new_observation, type = "terms")) # attributions
+```
+The largest contributions to the prediction come from variables ''hours'' and ''evaluation.'' Variables ''gender'' and ''age'' slightly decrease the predicted value. The sum of the attributions is equal to
+```{r, warning=FALSE, message=FALSE}
+sum(var.attr)
+```
+The attribute `constant` of object `var.attr` provides the ''average'' prediction, i.e., the predicted logit for an obsrvation defined by the means of the explanatory variables, as can be seen from the calculation below:
+```{r, warning=FALSE, message=FALSE}
+coef(model_fired)%*%c(1, mean((HR$gender=="male")), mean(HR$age), mean(HR$hours), 
+                      mean(HR$evaluation), mean(HR$salary))
+```
+Adding the ''average'' prediction to the sum of the variable attributions results in the new-observation prediction:
+```{r, warning=FALSE, message=FALSE}
+attributes(var.attr)$constant + sum(var.attr)
+```
+Below we illustrate how to implement this approach with the `DALEX` package. Toward this end, functions `explain()` and `single_prediction()` can be used. Object `model_fired` stores the definition of the logistic-regression model used earlier in this section. The contents of object `attribution` correspond to the results obtained by using function `predict()`.
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 
@@ -109,8 +123,9 @@ explainer_fired <- explain(model_fired,
                  y = HR$status == "fired",
                  label = "fired")
 
-attribution <- single_prediction(explainer_fired, new_observation)
-attribution
+(attribution <- single_prediction(explainer_fired, new_observation))
+```
+After object `attribution` has been created, a plot presenting the variable attributions can be easily constructed:
+```{r, warning=FALSE, message=FALSE}
 plot(attribution)
 ```
-
