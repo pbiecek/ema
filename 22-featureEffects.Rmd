@@ -257,13 +257,75 @@ plot(pdp_rf, pdp_glm, pdp_gbm, variables = "Age", color = "_label_", size = 2) +
 ```
 
 
-### Correlation between features
+## Correlated features
 
 One of the largest advantages of the Partial Dependency Profiles is that they are easy to explain, as they are just an average across Ceteris Paribus profiles. But one of the largest disadvantages lies in assumptions of CPs. Profiles are created based on assumption that it makes sense to change variable $x^i$ independently from all other variables $x^{-i}$.
 
-But this may not have sense at all. Features like $surface$ and $number.or.rooms$ are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change $x^{surface}$ independently from $x^{number.of.rooms}$.
+But in some cases it may not have sense at all. In the dataset about `apartments` features like $surface$ and $number.or.rooms$ are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change $x^{surface}$ independently from $x^{number.of.rooms}$. In the `titanic` dataset we shall expect correlation between `fare` and `passanger class`. 
 
-There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots) [@R-ALEPlot] or Local Conditional Expectation Profiles (LCE) [TODO: referencja do pracy Rafala]?
+There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots)  introduced in the [@R-ALEPlot]. 
+Idea of this solution is introduced in the figure \@ref{accumulatedLocalEffects}. 
+
+
+
+```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALL.png")
+```
+
+
+
+Partial Dependency Profiles are defined as an expected value from Ceteris Paribus Profiles.
+
+$$
+g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
+$$
+And can be estimated as average from CP profiles.
+
+$$
+\hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
+$$
+
+As it was said, if $X_i$ and $X_{-i}$ are related it may have no sense to average CP profiles over marginal $X_{-i}$. Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X_i=x_i$. 
+
+$$
+g^{M}_i(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+$$
+
+### Marginal Profiles
+
+See Figure \@ref{accumulatedCor} for illustration of difference between marginal and conditional distribution. Such profiles are called Marginal (TODO: why not conditional ?) and are estimated as 
+
+$$
+\hat g^{M}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
+$$
+where $N_i$ is the set of observations with $x_i$ close to $z$.
+
+
+
+```{r accumulatedCor, echo=FALSE, fig.cap="(fig:accumulatedCor) ", out.width = '40%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALE_2.png")
+```
+
+
+As it is justified in [@R-ALEPlot], there is a serious problem with this approach, illustrated by a following observation. If $y$ depends on $x_2$ but not $x_1$
+then the correlation between $x_1$ and $x_2$
+will produce a *false* relation in the Marginal profiles for feature $x_1$. This problem is also illustrated in the Figure \@ref{accumulatedLocalEffects}. 
+
+
+### Accumulated Local Profiles
+
+Idea behind the ALE profiles [@R-ALEPlot] is following. Instead of useing expected values of Ceteris Paribus profiles let's use only information about changes in these profiles around the point of interest. This leads to a following definition.
+
+
+$$
+g^{ALE}_i(z) = \int_{z_0}^z E_{X_{-i}|X_i=x_i}\left[ \frac{\partial f(x|^i = v, x^{-i}) }{\partial x_i}\right] dv.
+$$
+
+The equation may be a bit complex, but the intuition is not that complicated. Instead of aggregation of Ceteris Paribus we just look locally how quickly CP profiles are changing. And ALE profile is reconstructed from such local partial changes. 
+
+
+
+
 
 
 ## Merging Path Plots
@@ -295,8 +357,6 @@ March 26, 2018.
 http://explained.ai/rf-importance/index.html
 
 
-
-[@R-factorMerger]
 
 ```{r, warning=FALSE, message=FALSE}
 library(factorMerger)
