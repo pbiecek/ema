@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-03-14">
+<meta name="date" content="2019-03-30">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -225,9 +225,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="13.1.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#interactions-and-partial-dependency-profiles"><i class="fa fa-check"></i><b>13.1.1</b> Interactions and Partial Dependency profiles</a></li>
 <li class="chapter" data-level="13.1.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#groups-of-partial-dependency-profiles"><i class="fa fa-check"></i><b>13.1.2</b> Groups of Partial Dependency profiles</a></li>
 <li class="chapter" data-level="13.1.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#model-comparisons-with-partial-dependency-plots"><i class="fa fa-check"></i><b>13.1.3</b> Model comparisons with Partial Dependency Plots</a></li>
-<li class="chapter" data-level="13.1.4" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlation-between-features"><i class="fa fa-check"></i><b>13.1.4</b> Correlation between features</a></li>
 </ul></li>
-<li class="chapter" data-level="13.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>13.2</b> Merging Path Plots</a></li>
+<li class="chapter" data-level="13.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlated-features"><i class="fa fa-check"></i><b>13.2</b> Correlated features</a><ul>
+<li class="chapter" data-level="13.2.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#marginal-profiles"><i class="fa fa-check"></i><b>13.2.1</b> Marginal Profiles</a></li>
+<li class="chapter" data-level="13.2.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#accumulated-local-profiles"><i class="fa fa-check"></i><b>13.2.2</b> Accumulated Local Profiles</a></li>
+</ul></li>
+<li class="chapter" data-level="13.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>13.3</b> Merging Path Plots</a></li>
 </ul></li>
 <li class="chapter" data-level="14" data-path="other-topics.html"><a href="other-topics.html"><i class="fa fa-check"></i><b>14</b> Other topics</a></li>
 <li class="chapter" data-level="15" data-path="modelComparisons.html"><a href="modelComparisons.html"><i class="fa fa-check"></i><b>15</b> Performance Diagnostic</a></li>
@@ -456,12 +459,12 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.37%
+##         OOB estimate of  error rate: 27.54%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2271  387      197   0.2045534
-## ok         528 1254      439   0.4353895
-## promoted   196  401     2174   0.2154457</code></pre>
+## fired     2266  393      196   0.2063047
+## ok         531 1248      442   0.4380910
+## promoted   210  389     2172   0.2161674</code></pre>
 <p>Model exploration with the <code>breakDown2</code> package is performed in three steps.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
 <p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX2</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">b</a>)</span>.</p>
@@ -478,7 +481,7 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 <a class="sourceLine" id="cb51-6" data-line-number="6"></a>
 <a class="sourceLine" id="cb51-7" data-line-number="7"><span class="kw">predict</span>(model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
 <pre><code>##   fired    ok promoted
-## 1 0.812 0.188        0
+## 1 0.834 0.164    0.002
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <p><strong>3. Calculate Break Down decomposition</strong></p>
@@ -492,27 +495,26 @@ I = \{j: score(f, x^*, j) &lt; score(f, x^*, i)\}
 <a class="sourceLine" id="cb53-6" data-line-number="6">bd_rf</a></code></pre></div>
 <pre><code>##                                       contribution
 ## randomForest.fired: intercept                0.376
-## randomForest.fired: hours = 42               0.237
-## randomForest.fired: evaluation = 2           0.056
-## randomForest.fired: salary = 2              -0.248
-## randomForest.fired: age = 58                 0.092
-## randomForest.fired: gender = male            0.300
-## randomForest.fired: prediction               0.812
-## randomForest.ok: intercept                   0.275
-## randomForest.ok: hours = 42                 -0.047
-## randomForest.ok: evaluation = 2              0.097
-## randomForest.ok: salary = 2                  0.246
-## randomForest.ok: age = 58                   -0.085
-## randomForest.ok: gender = male              -0.298
-## randomForest.ok: prediction                  0.188
-## randomForest.promoted: intercept             0.349
-## randomForest.promoted: hours = 42           -0.190
-## randomForest.promoted: evaluation = 2       -0.153
+## randomForest.fired: hours = 42               0.244
+## randomForest.fired: evaluation = 2           0.057
+## randomForest.fired: salary = 2              -0.243
+## randomForest.fired: age = 58                 0.112
+## randomForest.fired: gender = male            0.288
+## randomForest.fired: prediction               0.834
+## randomForest.ok: intercept                   0.276
+## randomForest.ok: hours = 42                 -0.052
+## randomForest.ok: evaluation = 2              0.093
+## randomForest.ok: salary = 2                  0.241
+## randomForest.ok: age = 58                   -0.106
+## randomForest.ok: gender = male              -0.289
+## randomForest.ok: prediction                  0.164
+## randomForest.promoted: intercept             0.348
+## randomForest.promoted: hours = 42           -0.192
+## randomForest.promoted: evaluation = 2       -0.150
 ## randomForest.promoted: salary = 2            0.002
-## randomForest.promoted: age = 58             -0.007
-## randomForest.promoted: gender = male        -0.002
-## randomForest.promoted: prediction            0.000
-## baseline:  0</code></pre>
+## randomForest.promoted: age = 58             -0.006
+## randomForest.promoted: gender = male         0.001
+## randomForest.promoted: prediction            0.002</code></pre>
 <p>The generic <code>plot()</code> function creates a Break Down plots.</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>

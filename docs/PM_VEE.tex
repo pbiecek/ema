@@ -113,7 +113,7 @@
 \usepackage{titling}
 
 % Create subtitle command for use in maketitle
-\newcommand{\subtitle}[1]{
+\providecommand{\subtitle}[1]{
   \posttitle{
     \begin{center}\large#1\end{center}
     }
@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-03-11}
+    \date{2019-03-30}
 
 \usepackage{booktabs}
 
@@ -221,6 +221,27 @@ of such methods is a very active area of research and new methods become
 available almost on a continuous basis, we do not aim at being
 exhaustive. Rather, we present the mind-set, key problems, and several
 examples of methods that can be used in model exploration.
+
+Lack of interpretability often leads to harmful situations. \emph{Models
+are not working properly and are hard to debug.} For example, very
+famous Watson for Oncology was criticized by oncologists for delivering
+unsafe and inaccurate recommendations \citep{IBMWatson}. \emph{Results
+are biased in a systematic ways.} For example, Amazon (giant in AI)
+failed with system for CV screening, as it was biased against woman
+\citep{AmazonAI}. Or the COMPAS algorithm for predicting recidivism
+discriminates against race \citep{COMPAS}. These are serious violations
+of fairness and ethical principles. \emph{Data drift leads to the
+deterioration in models performance.} For example, very popular model
+Google Flu after two years gave worse predictions than a baseline
+\citep{GoogleFLU}. The number of such examples grows rapidly. A reaction
+for some of these these problems are new legal regulations, like the
+General Data Protection Regulation \citep{EUGDPR} and the \emph{,,Right
+to Explanation''}, a civic right to be given an explanation for an
+output of the automated algorithm \citep{RightToExpl}. Some are already
+in use while new are being suggested \citep{RightToExpl2},
+\citep{RightToExpl3}. It is an important topic and surprisingly, we
+still do not have good enough tools for verification, exploration and
+explanation of machine learning models.
 
 \hypertarget{three-single-laws}{%
 \subsection{A bit of philosophy: three laws of model
@@ -658,9 +679,9 @@ two-variable summaries for each variable.
 
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-5-1.pdf}
 
-\hypertarget{logistic-regression-is-always-a-good-choice}{%
+\hypertarget{model_titanic_lmr}{%
 \subsubsection{Logistic regression is always a good
-choice}\label{logistic-regression-is-always-a-good-choice}}
+choice}\label{model_titanic_lmr}}
 
 The feature of interest \texttt{survival} is binary, thus a natural
 choice is a logistic regression. Most of predictive features are
@@ -674,9 +695,9 @@ available in the \texttt{rcs()} function in the \texttt{rms} package
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"rms"}\NormalTok{)}
-\NormalTok{lmr_model <-}\StringTok{ }\KeywordTok{lrm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\KeywordTok{rcs}\NormalTok{(Age) }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
+\NormalTok{model_titanic_lmr <-}\StringTok{ }\KeywordTok{lrm}\NormalTok{(Survived }\OperatorTok{==}\StringTok{ "1"} \OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\KeywordTok{rcs}\NormalTok{(Age) }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}
 \StringTok{                   }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, titanic_small)}
-\NormalTok{lmr_model}
+\NormalTok{model_titanic_lmr}
 \end{Highlighting}
 \end{Shaded}
 
@@ -711,9 +732,8 @@ available in the \texttt{rcs()} function in the \texttt{rms} package
 ## 
 \end{verbatim}
 
-\hypertarget{random-forest-to-the-rescue}{%
-\subsubsection{Random Forest to the
-rescue}\label{random-forest-to-the-rescue}}
+\hypertarget{model_titanic_rf}{%
+\subsubsection{Random Forest to the rescue}\label{model_titanic_rf}}
 
 In addition to a logistic regression we will use a random forest model
 with default settings. Random forest is known for good performance, is
@@ -725,10 +745,10 @@ Here we are using the \texttt{randomForest} package
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
-\NormalTok{rf_model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Survived }\OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }
+\NormalTok{model_titanic_rf <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Survived }\OperatorTok{~}\StringTok{ }\NormalTok{Pclass }\OperatorTok{+}\StringTok{ }\NormalTok{Sex }\OperatorTok{+}\StringTok{ }\NormalTok{Age }\OperatorTok{+}\StringTok{ }\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }
 \StringTok{                           }\NormalTok{Parch }\OperatorTok{+}\StringTok{ }\NormalTok{Fare }\OperatorTok{+}\StringTok{ }\NormalTok{Embarked, }
                            \DataTypeTok{data =}\NormalTok{ titanic_small)}
-\NormalTok{rf_model}
+\NormalTok{model_titanic_rf}
 \end{Highlighting}
 \end{Shaded}
 
@@ -740,11 +760,11 @@ Here we are using the \texttt{randomForest} package
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 17.79%
+##         OOB estimate of  error rate: 18.07%
 ## Confusion matrix:
 ##     0   1 class.error
-## 0 391  33  0.07783019
-## 1  94 196  0.32413793
+## 0 388  36  0.08490566
+## 1  93 197  0.32068966
 \end{verbatim}
 
 \hypertarget{gradient-boosting-for-interactions}{%
@@ -809,7 +829,7 @@ Logistic regression model says 88.3\% for survival.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{predict}\NormalTok{(lmr_model, henry, }\DataTypeTok{type =} \StringTok{"fitted"}\NormalTok{)}
+\KeywordTok{predict}\NormalTok{(model_titanic_lmr, henry, }\DataTypeTok{type =} \StringTok{"fitted"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -822,13 +842,13 @@ Random forest model says 53.2\% for survival.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{predict}\NormalTok{(rf_model, henry, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)}
+\KeywordTok{predict}\NormalTok{(model_titanic_rf, henry, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
 ##      0    1
-## 1 0.48 0.52
+## 1 0.43 0.57
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -842,7 +862,7 @@ Gradient boosting model says 53.2\% for survival.
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.8333684
+## [1] 0.8215767
 \end{verbatim}
 
 Three different opinions. Which one should we trust? Tools introduced in
@@ -956,18 +976,20 @@ divided into three classes.
 
 \hypertarget{ceterisParibus}{%
 \section{What-If analysis with the Ceteris Paribus
-Principle}\label{ceterisParibus}}
+Profiles}\label{ceterisParibus}}
 
-In this section we introduce tools based on Ceteris Paribus principle.
-The main goal for these tools is to help understand how changes in model
-input affect changes in model output.
+In this section we introduce a technique for model exploration based on
+Ceteris Paribus principle. The main goal for this technique is to
+understand how changes in the single feature affects changes in the
+model output. Similar approach is used in the sensitivity analysis.
 
 Presented explainers are linked with the second law introduced in
 Section \ref{three-single-laws}, i.e.~law for prediction's speculations.
 This is why these explainers are also known as \emph{What-If model
 analysis} or \emph{Individual Conditional EXpectations} \citep{ICEbox}.
-It turns out that it is easier to understand how blacx-box model is
-working if we can play with it by changing variable by variable.
+It turns out that it is easier to understand how a blacx-box model is
+working if we can explore the model by playing with inputs separatly,
+changing one in a time.
 
 \hypertarget{introduction-1}{%
 \subsection{Introduction}\label{introduction-1}}
@@ -975,8 +997,17 @@ working if we can play with it by changing variable by variable.
 \emph{Ceteris paribus} is a Latin phrase meaning ``other things held
 constant'' or ``all else unchanged''. Using this principle we examine
 input variable per variable separatly, asumming that effects of all
-other variables are unchanged. See Figure
-\ref{fig:modelResponseCurveLine}
+other variables are unchanged.
+
+\hypertarget{intuition}{%
+\subsection{Intuition}\label{intuition}}
+
+See Figure \ref{fig:modelResponseCurveLine}. The panel A shows a model
+response surface for a function that takes two arguments, \emph{floor}
+and \emph{construction.year}. We are interested in an explanation of the
+model curvature around a single point, here marked as a black dot.
+Ceteris Paribus profiles examine this function dimension by dimension as
+a one-dimensional profiles. Panel B shows two such profiles.
 
 \begin{figure}
 
@@ -987,56 +1018,61 @@ other variables are unchanged. See Figure
 \caption{(fig:modelResponseCurveLine) A) Model response surface. Ceteris Paribus profiles marked with black curves helps to understand the curvature of the model response by updating only a single variable. B) CP profiles are individual conditional model responses}\label{fig:modelResponseCurveLine}
 \end{figure}
 
-Similar to the LIME method introduced in the section \ref{LIME}, Ceteris
-Paribus profiles examine curvature of a model response function. The
-difference between these two methods that LIME approximates the model
-curvature with a simpler white-box model that is easier to present.
-Usually the LIME model is sparse, thus our attention may be limited to
-smaller number of dimensions. In contrary, the CP plots show conditional
-model response for every variable. In the last subsection we discuss
-pros and cons of this approach.
+In some sense this technique is similar to the LIME method introduced in
+the section \ref{LIME}. In both cases LIME and Ceteris Paribus profiles
+examine curvature of a model response function. The difference between
+these two methods that LIME approximates the model curvature with a
+simpler white-box model that is easier to present. Usually the LIME
+model is sparse, thus our attention may be limited to smaller number of
+dimensions. In contrary, the CP plots show conditional model response
+for every variable. In most cases it is much easier to explain how to
+read CP profiles than LIME attributions. In the last subsection we
+discuss pros and cons of this approach.
 
-\hypertarget{intuition}{%
-\subsection{Intuition}\label{intuition}}
+\hypertarget{the-method}{%
+\subsection{The Method}\label{the-method}}
 
-\hypertarget{method}{%
-\subsection{Method}\label{method}}
+In next subsections we introduce 1D and 2D Ceteris Profiles more
+formally. Here we present profiles for continuous variable, but they can
+be easily generalized for variables of other types, like time features,
+spatial feature, color or categorical features.
 
 \hypertarget{ceterisParibus1d}{%
-\subsubsection{1D profiles}\label{ceterisParibus1d}}
+\subsubsection{1D Ceteris Paribus Profiles}\label{ceterisParibus1d}}
 
-Let \(f_{M}(x): \mathcal R^{d} \rightarrow \mathcal R\) denote a
+Let \(f(x): \mathcal R^{d} \rightarrow \mathcal R\) stands for a
 predictive model, i.e.~function that takes \(d\) dimensional vector and
 calculate numerical score. Symbol \(x \in \mathcal R^d\) refers to a
 point in the feature space. We use subscript \(x_i\) to refer to a
-different data points and superscript \(x^j\) to refer to specific
-dimensions. Additionally, let \(x^{-j}\) denote all coordinates except
-\(j\)-th and let \(x|^j=z\) denote a data point \(x^*\) with all
-coordinates equal to \(x\) except coordinate \(j\) equal to value \(z\).
-I.e. \(\forall_{i \neq {j}} x^i = x^{*,i}\) and \(x^j = z\). In other
-words \(x|^j=z\) denote a \(x\) with \(j\)th coordinate changed to
-\(z\).
+specific data point/observation and superscript \(x^j\) to refer to
+specific dimension/feature. Additionally, let \(x^{-j}\) denote all
+coordinates except \(j\)-th and let \(x|^j=z\) denote a data point \(x\)
+with all coordinates equal to \(x\) except for a coordinate \(j\) equal
+to value \(z\). I.e. \(\forall_{i \neq {j}} x^i = x^{*,i}\) and
+\(x^j = z\). In other words \(x|^j=z\) stands for a point constructed
+based on \(x\) with \(j\)th coordinate/feature changed to \(z\).
 
-Now we can define uni-dimensional Ceteris Paribus Profile for model
-\(f\), variable \(j\) and point \(x\) as
+Now we can define 1-dimensional Ceteris Paribus Profile for model \(f\),
+variable \(j\) and point \(x\) as
 
 \[
 CP^{f, j, x}(z) := f(x|^j = z).
-\] I.e. CP profile is a model response obtained for observations created
-based on \(x\) with coordinate \(j\) changed and all other coordinates
+\] I.e. Ceteris Paribus profile is a model response calculated for
+observations created based on \(x\) with coordinate \(j\) changed to
+range of valus typical for feature \(x^j\) and all other coordinates
 kept unchanged.
 
 A natural way to visualise CP profiles is to use a profile plot as in
 Figure \ref{fig:HRCPFiredHours}.
 
 Figure \ref{fig:HRCPFiredHours} shows an example of Ceteris Paribus
-profile. The black dot stands for prediction for a single observation.
-Grey line show how the model response would change if in this single
-observation coordinate \texttt{hours} will be changed to selected value.
-One thing that we can read is that the model response is not smooth and
-there is some variability along the profile. Second thing is that for
-this particular observation the model response would drop significantly
-if the variable \texttt{hours} will be higher than 45.
+profile. The black dot stands for prediction for a single observation
+\((x, f(x))\). Red curve shows how the model response change if in this
+single observation coordinate \texttt{hours} is changed to selected
+value. One thing that we can read is that the model response is not
+smooth and there is some variability along the profile. Second thing is
+that for this particular observation the model response would drop
+significantly if the variable \texttt{hours} will be higher than 45.
 
 \begin{figure}
 
@@ -1047,9 +1083,16 @@ if the variable \texttt{hours} will be higher than 45.
 \caption{(fig:HRCPHiredHours) Ceteris Paribus profile for Random Forest model that assess the probability of being fired in call center as a function of average number of working hours}\label{fig:HRCPFiredHours}
 \end{figure}
 
-Since in the example dataset we are struggling with model for three
-classes, one can plot CP profiles for each class in the same panel. See
-an example in the Figure \ref{fig:HRCPAllHours}.
+Since in the \texttt{HR} dataset we are struggling with model for three
+classes, it is a good idea to plot CP profiles for each class in the
+same panel. In this way we can compare effect of the \texttt{hours} on
+all three classes in the same time. See an example in the Figure
+\ref{fig:HRCPAllHours}.
+
+Of course in the multilabel classification the sum of probabilities over
+all classes is equal 1. So it is redundant to plot profiles for every
+class. But this small redundancy helps to understand how changes in a
+single feature affect the model decisions.
 
 \begin{figure}
 
@@ -1057,13 +1100,19 @@ an example in the Figure \ref{fig:HRCPAllHours}.
 
 }
 
-\caption{(fig:HRCPAllHours) Ceteris Paribus profiles for three classess predicted by the Random Forest model as a function of average number of working hours}\label{fig:HRCPAllHours}
+\caption{(fig:HRCPAllHours) Ceteris Paribus Profiles for three classess predicted by the Random Forest model as a function of average number of working hours}\label{fig:HRCPAllHours}
 \end{figure}
 
-Usually model input consist many variables, then it is beneficial to
-show more variables at the same time. The easiest way to do so is to
-plot consecutive variables on separate panels. See an example in Figure
+Usually the model input contains large number of variables. It's not a
+problem, because Ceteris Paribus Profiles are readable even for tiny
+subplots, created with techniques like sparklines or small multiples.
+This way we can show large number of variables at the same time keeping
+consecutive variables on separate panels. See an example in Figure
 \ref{fig:HRCPFiredAll}.
+
+It helps if these panels are ordered in a way, that the most important
+profiles are listed first. How to assess importances for CP profiles.
+See a next subsection.
 
 \begin{figure}
 
@@ -1071,49 +1120,49 @@ plot consecutive variables on separate panels. See an example in Figure
 
 }
 
-\caption{(fig:HRCPFiredAll) Ceteris Paribus profiles for all continuous variables}\label{fig:HRCPFiredAll}
+\caption{(fig:HRCPFiredAll) Ceteris Paribus profiles for all continuous variables in the HR dataset}\label{fig:HRCPFiredAll}
 \end{figure}
 
 \hypertarget{oscillations}{%
 \subsubsection{Profile oscillations}\label{oscillations}}
 
-Visual examination of variables is insightful, but for large number of
-variables we end up with large number of panels, most of which are flat.
-This is why we want to asses variable importance and show only profiles
-for important variables. The advantage of CP profiles is that they lead
-to a very natural and intuitive way of assessing the variable importance
-for a single prediction. The intuition is: the more important variable
-the larger are changes along the CP profile. If variable is not
-important then model response will barely change. If variable is
-important the CP profile change a lot for different values of a
-variable.
+Visual examination of Ceteris Paribus profiles is insightful, but for
+large number of features we end up with large number of panels. Wall of,
+mostly flat, profiles can be confusing for new users. To prioritize
+panels that are more important we need a measure that assess an local
+impact of a selected feature on the model output. This problem is
+discussed also in next section, bet here we propose a solution closely
+linked with Ceteris Paribus profiels.
+
+Profile oscillations are one of such measures. They can be used for
+ordering of profiles or for filtering out features that are not
+important for a given observation. CP profiles lead to a very natural
+and intuitive way of assessing the local feature importance for a single
+prediction. The intuition is: the more important is a feature the larger
+are fluctuations along its CP profile. If feature is not important then
+model response will be flat of barely changed. If variable is important
+the CP profile fluctuates a lot depending on a value for selected
+feature.
 
 Let's write it down in a more formal way.
 
-Let \(vip^{CP}_j(x)\) denotes variable importance calculated based on CP
-profiles in point \(x\) for variable \(j\).
+Let \(vip^{CP}_j(x)\) denotes local feature importance calculated based
+on a CP profile for feature \(j\) in a point \(x\). Let \(g^j(z)\)
+stands for a density/distribution of a feature \(j\) then the expected
+absolute oscilations are defined as
 
 \[
-vip^{CP}_j(x) = \int_{-\inf}^{inf} |CP^{f,j,x}(z) - f(x)| dz
+vip^{CP}_j(x) = \int_{\mathcal R} |CP^{f,j,x}(z) - f(x)| g^j(z)dz.
 \]
 
-So it's an absolute deviation from \(f(x)\). Note that one can consider
-different modification of this coefficient:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Deviations can be calculated not as a distance from \(f(x)\) but from
-  average \(\bar CP^{f,j,x}(z)\).
-\item
-  The integral may be weighted based on the density of variable \(x^j\).
-\item
-  Instead of absolute deviations one may use root from average squares.
-\end{enumerate}
-
-TODO: we need to verify which approach is better. Anna Kozak is working
-on this
+Intuitively \(vip^{CP}_j(x)\) is an area between the model prediction
+\(f(x)\) and the Ceteris Paribus profile \(CP^{f,j,x}\) weighted by the
+density of the feature \(j\). It is easy to propose modifications of
+this measure, for example deviations can be calculated not as a distance
+from \(f(x)\) but from average \(\bar CP^{f,j,x}(z)\) or instead of
+absolute deviations one may use root from average squares. We propose to
+use \(vip^{CP}_j(x)\) since we found the resulting ordering the most
+natural.
 
 The straightforward estimator for \(vip^{CP}_j(x)\) is
 
@@ -1134,8 +1183,9 @@ variable.
 \caption{(fig:CPVIPprofiles) CP oscillations are average deviations between CP profiles and the model response}\label{fig:CPVIPprofiles}
 \end{figure}
 
-Figure \ref{fig:CPVIP1} summarizes variable oscillations. Such visuals
-help to quickly grasp how large are model oscillations around a specific
+Figure \ref{fig:CPVIP1} summarizes variable oscillations. The longer the
+line the larger are oscilations for a given feature. Such visuals help
+to quickly grasp how large are model oscillations around a specific
 point.
 
 \begin{figure}
@@ -1149,8 +1199,8 @@ point.
 
 \textbf{NOTE}
 
-Variable importance for single prediction may be very different than
-variable importance for the full model.
+Feature importance calculated for a single prediction may be very
+different from feature importance calculated for the whole dataset.
 
 For example, consider a model \[
 f(x_1, x_2) = x_1 * x_2
@@ -1166,12 +1216,12 @@ This is because profile for \(f(z, 1)\) have larger oscillations than
 \hypertarget{d-profiles}{%
 \subsubsection{2D profiles}\label{d-profiles}}
 
-The definition of ceteris paribus profiles given in section
-\ref{ceterisParibus1d} may be easily extended to two and more variables.
+The definition of Ceteris Paribus profiles given in section
+\ref{ceterisParibus1d} may be easily extended to two or more variables.
 Also definition of CP oscillations \ref{oscillations} have straight
-forward generalization for larger number of dimensions. Such
-generalisations are usefull when model is non additive. Presence of
-pairwise interactions may be detected with 2D Ceteris Paribus plots.
+forward extension for larger number of dimensions. Such extensionss are
+usefull to check if model is additive. Presence of pairwise interactions
+may be detected with 2D Ceteris Paribus plots.
 
 Let's define two-dimensional Ceteris Paribus Profile for model \(f\),
 variables \(j\) and \(k\) and point \(x\) as
@@ -1198,6 +1248,10 @@ If number of variables is small or moderate thein it is possible to
 present all pairs of variables. See an example in Figure
 \ref{fig:CP2Dall}.
 
+Number of pairs of features grows rapidly, but we can use a simple
+extension of CP oscilations to define pairs-of-features importance. Then
+we can order pairs based on their oscilations.
+
 \begin{figure}
 
 {\centering \includegraphics[width=0.9\linewidth]{figure/cp_2d_all} 
@@ -1210,20 +1264,29 @@ present all pairs of variables. See an example in Figure
 \hypertarget{local-model-fidelity}{%
 \subsection{Local model fidelity}\label{local-model-fidelity}}
 
-Ceteris Paribus profiles are also a useful tool to validate local model
-fidelity. It may happen that global performance of the model is good,
-while for some points the local fit is very bad. Local fidelity helps to
-understand how good is the model fit around point of interest.
+It turns out that a simple idea like Ceteris Paribus profiles can be
+useful for a local model diagnostic. Typically diagnostic is being
+performed for the whole model. In most cases we check how good is the
+model on average. But it may not be helpful for a single prediction,
+since in many cases a model i better in general but may give worse
+predictions for some selected segment of points.
+
+In this section we show how to use Ceteris Paribus profiles to validate
+local model fidelity. It may happen that global performance of the model
+is good, while for some points the local fit is very bad. Local fidelity
+helps to understand how good is the model fit around point of interest.
 
 How does it work?
 
 The idea behind fidelity plots is to select some number of points from
-the validation dataset that are closes to the point of interest. It's a
-similar approach as in k nearest neighbours. Then for these neighbours
-we may plot Ceteris Paribus Profiles and check how stable they are.
+the validation dataset that are closest to the point of interest. It's a
+similar approach as in k-nearest neighbours procedure. Then for selected
+neighbours we plot Ceteris Paribus Profiles and check how stable they
+are.
 
-Also, if we know true taget values for points from the validation
-dataset we may plot residuals to show how large are residuals.
+Also, if we know true taget labels for selected neighbours from the
+validation dataset we may plot residuals to show how good is the local
+fit of a model.
 
 An example fidelity plot is presented in Figure \ref{fig:CPfidelity1}.
 Black line shows the CP profiles for the point of interest, while grey
@@ -1247,8 +1310,6 @@ See Figure \ref{fig:CPfidelityBoxplot} for an example. Here residuals
 for neighbors are shifted towards highest values. This suggests that the
 model response is biased around the observation of interest.
 
-TODO: diagnostic score: average quantaile of neighbours.
-
 \begin{figure}
 
 {\centering \includegraphics[width=0.7\linewidth]{figure/cp_fidelity_boxplot} 
@@ -1258,15 +1319,12 @@ TODO: diagnostic score: average quantaile of neighbours.
 \caption{(fig:CPfidelityBoxplot) Distribution of residuals for whole validation data (grey boxplot) and for selected closes 15 neighbors (red boxplot).}\label{fig:CPfidelityBoxplot}
 \end{figure}
 
-\hypertarget{example}{%
-\subsection{Example}\label{example}}
-
 \hypertarget{pros-and-cons}{%
 \subsection{Pros and cons}\label{pros-and-cons}}
 
-Ceteris Paribus principle gives a uniform and extendable approach to
-model exploration. Below we summarize key strengths and weaknesses of
-this approach.
+Ceteris Paribus principle gives a uniform, easy to comunicate and
+extendable approach to model exploration. Below we summarize key
+strengths and weaknesses of this approach.
 
 \textbf{Pros}
 
@@ -1274,13 +1332,13 @@ this approach.
 \tightlist
 \item
   Graphical representation of Ceteris Paribus profile is easy to
-  understand.
+  understand and explain to others.
 \item
-  Ceteris Paribus profiles are compact and it is easy to fit many models
-  or many variables in a small space.
+  Ceteris Paribus profiles are compact so one can present many models or
+  many variables in a single plot.
 \item
-  Ceteris Paribus profiles helps to understand how model response would
-  change and how stable it is
+  Ceteris Paribus profiles help to understand how model response would
+  change and how stable is the model.
 \item
   Oscillations calculated for CP profiles helps to select the most
   important variables.
@@ -1303,121 +1361,82 @@ this approach.
   This tool is not suited for very wide data, like hundreds or thousands
   of variables.
 \item
-  Visualization of categorical variables is non trivial.
+  Visualization of categorical variables is non trivial, especially if
+  ther eis large number of categories, like zip-code.
 \end{itemize}
 
 \hypertarget{code-snippets-for-r}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r}}
 
-In this section we present key features of the \texttt{ceterisParibus}
-package for R \citep{R-ceterisParibus}. This package covers all features
-presented in this chapter. It is available on CRAN and GitHub. Find more
-examples at the website of this package
-\texttt{https://pbiecek.github.io/ceterisParibus/}.
+In this section we present key features of the \texttt{ingredients}
+package for R \citep{R-ingredients} which is a part of the DALEXverse.
+This package covers all features presented in this chapter. It is
+available on CRAN and GitHub. Find more examples at the website of this
+package \texttt{https://modeloriented.github.io/ingredients/}.
 
-A very interesting tool for moedl explorartion with similar principle is
-implemented in the \texttt{condvis} package \citep{JSSv081i05}.
+There are also other packages that have similar features. For example,
+an interesting approach for model explorartion with similar principles
+is implemented in the \texttt{condvis} package \citep{JSSv081i05}.
 
 \textbf{Model preparation}
 
-In this section we will present examples based on the
-\texttt{apartments} dataset. See section TODO for more details.
+In this section we use a random forest \citep{R-randomForest} model
+\texttt{model\_titanic\_rf} trained for the Titanic dataset. See the
+section @ref\{model\_titanic\_rf\} for more details.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
-\KeywordTok{head}\NormalTok{(apartments)}
-\end{Highlighting}
-\end{Shaded}
+Here we have a binary classification problem. We want to predict chances
+of survival for a selected passenger.
 
-\begin{verbatim}
-##   m2.price construction.year surface floor no.rooms    district
-## 1     5897              1953      25     3        1 Srodmiescie
-## 2     1818              1992     143     9        5     Bielany
-## 3     3643              1937      56     1        2       Praga
-## 4     3517              1995      93     7        3      Ochota
-## 5     3013              1992     144     6        5     Mokotow
-## 6     5795              1926      61     6        2 Srodmiescie
-\end{verbatim}
-
-The problem here is to predict average price for square meter for an
-apartment. Let's build a random forest model with \texttt{randomForest}
-package \citep{R-randomForest}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
-\NormalTok{rf_model <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(m2.price }\OperatorTok{~}\StringTok{ }\NormalTok{construction.year }\OperatorTok{+}\StringTok{ }\NormalTok{surface }\OperatorTok{+}\StringTok{ }\NormalTok{floor }\OperatorTok{+}
-\StringTok{      }\NormalTok{no.rooms, }\DataTypeTok{data =}\NormalTok{ apartments)}
-\NormalTok{rf_model}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-## Call:
-##  randomForest(formula = m2.price ~ construction.year + surface +      floor + no.rooms, data = apartments) 
-##                Type of random forest: regression
-##                      Number of trees: 500
-## No. of variables tried at each split: 1
-## 
-##           Mean of squared residuals: 485118.3
-##                     % Var explained: 40.93
-\end{verbatim}
-
-Model exploration with \texttt{ceterisParibus} package is performed in
-four steps.
+Ceteris Paribus profiles are calculated in four steps with the
+\texttt{ingredients} package.
 
 \textbf{1. Create an explainer - wrapper around model and validation
 data.}
 
-Since all other functions work in a model agnostic fashion, first we
-need to define a wrapper around the model. Here we are using the
-\texttt{explain()} function from \texttt{DALEX} package \citep{R-DALEX}.
+Models created with different libraries may have different internal
+structures, so first, we need to create a wrapper around the model. Here
+we are using the \texttt{explain()} function from the \texttt{DALEX}
+package \citep{R-DALEX}. The \texttt{explain()} function expects at
+least four arguments: a model, a validation data, labels for validation
+data and a function that returns prediction scores. Here we are using
+training data as validation data. We do not specify forth parameter
+since for \texttt{randomForest} objects it is preimplemented.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
-\NormalTok{explainer_rf <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(rf_model,}
-      \DataTypeTok{data =}\NormalTok{ apartmentsTest, }\DataTypeTok{y =}\NormalTok{ apartmentsTest}\OperatorTok{$}\NormalTok{m2.price)}
-\NormalTok{explainer_rf}
+\NormalTok{explainer_titanic_rf <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(model_titanic_rf, }\DataTypeTok{data =}\NormalTok{ titanic_small, }\DataTypeTok{y =}\NormalTok{ titanic_small}\OperatorTok{$}\NormalTok{Survived)}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## Model label:  randomForest 
-## Model class:  randomForest.formula,randomForest 
-## Data head  :
-##      m2.price construction.year surface floor no.rooms    district
-## 1001     4644              1976     131     3        5 Srodmiescie
-## 1002     3082              1978     112     9        4     Mokotow
-\end{verbatim}
 
 \textbf{2. Define point of interest.}
 
-Certeris Paribus profiles explore model around a single point.
+Certeris Paribus profiles explore model around a single point. Here we
+defined a data frame \texttt{johny\_d} with a single row, it describes
+an 8-years old boy that travels in the first class without parents and
+siblings.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{new_apartment <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{construction.year =} \DecValTok{1965}\NormalTok{, }\DataTypeTok{no.rooms =} \DecValTok{5}\NormalTok{, }\DataTypeTok{surface =} \DecValTok{142}\NormalTok{, }\DataTypeTok{floor =} \DecValTok{8}\NormalTok{)}
-\NormalTok{new_apartment}
+\NormalTok{johny_d <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
+  \DataTypeTok{Pclass =} \DecValTok{1}\NormalTok{,}
+  \DataTypeTok{Sex =} \KeywordTok{factor}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"female"}\NormalTok{, }\StringTok{"male"}\NormalTok{)),}
+  \DataTypeTok{Age =} \DecValTok{8}\NormalTok{,}
+  \DataTypeTok{SibSp =} \DecValTok{0}\NormalTok{,}
+  \DataTypeTok{Parch =} \DecValTok{0}\NormalTok{,}
+  \DataTypeTok{Fare =} \DecValTok{72}\NormalTok{,}
+  \DataTypeTok{Embarked =} \KeywordTok{factor}\NormalTok{(}\StringTok{"C"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"N"}\NormalTok{,}\StringTok{"C"}\NormalTok{,}\StringTok{"Q"}\NormalTok{,}\StringTok{"S"}\NormalTok{))}
+\NormalTok{)}
+
+\KeywordTok{predict}\NormalTok{(model_titanic_rf, johny_d, }\DataTypeTok{type =} \StringTok{"prob"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##   construction.year no.rooms surface floor
-## 1              1965        5     142     8
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{predict}\NormalTok{(rf_model, new_apartment)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##        1 
-## 2312.307
+##      0    1
+## 1 0.45 0.55
+## attr(,"class")
+## [1] "matrix" "votes"
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -1427,74 +1446,96 @@ selected model around selected observation.
 
 By default CP profiles are calculated for all numerical variables. Use
 the \texttt{variables} argument to select subset of interesting
-variables. The result from \texttt{ceteris\_paribus()}function is a data
-frame with model predictions for modified points around the point of
-interest.
+variables. The result is a data frame with model predictions around the
+point of interest.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"ceterisParibus"}\NormalTok{)}
-\NormalTok{cp_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_rf, new_apartment, }
-                            \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"construction.year"}\NormalTok{, }\StringTok{"floor"}\NormalTok{))}
-\NormalTok{cp_rf}
+\KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
+\NormalTok{cp_titanic_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_titanic_rf, johny_d, }
+                            \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"Age"}\NormalTok{, }\StringTok{"Fare"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"SibSp"}\NormalTok{))}
+\NormalTok{cp_titanic_rf}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
 ## Top profiles    : 
-##     construction.year no.rooms surface floor   _yhat_           _vname_
-## 1                1920        5     142     8 3064.882 construction.year
-## 1.1              1921        5     142     8 3093.194 construction.year
-## 1.2              1922        5     142     8 3083.820 construction.year
-## 1.3              1923        5     142     8 3052.674 construction.year
-## 1.4              1924        5     142     8 3060.070 construction.year
-## 1.5              1925        5     142     8 3079.873 construction.year
-##     _ids_      _label_
-## 1       1 randomForest
-## 1.1     1 randomForest
-## 1.2     1 randomForest
-## 1.3     1 randomForest
-## 1.4     1 randomForest
-## 1.5     1 randomForest
+##     Pclass  Sex  Age SibSp Parch Fare Embarked _vname_ _ids_ _yhat_
+## 1        1 male 0.42     0     0   72        C     Age     1  0.394
+## 1.1      1 male 1.00     0     0   72        C     Age     1  0.400
+## 1.2      1 male 2.00     0     0   72        C     Age     1  0.408
+## 1.3      1 male 3.00     0     0   72        C     Age     1  0.408
+## 1.4      1 male 4.00     0     0   72        C     Age     1  0.416
+## 1.5      1 male 5.00     0     0   72        C     Age     1  0.416
+##            _label_
+## 1   randomForest.0
+## 1.1 randomForest.0
+## 1.2 randomForest.0
+## 1.3 randomForest.0
+## 1.4 randomForest.0
+## 1.5 randomForest.0
 ## 
 ## 
 ## Top observations:
-##   construction.year no.rooms surface floor   _yhat_      _label_ _ids_
-## 1              1965        5     142     8 2312.307 randomForest     1
+##     Pclass  Sex Age SibSp Parch Fare Embarked _yhat_        _label_ _ids_
+## 1        1 male   8     0     0   72        C   0.45 randomForest.0     1
+## 1.1      1 male   8     0     0   72        C   0.55 randomForest.1     1
 \end{verbatim}
 
 \textbf{4. Plot CP profiles.}
 
-Generic \texttt{plot()} function plot CP profiles. It returns a
-\texttt{ggplot2} object that can be polished if needed. Use additional
-arguments of this function to select colors and sizes for elements
-visible in the plot.
+Generic \texttt{plot()} function draws CP profiles. It returns a
+\texttt{ggplot2} object that can be polished if needed.
+
+The resulting plot can be enriched with additional data by adding
+functions, \texttt{show\_rugs} (adds rugs for the selected points)
+\texttt{show\_observations} (adds observations) or
+\texttt{show\_aggreagated\_profiles} (is described in the section
+@ref\{variableEngeneering\}).
+
+All these functions can take additional arguments to modify size, color
+or linetype.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(cp_rf) }
+\KeywordTok{plot}\NormalTok{(cp_titanic_rf) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{show_observations}\NormalTok{(cp_titanic_rf, }
+        \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"Age"}\NormalTok{, }\StringTok{"Fare"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"SibSp"}\NormalTok{)) }
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-18-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-17-1.pdf}
 
 One of very useful features of \texttt{ceterisParibus} explainers is
 that profiles for two or more models may be superimposed in a single
-plot. This helps in model comparisons.
+plot. It's sometimes called contrastive explanations and is very helpful
+for model comparisons.
 
-Let's create a linear model for this dataset and repeat steps 1-3 for
-the lm model.
+Let's take a logistic regression model created in the section
+@ref\{model\_titanic\_lmr\} and plot it along the random forest model.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{lm_model <-}\StringTok{ }\KeywordTok{lm}\NormalTok{(m2.price }\OperatorTok{~}\StringTok{ }\NormalTok{construction.year }\OperatorTok{+}\StringTok{ }\NormalTok{surface }\OperatorTok{+}\StringTok{ }\NormalTok{floor }\OperatorTok{+}
-\StringTok{      }\NormalTok{no.rooms, }\DataTypeTok{data =}\NormalTok{ apartments)}
-\NormalTok{explainer_lm <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(lm_model,}
-      \DataTypeTok{data =}\NormalTok{ apartmentsTest, }\DataTypeTok{y =}\NormalTok{ apartmentsTest}\OperatorTok{$}\NormalTok{m2.price)}
-\NormalTok{cp_lm <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_lm, new_apartment, }
-                            \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"construction.year"}\NormalTok{, }\StringTok{"floor"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
+\begin{verbatim}
+## Top profiles    : 
+##     Pclass  Sex  Age SibSp Parch Fare Embarked    _yhat_ _vname_ _ids_
+## 1        1 male 0.42     0     0   72        C 0.9784112     Age     1
+## 1.1      1 male 1.00     0     0   72        C 0.9752918     Age     1
+## 1.2      1 male 2.00     0     0   72        C 0.9688533     Age     1
+## 1.3      1 male 3.00     0     0   72        C 0.9608045     Age     1
+## 1.4      1 male 4.00     0     0   72        C 0.9507814     Age     1
+## 1.5      1 male 5.00     0     0   72        C 0.9383767     Age     1
+##     _label_
+## 1       glm
+## 1.1     glm
+## 1.2     glm
+## 1.3     glm
+## 1.4     glm
+## 1.5     glm
+## 
+## 
+## Top observations:
+##   Pclass  Sex Age SibSp Parch Fare Embarked    _yhat_ _label_ _ids_
+## 1      1 male   8     0     0   72        C 0.8836101     glm     1
+\end{verbatim}
 
 Now we can use function \texttt{plot()} to compare both models in a
 single chart. Additional argument \texttt{color\ =\ "\_label\_"} set
@@ -1502,7 +1543,9 @@ color as a key for model.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(cp_rf, cp_lm, }\DataTypeTok{color =} \StringTok{"_label_"}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(cp_titanic_rf, cp_titanic_lmr, }\DataTypeTok{color =} \StringTok{"_label_"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{show_observations}\NormalTok{(cp_titanic_rf, cp_titanic_lmr,}
+        \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"Age"}\NormalTok{, }\StringTok{"Fare"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"SibSp"}\NormalTok{)) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -1515,23 +1558,22 @@ for CP profiles.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{cp_rf_all <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_rf, new_apartment)}
-\NormalTok{co_rf_all <-}\StringTok{ }\KeywordTok{calculate_oscillations}\NormalTok{(cp_rf_all)}
-\NormalTok{co_rf_all}
+\NormalTok{co_titanic_rf <-}\StringTok{ }\KeywordTok{calculate_oscillations}\NormalTok{(cp_titanic_rf)}
+\NormalTok{co_titanic_rf}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##             _vname_ _ids_ oscillations
-## 3           surface     1     641.6855
-## 2          no.rooms     1     399.7537
-## 4             floor     1     321.9560
-## 1 construction.year     1     249.3308
+##   _vname_ _ids_ oscillations
+## 1     Age     1   0.09619048
+## 4   SibSp     1   0.07028571
+## 2    Fare     1   0.06482500
+## 3  Pclass     1   0.05400000
 \end{verbatim}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(co_rf_all)}
+\KeywordTok{plot}\NormalTok{(co_titanic_rf)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -1539,17 +1581,16 @@ for CP profiles.
 
 \textbf{2D Ceteris Paribus profiles}
 
-And the \texttt{what\_if\_2d()} function calculates 2D CP profiles.
+And the \texttt{ceteris\_paribus\_2d()} function calculates 2D CP
+profiles.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{wi_rf_2d <-}\StringTok{ }\KeywordTok{what_if_2d}\NormalTok{(explainer_rf, }\DataTypeTok{observation =}\NormalTok{ new_apartment, }
-                 \DataTypeTok{selected_variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"surface"}\NormalTok{,}\StringTok{"floor"}\NormalTok{, }\StringTok{"construction.year"}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(wi_rf_2d, }\DataTypeTok{split_ncol =} \DecValTok{2}\NormalTok{)}
+\NormalTok{cp2d_titanic_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus_2d}\NormalTok{(explainer_titanic_rf, }\DataTypeTok{observation =}\NormalTok{ johny_d, }
+                 \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"Age"}\NormalTok{,}\StringTok{"Fare"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{))}
+\KeywordTok{plot}\NormalTok{(cp2d_titanic_rf, }\DataTypeTok{split_ncol =} \DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-22-1.pdf}
 
 \hypertarget{variableAttributionMethods}{%
 \section{Variable attribution for linear
@@ -1601,7 +1642,8 @@ by the following linear combination:
 
 \[
 E_Y(Y | x) = f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
-\] We are interested in the contribution of the \(i\)-th explanatory
+\]\\
+We are interested in the contribution of the \(i\)-th explanatory
 variable to model prediction \(f(x^*)\) for a single observation
 described by \(x^*\). In this case, the contribution is equal to
 \(x^*_i\beta_i\), because the \(i\)-th variable occurs only in this
@@ -1612,8 +1654,8 @@ following, intuitive formula for the variable attribution: \[
 v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
 \]
 
-\hypertarget{method-1}{%
-\subsection{Method}\label{method-1}}
+\hypertarget{method}{%
+\subsection{Method}\label{method}}
 
 We want to calculate \(v(f, x^*, i)\), which is the contribution of the
 \(i\)-th explanatory variable to the prediction of model \(f()\) at
@@ -1653,7 +1695,7 @@ may not be the case. We will return to this problem in Section
 \hypertarget{example-wine-quality}{%
 \subsection{Example: Wine quality}\label{example-wine-quality}}
 
-Figure \ref{fig:attribution1} shows the relation between alcohol and
+Figure \ref{fig:attribution1a} shows the relation between alcohol and
 wine quality, based on the wine dataset \citep{wine2009}. The linear
 model is \[
 quality(alcohol) = 2.5820 + 0.3135 * alcohol.
@@ -1676,7 +1718,7 @@ alcohol concentration should imply a lower quality of the wine.
 
 }
 
-\caption{(fig:attribution1)Relation between wine quality and concentration of alcohol assessed with linear model}\label{fig:attribution1}
+\caption{(fig:attribution1a)Relation between wine quality and concentration of alcohol assessed with linear model}\label{fig:attribution1a}
 \end{figure}
 
 \hypertarget{pros-and-cons-1}{%
@@ -1860,7 +1902,7 @@ the variable attributions can be easily constructed:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-32-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-31-1.pdf}
 
 \hypertarget{breakDown}{%
 \section{Variable attributions}\label{breakDown}}
@@ -1912,8 +1954,8 @@ model prediction, which is denoted by a grey bar in this example.
 \caption{(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. }\label{fig:BDPrice4}
 \end{figure}
 
-\hypertarget{method-2}{%
-\subsection{Method}\label{method-2}}
+\hypertarget{method-1}{%
+\subsection{Method}\label{method-1}}
 
 Again, let \(v(f, x^*, i)\) stands for the contribution of variable
 \(x_i\) on prediction of model \(f()\) in point \(x^*\).
@@ -2099,12 +2141,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.36%
+##         OOB estimate of  error rate: 27.26%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2276  388      191   0.2028021
-## ok         533 1249      439   0.4376407
-## promoted   203  393     2175   0.2150848
+## fired     2272  381      202   0.2042032
+## ok         535 1254      432   0.4353895
+## promoted   207  382     2182   0.2125586
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -2144,8 +2186,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired   ok promoted
-## 1 0.766 0.23    0.004
+##   fired    ok promoted
+## 1 0.778 0.218    0.004
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -2160,7 +2202,7 @@ with variable attributions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown2"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"iBreakDown"}\NormalTok{)}
 \NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{local_attributions}\NormalTok{(explainer_rf,}
 \NormalTok{                 new_observation,}
                  \DataTypeTok{keep_distributions =} \OtherTok{TRUE}\NormalTok{)}
@@ -2170,29 +2212,28 @@ with variable attributions.
 \end{Shaded}
 
 \begin{verbatim}
-##                                         contribution
-## randomForest.fired: baseline                   0.376
-## randomForest.fired: * hours = 42               0.236
-## randomForest.fired: * evaluation = 2           0.063
-## randomForest.fired: * salary = 2              -0.248
-## randomForest.fired: * age = 58                 0.073
-## randomForest.fired: * gender = male            0.267
-## randomForest.fired: prediction                 0.766
-## randomForest.ok: baseline                      0.275
-## randomForest.ok: * hours = 42                 -0.047
-## randomForest.ok: * evaluation = 2              0.092
-## randomForest.ok: * salary = 2                  0.246
-## randomForest.ok: * age = 58                   -0.068
-## randomForest.ok: * gender = male              -0.268
-## randomForest.ok: prediction                    0.230
-## randomForest.promoted: baseline                0.349
-## randomForest.promoted: * hours = 42           -0.189
-## randomForest.promoted: * evaluation = 2       -0.154
-## randomForest.promoted: * salary = 2            0.002
-## randomForest.promoted: * age = 58             -0.005
-## randomForest.promoted: * gender = male         0.001
-## randomForest.promoted: prediction              0.004
-## baseline:  0
+##                                       contribution
+## randomForest.fired: intercept                0.377
+## randomForest.fired: hours = 42               0.239
+## randomForest.fired: evaluation = 2           0.060
+## randomForest.fired: salary = 2              -0.237
+## randomForest.fired: age = 58                 0.057
+## randomForest.fired: gender = male            0.281
+## randomForest.fired: prediction               0.778
+## randomForest.ok: intercept                   0.274
+## randomForest.ok: hours = 42                 -0.048
+## randomForest.ok: evaluation = 2              0.091
+## randomForest.ok: salary = 2                  0.236
+## randomForest.ok: age = 58                   -0.052
+## randomForest.ok: gender = male              -0.283
+## randomForest.ok: prediction                  0.218
+## randomForest.promoted: intercept             0.349
+## randomForest.promoted: hours = 42           -0.191
+## randomForest.promoted: evaluation = 2       -0.151
+## randomForest.promoted: salary = 2            0.001
+## randomForest.promoted: age = 58             -0.005
+## randomForest.promoted: gender = male         0.002
+## randomForest.promoted: prediction            0.004
 \end{verbatim}
 
 The generic \texttt{plot()} function creates a Break Down plots.
@@ -2203,7 +2244,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-37-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-36-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -2214,7 +2255,7 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-38-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-37-1.pdf}
 
 \hypertarget{variable-attribution-with-interactions}{%
 \section{Variable attribution with
@@ -2252,8 +2293,8 @@ can be done in two steps.
 
 TODO: easy example for interaction
 
-\hypertarget{method-3}{%
-\subsection{Method}\label{method-3}}
+\hypertarget{method-2}{%
+\subsection{Method}\label{method-2}}
 
 This algorithm is also composed out of two steps. In the first step
 variables and pairs of variables are ordered in terms of their
@@ -2415,12 +2456,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.51%
+##         OOB estimate of  error rate: 27.21%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2276  383      196   0.2028021
-## ok         539 1244      438   0.4398919
-## promoted   207  396     2168   0.2176110
+## fired     2281  383      191   0.2010508
+## ok         533 1248      440   0.4380910
+## promoted   199  389     2183   0.2121978
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -2460,7 +2501,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1 0.798 0.202        0
+## 1 0.808 0.188    0.004
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -2475,7 +2516,7 @@ with variable attributions.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"breakDown2"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"iBreakDown"}\NormalTok{)}
 \NormalTok{bd_rf <-}\StringTok{ }\KeywordTok{local_interactions}\NormalTok{(explainer_rf,}
 \NormalTok{                 new_observation)}
 
@@ -2484,26 +2525,28 @@ with variable attributions.
 \end{Shaded}
 
 \begin{verbatim}
-##                                               contribution
-## randomForest.fired: baseline                         0.376
-## randomForest.fired: * hours = 42                     0.238
-## randomForest.fired: * salary = 2                    -0.210
-## randomForest.fired: * age:gender = 58:male           0.396
-## randomForest.fired: * evaluation = 2                -0.002
-## randomForest.fired: prediction                       0.798
-## randomForest.ok: baseline                            0.274
-## randomForest.ok: * evaluation = 2                    0.136
-## randomForest.ok: * salary = 2                        0.155
-## randomForest.ok: * age:gender = 58:male             -0.282
-## randomForest.ok: * hours = 42                       -0.081
-## randomForest.ok: prediction                          0.202
-## randomForest.promoted: baseline                      0.349
-## randomForest.promoted: * hours = 42                 -0.190
-## randomForest.promoted: * evaluation = 2             -0.155
-## randomForest.promoted: * age:gender = 58:male       -0.005
-## randomForest.promoted: * salary = 2                 -0.001
-## randomForest.promoted: prediction                    0.000
-## baseline:  0
+##                                       contribution
+## randomForest.fired: intercept                0.804
+## randomForest.fired: salary = 2              -0.272
+## randomForest.fired: age = 58                 0.346
+## randomForest.fired: evaluation = 2          -0.046
+## randomForest.fired: hours = 42              -0.024
+## randomForest.fired: gender = male            0.000
+## randomForest.fired: prediction               0.808
+## randomForest.ok: intercept                   1.000
+## randomForest.ok: salary = 2                 -0.630
+## randomForest.ok: age = 58                   -0.086
+## randomForest.ok: hours = 42                 -0.038
+## randomForest.ok: gender = male               0.562
+## randomForest.ok: evaluation = 2              0.000
+## randomForest.ok: prediction                  0.188
+## randomForest.promoted: intercept             0.996
+## randomForest.promoted: salary = 2           -0.554
+## randomForest.promoted: evaluation = 2       -0.324
+## randomForest.promoted: hours = 42            0.296
+## randomForest.promoted: age = 58              0.394
+## randomForest.promoted: gender = male         0.000
+## randomForest.promoted: prediction            0.004
 \end{verbatim}
 
 The generic \texttt{plot()} function creates a Break Down plots.
@@ -2514,7 +2557,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-43-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-42-1.pdf}
 
 \hypertarget{shapley}{%
 \section{Average variable attributions}\label{shapley}}
@@ -2543,8 +2586,8 @@ idea is to average across all possible orderings.
 
 TODO: a nice example
 
-\hypertarget{method-4}{%
-\subsection{Method}\label{method-4}}
+\hypertarget{method-3}{%
+\subsection{Method}\label{method-3}}
 
 The name \emph{Shapley Values} comes from the solution in cooperative
 game theory attributed to Lloyd Shapley. The original problem was to
@@ -2702,7 +2745,7 @@ package.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-45-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-44-1.pdf}
 
 Here we use the \texttt{iml} package, see more examples in
 \citep{imlPackage}.
@@ -2759,7 +2802,7 @@ And the plot with Shapley attributions.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-48-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-47-1.pdf}
 
 See more examples for \texttt{iml} package in the \citep{molnar} book.
 
@@ -2796,8 +2839,8 @@ packages, see for example \citep{R-lime}, \citep{R-live} or
 \hypertarget{intuition-5}{%
 \subsection{Intuition}\label{intuition-5}}
 
-\hypertarget{method-5}{%
-\subsection{Method}\label{method-5}}
+\hypertarget{method-4}{%
+\subsection{Method}\label{method-4}}
 
 The LIME method, and its clones, has following properties:
 
@@ -3039,7 +3082,7 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-52-1.pdf}
 
 \hypertarget{the-live-package}{%
 \subsubsection{\texorpdfstring{\textbf{The live
@@ -3081,7 +3124,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -3089,7 +3132,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsubsection{\texorpdfstring{\textbf{The iml
@@ -3139,7 +3182,7 @@ package}}{The iml package}}\label{the-iml-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-55-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-1.pdf}
 
 \hypertarget{comparision-of-prediction-level-explainers}{%
 \section{Comparision of prediction level
@@ -3560,7 +3603,7 @@ interval that start in a loss and ends in a loss of perturbed data.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-59-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-58-1.pdf}
 
 \hypertarget{more-models}{%
 \subsection{More models}\label{more-models}}
@@ -3675,7 +3718,7 @@ When we compare other features it looks like in all models the
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-62-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-61-1.pdf}
 
 There is interesting difference between linear model and others in the
 way how important is the \texttt{construction.year}. For linear model
@@ -3814,7 +3857,7 @@ Such average can be calculated with the
 \KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
 \NormalTok{selected_passangers <-}\StringTok{ }\KeywordTok{select_sample}\NormalTok{(titanic_small, }\DataTypeTok{n =} \DecValTok{100}\NormalTok{)}
 \NormalTok{cp_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_rf, selected_passangers)}
-\NormalTok{pdp_rf <-}\StringTok{ }\KeywordTok{aggregate_profiles}\NormalTok{(cp_rf, }\DataTypeTok{selected_variables =} \StringTok{"Age"}\NormalTok{)}
+\NormalTok{pdp_rf <-}\StringTok{ }\KeywordTok{aggregate_profiles}\NormalTok{(cp_rf, }\DataTypeTok{variables =} \StringTok{"Age"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -3869,7 +3912,7 @@ results.
 \KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
 \NormalTok{selected_passangers <-}\StringTok{ }\KeywordTok{select_sample}\NormalTok{(titanic_small, }\DataTypeTok{n =} \DecValTok{100}\NormalTok{)}
 \NormalTok{cp_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_rf, selected_passangers)}
-\NormalTok{clust_rf <-}\StringTok{ }\KeywordTok{cluster_profiles}\NormalTok{(cp_rf, }\DataTypeTok{k =} \DecValTok{3}\NormalTok{, }\DataTypeTok{selected_variables =} \StringTok{"Age"}\NormalTok{)}
+\NormalTok{clust_rf <-}\StringTok{ }\KeywordTok{cluster_profiles}\NormalTok{(cp_rf, }\DataTypeTok{k =} \DecValTok{3}\NormalTok{, }\DataTypeTok{variables =} \StringTok{"Age"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -3910,7 +3953,7 @@ argument in the \texttt{aggregate\_profiles\{ingredients\}} function.
 \KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
 \NormalTok{selected_passangers <-}\StringTok{ }\KeywordTok{select_sample}\NormalTok{(titanic_small, }\DataTypeTok{n =} \DecValTok{100}\NormalTok{)}
 \NormalTok{cp_rf <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explainer_rf, selected_passangers)}
-\NormalTok{pdp_Sex_rf <-}\StringTok{ }\KeywordTok{aggregate_profiles}\NormalTok{(cp_rf, }\DataTypeTok{selected_variables =} \StringTok{"Age"}\NormalTok{,}
+\NormalTok{pdp_Sex_rf <-}\StringTok{ }\KeywordTok{aggregate_profiles}\NormalTok{(cp_rf, }\DataTypeTok{variables =} \StringTok{"Age"}\NormalTok{,}
                 \DataTypeTok{groups =} \StringTok{"Sex"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -3966,7 +4009,7 @@ consecutive arguments.
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
-\KeywordTok{plot}\NormalTok{(pdp_rf, pdp_glm, pdp_gbm, }\DataTypeTok{selected_variables =} \StringTok{"Age"}\NormalTok{, }\DataTypeTok{color =} \StringTok{"_label_"}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(pdp_rf, pdp_glm, pdp_gbm, }\DataTypeTok{variables =} \StringTok{"Age"}\NormalTok{, }\DataTypeTok{color =} \StringTok{"_label_"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -3984,9 +4027,8 @@ forest.
 different structures.}
 \end{figure}
 
-\hypertarget{correlation-between-features}{%
-\subsubsection{Correlation between
-features}\label{correlation-between-features}}
+\hypertarget{correlated-features}{%
+\subsection{Correlated features}\label{correlated-features}}
 
 One of the largest advantages of the Partial Dependency Profiles is that
 they are easy to explain, as they are just an average across Ceteris
@@ -3995,17 +4037,93 @@ assumptions of CPs. Profiles are created based on assumption that it
 makes sense to change variable \(x^i\) independently from all other
 variables \(x^{-i}\).
 
-But this may not have sense at all. Features like \(surface\) and
-\(number.or.rooms\) are strongly correlated as apartments with larger
-number of rooms usually have larger surface. It may makes no sense to
-consider an apartment with 10 rooms and 20 square meters, so it may be
-misleading to change \(x^{surface}\) independently from
-\(x^{number.of.rooms}\).
+But in some cases it may not have sense at all. In the dataset about
+\texttt{apartments} features like \(surface\) and \(number.or.rooms\)
+are strongly correlated as apartments with larger number of rooms
+usually have larger surface. It may makes no sense to consider an
+apartment with 10 rooms and 20 square meters, so it may be misleading to
+change \(x^{surface}\) independently from \(x^{number.of.rooms}\). In
+the \texttt{titanic} dataset we shall expect correlation between
+\texttt{fare} and \texttt{passanger\ class}.
 
 There are several attempts to fix this problem. One of the most known
-are Accumulated Local Effects Plots (ALEPlots) \citep{R-ALEPlot} or
-Local Conditional Expectation Profiles (LCE) {[}TODO: referencja do
-pracy Rafala{]}?
+are Accumulated Local Effects Plots (ALEPlots) introduced in the
+\citep{R-ALEPlot}. Idea of this solution is introduced in the figure
+@ref\{accumulatedLocalEffects\}.
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.9\linewidth]{figure/CP_ALL} 
+
+}
+
+\caption{(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.}\label{fig:accumulatedLocalEffects}
+\end{figure}
+
+Partial Dependency Profiles are defined as an expected value from
+Ceteris Paribus Profiles.
+
+\[
+g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
+\] And can be estimated as average from CP profiles.
+
+\[
+\hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
+\]
+
+As it was said, if \(X_i\) and \(X_{-i}\) are related it may have no
+sense to average CP profiles over marginal \(X_{-i}\). Instead, an
+intuitive approach would to use a conditional distribution
+\(X_{-i}|X_i=x_i\).
+
+\[
+g^{M}_i(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+\]
+
+\hypertarget{marginal-profiles}{%
+\subsubsection{Marginal Profiles}\label{marginal-profiles}}
+
+See Figure @ref\{accumulatedCor\} for illustration of difference between
+marginal and conditional distribution. Such profiles are called Marginal
+(TODO: why not conditional ?) and are estimated as
+
+\[
+\hat g^{M}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
+\] where \(N_i\) is the set of observations with \(x_i\) close to \(z\).
+
+\begin{figure}
+
+{\centering \includegraphics[width=0.4\linewidth]{figure/CP_ALE_2} 
+
+}
+
+\caption{(fig:accumulatedCor) }\label{fig:accumulatedCor}
+\end{figure}
+
+As it is justified in \citep{R-ALEPlot}, there is a serious problem with
+this approach, illustrated by a following observation. If \(y\) depends
+on \(x_2\) but not \(x_1\) then the correlation between \(x_1\) and
+\(x_2\) will produce a \emph{false} relation in the Marginal profiles
+for feature \(x_1\). This problem is also illustrated in the Figure
+@ref\{accumulatedLocalEffects\}.
+
+\hypertarget{accumulated-local-profiles}{%
+\subsubsection{Accumulated Local
+Profiles}\label{accumulated-local-profiles}}
+
+Idea behind the ALE profiles \citep{R-ALEPlot} is following. Instead of
+useing expected values of Ceteris Paribus profiles let's use only
+information about changes in these profiles around the point of
+interest. This leads to a following definition.
+
+\[
+g^{ALE}_i(z) = \int_{z_0}^z E_{X_{-i}|X_i=x_i}\left[ \frac{\partial f(x|^i = v, x^{-i}) }{\partial x_i}\right] dv.
+\]
+
+The equation may be a bit complex, but the intuition is not that
+complicated. Instead of aggregation of Ceteris Paribus we just look
+locally how quickly CP profiles are changing. And ALE profile is
+reconstructed from such local partial changes.
 
 \hypertarget{merging-path-plots}{%
 \subsection{Merging Path Plots}\label{merging-path-plots}}
@@ -4027,8 +4145,6 @@ March 26, 2018.
 
 \url{http://explained.ai/rf-importance/index.html}
 
-\citep{R-factorMerger}
-
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(factorMerger)}
@@ -4046,6 +4162,8 @@ March 26, 2018.
 \section{Performance Diagnostic}\label{modelComparisons}}
 
 Goal: how good is the model, which is better
+
+\citep{Piltaver2016} how good is the tree explainer
 
 Model selection
 
@@ -4076,7 +4194,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-70-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-69-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -4084,7 +4202,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-70-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-69-2.pdf}
 
 \hypertarget{modelAuditing}{%
 \section{Residual Diagnostic}\label{modelAuditing}}
@@ -4103,73 +4221,15 @@ Goal: verify if model is ok
 \NormalTok{predict_function <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(m,x,...) }\KeywordTok{predict}\NormalTok{(m, x, ...)}\OperatorTok{$}\NormalTok{predictions}
 \NormalTok{rf_au <-}\StringTok{ }\KeywordTok{audit}\NormalTok{(rf_model, }\DataTypeTok{data =}\NormalTok{ dragons, }\DataTypeTok{y =}\NormalTok{ dragons}\OperatorTok{$}\NormalTok{life_length,}
            \DataTypeTok{predict.function =}\NormalTok{ predict_function)}
-\KeywordTok{check_residuals}\NormalTok{(rf_au)}
-\end{Highlighting}
-\end{Shaded}
+\CommentTok{#check_residuals(rf_au)}
 
-\begin{verbatim}
-##   -----------------------------------------------
-##    Checks for autocorrelation
-##   -----------------------------------------------
-##     Model name:  ranger 
-##     Autocorrelation in target:     +0.01      
-##     Autocorrelation in residuals:  +0.01      
-##   -----------------------------------------------
-##    Checks for outliers
-##   -----------------------------------------------
-##     Model name:  ranger 
-##     Shift > 1:  20 ( 1 %) 
-##     Shift > 2:  14 ( 0.7 %) 
-##     Top lowest standardised residuals: 
-##      -2.5534 (1888), -2.4594 (920), -2.4588 (1388), -2.4019 (1508), -2.2377 (1829) 
-##     Top highest standardised residuals: 
-##      15.242 (1914), 11.256 (1745), 9.7175 (1532), 9.6979 (1111), 8.391 (1051) 
-##   -----------------------------------------------
-##    Checks for trend in residuals
-##   -----------------------------------------------
-##     Model name:  ranger 
-##     Standardised loess fit:  +76.75     ***
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plotResidualBoxplot}\NormalTok{(rf_au)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plotResidual}\NormalTok{(rf_au, }\DataTypeTok{variable =} \StringTok{"Observed response"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-2.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
+\CommentTok{#plotResidualBoxplot(rf_au)}
+\CommentTok{#plotResidual(rf_au, variable = "Observed response")}
 \KeywordTok{plotScaleLocation}\NormalTok{(rf_au)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-3.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plotRROC}\NormalTok{(rf_au)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-4.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plotAutocorrelation}\NormalTok{(rf_au)}
 \end{Highlighting}
 \end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-5.pdf}
 
 \hypertarget{concept-drift}{%
 \section{Concept Drift}\label{concept-drift}}
@@ -4386,7 +4446,7 @@ Here we are going to use the \texttt{drifter} package.
 \begin{verbatim}
 ##                   Variable  Shift
 ##   -------------------------------------
-##                  Residuals    3.4
+##                  Residuals    3.8
 \end{verbatim}
 
 \hypertarget{model-drift}{%
@@ -4438,22 +4498,7 @@ these two datasets are different.
 \NormalTok{                 HR_test}\OperatorTok{$}\NormalTok{status }\OperatorTok{==}\StringTok{ "fired"}\NormalTok{,}
                  \DataTypeTok{max_obs =} \DecValTok{1000}\NormalTok{,}
                  \DataTypeTok{predict_function =}\NormalTok{ predict_function)}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-##                   Variable    Shift  Scaled
-##   -----------------------------------------------
-##                     gender     0.00     0.9  
-##                        age     0.26    54.7  ***
-##                      hours     0.04     8.3  
-##                 evaluation     0.01     2.6  
-##                     salary     0.02     3.4  
-##                     status     0.00     0.9
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"ceterisParibus2"}\NormalTok{)}
 \NormalTok{prof_old <-}\StringTok{ }\KeywordTok{individual_variable_profile}\NormalTok{(model_old,}
                  \DataTypeTok{data =}\NormalTok{ data_new,}
@@ -4466,12 +4511,10 @@ these two datasets are different.
                  \DataTypeTok{label =} \StringTok{"model_new"}\NormalTok{,}
                  \DataTypeTok{predict_function =}\NormalTok{ predict_function)}
 \KeywordTok{plot}\NormalTok{(prof_old, prof_new,}
-     \DataTypeTok{selected_variables =} \StringTok{"age"}\NormalTok{, }\DataTypeTok{aggregate_profiles =}\NormalTok{ mean,}
+     \DataTypeTok{variables =} \StringTok{"age"}\NormalTok{, }\DataTypeTok{aggregate_profiles =}\NormalTok{ mean,}
      \DataTypeTok{show_observations =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{color =} \StringTok{"_label_"}\NormalTok{, }\DataTypeTok{alpha =} \DecValTok{1}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-74-1.pdf}
 
 \hypertarget{appendixes}{%
 \section*{Appendixes}\label{appendixes}}

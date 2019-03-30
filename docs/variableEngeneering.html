@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-03-14">
+<meta name="date" content="2019-03-30">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -225,9 +225,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="13.1.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#interactions-and-partial-dependency-profiles"><i class="fa fa-check"></i><b>13.1.1</b> Interactions and Partial Dependency profiles</a></li>
 <li class="chapter" data-level="13.1.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#groups-of-partial-dependency-profiles"><i class="fa fa-check"></i><b>13.1.2</b> Groups of Partial Dependency profiles</a></li>
 <li class="chapter" data-level="13.1.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#model-comparisons-with-partial-dependency-plots"><i class="fa fa-check"></i><b>13.1.3</b> Model comparisons with Partial Dependency Plots</a></li>
-<li class="chapter" data-level="13.1.4" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlation-between-features"><i class="fa fa-check"></i><b>13.1.4</b> Correlation between features</a></li>
 </ul></li>
-<li class="chapter" data-level="13.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>13.2</b> Merging Path Plots</a></li>
+<li class="chapter" data-level="13.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#correlated-features"><i class="fa fa-check"></i><b>13.2</b> Correlated features</a><ul>
+<li class="chapter" data-level="13.2.1" data-path="variableEngeneering.html"><a href="variableEngeneering.html#marginal-profiles"><i class="fa fa-check"></i><b>13.2.1</b> Marginal Profiles</a></li>
+<li class="chapter" data-level="13.2.2" data-path="variableEngeneering.html"><a href="variableEngeneering.html#accumulated-local-profiles"><i class="fa fa-check"></i><b>13.2.2</b> Accumulated Local Profiles</a></li>
+</ul></li>
+<li class="chapter" data-level="13.3" data-path="variableEngeneering.html"><a href="variableEngeneering.html#merging-path-plots"><i class="fa fa-check"></i><b>13.3</b> Merging Path Plots</a></li>
 </ul></li>
 <li class="chapter" data-level="14" data-path="other-topics.html"><a href="other-topics.html"><i class="fa fa-check"></i><b>14</b> Other topics</a></li>
 <li class="chapter" data-level="15" data-path="modelComparisons.html"><a href="modelComparisons.html"><i class="fa fa-check"></i><b>15</b> Performance Diagnostic</a></li>
@@ -391,15 +394,59 @@ Check how the interaction for <code>Pclass</code> (passenger class) looks like.<
 </p>
 </div>
 </div>
-<div id="correlation-between-features" class="section level3">
-<h3><span class="header-section-number">13.1.4</span> Correlation between features</h3>
+</div>
+<div id="correlated-features" class="section level2">
+<h2><span class="header-section-number">13.2</span> Correlated features</h2>
 <p>One of the largest advantages of the Partial Dependency Profiles is that they are easy to explain, as they are just an average across Ceteris Paribus profiles. But one of the largest disadvantages lies in assumptions of CPs. Profiles are created based on assumption that it makes sense to change variable <span class="math inline">\(x^i\)</span> independently from all other variables <span class="math inline">\(x^{-i}\)</span>.</p>
-<p>But this may not have sense at all. Features like <span class="math inline">\(surface\)</span> and <span class="math inline">\(number.or.rooms\)</span> are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change <span class="math inline">\(x^{surface}\)</span> independently from <span class="math inline">\(x^{number.of.rooms}\)</span>.</p>
-<p>There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots) <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span> or Local Conditional Expectation Profiles (LCE) [TODO: referencja do pracy Rafala]?</p>
+<p>But in some cases it may not have sense at all. In the dataset about <code>apartments</code> features like <span class="math inline">\(surface\)</span> and <span class="math inline">\(number.or.rooms\)</span> are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change <span class="math inline">\(x^{surface}\)</span> independently from <span class="math inline">\(x^{number.of.rooms}\)</span>. In the <code>titanic</code> dataset we shall expect correlation between <code>fare</code> and <code>passanger class</code>.</p>
+<p>There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots) introduced in the <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span>.
+Idea of this solution is introduced in the figure @ref{accumulatedLocalEffects}.</p>
+<div class="figure" style="text-align: center"><span id="fig:accumulatedLocalEffects"></span>
+<img src="figure/CP_ALL.png" alt="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles." width="90%" />
+<p class="caption">
+Figure 13.1: (fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.
+</p>
+</div>
+<p>Partial Dependency Profiles are defined as an expected value from Ceteris Paribus Profiles.</p>
+<p><span class="math display">\[
+g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
+\]</span>
+And can be estimated as average from CP profiles.</p>
+<p><span class="math display">\[
+\hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
+\]</span></p>
+<p>As it was said, if <span class="math inline">\(X_i\)</span> and <span class="math inline">\(X_{-i}\)</span> are related it may have no sense to average CP profiles over marginal <span class="math inline">\(X_{-i}\)</span>. Instead, an intuitive approach would to use a conditional distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span>.</p>
+<p><span class="math display">\[
+g^{M}_i(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+\]</span></p>
+<div id="marginal-profiles" class="section level3">
+<h3><span class="header-section-number">13.2.1</span> Marginal Profiles</h3>
+<p>See Figure @ref{accumulatedCor} for illustration of difference between marginal and conditional distribution. Such profiles are called Marginal (TODO: why not conditional ?) and are estimated as</p>
+<p><span class="math display">\[
+\hat g^{M}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
+\]</span>
+where <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> close to <span class="math inline">\(z\)</span>.</p>
+<div class="figure" style="text-align: center"><span id="fig:accumulatedCor"></span>
+<img src="figure/CP_ALE_2.png" alt="(fig:accumulatedCor) " width="40%" />
+<p class="caption">
+Figure 13.2: (fig:accumulatedCor)
+</p>
+</div>
+<p>As it is justified in <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span>, there is a serious problem with this approach, illustrated by a following observation. If <span class="math inline">\(y\)</span> depends on <span class="math inline">\(x_2\)</span> but not <span class="math inline">\(x_1\)</span>
+then the correlation between <span class="math inline">\(x_1\)</span> and <span class="math inline">\(x_2\)</span>
+will produce a <em>false</em> relation in the Marginal profiles for feature <span class="math inline">\(x_1\)</span>. This problem is also illustrated in the Figure @ref{accumulatedLocalEffects}.</p>
+</div>
+<div id="accumulated-local-profiles" class="section level3">
+<h3><span class="header-section-number">13.2.2</span> Accumulated Local Profiles</h3>
+<p>Idea behind the ALE profiles <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span> is following. Instead of useing expected values of Ceteris Paribus profiles let’s use only information about changes in these profiles around the point of interest. This leads to a following definition.</p>
+<p><span class="math display">\[
+g^{ALE}_i(z) = \int_{z_0}^z E_{X_{-i}|X_i=x_i}\left[ \frac{\partial f(x|^i = v, x^{-i}) }{\partial x_i}\right] dv.
+\]</span></p>
+<p>The equation may be a bit complex, but the intuition is not that complicated. Instead of aggregation of Ceteris Paribus we just look locally how quickly CP profiles are changing. And ALE profile is reconstructed from such local partial changes.</p>
 </div>
 </div>
 <div id="merging-path-plots" class="section level2">
-<h2><span class="header-section-number">13.2</span> Merging Path Plots</h2>
+<h2><span class="header-section-number">13.3</span> Merging Path Plots</h2>
 <p><span class="citation">(Demšar and Bosnić <a href="#ref-demsar2018">2018</a>)</span></p>
 <p><span class="citation">(Greenwell <a href="#ref-RJ2017016">2017</a><a href="#ref-RJ2017016">b</a>)</span>
 <span class="citation">(Puri et al. <a href="#ref-MAGIX">2017</a>)</span></p>
@@ -412,7 +459,6 @@ Check how the interaction for <code>Pclass</code> (passenger class) looks like.<
 <p>Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
 March 26, 2018.</p>
 <p><a href="http://explained.ai/rf-importance/index.html" class="uri">http://explained.ai/rf-importance/index.html</a></p>
-<p><span class="citation">(Sitko, Grudziąż, and Biecek <a href="#ref-R-factorMerger">2018</a>)</span></p>
 <div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" data-line-number="1"><span class="kw">library</span>(factorMerger)</a></code></pre></div>
 </div>
 </div>
