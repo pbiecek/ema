@@ -1,0 +1,116 @@
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(titanic)
+library(randomForest)
+library(DALEX)
+library(dplyr)
+
+titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
+titanic_small$Survived <- factor(titanic_small$Survived)
+titanic_small$Sex <- factor(titanic_small$Sex)
+titanic_small$Embarked <- factor(titanic_small$Embarked)
+titanic_small <- na.omit(titanic_small)
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked, 
+                         data = titanic_small)
+predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+rf_explain <- explain(rf_model, data = titanic_small, 
+                      y = titanic_small$Survived == "1", label = "RF",
+                      predict_function = predict_fuction)
+
+
+#
+# TWORZYMY MODELE
+
+## random forest
+rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+                         data = titanic_small)
+predict_rf_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+explainer_rf <- explain(rf_model, data = titanic_small,
+                      y = titanic_small$Survived == "1", label = "RF",
+                      predict_function = predict_rf_fuction)
+
+## GLM
+glm_model <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
+                         data = titanic_small, family = "binomial")
+explainer_glm <- explain(glm_model, data = titanic_small,
+                      y = titanic_small$Survived == "1", label = "GLM")
+
+
+## splines
+library("rms")
+rms_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
+                   Parch + Fare + Embarked, titanic_small)
+predict_rms_fuction <- function(m,x) predict(m, x, type="fitted")
+explainer_rms <- explain(rms_model, data = titanic_small,
+                         y = titanic_small$Survived == "1", label = "RMS",
+                         predict_function = predict_rms_fuction)
+
+## GBM
+library("gbm")
+#titanic_gbm <- gbm(Survived == "1" ~ Age + Pclass + Sex, data = titanic_small, n.trees = 1000)
+titanic_gbm <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
+                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+predict_gbm_fuction <- function(m,x) predict(m, x,
+                                             n.trees = 15000, type = "response")
+explainer_gbm <- explain(titanic_gbm,
+                         data = titanic_small, y = titanic_small$Survived == "1",
+                         label = "GBM",
+                         predict_function = predict_gbm_fuction)
+
+```
+
+
+# Local Dependency Profiles  {#localProfiles}
+
+One of the largest advantages of the Partial Dependency Profiles is that they are easy to explain, as they are just an average across Ceteris Paribus profiles. But one of the largest disadvantages lies in assumptions of CPs. Profiles are created based on assumption that it makes sense to change variable $x^i$ independently from all other variables $x^{-i}$.
+
+But in some cases it may not have sense at all. In the dataset about `apartments` features like $surface$ and $number.or.rooms$ are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change $x^{surface}$ independently from $x^{number.of.rooms}$. In the `titanic` dataset we shall expect correlation between `fare` and `passanger class`. 
+
+There are several attempts to fix this problem. One of the most known are Accumulated Local Effects Plots (ALEPlots)  introduced in the [@R-ALEPlot]. 
+Idea of this solution is introduced in the figure \@ref{accumulatedLocalEffects}. 
+
+
+
+```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALL.png")
+```
+
+
+
+Partial Dependency Profiles are defined as an expected value from Ceteris Paribus Profiles.
+
+$$
+g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
+$$
+And can be estimated as average from CP profiles.
+
+$$
+\hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
+$$
+
+As it was said, if $X_i$ and $X_{-i}$ are related it may have no sense to average CP profiles over marginal $X_{-i}$. Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X_i=x_i$. 
+
+$$
+g^{M}_i(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+$$
+
+## Conditional / Marginal  Profiles
+
+See Figure \@ref{accumulatedCor} for illustration of difference between marginal and conditional distribution. Such profiles are called Marginal (TODO: why not conditional ?) and are estimated as 
+
+$$
+\hat g^{M}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
+$$
+where $N_i$ is the set of observations with $x_i$ close to $z$.
+
+
+
+```{r accumulatedCor, echo=FALSE, fig.cap="(fig:accumulatedCor) ", out.width = '40%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALE_2.png")
+```
+
+
+As it is justified in [@R-ALEPlot], there is a serious problem with this approach, illustrated by a following observation. If $y$ depends on $x_2$ but not $x_1$
+then the correlation between $x_1$ and $x_2$
+will produce a *false* relation in the Marginal profiles for feature $x_1$. This problem is also illustrated in the Figure \@ref{accumulatedLocalEffects}. 
+
+
