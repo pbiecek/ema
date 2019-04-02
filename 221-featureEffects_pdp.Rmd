@@ -1,79 +1,47 @@
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-library(titanic)
-library(randomForest)
-library(DALEX)
-library(dplyr)
-
-titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
-titanic_small$Survived <- factor(titanic_small$Survived)
-titanic_small$Sex <- factor(titanic_small$Sex)
-titanic_small$Embarked <- factor(titanic_small$Embarked)
-titanic_small <- na.omit(titanic_small)
-rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked, 
-                         data = titanic_small)
-predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
-rf_explain <- explain(rf_model, data = titanic_small, 
-                      y = titanic_small$Survived == "1", label = "RF",
-                      predict_function = predict_fuction)
-
-
-#
-# TWORZYMY MODELE
-
-## random forest
-rf_model <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
-                         data = titanic_small)
-predict_rf_fuction <- function(m,x) predict(m, x, type="prob")[,2]
-explainer_rf <- explain(rf_model, data = titanic_small,
-                      y = titanic_small$Survived == "1", label = "RF",
-                      predict_function = predict_rf_fuction)
-
-## GLM
-glm_model <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked,
-                         data = titanic_small, family = "binomial")
-explainer_glm <- explain(glm_model, data = titanic_small,
-                      y = titanic_small$Survived == "1", label = "GLM")
-
-
-## splines
-library("rms")
-rms_model <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
-                   Parch + Fare + Embarked, titanic_small)
-predict_rms_fuction <- function(m,x) predict(m, x, type="fitted")
-explainer_rms <- explain(rms_model, data = titanic_small,
-                         y = titanic_small$Survived == "1", label = "RMS",
-                         predict_function = predict_rms_fuction)
-
-## GBM
-library("gbm")
-#titanic_gbm <- gbm(Survived == "1" ~ Age + Pclass + Sex, data = titanic_small, n.trees = 1000)
-titanic_gbm <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
-                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
-predict_gbm_fuction <- function(m,x) predict(m, x,
-                                             n.trees = 15000, type = "response")
-explainer_gbm <- explain(titanic_gbm,
-                         data = titanic_small, y = titanic_small$Survived == "1",
-                         label = "GBM",
-                         predict_function = predict_gbm_fuction)
-
+source("models/models_titanic.R")
 ```
-
-
 
 # Partial Dependency Profiles {#partialDependenceProfiles}
 
-One of the first and the most popular tools for model understanding
-are Partial Dependence Plots (sometimes named Partial Dependence Profiles) [@Friedman00greedyfunction]. 
+One of the first and the most popular tools for inspection of black-box models on the global level are Partial Dependence Plots (sometimes called Partial Dependence Profiles). 
 
-PDP was introduced by Friedman in 2000 in the paper devoted to Gradient Boosting Machines (GBM) - new type of complex yet effective models. For many years PDP as sleeping beauties stay in the shadow of the boosting. It has changed in recent years.
+PDP were introduced by Friedman in 2000 in his paper devoted to Gradient Boosting Machines (GBM) - new type of complex yet effective models [@Friedman00greedyfunction]. For many years PDP as sleeping beauties stay in the shadow of the boosting method. But this has changed in recent years. PDP are very popular and available in most of data science languages. In this chapter we will introduce key intuitions, explain the math beyond PDP and discuss strengths and weaknesses.
 
-General idea is to show how the expected model response behaves as a function of a selected feature. Here the word ,,expected''  means averaged over the population.
-We can think about them as about an average from Ceteris Paribus Profiles introduced in \@ref{ceterisParibus}.
+General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in \@ref{ceterisParibus}.
+
+## Definition
+
+Partial Dependency Profile for for a model $f$ and a variable $x^j$ is defined as
+
+$$
+g_{PD}^{f, j}(z) = E[f(x^j=z, X^{-j})] = E[f(x|^j=z)].
+$$
+
+So it's an expected value for $x^j = z$ over **marginal** distribution $X^{-j}$ or equivalently expected value of $f$ after variable $x^j$ is set to $z$.
+
+*Exercise*
+
+Let $f = x_1 + x_2$ and distribuion of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$.
+
+Calculate $g_{PD}^{f, 1}(z)$.
+
+*Answer* $g_{PD}^{f, 1}(z) = z + 0.5$.
+
+
+## Estimation
 
 Let's see how they are constructed step by step. 
-Here we will use a *random forest model* created for the *titanic* dataset. Examples are related to a single variable *Age*.
+Here we will use a random forest `rf_5` model for the *titanic* dataset. Examples are related to a single variable *age*.
 
-1. Calculate Ceteris Paribus profiles for observations from the dataset
+The expectation cannot be calculated directly as we do not know fully neither the distribution of $X^{-j}$ nor the $f()$. Yet this value may be estimated by as average from CP profiles.
+
+$$
+\hat g_{PD}^{f, j}(z) = \frac 1n \sum_{i=1}^{N} f(x_i^j=z, x^{-j}_i)] = \frac 1n \sum_{i=1}^{N} f(x_i|^j=z).
+$$
+
+
+1. Calculate Ceteris Paribus Profiles for observations from the dataset
 
 As it was introduced in \@ref{ceterisParibus} Ceteris Paribus profiles are calculated for observations. They show how model response change is a selected variable in this observation is modified.
 
@@ -83,49 +51,28 @@ $$
 
 Such profiles can be calculated for example with the `ceteris_paribus{ingredients}` function.
 
-```{r, eval=FALSE}
+```{r pdp_part_1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Ceteris Paribus profiles for 100 observations, the age variable and the random forest model"}
 library("ingredients")
-selected_passangers <- select_sample(titanic_small, n = 100)
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
+selected_passangers <- select_sample(titanic, n = 25)
+cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
+plot(cp_rf)+
+  ggtitle("Ceteris Paribus profiles", "For a random forest model / Titanic data") 
 ```
 
 So for a single model and a single variable we get a bunch of *what-if* profiles. In the figure \@ref{pdp_part_1} we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.
 
-```{r pdp_part_1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Ceteris Paribus profiles for 100 observations, the Age variable and the random forest model"}
-library("ingredients")
-set.seed(1313)
-
-selected_passangers <- select_sample(titanic_small, n = 100)
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-
-plot(cp_rf, variables = "Age", color = "grey") +
-  xlab("Passanger Age") + ylab("Survival probability") +
-  ggtitle("Ceteris Paribus profiles", "For a random forest model / Titanic data") +
-  scale_y_continuous(label=scales::percent) 
-```
-
 2. Aggregate Ceteris Paribus into a single Partial Dependency Profile
 
-In the most common formulation Partial Dependency Plots are expected values for CP profiles (see `pdp` package [@pdp]).
+Simple pointwise average across CP profiles. If number of CPprofiles is large, it is enoug to sample some number of them to get resonably accurate PD profiles.
 
-
-$$
-g_i(z) = E_{x_{-i}}[ f(x|^i = z, x^{-i}) ].
-$$
-
-Of course, this expectation cannot be calculated directly as we do not know fully neither the distribution of $x_{-i}$ nor the $f()$. Yet this value may be estimated by 
-
-$$
-\hat g_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
-$$
+Here we show profiles calculated with `ingredients` package, but find siilar implementation in the `pdp` package [@pdp], `ALEPlots` package [@R-ALEPlot] or `iml` [@iml] package.
 
 Such average can be calculated with the `aggregate_profiles{ingredients}` function.
 
-```{r, eval=FALSE}
-library("ingredients")
-selected_passangers <- select_sample(titanic_small, n = 100)
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
+```{r}
+pdp_rf <- aggregate_profiles(cp_rf)
+plot(pdp_rf) +
+  ggtitle("Partial Dependency profile", "For a random forest model / Titanic data") 
 ```
 
 So for a single model and a single variable we get a profile. See an example in figure \@ref{pdp_part_2}. It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them. 
@@ -134,15 +81,11 @@ The average response is of course more stable (as it's an average) and in this c
 Moreover it is easier to notice that the largest drop in survival changes happen for teenagers. On average the survival for adults is 30 percent points smaller than for kids.
 
 ```{r pdp_part_2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Partial Dependency profile as an average for 100 observations"}
+pdp_rf <- partial_dependency(explain_titanic_rf, selected_passangers)
 
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
-
-plot(cp_rf, variables = "Age", color = "grey") +
-   show_aggreagated_profiles(pdp_rf, size = 3) +
-  xlab("Passanger Age") + ylab("Survival probability") +
-  ggtitle("Partial Dependency profile", "For a random forest model / Titanic data") +
-  scale_y_continuous(label=scales::percent) 
+plot(cp_rf) +
+  show_aggreagated_profiles(pdp_rf, size = 3) +
+  ggtitle("Partial Dependency profile", "For a random forest model / Titanic data") 
 ```
 
 ### Interactions and Partial Dependency profiles
@@ -156,26 +99,20 @@ The most straightforward approach would be to use a method for clustering, like 
 
 Such clusters can be calculated with the `cluster_profiles{ingredients}` function. We choose the hierarchical clustering with Ward linkage as it gives most stable results.
 
-```{r, eval=FALSE}
-library("ingredients")
-selected_passangers <- select_sample(titanic_small, n = 100)
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-clust_rf <- cluster_profiles(cp_rf, k = 3, variables = "Age")
-```
 
 So for a single model and a single variable we get $k$ profiles. The common problem in clustering is the selection of $k$. However in our case, as it's an exploration, the problem is simpler, as we are interesting if $k=1$ (Partial Dependency is a good summary) or not (there are some interactions). 
 
 See an example in Figure \@ref{pdp_part_4}. It is easier to notice that Ceteris Paribus profiles can be groups in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.
 
 ```{r pdp_part_4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles"}
+library("ingredients")
+selected_passangers <- select_sample(titanic, n = 100)
+cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
+clust_rf <- cluster_profiles(cp_rf, k = 3, selected_variables = "age")
 
-clust_rf <- cluster_profiles(cp_rf, k = 3, variables = "Age")
-
-plot(cp_rf, color = "grey", variables = "Age") +
-  show_aggreagated_profiles(clust_rf, color = "_label_", size = 2) +
-  xlab("Passanger Age") + ylab("Survival probability") +
-  ggtitle("Profiles of 3 clusters", "For a random forest model / Titanic data") +
-  scale_y_continuous(label = scales::percent) 
+plot(cp_rf, color = "grey") +
+  show_aggreagated_profiles(clust_rf, size = 2, color = "_label_") +
+  ggtitle("Profiles of 3 clusters", "For a random forest model / titanic data") 
 ```
 
 ### Groups of Partial Dependency profiles
@@ -195,16 +132,14 @@ pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "Age",
 See an example in Figure \@ref{pdp_part_5}. Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
 Check how the interaction for `Pclass` (passenger class) looks like.
 
-```{r pdp_part_5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Grouped profiles with respect to the Sex variable"}
+```{r pdp_part_5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Grouped profiles with respect to the gender variable"}
+cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers)
+pdp_gender_rf <- aggregate_profiles(cp_rf, selected_variables = "age",
+				groups = "gender")
 
-pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "Age",
-				groups = "Sex")
-
-plot(cp_rf, color = "grey", variables = "Age") +
-  show_aggreagated_profiles(pdp_Sex_rf, color = "_label_", size = 2) +
-  xlab("Passanger Age") + ylab("Survival probability") +
-  ggtitle("Groups of Ceteris Paribus Profiles defined by the Sex feature", "For a random forest model / Titanic data") +
-  scale_y_continuous(label = scales::percent) 
+plot(cp_rf, color = "grey", selected_variables = "age") +
+  show_aggreagated_profiles(pdp_gender_rf, color = "_label_", size = 2) +
+  ggtitle("Groups of Ceteris Paribus Profiles defined by the Sex feature", "For a random forest model / Titanic data") 
 ```
 
 
@@ -220,29 +155,21 @@ Why one would like to compare models? There are at least three reasons for it.
 
 Generic `plot{ingredients}` function handles multiple models as consecutive arguments. 
 
-```{r, eval=FALSE}
-library("ingredients")
-plot(pdp_rf, pdp_glm, pdp_gbm, variables = "Age", color = "_label_")
-```
-
 See an example in Figure \@ref{pdp_part_7}. Random forest is compared with gradient boosting model and generalized linear model (logistic regression). All three models agree when it comes to a general relation between Age and Survival. Logistic regression is of course the most smooth. Gradient boosting has on average higher predictions than random forest.
 
 ```{r pdp_part_7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Comparison on three predictive models with different structures."}
 
-cp_gbm <- ceteris_paribus(explainer_gbm, selected_passangers)
-pdp_gbm <- aggregate_profiles(cp_gbm, variables = "Age")
+#cp_gbm <- partial_dependency(explain_titanic_gbm, selected_passangers)
+#pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")
 
-cp_glm <- ceteris_paribus(explainer_glm, selected_passangers)
-pdp_glm <- aggregate_profiles(cp_glm, variables = "Age")
+cp_glm <- ceteris_paribus(explain_titanic_lmr, selected_passangers)
+pdp_glm <- aggregate_profiles(cp_glm, selected_variables = "age")
 
-cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, variables = "Age")
+cp_rf <- ceteris_paribus(explain_titanic_svm, selected_passangers)
+pdp_rf <- aggregate_profiles(cp_rf, selected_variables = "age")
 
-plot(pdp_rf, pdp_glm, pdp_gbm, variables = "Age", color = "_label_", size = 2) +
-  xlab("Passanger Age") + ylab("Survival probability") +
-  ggtitle("Partial Dependency Profiles", "For random forest / gradient boosting / logistic model") +
-  ggtitle("Ceteris Paribus profiles for three models") +
-  scale_y_continuous(label = scales::percent, limits = c(0,1))
+plot(pdp_rf, pdp_glm, variables = "age", color = "_label_", size = 2) +
+  ggtitle("Partial Dependency Profiles", "For random forest / gradient boosting / logistic model") 
 ```
 
 
