@@ -35,7 +35,7 @@ head(titanic_small)
 
 ### Data exploration
 
-It is always a good idea to do data exploration before modeling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.
+It is always a good idea to do data exploration before modelling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4}
 mosaicplot(table(titanic_small$Pclass, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "First class have the highest survival", ylab = "Survived", xlab = "Passenger class")
@@ -144,4 +144,79 @@ Tools introduced in following sections will help to understand how these models 
 
 ## Apartment Prices {#ApartmentDataset}
 
+![Warsaw skyscrapers by Artur Malinowski Flicker](figure/am1974_flicker.jpg)
+
+Predicting house prices is a common regression problem for machine learning. Various datasets for house prices are available at websites like Kaggle or UCI Machine Learning Repository. 
+
+In this book we will work with a very interesting version of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warsaw. But the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. 
+
+Which one we should chose? Based on this dataset we show that visual explainers give a better understanding of key model characteristics and are very helpful in the model selection.
+
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single apartment. Features like surface, number of rooms, district or floor are used as predictive features. The problem here is to predict price per a square meter for an apartment, so it's a regression problem with continuous target. 
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(apartments, 2)
+head(apartments_test, 2)
+```
+
+### A tale of two models
+
+Feature of interest is the variable `m2.price`, it's a price (EUR) for a square meter of an apartment. 
+
+Let's build two predictive models for this variable.
+
+For the champion we will use a linear model. Easy to train, easy to test, easy to understand.
+
+```{r, warning=FALSE, message=FALSE}
+model_apartments_lm <- lm(m2.price ~ ., data = apartments)
+predicted_apartments_lm <- predict(model_apartments_lm, apartments_test)
+rmsd_lm <- sqrt(mean((predicted_apartments_lm - apartments_test$m2.price)^2))
+rmsd_lm
+```
+
+The root mean square difference for linear model calculated on test data  is `r round(rmsd_lm, 1)`.
+
+Now, let's train a challenger - a random forest model from `randomForest` package  [@R-randomForest]. Elastic, popular, able to handle non linear relations. 
+
+```{r, warning=FALSE, message=FALSE}
+library("randomForest")
+set.seed(72)
+model_apartments_rf <- randomForest(m2.price ~ ., data = apartments)
+predicted_apartments_rf <- predict(model_apartments_rf, apartments_test)
+rmsd_rf <- sqrt(mean((predicted_apartments_rf - apartments_test$m2.price)^2))
+rmsd_rf
+```
+
+The root mean square difference for random forest is `r round(rmsd_rf, 1)`.
+
+The challenger is better in terms of RMSD, but the difference between accuracies is smaller than 10 cents. Shall we choose the model complex but elastic model or the linear model?
+
+
 ## Hire or Fire {#HFDataset}
+
+In this chapter we present an artificial dataset from Human Resources department in a Call Center. 
+
+The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee in a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
+
+The goal here is to first build a model, that will guess when to fire and when to promote an employer, so it's a classification problem with three classes. 
+
+Why we need such model? We want to have objective decisions. That will not be subject to personal preferences of a manager. But is it possible to have an objective model? Would it be fair or it will just replicate some unfairness?
+
+We will use this example to show how to use prediction level explainers to better understand how the model works for selected cases.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(HR)
+```
+
+In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest [@R-randomForest] and generalized linear model [@R-nnet].
+
+```{r, warning=FALSE, message=FALSE }
+set.seed(59)
+library("randomForest")
+model_HR_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+
+library("nnet")
+model_HR_glm <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+```
