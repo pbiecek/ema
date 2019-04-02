@@ -1,4 +1,4 @@
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
+```{r load_models_FE, warning=FALSE, message=FALSE, echo=FALSE}
 source("models/models_titanic.R")
 ```
 
@@ -8,7 +8,7 @@ One of the first and the most popular tools for inspection of black-box models o
 
 PDP were introduced by Friedman in 2000 in his paper devoted to Gradient Boosting Machines (GBM) - new type of complex yet effective models [@Friedman00greedyfunction]. For many years PDP as sleeping beauties stay in the shadow of the boosting method. But this has changed in recent years. PDP are very popular and available in most of data science languages. In this chapter we will introduce key intuitions, explain the math beyond PDP and discuss strengths and weaknesses.
 
-General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in \@ref{ceterisParibus}.
+General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in \@ref(ceterisParibus).
 
 ## Definition
 
@@ -81,7 +81,7 @@ The average response is of course more stable (as it's an average) and in this c
 Moreover it is easier to notice that the largest drop in survival changes happen for teenagers. On average the survival for adults is 30 percent points smaller than for kids.
 
 ```{r pdp_part_2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Partial Dependency profile as an average for 100 observations"}
-pdp_rf <- partial_dependency(explain_titanic_rf, selected_passangers)
+pdp_rf <- partial_dependency(explain_titanic_rf, variables = "age")
 
 plot(cp_rf) +
   show_aggreagated_profiles(pdp_rf, size = 3) +
@@ -108,7 +108,7 @@ See an example in Figure \@ref{pdp_part_4}. It is easier to notice that Ceteris 
 library("ingredients")
 selected_passangers <- select_sample(titanic, n = 100)
 cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
-clust_rf <- cluster_profiles(cp_rf, k = 3, selected_variables = "age")
+clust_rf <- cluster_profiles(cp_rf, k = 3)
 
 plot(cp_rf, color = "grey") +
   show_aggreagated_profiles(clust_rf, size = 2, color = "_label_") +
@@ -123,10 +123,10 @@ The most straightforward approach is to use some other variable as a grouping va
 
 ```{r, eval=FALSE}
 library("ingredients")
-selected_passangers <- select_sample(titanic_small, n = 100)
+selected_passangers <- select_sample(titanic, n = 100)
 cp_rf <- ceteris_paribus(explainer_rf, selected_passangers)
-pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "Age",
-				groups = "Sex")
+pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "age",
+				groups = "gender")
 ```
 
 See an example in Figure \@ref{pdp_part_5}. Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
@@ -134,10 +134,10 @@ Check how the interaction for `Pclass` (passenger class) looks like.
 
 ```{r pdp_part_5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Grouped profiles with respect to the gender variable"}
 cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers)
-pdp_gender_rf <- aggregate_profiles(cp_rf, selected_variables = "age",
+pdp_gender_rf <- aggregate_profiles(cp_rf, variables = "age",
 				groups = "gender")
 
-plot(cp_rf, color = "grey", selected_variables = "age") +
+plot(cp_rf, color = "grey") +
   show_aggreagated_profiles(pdp_gender_rf, color = "_label_", size = 2) +
   ggtitle("Groups of Ceteris Paribus Profiles defined by the Sex feature", "For a random forest model / Titanic data") 
 ```
@@ -163,10 +163,10 @@ See an example in Figure \@ref{pdp_part_7}. Random forest is compared with gradi
 #pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")
 
 cp_glm <- ceteris_paribus(explain_titanic_lmr, selected_passangers)
-pdp_glm <- aggregate_profiles(cp_glm, selected_variables = "age")
+pdp_glm <- aggregate_profiles(cp_glm, variables = "age")
 
 cp_rf <- ceteris_paribus(explain_titanic_svm, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, selected_variables = "age")
+pdp_rf <- aggregate_profiles(cp_rf, variables = "age")
 
 plot(pdp_rf, pdp_glm, variables = "age", color = "_label_", size = 2) +
   ggtitle("Partial Dependency Profiles", "For random forest / gradient boosting / logistic model") 
