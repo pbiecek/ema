@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-03">
+<meta name="date" content="2019-04-04">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -153,6 +153,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="2.2.1" data-path="DataSetsIntro.html"><a href="DataSetsIntro.html#a-tale-of-two-models"><i class="fa fa-check"></i><b>2.2.1</b> A tale of two models</a></li>
 </ul></li>
 <li class="chapter" data-level="2.3" data-path="DataSetsIntro.html"><a href="DataSetsIntro.html#HFDataset"><i class="fa fa-check"></i><b>2.3</b> Hire or Fire</a></li>
+<li class="chapter" data-level="2.4" data-path="DataSetsIntro.html"><a href="DataSetsIntro.html#ListOfModels"><i class="fa fa-check"></i><b>2.4</b> List of Models</a></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="instance-level-explanation.html"><a href="instance-level-explanation.html"><i class="fa fa-check"></i>Instance-level explanation</a></li>
 <li class="chapter" data-level="3" data-path="PredictionExplainers.html"><a href="PredictionExplainers.html"><i class="fa fa-check"></i><b>3</b> Introduction</a></li>
@@ -299,113 +300,123 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <img src="figure/Titanic.jpg" alt="Titanic sinking by Willy Stöwer" />
 <p class="caption">Titanic sinking by Willy Stöwer</p>
 </div>
-<p>Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like <em>Encyclopedia titanica</em> <code>https://www.encyclopedia-titanica.org/</code> we have a very rich and precise data about passengers. This dataset is available in the <code>titanic</code> dataset.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;titanic&quot;</span>)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">head</span>(titanic_train, <span class="dv">2</span>)</a></code></pre></div>
-<pre><code>##   PassengerId Survived Pclass
-## 1           1        0      3
-## 2           2        1      1
-##                                                  Name    Sex Age SibSp
-## 1                             Braund, Mr. Owen Harris   male  22     1
-## 2 Cumings, Mrs. John Bradley (Florence Briggs Thayer) female  38     1
-##   Parch    Ticket    Fare Cabin Embarked
-## 1     0 A/5 21171  7.2500              S
-## 2     0  PC 17599 71.2833   C85        C</code></pre>
+<p>Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like <em>Encyclopedia titanica</em> <code>https://www.encyclopedia-titanica.org/</code> we have a very rich and precise data about passengers. This dataset is available in the <code>stablelearner</code> package. After some variable transformation it is also avaliable in the <code>DALEX</code> package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">head</span>(titanic, <span class="dv">2</span>)</a></code></pre></div>
+<pre><code>##   gender age class    embarked       country  fare sibsp parch survived
+## 1   male  42   3rd Southampton United States  7.11     0     0       no
+## 2   male  13   3rd Southampton United States 20.05     0     2       no</code></pre>
 <div id="data-cleaning" class="section level3">
 <h3><span class="header-section-number">2.1.1</span> Data cleaning</h3>
-<p>Feature of interest is the binary variable <code>Survived</code>. Let’s build some predictive models for this variable.</p>
-<p>First we need to do some data preprocessing. Columns with characters are converted to factors and rows with missing data are removed.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">titanic_small &lt;-<span class="st"> </span>titanic_train[,<span class="kw">c</span>(<span class="st">&quot;Survived&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;Sex&quot;</span>, <span class="st">&quot;Age&quot;</span>, <span class="st">&quot;SibSp&quot;</span>, <span class="st">&quot;Parch&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Embarked&quot;</span>)]</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">titanic_small<span class="op">$</span>Survived &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Survived)</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">titanic_small<span class="op">$</span>Sex &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Sex)</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">titanic_small<span class="op">$</span>Embarked &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic_small<span class="op">$</span>Embarked)</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">titanic_small &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic_small)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="kw">head</span>(titanic_small)</a></code></pre></div>
-<pre><code>##   Survived Pclass    Sex Age SibSp Parch    Fare Embarked
-## 1        0      3   male  22     1     0  7.2500        S
-## 2        1      1 female  38     1     0 71.2833        C
-## 3        1      3 female  26     0     0  7.9250        S
-## 4        1      1 female  35     1     0 53.1000        S
-## 5        0      3   male  35     0     0  8.0500        S
-## 7        0      1   male  54     0     0 51.8625        S</code></pre>
+<p>Feature of interest is the binary variable <code>survived</code>. Let’s build some predictive models for this variable.</p>
+<p>First we need to do some data preprocessing. Columns with missing data are filled up</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="co"># missing country is replaced by &quot;X&quot;</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">titanic<span class="op">$</span>country[<span class="kw">is.na</span>(titanic<span class="op">$</span>country)] =<span class="st"> &quot;X&quot;</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"><span class="co"># missing age is replaced by average (30)</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">titanic<span class="op">$</span>age[<span class="kw">is.na</span>(titanic<span class="op">$</span>age)] =<span class="st"> </span><span class="dv">30</span></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5"><span class="co"># missing fare, sibsp, parch are replaced by 0</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare)] =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">titanic<span class="op">$</span>sibsp[<span class="kw">is.na</span>(titanic<span class="op">$</span>sibsp)] =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">titanic<span class="op">$</span>parch[<span class="kw">is.na</span>(titanic<span class="op">$</span>parch)] =<span class="st"> </span><span class="dv">0</span></a></code></pre></div>
 </div>
 <div id="data-exploration" class="section level3">
 <h3><span class="header-section-number">2.1.2</span> Data exploration</h3>
 <p>It is always a good idea to do data exploration before modelling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.</p>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-3-1.png" width="384" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-2.png" width="384" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-3.png" width="384" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-4.png" width="384" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-5.png" width="384" /></p>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-3-1.png" width="576" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-2.png" width="576" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-3.png" width="576" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-4.png" width="576" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-5.png" width="576" /><img src="PM_VEE_files/figure-html/unnamed-chunk-3-6.png" width="576" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-4-1.png" width="576" /></p>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-5-1.png" width="576" /></p>
 </div>
 <div id="model_titanic_lmr" class="section level3">
 <h3><span class="header-section-number">2.1.3</span> Logistic regression is always a good choice</h3>
 <p>The feature of interest <code>survival</code> is binary, thus a natural choice is a logistic regression. Most of predictive features are categorical except age.</p>
 <p>There is no reason to expect a linear relation between age and odds of survival, thus for age we will use linear tail-restricted cubic splines available in the <code>rcs()</code> function in the <code>rms</code> package <span class="citation">(Harrell Jr <a href="#ref-rms">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;rms&quot;</span>)</a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">model_titanic_lmr &lt;-<span class="st"> </span><span class="kw">lrm</span>(Survived <span class="op">==</span><span class="st"> &quot;1&quot;</span> <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span><span class="kw">rcs</span>(Age) <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3"><span class="st">                   </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, titanic_small)</a>
-<a class="sourceLine" id="cb5-4" data-line-number="4">model_titanic_lmr</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;rms&quot;</span>)</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">titanic_lmr_v6 &lt;-<span class="st"> </span><span class="kw">lrm</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span><span class="kw">rcs</span>(age) <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span></a>
+<a class="sourceLine" id="cb4-3" data-line-number="3"><span class="st">                   </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, titanic)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">titanic_lmr_v6</a></code></pre></div>
 <pre><code>## Logistic Regression Model
 ##  
-##  lrm(formula = Survived == &quot;1&quot; ~ Pclass + Sex + rcs(Age) + SibSp + 
-##      Parch + Fare + Embarked, data = titanic_small)
+##  lrm(formula = survived == &quot;yes&quot; ~ gender + rcs(age) + class + 
+##      sibsp + parch + fare + embarked, data = titanic)
 ##  
-##                      Model Likelihood     Discrimination    Rank Discrim.    
-##                         Ratio Test           Indexes           Indexes       
-##  Obs         714    LR chi2     353.20    R2       0.527    C       0.874    
-##   FALSE      424    d.f.            12    g        2.192    Dxy     0.748    
-##   TRUE       290    Pr(&gt; chi2) &lt;0.0001    gr       8.957    gamma   0.749    
-##  max |deriv| 0.1                          gp       0.363    tau-a   0.361    
-##                                           Brier    0.134                     
+##                         Model Likelihood     Discrimination    Rank Discrim.    
+##                            Ratio Test           Indexes           Indexes       
+##  Obs           2207    LR chi2     752.73    R2       0.404    C       0.817    
+##   FALSE        1496    d.f.            17    g        1.648    Dxy     0.635    
+##   TRUE          711    Pr(&gt; chi2) &lt;0.0001    gr       5.195    gamma   0.636    
+##  max |deriv| 0.0001                          gp       0.282    tau-a   0.277    
+##                                              Brier    0.146                     
 ##  
-##             Coef    S.E.    Wald Z Pr(&gt;|Z|)
-##  Intercept  12.1530 26.3889   0.46 0.6451  
-##  Pclass     -1.0822  0.1693  -6.39 &lt;0.0001 
-##  Sex=male   -2.7848  0.2317 -12.02 &lt;0.0001 
-##  Age        -0.2382  0.0472  -5.04 &lt;0.0001 
-##  Age&#39;        0.7961  0.2138   3.72 0.0002  
-##  Age&#39;&#39;      -4.3833  1.5123  -2.90 0.0038  
-##  Age&#39;&#39;&#39;      5.1859  2.2693   2.29 0.0223  
-##  SibSp      -0.5292  0.1449  -3.65 0.0003  
-##  Parch      -0.1990  0.1344  -1.48 0.1387  
-##  Fare        0.0032  0.0029   1.11 0.2670  
-##  Embarked=C -4.6054 26.3806  -0.17 0.8614  
-##  Embarked=Q -5.3341 26.3853  -0.20 0.8398  
-##  Embarked=S -4.9968 26.3802  -0.19 0.8498  
+##                         Coef    S.E.   Wald Z Pr(&gt;|Z|)
+##  Intercept               4.5458 0.5460   8.33 &lt;0.0001 
+##  gender=male            -2.7658 0.1587 -17.43 &lt;0.0001 
+##  age                    -0.1186 0.0221  -5.37 &lt;0.0001 
+##  age&#39;                    0.6339 0.1629   3.89 &lt;0.0001 
+##  age&#39;&#39;                  -2.6621 0.7841  -3.39 0.0007  
+##  age&#39;&#39;&#39;                  2.8936 1.0131   2.86 0.0043  
+##  class=2nd              -1.1029 0.2486  -4.44 &lt;0.0001 
+##  class=3rd              -2.0185 0.2466  -8.18 &lt;0.0001 
+##  class=deck crew         1.1067 0.3468   3.19 0.0014  
+##  class=engineering crew -0.9287 0.2615  -3.55 0.0004  
+##  class=restaurant staff -3.1278 0.6571  -4.76 &lt;0.0001 
+##  class=victualling crew -1.0473 0.2558  -4.09 &lt;0.0001 
+##  sibsp                  -0.4574 0.1012  -4.52 &lt;0.0001 
+##  parch                  -0.0970 0.0992  -0.98 0.3282  
+##  fare                    0.0021 0.0020   1.05 0.2928  
+##  embarked=Cherbourg      0.7725 0.2844   2.72 0.0066  
+##  embarked=Queenstown     0.2653 0.3411   0.78 0.4368  
+##  embarked=Southampton    0.2287 0.2119   1.08 0.2805  
 ## </code></pre>
 </div>
 <div id="model_titanic_rf" class="section level3">
 <h3><span class="header-section-number">2.1.4</span> Random Forest to the rescue</h3>
 <p>In addition to a logistic regression we will use a random forest model with default settings. Random forest is known for good performance, is able to grasp low-level variable interactions and is quite stable.</p>
 <p>Here we are using the <code>randomForest</code> package <span class="citation">(Liaw and Wiener <a href="#ref-randomForestRNews">2002</a>)</span>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb7-2" data-line-number="2">model_titanic_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(Survived <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span>Age <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb7-3" data-line-number="3"><span class="st">                           </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, </a>
-<a class="sourceLine" id="cb7-4" data-line-number="4">                           <span class="dt">data =</span> titanic_small)</a>
-<a class="sourceLine" id="cb7-5" data-line-number="5">model_titanic_rf</a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">titanic_rf_v6 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb6-3" data-line-number="3"><span class="st">                           </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, </a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">                           <span class="dt">data =</span> titanic)</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">titanic_rf_v6</a></code></pre></div>
 <pre><code>## 
 ## Call:
-##  randomForest(formula = Survived ~ Pclass + Sex + Age + SibSp +      Parch + Fare + Embarked, data = titanic_small) 
+##  randomForest(formula = survived ~ class + gender + age + sibsp +      parch + fare + embarked, data = titanic) 
 ##                Type of random forest: classification
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 18.63%
+##         OOB estimate of  error rate: 18.58%
 ## Confusion matrix:
-##     0   1 class.error
-## 0 377  47   0.1108491
-## 1  86 204   0.2965517</code></pre>
+##       no yes class.error
+## no  1394 102  0.06818182
+## yes  308 403  0.43319269</code></pre>
+<p>And a smaller model</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">titanic_rf_v3 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age, </a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">                           <span class="dt">data =</span> titanic)</a>
+<a class="sourceLine" id="cb8-3" data-line-number="3">titanic_rf_v3</a></code></pre></div>
+<pre><code>## 
+## Call:
+##  randomForest(formula = survived ~ class + gender + age, data = titanic) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 1
+## 
+##         OOB estimate of  error rate: 20.66%
+## Confusion matrix:
+##       no yes class.error
+## no  1359 137  0.09157754
+## yes  319 392  0.44866385</code></pre>
 </div>
 <div id="gradient-boosting-for-interactions" class="section level3">
 <h3><span class="header-section-number">2.1.5</span> Gradient boosting for interactions</h3>
 <p>Last model that we will train on this dataset is the gradient boosting model. This family of models is known for being able to grasp deep interactions between variables.</p>
 <p>Here we are using the implementation from the <code>gbm</code> package <span class="citation">(Ridgeway <a href="#ref-gbm">2017</a>)</span>.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">gbm_model &lt;-<span class="st"> </span><span class="kw">gbm</span>(Survived <span class="op">==</span><span class="st"> &quot;1&quot;</span> <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span>Age <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="st">                     </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, <span class="dt">data =</span> titanic_small, <span class="dt">n.trees =</span> <span class="dv">15000</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
+<a class="sourceLine" id="cb10-2" data-line-number="2">titanic_gbm_v6 &lt;-<span class="st"> </span><span class="kw">gbm</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="st">                     </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, <span class="dt">data =</span> titanic, <span class="dt">n.trees =</span> <span class="dv">15000</span>)</a></code></pre></div>
 <pre><code>## Distribution not specified, assuming bernoulli ...</code></pre>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1">gbm_model</a></code></pre></div>
-<pre><code>## gbm(formula = Survived == &quot;1&quot; ~ Pclass + Sex + Age + SibSp + 
-##     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1">titanic_gbm_v6</a></code></pre></div>
+<pre><code>## gbm(formula = survived == &quot;yes&quot; ~ class + gender + age + sibsp + 
+##     parch + fare + embarked, data = titanic, n.trees = 15000)
 ## A gradient boosted model with bernoulli loss function.
 ## 15000 iterations were performed.
 ## There were 7 predictors of which 7 had non-zero influence.</code></pre>
@@ -413,28 +424,28 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="model-predictions" class="section level3">
 <h3><span class="header-section-number">2.1.6</span> Model predictions</h3>
 <p>Having all three models let’s see what are odds of surviving for a 2-years old boy that travels in the 3rd class with 1 parent and 3 siblings.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1">henry &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2">            <span class="dt">Pclass =</span> <span class="dv">1</span>,</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3">            <span class="dt">Sex =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">            <span class="dt">Age =</span> <span class="dv">8</span>,</a>
-<a class="sourceLine" id="cb13-5" data-line-number="5">            <span class="dt">SibSp =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">            <span class="dt">Parch =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb13-7" data-line-number="7">            <span class="dt">Fare =</span> <span class="dv">72</span>,</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8">            <span class="dt">Embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;C&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;Q&quot;</span>,<span class="st">&quot;S&quot;</span>))</a>
-<a class="sourceLine" id="cb13-9" data-line-number="9">)</a></code></pre></div>
-<p>Logistic regression model says 88.3% for survival.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">predict</span>(model_titanic_lmr, henry, <span class="dt">type =</span> <span class="st">&quot;fitted&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">henry &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb14-2" data-line-number="2">            <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;2nd&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
+<a class="sourceLine" id="cb14-3" data-line-number="3">            <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
+<a class="sourceLine" id="cb14-4" data-line-number="4">            <span class="dt">age =</span> <span class="dv">8</span>,</a>
+<a class="sourceLine" id="cb14-5" data-line-number="5">            <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb14-6" data-line-number="6">            <span class="dt">parch =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb14-7" data-line-number="7">            <span class="dt">fare =</span> <span class="dv">72</span>,</a>
+<a class="sourceLine" id="cb14-8" data-line-number="8">            <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>,<span class="st">&quot;Cherbourg&quot;</span>,<span class="st">&quot;Queenstown&quot;</span>,<span class="st">&quot;Southampton&quot;</span>))</a>
+<a class="sourceLine" id="cb14-9" data-line-number="9">)</a></code></pre></div>
+<p>Logistic regression model says 47% for survival.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">predict</span>(titanic_lmr_v6, henry, <span class="dt">type =</span> <span class="st">&quot;fitted&quot;</span>)</a></code></pre></div>
 <pre><code>##         1 
-## 0.8836101</code></pre>
-<p>Random forest model says 53.2% for survival.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">predict</span>(model_titanic_rf, henry, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
-<pre><code>##       0     1
-## 1 0.434 0.566
+## 0.4702145</code></pre>
+<p>Random forest model says 39% for survival.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">predict</span>(titanic_rf_v6, henry, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<pre><code>##     no  yes
+## 1 0.63 0.37
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
-<p>Gradient boosting model says 53.2% for survival.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">predict</span>(gbm_model, henry, <span class="dt">type =</span> <span class="st">&quot;response&quot;</span>, <span class="dt">n.trees =</span> <span class="dv">15000</span>)</a></code></pre></div>
-<pre><code>## [1] 0.83418</code></pre>
+<p>Gradient boosting model says 43.6% for survival.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">predict</span>(titanic_gbm_v6, henry, <span class="dt">type =</span> <span class="st">&quot;response&quot;</span>, <span class="dt">n.trees =</span> <span class="dv">15000</span>)</a></code></pre></div>
+<pre><code>## [1] 0.4377515</code></pre>
 <p>Three different opinions. Which one should we trust?
 Tools introduced in following sections will help to understand how these models are different.</p>
 </div>
@@ -449,12 +460,12 @@ Tools introduced in following sections will help to understand how these models 
 <p>In this book we will work with a very interesting version of this problem. The <code>apartments</code> dataset is an artificial dataset created to match key characteristics of real apartments in Warsaw. But the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy.</p>
 <p>Which one we should chose? Based on this dataset we show that visual explainers give a better understanding of key model characteristics and are very helpful in the model selection.</p>
 <p>The dataset is available in the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">b</a>)</span>. Each row corresponds to a single apartment. Features like surface, number of rooms, district or floor are used as predictive features. The problem here is to predict price per a square meter for an apartment, so it’s a regression problem with continuous target.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="kw">head</span>(apartments, <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb21-2" data-line-number="2"><span class="kw">head</span>(apartments, <span class="dv">2</span>)</a></code></pre></div>
 <pre><code>##   m2.price construction.year surface floor no.rooms    district
 ## 1     5897              1953      25     3        1 Srodmiescie
 ## 2     1818              1992     143     9        5     Bielany</code></pre>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">head</span>(apartments_test, <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="kw">head</span>(apartments_test, <span class="dv">2</span>)</a></code></pre></div>
 <pre><code>##      m2.price construction.year surface floor no.rooms    district
 ## 1001     4644              1976     131     3        5 Srodmiescie
 ## 1002     3082              1978     112     9        4     Mokotow</code></pre>
@@ -463,19 +474,19 @@ Tools introduced in following sections will help to understand how these models 
 <p>Feature of interest is the variable <code>m2.price</code>, it’s a price (EUR) for a square meter of an apartment.</p>
 <p>Let’s build two predictive models for this variable.</p>
 <p>For the champion we will use a linear model. Easy to train, easy to test, easy to understand.</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1">model_apartments_lm &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb24-2" data-line-number="2">predicted_apartments_lm &lt;-<span class="st"> </span><span class="kw">predict</span>(model_apartments_lm, apartments_test)</a>
-<a class="sourceLine" id="cb24-3" data-line-number="3">rmsd_lm &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">mean</span>((predicted_apartments_lm <span class="op">-</span><span class="st"> </span>apartments_test<span class="op">$</span>m2.price)<span class="op">^</span><span class="dv">2</span>))</a>
-<a class="sourceLine" id="cb24-4" data-line-number="4">rmsd_lm</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1">apartments_lm_v5 &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb25-2" data-line-number="2">predicted_apartments_lm &lt;-<span class="st"> </span><span class="kw">predict</span>(apartments_lm_v5, apartments_test)</a>
+<a class="sourceLine" id="cb25-3" data-line-number="3">rmsd_lm &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">mean</span>((predicted_apartments_lm <span class="op">-</span><span class="st"> </span>apartments_test<span class="op">$</span>m2.price)<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb25-4" data-line-number="4">rmsd_lm</a></code></pre></div>
 <pre><code>## [1] 283.0865</code></pre>
 <p>The root mean square difference for linear model calculated on test data is 283.1.</p>
 <p>Now, let’s train a challenger - a random forest model from <code>randomForest</code> package <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>. Elastic, popular, able to handle non linear relations.</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">72</span>)</a>
-<a class="sourceLine" id="cb26-3" data-line-number="3">model_apartments_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb26-4" data-line-number="4">predicted_apartments_rf &lt;-<span class="st"> </span><span class="kw">predict</span>(model_apartments_rf, apartments_test)</a>
-<a class="sourceLine" id="cb26-5" data-line-number="5">rmsd_rf &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">mean</span>((predicted_apartments_rf <span class="op">-</span><span class="st"> </span>apartments_test<span class="op">$</span>m2.price)<span class="op">^</span><span class="dv">2</span>))</a>
-<a class="sourceLine" id="cb26-6" data-line-number="6">rmsd_rf</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">72</span>)</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">apartments_rf_v5 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> apartments)</a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">predicted_apartments_rf &lt;-<span class="st"> </span><span class="kw">predict</span>(apartments_rf_v5, apartments_test)</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">rmsd_rf &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">mean</span>((predicted_apartments_rf <span class="op">-</span><span class="st"> </span>apartments_test<span class="op">$</span>m2.price)<span class="op">^</span><span class="dv">2</span>))</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">rmsd_rf</a></code></pre></div>
 <pre><code>## [1] 282.9519</code></pre>
 <p>The root mean square difference for random forest is 283.</p>
 <p>The challenger is better in terms of RMSD, but the difference between accuracies is smaller than 10 cents. Shall we choose the model complex but elastic model or the linear model?</p>
@@ -488,8 +499,8 @@ Tools introduced in following sections will help to understand how these models 
 <p>The goal here is to first build a model, that will guess when to fire and when to promote an employer, so it’s a classification problem with three classes.</p>
 <p>Why we need such model? We want to have objective decisions. That will not be subject to personal preferences of a manager. But is it possible to have an objective model? Would it be fair or it will just replicate some unfairness?</p>
 <p>We will use this example to show how to use prediction level explainers to better understand how the model works for selected cases.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb28-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb29-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
 <pre><code>##   gender      age    hours evaluation salary   status
 ## 1   male 32.58267 41.88626          3      1    fired
 ## 2 female 41.21104 36.34339          2      5    fired
@@ -498,12 +509,12 @@ Tools introduced in following sections will help to understand how these models 
 ## 5   male 21.10283 62.15464          5      3 promoted
 ## 6   male 40.11812 69.53973          2      0    fired</code></pre>
 <p>In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> and generalized linear model <span class="citation">(Ripley <a href="#ref-R-nnet">2016</a>)</span>.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb30-3" data-line-number="3">model_HR_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb30-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb30-5" data-line-number="5"><span class="kw">library</span>(<span class="st">&quot;nnet&quot;</span>)</a>
-<a class="sourceLine" id="cb30-6" data-line-number="6">model_HR_glm &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
+<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb31-3" data-line-number="3">HR_rf_v5 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb31-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb31-5" data-line-number="5"><span class="kw">library</span>(<span class="st">&quot;nnet&quot;</span>)</a>
+<a class="sourceLine" id="cb31-6" data-line-number="6">HR_glm_v5 &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
 <pre><code>## # weights:  21 (12 variable)
 ## initial  value 8620.810629 
 ## iter  10 value 7002.127738
@@ -512,13 +523,87 @@ Tools introduced in following sections will help to understand how these models 
 ## iter  20 value 6239.478124
 ## final  value 6239.478124 
 ## converged</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1">link_to_amodels &lt;-<span class="st"> &quot;models/models_apartments.rda&quot;</span></a>
-<a class="sourceLine" id="cb32-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb32-3" data-line-number="3"><span class="cf">if</span> (<span class="op">!</span><span class="kw">file.exists</span>(link_to_amodels)) {</a>
-<a class="sourceLine" id="cb32-4" data-line-number="4">   <span class="kw">save</span>(model_HR_rf, model_HR_glm, </a>
-<a class="sourceLine" id="cb32-5" data-line-number="5">       model_apartments_lm, model_apartments_rf, </a>
-<a class="sourceLine" id="cb32-6" data-line-number="6">       <span class="dt">file =</span> link_to_models)</a>
-<a class="sourceLine" id="cb32-7" data-line-number="7">}</a></code></pre></div>
+</div>
+<div id="ListOfModels" class="section level2">
+<h2><span class="header-section-number">2.4</span> List of Models</h2>
+<p>In previous sections we build a collection of predictive models for dataset about Sinking of RMS Titanic, apartment prices and Human Resources data. These models will be used in next chapters.</p>
+<p>The table below summarizes all these models. You can download the binary object with the attached archivist hooks <span class="citation">(Biecek and Kosinski <a href="#ref-archivist">2017</a>)</span>.</p>
+<table>
+<colgroup>
+<col width="23%" />
+<col width="28%" />
+<col width="16%" />
+<col width="20%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model name</th>
+<th>Model generator</th>
+<th>Dataset</th>
+<th>Variables</th>
+<th>Link to the model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>titanic_lmr_v6</code></td>
+<td><code>rms:: lmr</code></td>
+<td><code>DALEX:: titanic</code></td>
+<td>gender, age, class, sibsp, parch, fare, embarked</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/f285c&quot;)</code></td>
+</tr>
+<tr class="even">
+<td><code>titanic_rf_v6</code></td>
+<td><code>randomForest:: randomForest</code></td>
+<td><code>DALEX:: titanic</code></td>
+<td>gender, age, class, sibsp, parch, fare, embarked</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/92753&quot;)</code></td>
+</tr>
+<tr class="odd">
+<td><code>titanic_rf_v3</code></td>
+<td><code>randomForest:: randomForest</code></td>
+<td><code>DALEX:: titanic</code></td>
+<td>gender, age, class</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/bcd20&quot;)</code></td>
+</tr>
+<tr class="even">
+<td><code>titanic_gbm_v6</code></td>
+<td><code>gbm:: gbm</code></td>
+<td><code>DALEX:: titanic</code></td>
+<td>gender, age, class, sibsp, parch, fare, embarked</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/2bdad&quot;)</code></td>
+</tr>
+<tr class="odd">
+<td><code>apartments_lm_v5</code></td>
+<td><code>stats:: lm</code></td>
+<td><code>DALEX:: apartments</code></td>
+<td>construction .year, surface, floor, no.rooms, district</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/55f19&quot;)</code></td>
+</tr>
+<tr class="even">
+<td><code>apartments_rf_v5</code></td>
+<td><code>randomForest:: randomForest</code></td>
+<td><code>DALEX:: apartments</code></td>
+<td>construction .year, surface, floor, no.rooms, district</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/fe7a5&quot;)</code></td>
+</tr>
+<tr class="odd">
+<td><code>HR_rf_v5</code></td>
+<td><code>randomForest:: randomForest</code></td>
+<td><code>DALEX:: HR</code></td>
+<td>gender, age, hours, evaluation, salary</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/1ecfd&quot;)</code></td>
+</tr>
+<tr class="even">
+<td><code>HR_glm_v5</code></td>
+<td><code>stats:: glm</code></td>
+<td><code>DALEX:: HR</code></td>
+<td>gender, age, hours, evaluation, salary</td>
+<td><code>archivist:: aread(&quot;pbiecek/models/f0244&quot;)</code></td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
@@ -541,6 +626,9 @@ Tools introduced in following sections will help to understand how these models 
 </div>
 <div id="ref-R-nnet">
 <p>Ripley, Brian. 2016. <em>Nnet: Feed-Forward Neural Networks and Multinomial Log-Linear Models</em>. <a href="https://CRAN.R-project.org/package=nnet">https://CRAN.R-project.org/package=nnet</a>.</p>
+</div>
+<div id="ref-archivist">
+<p>Biecek, Przemyslaw, and Marcin Kosinski. 2017. “archivist: An R Package for Managing, Recording and Restoring Data Analysis Results.” <em>Journal of Statistical Software</em> 82 (11): 1–28. <a href="https://doi.org/10.18637/jss.v082.i11">https://doi.org/10.18637/jss.v082.i11</a>.</p>
 </div>
 </div>
             </section>
