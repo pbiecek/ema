@@ -10,58 +10,79 @@ We illustrate techniques introduced in this book on three datasets:
 
 ![Titanic sinking by Willy Stöwer](figure/Titanic.jpg)
 
-Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` we have a very rich and precise data about passengers. This dataset is available in the `titanic` dataset.
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` we have a very rich and precise data about passengers. This dataset is available in the `stablelearner` package. After some variable transformation it is also avaliable in the `DALEX` package.
 
 
 ```{r, warning=FALSE, message=FALSE}
-library("titanic")
-head(titanic_train, 2)
+library("DALEX")
+head(titanic, 2)
 ```
 
 ### Data cleaning
 
-Feature of interest is the binary variable `Survived`. Let's build some predictive models for this variable.
+Feature of interest is the binary variable `survived`. Let's build some predictive models for this variable.
 
-First we need to do some data preprocessing. Columns with characters are converted to factors and rows with missing data are removed.
+First we need to do some data preprocessing. Columns with missing data are filled up
 
 ```{r, warning=FALSE, message=FALSE}
-titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
-titanic_small$Survived <- factor(titanic_small$Survived)
-titanic_small$Sex <- factor(titanic_small$Sex)
-titanic_small$Embarked <- factor(titanic_small$Embarked)
-titanic_small <- na.omit(titanic_small)
-head(titanic_small)
+# missing country is replaced by "X"
+titanic$country[is.na(titanic$country)] = "X"
+# missing age is replaced by average (30)
+titanic$age[is.na(titanic$age)] = 30
+# missing fare, sibsp, parch are replaced by 0
+titanic$fare[is.na(titanic$fare)] = 0
+titanic$sibsp[is.na(titanic$sibsp)] = 0
+titanic$parch[is.na(titanic$parch)] = 0
 ```
 
 ### Data exploration
 
 It is always a good idea to do data exploration before modelling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4}
-mosaicplot(table(titanic_small$Pclass, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "First class have the highest survival", ylab = "Survived", xlab = "Passenger class")
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4}
+library("ggmosaic")
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, class), fill=survived)) +
+   labs(x="Passenger class", y="Survived?", title='Survival for the titanic per class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-mosaicplot(table(titanic_small$Sex, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "Female are more likely to survive", ylab = "Survived", xlab = "Sex")
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
+   labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-mosaicplot(table(titanic_small$Parch, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "It's better to have a parent on board", ylab = "Survived", xlab = "Number of Parents/Children Aboard")
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
+   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival for the titanic per Parents/Children') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-mosaicplot(table(titanic_small$SibSp, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "It's better to have one sibling on board", ylab = "Survived", xlab = "Number of Siblings/Spouses Aboard")
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
+   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-mosaicplot(table(titanic_small$Embarked, titanic_small$Survived), color = c("red4","green4"), border = "white", off = 0, main = "", ylab = "Survived", xlab = "Embarked")
+
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
+   labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+
+
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
+   labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+
 ```
 
-```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=2, echo=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=2, echo=FALSE}
 library("ggplot2")
-ggplot(titanic_small, aes(Survived, Fare, color = Survived)) + 
+ggplot(titanic, aes(survived, fare, color = survived)) + 
   geom_boxplot() + coord_flip() + scale_y_log10() +
   ggtitle("The more you pay for ticket, the more likely is your survival") +
-  theme_minimal() + scale_color_manual(values = c("red4", "green4"))
+  theme_drwhy()+ theme(legend.position = "none") + scale_color_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, echo=FALSE}
-ggplot(titanic_small, aes(fill = Survived, x=cut(Age,c(0,2,5,10,18,30,50,70,100)))) + 
-  geom_bar(position = "fill") + xlab("Age") + ylab("Fraction of survivors") +
-  ggtitle("If you are below 5 your survival is more likely")+
-  theme_minimal() + scale_fill_manual(values = c("red4", "green4"))
+```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, echo=FALSE}
+titanic$age_c <- cut(titanic$age,c(0,2,5,10,18,30,50,70,100))
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, age_c), fill=survived)) +
+   labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+
 ```
 
 ### Logistic regression is always a good choice {#model_titanic_lmr}
@@ -72,9 +93,9 @@ There is no reason to expect a linear relation between age and odds of survival,
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
-model_titanic_lmr <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
-                   Parch + Fare + Embarked, titanic_small)
-model_titanic_lmr
+titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class + sibsp +
+                   parch + fare + embarked, titanic)
+titanic_lmr_v6
 ```
 
 
@@ -86,10 +107,18 @@ Here we are using the `randomForest` package [@randomForestRNews].
 
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-model_titanic_rf <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
-                           Parch + Fare + Embarked, 
-                           data = titanic_small)
-model_titanic_rf
+titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + 
+                           parch + fare + embarked, 
+                           data = titanic)
+titanic_rf_v6
+```
+
+And a smaller model
+
+```{r, warning=FALSE, message=FALSE}
+titanic_rf_v3 <- randomForest(survived ~ class + gender + age, 
+                           data = titanic)
+titanic_rf_v3
 ```
 
 ### Gradient boosting for interactions
@@ -100,9 +129,9 @@ Here we are using the implementation from the `gbm` package [@gbm].
 
 ```{r, warning=FALSE, message=FALSE}
 library("gbm")
-gbm_model <- gbm(Survived == "1" ~ Pclass + Sex + Age + SibSp +
-                     Parch + Fare + Embarked, data = titanic_small, n.trees = 15000)
-gbm_model
+titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp +
+                     parch + fare + embarked, data = titanic, n.trees = 15000)
+titanic_gbm_v6
 ```
 
 ### Model predictions
@@ -111,32 +140,32 @@ Having all three models let's see what are odds of surviving for a 2-years old b
 
 ```{r, warning=FALSE, message=FALSE}
 henry <- data.frame(
-            Pclass = 1,
-            Sex = factor("male", levels = c("female", "male")),
-            Age = 8,
-            SibSp = 0,
-            Parch = 0,
-            Fare = 72,
-            Embarked = factor("C", levels = c("","C","Q","S"))
+            class = factor("2nd", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
+            gender = factor("male", levels = c("female", "male")),
+            age = 8,
+            sibsp = 0,
+            parch = 0,
+            fare = 72,
+            embarked = factor("Belfast", levels = c("Belfast","Cherbourg","Queenstown","Southampton"))
 )
 ```
 
-Logistic regression model says 88.3\% for survival.
+Logistic regression model says 47\% for survival.
 
 ```{r, warning=FALSE, message=FALSE}
-predict(model_titanic_lmr, henry, type = "fitted")
+predict(titanic_lmr_v6, henry, type = "fitted")
 ```
 
-Random forest model says 53.2\% for survival.
+Random forest model says 39\% for survival.
 
 ```{r, warning=FALSE, message=FALSE}
-predict(model_titanic_rf, henry, type = "prob")
+predict(titanic_rf_v6, henry, type = "prob")
 ```
 
-Gradient boosting model says 53.2\% for survival.
+Gradient boosting model says 43.6\% for survival.
 
 ```{r, warning=FALSE, message=FALSE}
-predict(gbm_model, henry, type = "response", n.trees = 15000)
+predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000)
 ```
 
 Three different opinions. Which one should we trust?
@@ -169,8 +198,8 @@ Let's build two predictive models for this variable.
 For the champion we will use a linear model. Easy to train, easy to test, easy to understand.
 
 ```{r, warning=FALSE, message=FALSE}
-model_apartments_lm <- lm(m2.price ~ ., data = apartments)
-predicted_apartments_lm <- predict(model_apartments_lm, apartments_test)
+apartments_lm_v5 <- lm(m2.price ~ ., data = apartments)
+predicted_apartments_lm <- predict(apartments_lm_v5, apartments_test)
 rmsd_lm <- sqrt(mean((predicted_apartments_lm - apartments_test$m2.price)^2))
 rmsd_lm
 ```
@@ -182,8 +211,8 @@ Now, let's train a challenger - a random forest model from `randomForest` packag
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
 set.seed(72)
-model_apartments_rf <- randomForest(m2.price ~ ., data = apartments)
-predicted_apartments_rf <- predict(model_apartments_rf, apartments_test)
+apartments_rf_v5 <- randomForest(m2.price ~ ., data = apartments)
+predicted_apartments_rf <- predict(apartments_rf_v5, apartments_test)
 rmsd_rf <- sqrt(mean((predicted_apartments_rf - apartments_test$m2.price)^2))
 rmsd_rf
 ```
@@ -215,19 +244,45 @@ In this book we are focused on model exploration rather than model building, thu
 ```{r, warning=FALSE, message=FALSE }
 set.seed(59)
 library("randomForest")
-model_HR_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_rf_v5 <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
 
 library("nnet")
-model_HR_glm <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_glm_v5 <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
 ```
 
 
-```{r save_models, warning=FALSE, message=FALSE }
-link_to_amodels <- "models/models_apartments.rda"
+```{r save_models, warning=FALSE, message=FALSE, echo=FALSE}
+link_to_data_models <- "models/titanic_lmr_v6.rda"
 
-if (!file.exists(link_to_amodels)) {
-   save(model_HR_rf, model_HR_glm, 
-       model_apartments_lm, model_apartments_rf, 
-       file = link_to_models)
+if (!file.exists(link_to_data_models)) {
+  save(titanic_lmr_v6, file = "models/titanic_lmr_v6.rda")
+  save(titanic_rf_v6, file = "models/titanic_rf_v6.rda")
+  save(titanic_rf_v3, file = "models/titanic_rf_v3.rda")
+  save(titanic_gbm_v6, file = "models/titanic_gbm_v6.rda")
+  
+  save(apartments_lm_v5, file = "models/apartments_lm_v5.rda")
+  save(apartments_rf_v5, file = "models/apartments_rf_v5.rda")
+  
+  save(HR_rf_v5, file = "models/HR_rf_v5.rda")
+  save(HR_glm_v5, file = "models/HR_glm_v5.rda")
 }
 ```
+
+## List of Models {#ListOfModels}
+
+In previous sections we build a collection of predictive models for dataset about Sinking of RMS Titanic, apartment prices and Human Resources data. These models will be used in next chapters. 
+
+The table below summarizes all these models. You can download the binary object with the attached archivist hooks [@archivist].
+
+| Model name   | Model generator | Dataset  | Variables  | Link to the model |
+|--------------|-----------------|----------|------------|-------|
+| `titanic_lmr_v6`  | `rms:: lmr`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/f285c")` |
+| `titanic_rf_v6`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/92753")` |
+| `titanic_rf_v3`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class  |  `archivist:: aread("pbiecek/models/bcd20")` |
+| `titanic_gbm_v6`  | `gbm:: gbm`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/2bdad")` |
+| `apartments_lm_v5`  | `stats:: lm`  |  `DALEX:: apartments` | construction .year, surface, floor, no.rooms, district  |  `archivist:: aread("pbiecek/models/55f19")` |
+|  `apartments_rf_v5` | `randomForest:: randomForest`  | `DALEX:: apartments`  | construction .year, surface, floor, no.rooms, district  | `archivist:: aread("pbiecek/models/fe7a5")`  |
+|  `HR_rf_v5` | `randomForest:: randomForest`  | `DALEX:: HR`  | gender, age, hours, evaluation, salary  | `archivist:: aread("pbiecek/models/1ecfd")`  |
+|  `HR_glm_v5` | `stats:: glm`  | `DALEX:: HR`  | gender, age, hours, evaluation, salary  | `archivist:: aread("pbiecek/models/f0244")`  |
+
+
