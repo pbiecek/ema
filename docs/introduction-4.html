@@ -32,8 +32,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="ceterisParibusA.html">
-<link rel="next" href="breakDown.html">
+<link rel="prev" href="model-level-explanations.html">
+<link rel="next" href="variableImportance.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -292,143 +292,35 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="variableAttributionMethods" class="section level1">
-<h1><span class="header-section-number">Chapter 6</span> Variable attribution for linear models</h1>
-<div id="introduction-3" class="section level2">
-<h2><span class="header-section-number">6.1</span> Introduction</h2>
-<p>In this chapter we introduce the concept and the intuitions underlying ‘’variable attribution,’’ i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. We can think about the following examples:</p>
+<div id="introduction-4" class="section level1">
+<h1><span class="header-section-number">Chapter 12</span> Introduction</h1>
+<p>Model level explainers help to understand how the model works in general, for some population of interest. This is the main difference from the instance level explainers that were focused on a model behaviour around a single observation. Model level explainers work in the context of a population or subpopulation.</p>
+<p>Think about following use-cases</p>
 <ul>
-<li>Assume that we are interested in predicting the risk of heart attack based on person’s age, sex, and smoking habits. A patient may want to know which factors have the highest impact on the his/her risk score.</li>
-<li>Consider a model for prediction of apartment prices. An investor may want to know how much of the predicted price may be attributed to, for instance, the location of an apartment.</li>
-<li>Consider a model for credit scoring. A customer may want to know if factors like gender, age, or number of children influence model predictions.</li>
+<li>One wants to know which variables are important in the model. Think about model for heart accident in which features come from additional medical examinations. Knowing which examinations are not important one can reduce a model by removing unnecessary variables.</li>
+<li>One wants to understand how a selected variable affects the model response. Think about a model for prediction of apartment prices. You know that apartment location is an important factor, but which locations are better and how much a given location is worth? Model explainers help to understand how values of a selected variable affect the model response.</li>
+<li>One wants to know if there are any unusual observations that do not fit to the model. Observations with unusually large residuals. Think about a model for survival after some very risky treatment. You would like to know if for some patients the model predictions are extremely incorrect.</li>
 </ul>
-<p>In each of those cases we want to attribute a part of the model prediction to a single explanatory variable. This can be done directly for linear models. Hence, in this chapter We focus on those models. The method can be easily extended to generalized linear models. Model-agnostic approaches will be presented in Chapters <a href="breakDown.html#breakDown">7</a> and <a href="shapley.html#shapley">9</a>.</p>
+<p>All cases mentioned above are linked with either model diagnostic (checking if model behaves alog our expectations) or knowledge extraction (model was trained to extract some knowledge about the discipline).</p>
+<div id="approaches-to-model-explanations" class="section level2">
+<h2><span class="header-section-number">12.1</span> Approaches to model explanations</h2>
+<p>Model level explanations are focused on four main aspects of a model.</p>
+<ul>
+<li>Model performance. Here the question is how good is the model, is it good enough (better than some predefined threshold), is a model A better than model B?</li>
+<li>Variable importance. How important are variables, which are the most important and which are not important at all?</li>
+<li>Variable effects. What is the relation between a variable and model response, can the variable be transformed to create a better model?</li>
+<li>Model residuals. Is there any unusual pattern related to residuals, are they biased, are they correlated with some additional variable?</li>
+</ul>
 </div>
-<div id="intuition-2" class="section level2">
-<h2><span class="header-section-number">6.2</span> Intuition</h2>
-<p>Assume a classical linear model for response <span class="math inline">\(Y\)</span> with <span class="math inline">\(p\)</span> explanatory variables collected in the vector <span class="math inline">\(X = (X_1, X_2, \ldots, X_p)\)</span> and coefficients <span class="math inline">\(\beta = (\beta_0, \beta_1, .., \beta_p)\)</span>, where <span class="math inline">\(\beta_0\)</span> is the intercept. The prediction for <span class="math inline">\(Y\)</span> at point <span class="math inline">\(X=x=(x_1, x_2, \ldots, x_p)\)</span> is given by the expected value of <span class="math inline">\(Y\)</span> conditional on <span class="math inline">\(X=x\)</span>. For a linear model, the expected value is given by the following linear combination:</p>
-<p><span class="math display">\[
-E_Y(Y | x) = f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
-\]</span><br />
-We are interested in the contribution of the <span class="math inline">\(i\)</span>-th explanatory variable to model prediction <span class="math inline">\(f(x^*)\)</span> for a single observation described by <span class="math inline">\(x^*\)</span>. In this case, the contribution is equal to <span class="math inline">\(x^*_i\beta_i\)</span>, because the <span class="math inline">\(i\)</span>-th variable occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable’s contribution if <span class="math inline">\(x_i\)</span> is is centered by subtracting a constant <span class="math inline">\(\hat x_i\)</span> (usually, the mean of <span class="math inline">\(x_i\)</span>). This leads the following, intuitive formula for the variable attribution:
-<span class="math display">\[
-v(f, x^*, i) = \beta_i (x_i^* - \hat x_i).
-\]</span></p>
-</div>
-<div id="method-2" class="section level2">
-<h2><span class="header-section-number">6.3</span> Method</h2>
-<p>We want to calculate <span class="math inline">\(v(f, x^*, i)\)</span>, which is the contribution of the <span class="math inline">\(i\)</span>-th explanatory variable to the prediction of model <span class="math inline">\(f()\)</span> at point <span class="math inline">\(x^*\)</span>. Assume that <span class="math inline">\(E_Y(Y | x^*) \approx f(x^*)\)</span>, where <span class="math inline">\(f(x^*)\)</span> is the value of the model at <span class="math inline">\(x^*\)</span>. A possible approach to define <span class="math inline">\(v(f, x^*, i)\)</span> is to measure how much the expected model response changes after conditioning on <span class="math inline">\(x_i^*\)</span>:
-<span class="math display">\[
-v(f, x^*, i) = E_Y(Y | x^*) - E_{X_i}\{E_Y[Y | (x_1^*,\ldots,x_{i-1}^*,X_i,x_{i+1}^*,x_p^*)]\}\approx f(x^*) - E_{X_i}[f(x_{-i}^*)],
-\]</span>
-where <span class="math inline">\(x_{-i}^*\)</span> indicates that variable <span class="math inline">\(X_i\)</span> in vector <span class="math inline">\(x_{-i}^*\)</span> is treated as random. For the classical linear model, if the explanatory variables are independent, <span class="math inline">\(v(f, x^*, i)\)</span> can be expressed as follows:
-<span class="math display">\[
-v(f, x^*, i) = f(x^*) - E_{X_i}[f(x_{-i}^*)] = \beta_0 + x_1^* \beta_1 + \ldots + x_p^* \beta_p - E_{X_i}[\beta_0 + x_1^* \beta_1 + \ldots +\beta_i X_i \ldots + x_p^* \beta_p] = \beta_i[x^*_i - E_{X_i}(X_i)].
-\]</span>
-In practice, given a dataset, the expected value of <span class="math inline">\(X_i\)</span> can be estimated by the sample mean <span class="math inline">\(\bar x_i\)</span>. This leads to<br />
-<span class="math display">\[
-v(f, x^*, i) = \beta_i (x^*_i - \bar x_i).
-\]</span>
-Note that the linear-model-based prediction may be re-expressed in the following way:
-<span class="math display">\[
-f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] \equiv [average \ prediction] + \sum_{j=1}^p v(f, x^*, j).
-\]</span>
-Thus, the contributions of the explanatory variables are the differences between the model prediction for <span class="math inline">\(x^*\)</span> and the average prediction.</p>
-<p>** NOTE for careful readers **</p>
-<p>Obviously, sample mean <span class="math inline">\(\bar x_i\)</span> is an estimator of the expected value <span class="math inline">\(E_{X_i}(X_i)\)</span>, calculated using a dataset. For the sake of simplicity we do not emphasize these differences in the notation. Also, we ignore the fact that, in practice, we never know the model coefficients and we work with an estimated model.</p>
-<p>Also, we assumed that the explanatory variables are independent, which may not be the case. We will return to this problem in Section [TOMASZ: INSERT REF], when we will discuss interactions.</p>
-</div>
-<div id="example-wine-quality" class="section level2">
-<h2><span class="header-section-number">6.4</span> Example: Wine quality</h2>
-<p>Figure <a href="variableAttributionMethods.html#fig:attribution1a">6.1</a> shows the relation between alcohol and wine quality, based on the wine dataset <span class="citation">(Cortez et al. <a href="#ref-wine2009">2009</a>)</span>. The linear model is
-<span class="math display">\[
-quality(alcohol) = 2.5820 + 0.3135 * alcohol.
-\]</span>
-The weakest wine in the dataset has 8% of alcohol, while the average alcohol concentration is 10.51%. Thus, the contribution of alcohol to the model prediction for the weakest wine is <span class="math inline">\(0.3135 \cdot (8-10.51) = -0.786885\)</span>. This means that low concentration of alcohol for this wine (8%) decreses the predicted quality by <span class="math inline">\(-0.786885\)</span>.</p>
-<p>Note, that it would be misleading to use <span class="math inline">\(x_i^*\beta_i = 0.3135*8 = 2.508\)</span> as the alcohol contribution to the quality. The positive value of the product would not correrspond to the intuition that, in the presence of a positive relation, a smaller alcohol concentration should imply a lower quality of the wine.</p>
-<div class="figure" style="text-align: center"><span id="fig:attribution1a"></span>
-<img src="figure/attribution_1.png" alt="(fig:attribution1a)Relation between wine quality and concentration of alcohol assessed with linear model" width="50%" />
-<p class="caption">
-Figure 6.1: (fig:attribution1a)Relation between wine quality and concentration of alcohol assessed with linear model
-</p>
-</div>
-</div>
-<div id="pros-and-cons-2" class="section level2">
-<h2><span class="header-section-number">6.5</span> Pros and Cons</h2>
-<p>The proposed definition of <span class="math inline">\(v(f, x^*, i)\)</span> is linked neither with scale nor location of <span class="math inline">\(X_i\)</span>; hence, it is easier to understand than, for instance, the standardized value of <span class="math inline">\(\beta_i\)</span>. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. THE DEFINITION OF v() INVOLVES CENTERING.] For the classical linear model, <span class="math inline">\(v(f, x^*, i)\)</span> is not an approximation and it is directly linked with the structure of a model. An obvious diasadvantage is that the definition of <span class="math inline">\(v(f, x^*, i)\)</span> is very much linear-model based. Also, it does not, in any way, reduce the model complexity; it only presents model coefficients in a different way. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. MODEL COMPLEXITY IS WHAT IT IS. HOW CAN WE REDUCE IT?]</p>
-</div>
-<div id="code-snippets-1" class="section level2">
-<h2><span class="header-section-number">6.6</span> Code snippets</h2>
-<p>In this section, we present an example of computing variable attributions using the <code>HR</code> dataset (see Section <a href="DataSets.html#HRdataset">24.1</a> for more details).</p>
-<p>To calculate variable attributions for a particular point, first we have got to define this point:</p>
-<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
-<a class="sourceLine" id="cb55-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
-<a class="sourceLine" id="cb55-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
-<a class="sourceLine" id="cb55-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb55-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a></code></pre></div>
-<p>Variable attributions for linear and generalized linear models may be directly extracted by applying the <code>predict()</code> function, with the argument <code>type = &quot;terms&quot;</code>, to an object containing results of fitting of a model. To illustrate the approach for logistic regression, we build a logistic regression model for the binary variable <code>status == &quot;fired&quot;</code> and extract the estimated model coefficients:</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb56-2" data-line-number="2">model_fired &lt;-<span class="st"> </span><span class="kw">glm</span>(status <span class="op">==</span><span class="st"> &quot;fired&quot;</span> <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> HR, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
-<a class="sourceLine" id="cb56-3" data-line-number="3"><span class="kw">coef</span>(model_fired)</a></code></pre></div>
-<pre><code>##  (Intercept)   gendermale          age        hours   evaluation 
-##  5.737945729 -0.066803609 -0.001503314 -0.102021120 -0.425793369 
-##       salary 
-## -0.015740080</code></pre>
-<p>For the new observation, the predicted value of the logit of the probability of being fired is obtained by applying the <code>predict()</code> function:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="kw">as.vector</span>(pred.inst &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation)) <span class="co"># new pediction</span></a></code></pre></div>
-<pre><code>## [1] 0.3858406</code></pre>
-<p>On the other hand, variable attributions can be obtained by applying the <code>predict()</code> function with the <code>type=&quot;terms&quot;</code> argument:</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1">(var.attr &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation, <span class="dt">type =</span> <span class="st">&quot;terms&quot;</span>)) <span class="co"># attributions</span></a></code></pre></div>
-<pre><code>##        gender         age     hours evaluation      salary
-## 1 -0.03361889 -0.02660691 0.7555555  0.5547197 0.007287334
-## attr(,&quot;constant&quot;)
-## [1] -0.8714962</code></pre>
-<p>The largest contributions to the prediction come from variables ‘’hours’’ and ‘’evaluation.’’ Variables ‘’gender’’ and ‘’age’’ slightly decrease the predicted value. The sum of the attributions is equal to</p>
-<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="kw">sum</span>(var.attr)</a></code></pre></div>
-<pre><code>## [1] 1.257337</code></pre>
-<p>The attribute <code>constant</code> of object <code>var.attr</code> provides the ‘’average’’ prediction, i.e., the predicted logit for an obsrvation defined by the means of the explanatory variables, as can be seen from the calculation below:</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="kw">coef</span>(model_fired)<span class="op">%*%</span><span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">mean</span>((HR<span class="op">$</span>gender<span class="op">==</span><span class="st">&quot;male&quot;</span>)), <span class="kw">mean</span>(HR<span class="op">$</span>age), <span class="kw">mean</span>(HR<span class="op">$</span>hours), </a>
-<a class="sourceLine" id="cb64-2" data-line-number="2">                      <span class="kw">mean</span>(HR<span class="op">$</span>evaluation), <span class="kw">mean</span>(HR<span class="op">$</span>salary))</a></code></pre></div>
-<pre><code>##            [,1]
-## [1,] -0.8714962</code></pre>
-<p>Adding the ‘’average’’ prediction to the sum of the variable attributions results in the new-observation prediction:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" data-line-number="1"><span class="kw">attributes</span>(var.attr)<span class="op">$</span>constant <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(var.attr)</a></code></pre></div>
-<pre><code>## [1] 0.3858406</code></pre>
-<p>Below we illustrate how to implement this approach with the <code>DALEX</code> package. Toward this end, functions <code>explain()</code> and <code>single_prediction()</code> can be used. Object <code>model_fired</code> stores the definition of the logistic-regression model used earlier in this section. The contents of object <code>attribution</code> correspond to the results obtained by using function <code>predict()</code>.</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb68-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb68-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb68-3" data-line-number="3">explainer_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(model_fired,</a>
-<a class="sourceLine" id="cb68-4" data-line-number="4">                 <span class="dt">data =</span> HR,</a>
-<a class="sourceLine" id="cb68-5" data-line-number="5">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
-<a class="sourceLine" id="cb68-6" data-line-number="6">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
-<a class="sourceLine" id="cb68-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb68-8" data-line-number="8">(attribution &lt;-<span class="st"> </span><span class="kw">single_prediction</span>(explainer_fired, new_observation))</a></code></pre></div>
-<pre><code>##                    variable contribution variable_name variable_value
-## 1               (Intercept)  0.363833312     Intercept              1
-## hours        + hours = 42.3  0.109221944         hours           42.3
-## evaluation + evaluation = 2  0.134863451    evaluation              2
-## salary         + salary = 2  0.001751398        salary              2
-## age            + age = 57.7 -0.006343784           age           57.7
-## gender      + gender = male -0.008045314        gender           male
-## 11          final_prognosis  0.595281007                             
-##            cummulative sign position label
-## 1            0.3638333    1        1 fired
-## hours        0.4730553    1        2 fired
-## evaluation   0.6079187    1        3 fired
-## salary       0.6096701    1        4 fired
-## age          0.6033263   -1        5 fired
-## gender       0.5952810   -1        6 fired
-## 11           0.5952810    X        7 fired</code></pre>
-<p>After object <code>attribution</code> has been created, a plot presenting the variable attributions can be easily constructed:</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="kw">plot</span>(attribution)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-41-1.png" width="672" /></p>
+<div id="a-bit-of-philosophy-three-laws-for-model-level-explanations" class="section level2">
+<h2><span class="header-section-number">12.2</span> A bit of philosophy: Three Laws for Model Level Explanations</h2>
+<p>In the spirit of three laws introduces in the chapter <a href="index.html#three-single-laws">1.2</a> here we propose three laws for model level explanations.</p>
+<ul>
+<li><strong>Variable importance.</strong> For every model we shall be able to understand which variables are important and which are not.</li>
+<li><strong>Model audit.</strong> For every model we shall be able to verify basic check like if residuals are correlated with variables and if there are unusual observations.</li>
+<li><strong>Second opinion.</strong> For every model we shall be able to compare it against other models to verify if they capture different stories about the data.</li>
+</ul>
 
-</div>
-</div>
-<h3>References</h3>
-<div id="refs" class="references">
-<div id="ref-wine2009">
-<p>Cortez, Paulo, António Cerdeira, Fernando Almeida, Telmo Matos, and José Reis. 2009. “Modeling Wine Preferences by Data Mining from Physicochemical Properties.” <em>Decision Support Systems</em> 47 (4): 547–53. <a href="https://doi.org/10.1016/j.dss.2009.05.016">https://doi.org/10.1016/j.dss.2009.05.016</a>.</p>
 </div>
 </div>
             </section>
@@ -436,8 +328,8 @@ Figure 6.1: (fig:attribution1a)Relation between wine quality and concentration o
           </div>
         </div>
       </div>
-<a href="ceterisParibusA.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="breakDown.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="model-level-explanations.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="variableImportance.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
