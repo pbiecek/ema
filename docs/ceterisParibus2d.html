@@ -32,8 +32,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="introduction-4.html">
-<link rel="next" href="variableEngeneering.html">
+<link rel="prev" href="ceterisParibusOscillations.html">
+<link rel="next" href="variableAttributionMethods.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -293,220 +293,186 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="variableImportance" class="section level1">
-<h1><span class="header-section-number">Chapter 14</span> Feature Importance</h1>
-<p>Methods presented in this chapter are useful for assessment of feature importance. There are many possible applications of such methods, for example:</p>
-<ul>
-<li>Feature importance scores may be used for feature filtering. Features that are not important may be removed from the model training procedure. Removal of the noise shall lead to better models.</li>
-<li>Identification of the most important features may be used as a validation of a model against domain knowledge. Just to make sure that it’s not like a single random feature dominates model predictions.</li>
-<li>Identification of the most important features may leads to new domain knowledge. Well, we have identified important features.</li>
-<li>Comparison of feature importance between different models helps to understand how different models handle particular features.</li>
-<li>Ranking of feature importance helps to decide in what order we shall perform further model exploration, in what order we shall examine particular feature effects.</li>
-</ul>
-<p>There are many methods for assessment of feature importance. In general we may divide them into two groups, methods that are model specific and methods that are model agnostic.</p>
-<p>Some models like random forest, gradient boosting, linear models and many others have their own ways to assess feature importance. Such method are linked with the particular structure of the model. In terms of linear models such specific measures are linked with normalized regression coefficients of p-values. For tree based ensembles such measures may be based on utilization of particular features in particular trees, see <span class="citation">(Foster <a href="#ref-xgboostExplainer">2017</a>)</span> for gradient boosting or <span class="citation">(Paluszynska and Biecek <a href="#ref-randomForestExplainer">2017</a><a href="#ref-randomForestExplainer">a</a>)</span> for random forest.</p>
-<p>But in this book we are focused on methods that are model agnostic. The may reason for that is</p>
-<ul>
-<li>First, be able to apply this method to any predictive model or ensemble of models.</li>
-<li>Second, (which is maybe even more important) to be able to compare feature importance between models despite differences in their structure.</li>
-</ul>
-<p>Model agnostic methods cannot assume anything about the model structure and we do not want to refit a model. The method that is presented below is described in details in the <span class="citation">(Fisher, Rudin, and Dominici <a href="#ref-variableImportancePermutations">2018</a>)</span>.
-The main idea is to measure how much the model fit will decrease if a selected feature or group of features will be cancelled out. Here cancellation means perturbations like resampling from empirical distribution of just permutation.</p>
-<p>The method can be used to measure importance of single features, pairs of features or larger tuples For the simplicity below we describe algorithm for single features, but it is straight forward to use it for larger subsets of features.</p>
-<div id="permutation-based-feature-importance" class="section level2">
-<h2><span class="header-section-number">14.1</span> Permutation Based Feature Importance</h2>
-<p>The idea behind is easy and in some sense borrowed from Random Forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>. If a feature is important then after permutation model performance shall drop. The larger drop the more important is the feature.</p>
-<p>Let’s describe this idea in a bit more formal way. Let <span class="math inline">\(\mathcal L(f(x), y)\)</span> be a loss function that assess goodness of fit for a model <span class="math inline">\(f(x)\)</span> while let <span class="math inline">\(\mathcal X\)</span> be a set of features.</p>
-<ol style="list-style-type: decimal">
-<li>For each feature <span class="math inline">\(x_i \in \mathcal X\)</span> do steps 2-5</li>
-<li>Create a new data <span class="math inline">\(x^{*,-i}\)</span> with feature <span class="math inline">\(x_i\)</span> resampled (or permutated).</li>
-<li>Calculate model predictions for the new data <span class="math inline">\(x^{*,-i}\)</span>, they will be denoted as <span class="math inline">\(f(x^{*,-i})\)</span>.</li>
-<li>Calculate loss function for models predictions on perturbed data
+<div id="ceterisParibus2d" class="section level1">
+<h1><span class="header-section-number">Chapter 6</span> Two-dimensional (2D) Ceteris-paribus Profiles</h1>
+<p>The definition of CP profiles, given in Section <a href="#ceterisParibus1d"><strong>??</strong></a>, may be easily extended to two or more explanatory variables. Also, the definition of the variance importance measure <span class="math inline">\(vip^{CP}_j(x^*)\)</span> have a straightforward extension for a larger number of variables. For instance, a two-dimensional (2D) CP profile for model <span class="math inline">\(f\)</span>, explanatory variables <span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span>, and point <span class="math inline">\(x^*\)</span> is defined as follows:</p>
+<p><span class="math display">\[
+CP^{f, (j,k), x^*}(z_1, z_2) \equiv f(x^*|^{(j,k)} = (z_1,z_2)).
+\]</span>
+Thus, 2D CP profile is a function that provides the dependence of the (approximate) expected value (prediction) of the model for <span class="math inline">\(Y\)</span> on the values of <span class="math inline">\(j\)</span>-th and <span class="math inline">\(k\)</span>-th explanatory variables <span class="math inline">\(z_1\)</span> and <span class="math inline">\(z_2\)</span>, respectively, where <span class="math inline">\(z_1\)</span> and <span class="math inline">\(z_2\)</span> are taken to go through the range of values typical for the variables, and values of all other variables in <span class="math inline">\(x^*\)</span> are kept fixed at the values present in <span class="math inline">\(x^*\)</span>.</p>
+<p>The corresponding variance importance measure would be defined as follows:
 <span class="math display">\[
-L^{*,-i} = \mathcal L(f(x^{*,-i}), y)
-\]</span></li>
-<li>Feature importance may be calculated as difference or ratio of the original loss and loss on perturbed data, i.e. <span class="math inline">\(vip(x_i) = L^{*,-i} - L\)</span> or <span class="math inline">\(vip(x_i) = L^{*,-i} / L\)</span>.</li>
-</ol>
-<p>Note that ranking of feature importance will be the same for the difference and the ratio since the loss <span class="math inline">\(L\)</span> is the same.</p>
-<p>Note also, that the main advantage of the step 5 is that feature importance is kind of normalized. But in many cases such normalization is not needed and in fact it makes more sense to present raw <span class="math inline">\(L^{*,-i}\)</span> values.</p>
-</div>
-<div id="example-titanic" class="section level2">
-<h2><span class="header-section-number">14.2</span> Example: Titanic</h2>
-<p>Let’s use this approach to a random forest model created for the Titanic dataset. The goal is to predict passenger survival probability based on their sex, age, class, fare and some other features available in the <code>titanic</code> dataset.</p>
-<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" data-line-number="1"><span class="kw">head</span>(titanic)</a></code></pre></div>
-<pre><code>##   gender age class    embarked       country  fare sibsp parch survived
-## 1   male  42   3rd Southampton United States  7.11     0     0       no
-## 2   male  13   3rd Southampton United States 20.05     0     2       no
-## 3   male  16   3rd Southampton United States 20.05     1     1       no
-## 4 female  39   3rd Southampton       England 20.05     1     1      yes
-## 5 female  16   3rd Southampton        Norway  7.13     0     0      yes
-## 6   male  25   3rd Southampton United States  7.13     0     0      yes
-##     age_c
-## 1 (30,50]
-## 2 (10,18]
-## 3 (10,18]
-## 4 (30,50]
-## 5 (10,18]
-## 6 (18,30]</code></pre>
-<p>Permutation based feature importance can be calculated with the <code>feature_importance{ingredients}</code>. By default it permutes values feature by feature.</p>
-<p>Instead of showing normalized feature importance we plot both original <span class="math inline">\(L\)</span> and loss after permutation <span class="math inline">\(L^{*,-i}\)</span>. This way we can read also how good was the model, and as we will see in next subsection it will be useful for model comparison.</p>
-<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb117-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb117-2" data-line-number="2">fi_rf &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(explain_titanic_rf) </a>
-<a class="sourceLine" id="cb117-3" data-line-number="3"><span class="kw">plot</span>(fi_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;Permutation based feature importance&quot;</span>, <span class="st">&quot;For Random Forest model and Titanic data&quot;</span>)</a></code></pre></div>
-<div class="figure"><span id="fig:titanic3"></span>
-<img src="PM_VEE_files/figure-html/titanic3-1.png" alt="Feature importance. Each interval presents the difference between original model performance (left end) and the performance on a dataset with a single feature perturbed" width="480" />
+vip^{CP}_{j,k}(x^*) = \int_{\mathcal R}\int_{\mathcal R} |CP^{f,(j,k),x^*}(z_1,z_2) - f(x^*)| g^{j,k}(z_1,z_2)dz_1dz_2=E_{X_j,X_k}[|CP^{f,j,x^*}(X_j,X_k) - f(x^*)|],
+\]</span>
+where the expected value is taken over the joint distribution of the <span class="math inline">\(j\)</span>-th and <span class="math inline">\(k\)</span>-th explanatory variable.</p>
+<p>Such multi-dimensional extensions are useful to check if, for instance, the model involves interactions. In particular, presence of pairwise interactions may be detected with two-dimensional (2D) CP profiles.</p>
+<p>A natural way to visualise 2D CP profiles is to use a heatmap, as in Figure <a href="ceterisParibus2d.html#fig:CP2Dsurflor">6.1</a>. [TOMASZ: WHAT DOES THE PLOT SUGGEST?]</p>
+<div class="figure" style="text-align: center"><span id="fig:CP2Dsurflor"></span>
+<img src="figure/cp_2d_surf_floor.png" alt="(fig:CP2Dsurflor) Ceteris-paribus profile for a pair of explanatory variables (floor and surface) for a model for the price of an apartment. Black cross marks the coordinates of the point of interest." width="60%" />
 <p class="caption">
-Figure 14.1: Feature importance. Each interval presents the difference between original model performance (left end) and the performance on a dataset with a single feature perturbed
+Figure 6.1: (fig:CP2Dsurflor) Ceteris-paribus profile for a pair of explanatory variables (floor and surface) for a model for the price of an apartment. Black cross marks the coordinates of the point of interest.
 </p>
 </div>
-<p>It’s interesting that the most important variable for Titanic data is the Sex. So it have been ,,women first’’ after all. Then the three features of similar importance are passenger class (first class has higher survival), age (kids have higher survival) and fare (owners of more pricy tickets have higher survival).</p>
-<p>Note that drawing permutations evolves some randomness. Thus to have higher repeatability of results you may either set a seed for random number generator or replicate the procedure few times. The second approach has additional advantage, that you will learn the uncertainty behind feature importance assessment.</p>
-<p>Here we present scores for 10 repetition of the process.</p>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" data-line-number="1">fi_rf10 &lt;-<span class="st"> </span><span class="kw">replicate</span>(<span class="dv">10</span>, <span class="kw">feature_importance</span>(explain_titanic_rf), <span class="dt">simplify =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb118-2" data-line-number="2"><span class="kw">do.call</span>(plot, fi_rf10) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;Permutation based feature importance&quot;</span>, <span class="st">&quot;For Random Forest model and Titanic data&quot;</span>)</a></code></pre></div>
-<div class="figure"><span id="fig:titanic4"></span>
-<img src="PM_VEE_files/figure-html/titanic4-1.png" alt="Feature importance for 10 replication of feature importance assessment" width="480" />
+<p>If the number of pairs of explanatory variables is small or moderate, then it is possible to present 2D CP profiles for all pairs of variables, as illustrated in Figure <a href="ceterisParibus2d.html#fig:CP2Dall">6.2</a>.</p>
+<div class="figure" style="text-align: center"><span id="fig:CP2Dall"></span>
+<img src="figure/cp_2d_all.png" alt="(fig:CP2Dall) Ceteris-paribus profile for all pairs of explanatory variables  for a model for the price of an apartment." width="90%" />
 <p class="caption">
-Figure 14.2: Feature importance for 10 replication of feature importance assessment
+Figure 6.2: (fig:CP2Dall) Ceteris-paribus profile for all pairs of explanatory variables for a model for the price of an apartment.
 </p>
 </div>
-<p>It is much easier to assess feature importance if they come with some assessment of the uncertainty. We can read from the plot that Age and passenger class are close to each other.</p>
-<p>Note that intervals are useful for model comparisons. In the Figure @ref{titanic5} we can read feature importance for random forest, gradient boosting and logistic regression models. Best results are achieved by the random forest model and also this method consume more features than others. A good example is the <em>Fare</em> variable, not used in gradient boosting not logistic regression (as a feature highly correlated with passenger class) but consumed in the random forest model.</p>
-<div class="sourceCode" id="cb119"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb119-1" data-line-number="1">fi_rf &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(explain_titanic_rf)</a>
-<a class="sourceLine" id="cb119-2" data-line-number="2">fi_gbm &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(explain_titanic_gbm)</a>
-<a class="sourceLine" id="cb119-3" data-line-number="3">fi_glm &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(explain_titanic_lmr)</a>
-<a class="sourceLine" id="cb119-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb119-5" data-line-number="5"><span class="kw">plot</span>(fi_rf, fi_gbm, fi_glm)</a></code></pre></div>
-<div class="figure"><span id="fig:titanic5"></span>
-<img src="PM_VEE_files/figure-html/titanic5-1.png" alt="Feature importance for random forest, gradient boosting and logistic regression models" width="480" />
+<p>If the number of pairs is large, we can use the variable importance measure to order the pairs based on their importance and select the most important pairs for purposes of illustration.</p>
+<div id="example-local-model-fidelity" class="section level2">
+<h2><span class="header-section-number">6.1</span> Example: Local Model Fidelity</h2>
+<p>It may happen that global performance of the model is good, while for some particular observations the fit is very bad. Local fidelity helps to understand how good is the model fit at a particular observation. In this section we show how to use CP profiles to validate local model fidelity.</p>
+<p>The idea behind fidelity plots is to select a number of observatons (“neighbors”) from the validation dataset that are closest to the observation of interest. Then for the selected observations we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbours, we may add residuals to the plot to evaluate the local fit of the model.</p>
+<p>An example of a fidelity plot is presented in Figure <a href="ceterisParibus2d.html#fig:CPfidelity1">6.3</a>. [TOMASZ: WHICH DATA? WHICH MODEL? WHICH OBSERVATION WAS SELECTED? HOW THE NEIGHBORS WERE SELECTED?] The dark black line shows the CP profile for the observation of interest. Grey lines show CP profiles for the neihgbors. The red intervals indicate the residuals, i.e., the difference between the model prediction and the observed value of the dependent variable (indicated by the red dot). [TOMASZ: WHY ARE THERE INTERVALS THAT DO NOT START AT THE CP PROFILE?] In this example the intervals show that the predicted values are larger than the observed values of the dependent variable for all neighbors, i.e., all residuals are negative. Thus, the model may provide biased predictions around the observation of interest. [TOMASZ: IF WE FOCUS ON THE RESIDUALS, WHY DO WE NEED THE PROFILES?]</p>
+<div class="figure" style="text-align: center"><span id="fig:CPfidelity1"></span>
+<img src="figure/cp_fidelity_1.png" alt="(fig:CPfidelity1) Local fidelity plot [TOMASZ: WHICH DATA? WHICH OBSERVATION? WHICH MODEL?]. The black line shows the Cetris-paribus (CP) profile for the observation of interest. Grey lines show CP profiles for the neighbors of the observation from a validation dataset. Red intervals correspond to residuals - each interval extends from the model prediction for a selected neighbor to the observed value of the dependent variable (indicated by the red dot)." width="70%" />
 <p class="caption">
-Figure 14.3: Feature importance for random forest, gradient boosting and logistic regression models
+Figure 6.3: (fig:CPfidelity1) Local fidelity plot [TOMASZ: WHICH DATA? WHICH OBSERVATION? WHICH MODEL?]. The black line shows the Cetris-paribus (CP) profile for the observation of interest. Grey lines show CP profiles for the neighbors of the observation from a validation dataset. Red intervals correspond to residuals - each interval extends from the model prediction for a selected neighbor to the observed value of the dependent variable (indicated by the red dot).
+</p>
+</div>
+<p>This observation is confirmed by Figure <a href="ceterisParibus2d.html#fig:CPfidelityBoxplot">6.4</a>, which compares the distribution of all residuals from the validation dataset and the distribution of residuals for the neighbors. The plot shows that the residuals for neighbors are shifted towards higher values. [TOMASZ: THIS MAKES NO SENSE. THE PLOT SUGGESTS POSITIVE RESIDUALS, WHEREAS ABOVE IT IS ARGUED THAT THE RESIDUALS ARE NEGATIVE.] This suggests that the model predictions around the observation of interest are biased.</p>
+<div class="figure" style="text-align: center"><span id="fig:CPfidelityBoxplot"></span>
+<img src="figure/cp_fidelity_boxplot.png" alt="(fig:CPfidelityBoxplot) Distribution of residuals for the entire  validation dataset (grey boxplot) and for 15 selected neighbors to the observation of interest (red boxplot)." width="70%" />
+<p class="caption">
+Figure 6.4: (fig:CPfidelityBoxplot) Distribution of residuals for the entire validation dataset (grey boxplot) and for 15 selected neighbors to the observation of interest (red boxplot).
 </p>
 </div>
 </div>
-<div id="example-price-prediction" class="section level2">
-<h2><span class="header-section-number">14.3</span> Example: Price prediction</h2>
-<p>Let’s create a regression model for prediction of apartment prices.</p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb120-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb120-3" data-line-number="3"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb120-4" data-line-number="4">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb120-5" data-line-number="5"><span class="st">                           </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a></code></pre></div>
-<p>A popular loss function for regression model is the root mean square loss
-<span class="math display">\[
-  L(x, y) = \sqrt{\frac1n \sum_{i=1}^n (x_i - y_i)^2}
-\]</span></p>
-<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1"><span class="kw">loss_root_mean_square</span>(</a>
-<a class="sourceLine" id="cb121-2" data-line-number="2">  <span class="kw">predict</span>(model_rf, apartments), </a>
-<a class="sourceLine" id="cb121-3" data-line-number="3">  apartments<span class="op">$</span>m2.price</a>
-<a class="sourceLine" id="cb121-4" data-line-number="4">)</a></code></pre></div>
-<pre><code>## [1] 193.8477</code></pre>
-<p>Let’s calculate feature importance</p>
-<div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb123-1" data-line-number="1">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_rf, </a>
-<a class="sourceLine" id="cb123-2" data-line-number="2">            <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb123-3" data-line-number="3">vip &lt;-<span class="st"> </span><span class="kw">variable_importance</span>(explainer_rf, </a>
-<a class="sourceLine" id="cb123-4" data-line-number="4">            <span class="dt">loss_function =</span> loss_root_mean_square)</a>
-<a class="sourceLine" id="cb123-5" data-line-number="5">vip</a></code></pre></div>
-<pre><code>##            variable dropout_loss        label
-## 1      _full_model_     285.1355 randomForest
-## 2          no.rooms     391.0710 randomForest
-## 3 construction.year     410.5866 randomForest
-## 4             floor     445.2164 randomForest
-## 5           surface     480.1431 randomForest
-## 6          district     843.6519 randomForest
-## 7        _baseline_    1081.3710 randomForest</code></pre>
-<p>On a diagnostic plot is useful to present feature importance as an interval that start in a loss and ends in a loss of perturbed data.</p>
-<div class="sourceCode" id="cb125"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb125-1" data-line-number="1"><span class="kw">plot</span>(vip)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-73-1.png" width="672" /></p>
+<div id="pros-and-cons-2" class="section level2">
+<h2><span class="header-section-number">6.2</span> Pros and cons</h2>
+<p>CP profiles offer a uniform, easy to comunicate and extendable approach to model exploration. Their graphical representation is easy to understand and explain. It is possible to present profiles for many variables or models in a single plot. By using the expected oscillations of CP profiles it is possible to select the most important variables for instane prediction. Two-dimensional CP profiles can be used to, for instance, identify the presence of pairwise interactions in a model.</p>
+<p>There are several issues related to the use of the CP profiles. If explanatory variables are correlated, then changing one variable implies a change in the other. In such case, the application of the <em>Ceteris paribus</em> principle may lead to unrealistic settings, as it is not possible to keep one variable fixed while changing the other one. A special case are interactions, which require the use of 2D CP profiles that are more complex than the 1D ones. Also, in case of a model with hundreds or thousands of variables, the number of plots to inspect may be daunting. Finally, visualization of CP profiles for factors (categorical explanatory variables) is not trivial, especially for factors with many nominal (unordered) categories (like, for example, a ZIP-code).</p>
 </div>
-<div id="more-models" class="section level2">
-<h2><span class="header-section-number">14.4</span> More models</h2>
-<p>Much more can be read from feature importance plots if we compare models of a different structure.
-Let’s train three predictive models trained on <code>apartments</code> dataset from the <code>DALEX</code> package. Random Forest model <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> (elastic but biased), Support Vector Machines model <span class="citation">(Meyer et al. <a href="#ref-R-e1071">2017</a>)</span> (large variance on boundaries) and Linear Model (stable but not very elastic).
-Presented examples are for regression (prediction of square meter price), but the CP profiles may be used in the same way for classification.</p>
-<p>Let’s fit these three models.</p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb126-2" data-line-number="2">model_lm &lt;-<span class="st"> </span><span class="kw">lm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb126-3" data-line-number="3"><span class="st">                      </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb126-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb126-5" data-line-number="5"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb126-6" data-line-number="6"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb126-7" data-line-number="7">model_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb126-8" data-line-number="8"><span class="st">                      </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a>
-<a class="sourceLine" id="cb126-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb126-10" data-line-number="10"><span class="kw">library</span>(<span class="st">&quot;e1071&quot;</span>)</a>
-<a class="sourceLine" id="cb126-11" data-line-number="11">model_svm &lt;-<span class="st"> </span><span class="kw">svm</span>(m2.price <span class="op">~</span><span class="st"> </span>construction.year <span class="op">+</span><span class="st"> </span>surface <span class="op">+</span><span class="st"> </span>floor <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb126-12" data-line-number="12"><span class="st">                         </span>no.rooms <span class="op">+</span><span class="st"> </span>district, <span class="dt">data =</span> apartments)</a></code></pre></div>
-<p>For these models we use <code>DALEX</code> explainers created with <code>explain()</code> function. These explainers wrap models, predict functions and validation data.</p>
-<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb127-1" data-line-number="1">explainer_lm &lt;-<span class="st"> </span><span class="kw">explain</span>(model_lm, </a>
-<a class="sourceLine" id="cb127-2" data-line-number="2">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb127-3" data-line-number="3">vip_lm &lt;-<span class="st"> </span><span class="kw">variable_importance</span>(explainer_lm, </a>
-<a class="sourceLine" id="cb127-4" data-line-number="4">            <span class="dt">loss_function =</span> loss_root_mean_square)</a>
-<a class="sourceLine" id="cb127-5" data-line-number="5">vip_lm</a></code></pre></div>
-<pre><code>##            variable dropout_loss label
-## 1      _full_model_     282.0062    lm
-## 2 construction.year     281.9007    lm
-## 3          no.rooms     292.8398    lm
-## 4             floor     492.0857    lm
-## 5           surface     614.9198    lm
-## 6          district    1002.3487    lm
-## 7        _baseline_    1193.6209    lm</code></pre>
-<div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb129-1" data-line-number="1">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_rf, </a>
-<a class="sourceLine" id="cb129-2" data-line-number="2">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb129-3" data-line-number="3">vip_rf &lt;-<span class="st"> </span><span class="kw">variable_importance</span>(explainer_rf, </a>
-<a class="sourceLine" id="cb129-4" data-line-number="4">            <span class="dt">loss_function =</span> loss_root_mean_square)</a>
-<a class="sourceLine" id="cb129-5" data-line-number="5">vip_rf</a></code></pre></div>
-<pre><code>##            variable dropout_loss        label
-## 1      _full_model_     293.2729 randomForest
-## 2          no.rooms     389.4526 randomForest
-## 3 construction.year     416.1154 randomForest
-## 4             floor     453.9195 randomForest
-## 5           surface     480.4062 randomForest
-## 6          district     867.7050 randomForest
-## 7        _baseline_    1116.2616 randomForest</code></pre>
-<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb131-1" data-line-number="1">explainer_svm &lt;-<span class="st"> </span><span class="kw">explain</span>(model_svm, </a>
-<a class="sourceLine" id="cb131-2" data-line-number="2">                       <span class="dt">data =</span> apartmentsTest[,<span class="dv">2</span><span class="op">:</span><span class="dv">6</span>], <span class="dt">y =</span> apartmentsTest<span class="op">$</span>m2.price)</a>
-<a class="sourceLine" id="cb131-3" data-line-number="3">vip_svm &lt;-<span class="st"> </span><span class="kw">variable_importance</span>(explainer_svm, </a>
-<a class="sourceLine" id="cb131-4" data-line-number="4">            <span class="dt">loss_function =</span> loss_root_mean_square)</a>
-<a class="sourceLine" id="cb131-5" data-line-number="5">vip_svm</a></code></pre></div>
-<pre><code>##            variable dropout_loss label
-## 1      _full_model_     157.7938   svm
-## 2          no.rooms     221.4595   svm
-## 3 construction.year     365.2600   svm
-## 4             floor     439.8724   svm
-## 5           surface     527.2598   svm
-## 6          district     942.8512   svm
-## 7        _baseline_    1203.7571   svm</code></pre>
-<p>Let’s plot feature importance for all three models on a single plot.</p>
-<p>Intervals start in a different values, thus we can read that loss for SVM model is the lowest.</p>
-<p>When we compare other features it looks like in all models the <code>district</code> is the most important feature followed by <code>surface</code> and <code>floor</code>.</p>
-<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" data-line-number="1"><span class="kw">plot</span>(vip_rf, vip_svm, vip_lm)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-76-1.png" width="672" /></p>
-<p>There is interesting difference between linear model and others in the way how important is the <code>construction.year</code>. For linear model this variable is not importance, while for remaining two models there is some importance.</p>
-<p>In the next chapter we will see how this is possible.</p>
-</div>
-<div id="level-frequency" class="section level2">
-<h2><span class="header-section-number">14.5</span> Level frequency</h2>
-<p>What does the feature importance mean? How it is linked with a data distribution.</p>
+<div id="code-snippets-for-r-2" class="section level2">
+<h2><span class="header-section-number">6.3</span> Code snippets for R</h2>
+<p>In this section we present key features of the R package <code>ingredients</code> <span class="citation">(<span class="citeproc-not-found" data-reference-id="R-ingredients"><strong>???</strong></span>)</span> which is a part of <code>DALEXverse</code> and covers all methods presented in this chapter. More details and examples can be found at <code>https://modeloriented.github.io/ingredients/</code>.</p>
+<p>There are also other R packages that offer similar methods. For example, an interesting approach to model exploration based on similar principles [TOMASZ: CETERIS-PARIBUS? IF NOT, WHY MENTION IT HERE?] is implemented in the <code>condvis</code> package <span class="citation">(O’Connell, Hurley, and Domijan <a href="#ref-JSSv081i05">2017</a>)</span>.</p>
+<p>In this section we use a random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>model_titanic_rf</code> developed for the Titanic dataset (see Section @ref{model_titanic_rf}). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.</p>
+<p>CP profiles are calculated in four steps with the <code>ingredients</code> package.</p>
+<p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
+<p>Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end we use the <code>explain()</code> function from the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">b</a>)</span>. The function requires at least four arguments: a model-object, a validation data frame, observed values of the dependent variable for the validation data, and a function that returns prediction scores. In the example below we use the training data as the validation dataset. Moreover, we do not specify the fourth argument, because the prediction-score function for <code>randomForest</code> objects is pre-implemented. [TOMASZ: SO, THE STATEMENT OF THE REQUIREMENT OF FOUR ARGUMENTS IS NOT PRECISE.]</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb48-2" data-line-number="2">explainer_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_titanic_rf, <span class="dt">data =</span> titanic_small, <span class="dt">y =</span> titanic_small<span class="op">$</span>Survived)</a></code></pre></div>
+<p><strong>2. Define the instance (observation) of interest.</strong></p>
+<p>CP profiles explore model around a single observation. Thus, in the exampe below, we define data frame <code>johny_d</code> with a single row. It describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()’ function. In particular, we compute the probability for each category of the dependent binary variable.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb49-2" data-line-number="2">  <span class="dt">Pclass =</span> <span class="dv">1</span>,</a>
+<a class="sourceLine" id="cb49-3" data-line-number="3">  <span class="dt">Sex =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
+<a class="sourceLine" id="cb49-4" data-line-number="4">  <span class="dt">Age =</span> <span class="dv">8</span>,</a>
+<a class="sourceLine" id="cb49-5" data-line-number="5">  <span class="dt">SibSp =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb49-6" data-line-number="6">  <span class="dt">Parch =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb49-7" data-line-number="7">  <span class="dt">Fare =</span> <span class="dv">72</span>,</a>
+<a class="sourceLine" id="cb49-8" data-line-number="8">  <span class="dt">Embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;C&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;N&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;Q&quot;</span>,<span class="st">&quot;S&quot;</span>))</a>
+<a class="sourceLine" id="cb49-9" data-line-number="9">)</a>
+<a class="sourceLine" id="cb49-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb49-11" data-line-number="11"><span class="kw">predict</span>(model_titanic_rf, johny_d, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<pre><code>##       0     1
+## 1 0.442 0.558
+## attr(,&quot;class&quot;)
+## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
+<p><strong>3. Calculate CP profiles</strong></p>
+<p>To obtain CP profiles, we use the <code>ceteris_paribus()</code> function. It requires the explainer-object and the instance data frame as arguments. By default, CP profiles are calculated for all numerical variables. To select a subset of variables, the <code>variables</code> argument can be used. As a result, the function yields a data frame with model predictions around the instance of interest.</p>
+<p>[TOMASZ: WHAT IS THE DEFAULT OUTPUT WHEN PRINTING THE RESULTING DATA FRAME?]</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1">devtools<span class="op">::</span><span class="kw">install_github</span>(<span class="st">&quot;ModelOriented/ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb51-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb51-3" data-line-number="3">cp_titanic_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_titanic_rf, johny_d, </a>
+<a class="sourceLine" id="cb51-4" data-line-number="4">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;SibSp&quot;</span>))</a>
+<a class="sourceLine" id="cb51-5" data-line-number="5">cp_titanic_rf</a></code></pre></div>
+<pre><code>## Top profiles    : 
+##     Pclass  Sex  Age SibSp Parch Fare Embarked _yhat_ _vname_ _ids_
+## 1        1 male 0.42     0     0   72        C  0.612     Age     1
+## 1.1      1 male 1.00     0     0   72        C  0.602     Age     1
+## 1.2      1 male 2.00     0     0   72        C  0.586     Age     1
+## 1.3      1 male 3.00     0     0   72        C  0.596     Age     1
+## 1.4      1 male 4.00     0     0   72        C  0.592     Age     1
+## 1.5      1 male 5.00     0     0   72        C  0.592     Age     1
+##          _label_
+## 1   randomForest
+## 1.1 randomForest
+## 1.2 randomForest
+## 1.3 randomForest
+## 1.4 randomForest
+## 1.5 randomForest
+## 
+## 
+## Top observations:
+##   Pclass  Sex Age SibSp Parch Fare Embarked _yhat_      _label_ _ids_
+## 1      1 male   8     0     0   72        C  0.558 randomForest     1</code></pre>
+<p><strong>4. Plot CP profiles.</strong></p>
+<p>To obtain a graphical represenation of CP profiles, the generic <code>plot()</code> function can be applied to the data frame returend by the <code>ceteris_paribus()</code> function. It returns a <code>ggplot2</code> object that can be processed if needed.</p>
+<p>The resulting plot can be enriched with additional data by adding functions <code>show_rugs</code> (adds rugs for the selected points), <code>show_observations</code> (adds observations), or <code>show_aggreagated_profiles</code> (see Section @ref{variableEngeneering}). All these functions can take additional arguments to modify size, color or linetype.</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="kw">plot</span>(cp_titanic_rf) <span class="op">+</span></a>
+<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="st">  </span><span class="kw">show_observations</span>(cp_titanic_rf, </a>
+<a class="sourceLine" id="cb53-3" data-line-number="3">        <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;SibSp&quot;</span>)) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
+<p>A very useful feature of the CP profiles is that profiles for two or more models may be superimposed in a single plot. Such an approach is sometimes called “contrastive explanations” and is very helpful for model comparisons. We will illustrate this approach by comparing the profiles for the random forest model with those obtained for a logistic regression model (see Section @ref{model_titanic_lmr}).</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb54-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;rms&quot;</span>)</a>
+<a class="sourceLine" id="cb54-2" data-line-number="2">model_titanic_lmr &lt;-<span class="st"> </span><span class="kw">lrm</span>(Survived <span class="op">==</span><span class="st"> &quot;1&quot;</span> <span class="op">~</span><span class="st"> </span>Pclass <span class="op">+</span><span class="st"> </span>Sex <span class="op">+</span><span class="st"> </span><span class="kw">rcs</span>(Age) <span class="op">+</span><span class="st"> </span>SibSp <span class="op">+</span></a>
+<a class="sourceLine" id="cb54-3" data-line-number="3"><span class="st">                   </span>Parch <span class="op">+</span><span class="st"> </span>Fare <span class="op">+</span><span class="st"> </span>Embarked, titanic_small)</a>
+<a class="sourceLine" id="cb54-4" data-line-number="4">explainer_titanic_lmr &lt;-<span class="st"> </span><span class="kw">explain</span>(model_titanic_lmr, <span class="dt">data =</span> titanic_small, <span class="dt">y =</span> titanic_small<span class="op">$</span>Survived,</a>
+<a class="sourceLine" id="cb54-5" data-line-number="5">                                 <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) <span class="kw">predict</span>(m,x,<span class="dt">type =</span> <span class="st">&quot;fitted&quot;</span>))</a>
+<a class="sourceLine" id="cb54-6" data-line-number="6">cp_titanic_lmr &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explainer_titanic_lmr, johny_d, </a>
+<a class="sourceLine" id="cb54-7" data-line-number="7">        <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;SibSp&quot;</span>))</a>
+<a class="sourceLine" id="cb54-8" data-line-number="8">cp_titanic_lmr</a></code></pre></div>
+<pre><code>## Top profiles    : 
+##     Pclass  Sex  Age SibSp Parch Fare Embarked    _yhat_ _vname_ _ids_
+## 1        1 male 0.42     0     0   72        C 0.9784112     Age     1
+## 1.1      1 male 1.00     0     0   72        C 0.9752918     Age     1
+## 1.2      1 male 2.00     0     0   72        C 0.9688533     Age     1
+## 1.3      1 male 3.00     0     0   72        C 0.9608045     Age     1
+## 1.4      1 male 4.00     0     0   72        C 0.9507814     Age     1
+## 1.5      1 male 5.00     0     0   72        C 0.9383767     Age     1
+##     _label_
+## 1       glm
+## 1.1     glm
+## 1.2     glm
+## 1.3     glm
+## 1.4     glm
+## 1.5     glm
+## 
+## 
+## Top observations:
+##   Pclass  Sex Age SibSp Parch Fare Embarked    _yhat_ _label_ _ids_
+## 1      1 male   8     0     0   72        C 0.8836101     glm     1</code></pre>
+<p>After obtaining the CP profiles for the logistic regression model, we can use function <code>plot()</code> to compare profiles for both models in a single chart. Toward this aim, we use both data frames as arguments for the function. The additional argument <code>color = &quot;_label_&quot;</code> sets color as a key for model.</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="kw">plot</span>(cp_titanic_rf, cp_titanic_lmr, <span class="dt">color =</span> <span class="st">&quot;_label_&quot;</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb56-2" data-line-number="2"><span class="st">  </span><span class="kw">show_observations</span>(cp_titanic_rf, cp_titanic_lmr,</a>
+<a class="sourceLine" id="cb56-3" data-line-number="3">        <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>, <span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Pclass&quot;</span>, <span class="st">&quot;SibSp&quot;</span>)) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<p>[TOMASZ: WE SHOULD PROVIDE COMMENTS FOR THE RESULTING PLOT.]</p>
+<p><strong>Oscillations</strong></p>
+<p>To calculate the variable importance measures based on the oscillations of CP profiles, we use the <code>calculate_oscillations()</code> function. We apply the function to the data frame returned by the <code>ceteris_paribus()</code> function. The result for the prediction of the Random Forest model for <code>johny_d</code> indicates that the most important variable is the age. To obtain a graphical representaton of the result, we can apply function <code>plot()</code> to the object returned by the <code>calculate_oscillations()</code> function.</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1">co_titanic_rf &lt;-<span class="st"> </span><span class="kw">calculate_oscillations</span>(cp_titanic_rf)</a>
+<a class="sourceLine" id="cb57-2" data-line-number="2">co_titanic_rf</a></code></pre></div>
+<pre><code>##   _vname_ _ids_ oscillations
+## 1     Age     1   0.11517460
+## 2    Fare     1   0.06140000
+## 3  Pclass     1   0.04300000
+## 4   SibSp     1   0.03771429</code></pre>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">plot</span>(co_titanic_rf)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<p><strong>Two-dimensional Ceteris-paribus Profiles</strong></p>
+<p>To create 2D CP profiles, we use the <code>ceteris_paribus_2d()</code> function. Its syntax resembles the one of the <code>ceteris_paribus()</code> function.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1">cp2d_titanic_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus_2d</span>(explainer_titanic_rf, <span class="dt">observation =</span> johny_d, </a>
+<a class="sourceLine" id="cb60-2" data-line-number="2">                 <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;Age&quot;</span>,<span class="st">&quot;Fare&quot;</span>, <span class="st">&quot;Pclass&quot;</span>))</a>
+<a class="sourceLine" id="cb60-3" data-line-number="3"><span class="kw">plot</span>(cp2d_titanic_rf, <span class="dt">split_ncol =</span> <span class="dv">2</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
+<p>[TOMASZ: WE SHOULD PROVIDE COMMENTS FOR THE RESULTING PLOT.]</p>
 
 </div>
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
-<div id="ref-xgboostExplainer">
-<p>Foster, David. 2017. <em>XgboostExplainer: An R Package That Makes Xgboost Models Fully Interpretable</em>. <a href="https://github.com/AppliedDataSciencePartners/xgboostExplainer/">https://github.com/AppliedDataSciencePartners/xgboostExplainer/</a>.</p>
-</div>
-<div id="ref-randomForestExplainer">
-<p>Paluszynska, Aleksandra, and Przemyslaw Biecek. 2017a. <em>RandomForestExplainer: A Set of Tools to Understand What Is Happening Inside a Random Forest</em>. <a href="https://github.com/MI2DataLab/randomForestExplainer">https://github.com/MI2DataLab/randomForestExplainer</a>.</p>
-</div>
-<div id="ref-variableImportancePermutations">
-<p>Fisher, Aaron, Cynthia Rudin, and Francesca Dominici. 2018. “Model Class Reliance: Variable Importance Measures for Any Machine Learning Model Class, from the ’Rashomon’ Perspective.” <em>Journal of Computational and Graphical Statistics</em>. <a href="http://arxiv.org/abs/1801.01489">http://arxiv.org/abs/1801.01489</a>.</p>
+<div id="ref-JSSv081i05">
+<p>O’Connell, Mark, Catherine Hurley, and Katarina Domijan. 2017. “Conditional Visualization for Statistical Models: An Introduction to the Condvis Package in R.” <em>Journal of Statistical Software, Articles</em> 81 (5): 1–20. <a href="https://doi.org/10.18637/jss.v081.i05">https://doi.org/10.18637/jss.v081.i05</a>.</p>
 </div>
 <div id="ref-R-randomForest">
 <p>Breiman, Leo, Adele Cutler, Andy Liaw, and Matthew Wiener. 2018. <em>RandomForest: Breiman and Cutler’s Random Forests for Classification and Regression</em>. <a href="https://CRAN.R-project.org/package=randomForest">https://CRAN.R-project.org/package=randomForest</a>.</p>
 </div>
-<div id="ref-R-e1071">
-<p>Meyer, David, Evgenia Dimitriadou, Kurt Hornik, Andreas Weingessel, and Friedrich Leisch. 2017. <em>E1071: Misc Functions of the Department of Statistics, Probability Theory Group (Formerly: E1071), Tu Wien</em>. <a href="https://CRAN.R-project.org/package=e1071">https://CRAN.R-project.org/package=e1071</a>.</p>
+<div id="ref-R-DALEX">
+<p>Biecek, Przemyslaw. 2018b. <em>DALEX: Descriptive mAchine Learning Explanations</em>. <a href="https://pbiecek.github.io/DALEX/">https://pbiecek.github.io/DALEX/</a>.</p>
 </div>
 </div>
             </section>
@@ -514,8 +480,8 @@ Presented examples are for regression (prediction of square meter price), but th
           </div>
         </div>
       </div>
-<a href="introduction-4.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="variableEngeneering.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="ceterisParibusOscillations.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="variableAttributionMethods.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
