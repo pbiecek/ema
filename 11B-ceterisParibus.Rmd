@@ -3,14 +3,33 @@ output:
   pdf_document: default
   html_document: default
 ---
-#  Two-dimensional (2D) Ceteris-paribus Profiles {#ceterisParibus2d}
+#  Ceteris-Paribus 2D Profiles - a tool for pairwise interactions {#ceterisParibus2d}
 
-The definition of CP profiles, given in Section \@ref(ceterisParibus1d), may be easily extended to two or more explanatory variables. Also, the definition of the variance importance measure $vip^{CP}_j(x^*)$ have a straightforward extension for a larger number of variables. For instance, a two-dimensional (2D) CP profile for model $f$, explanatory variables $j$ and $k$, and point $x^*$ is defined as follows:
+## Introduction
+
+The definition of Ceteris Paribus profiles, given in Section \@ref(ceterisParibus), may be easily extended to two or more explanatory variables. Also, the definition of the variance importance measure $vip^{CP}_j(x^*)$ have a straightforward extension for a larger number of variables. 
+
+Such extension is useful to identify or visualize of pairwise interactions between variables.
+
+## Intuition
+
+Figure \@ref(fig:profile2d) presents a response surface for a `titanic_lmr_v6` model for two explanatory variables, *age* and *sibsp*, from the *titanic* dataset (see Section \@ref(TitanicDataset)). We are interested in the change of the model prediction induced by each of the variables. 
+
+```{r profile2d, echo=FALSE, fig.cap="(fig:profile2d) Ceteris-paribus profile for a pair of explanatory variables for a model `titanic_lmer_v6` for `age`  and `sibsp` variables.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/profile_2d.png")
+```
+
+
+## Method
+
+The definition of Ceteris Paribus profiles may be easily extended to two or more explanatory variables. 
+A two-dimensional Ceteris Paribus profile for model $f$, explanatory variables $j$ and $k$, and point $x^*$ is defined as follows:
 
 $$
 CP^{f, (j,k), x^*}(z_1, z_2) \equiv f(x^*|^{(j,k)} = (z_1,z_2)).
 $$
-Thus, 2D CP profile is a function that provides the dependence of the (approximate) expected value (prediction) of the model for $Y$ on the values of $j$-th and $k$-th explanatory variables $z_1$ and $z_2$, respectively, where $z_1$ and $z_2$ are taken to go through the range of values typical for the variables, and values of all other variables in $x^*$ are kept fixed at the values present in $x^*$.
+
+Ceteris Paribus 2D profile is a function that provides the dependence of the prediction of the model on the values of $j$-th and $k$-th explanatory variables $z_1$ and $z_2$, respectively, where $z_1$ and $z_2$ are taken to go through the range of values typical for the variables, and values of all other variables in $x^*$ are kept fixed at the values present in $x^*$.
 
 The corresponding variance importance measure would be defined as follows: 
 $$
@@ -20,164 +39,81 @@ where the expected value is taken over the joint distribution of the $j$-th and 
 
 Such multi-dimensional extensions are useful to check if, for instance, the model involves interactions. In particular, presence of pairwise interactions may be detected with two-dimensional (2D) CP profiles.
 
-A natural way to visualise 2D CP profiles is to use a heatmap, as in Figure \@ref(fig:CP2Dsurflor). [TOMASZ: WHAT DOES THE PLOT SUGGEST?]
+A natural way to visualize 2D CP profiles is to use a heat map for all pairs of explanatory variables as in Figure \@ref(fig:profile2dAll). 
 
-```{r CP2Dsurflor, echo=FALSE, fig.cap="(fig:CP2Dsurflor) Ceteris-paribus profile for a pair of explanatory variables (floor and surface) for a model for the price of an apartment. Black cross marks the coordinates of the point of interest.", out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/cp_2d_surf_floor.png")
+```{r profile2dAll, echo=FALSE, fig.cap="(fig:profile2dAll) Ceteris-paribus profile for all pairs of explanatory variables for a `titanic_lmer_v6` model. Black cross marks the coordinates of the point of interest.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/profile_2d_all.png")
 ```
 
-If the number of pairs of explanatory variables is small or moderate, then it is possible to present 2D CP profiles for all pairs of variables, as illustrated in Figure \@ref(fig:CP2Dall).  
-
-```{r CP2Dall, echo=FALSE, fig.cap="(fig:CP2Dall) Ceteris-paribus profile for all pairs of explanatory variables  for a model for the price of an apartment.", out.width = '90%', fig.align='center'}
-knitr::include_graphics("figure/cp_2d_all.png")
-```
+If the number of pairs of explanatory variables is small or moderate, then it is possible to present 2D CP profiles for all pairs of variables.  
 
 If the number of pairs is large, we can use the variable importance measure to order the pairs based on their importance and select the most important pairs for purposes of illustration.
 
-## Example: Local Model Fidelity
-
-It may happen that global performance of the model is good, while for some particular observations the fit is very bad. Local fidelity helps to understand how good is the model fit at a particular observation. In this section we show how to use CP profiles to validate local model fidelity. 
-
-The idea behind fidelity plots is to select a number of observatons ("neighbors") from the validation dataset that are closest to the observation of interest. Then for the selected observations we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbours, we may add residuals to the plot to evaluate the local fit of the model.
-
-An example of a fidelity plot is presented in Figure \@ref(fig:CPfidelity1). [TOMASZ: WHICH DATA? WHICH MODEL? WHICH OBSERVATION WAS SELECTED? HOW THE NEIGHBORS WERE SELECTED?] The dark black line shows the CP profile for the observation of interest. Grey lines show CP profiles for the neihgbors. The red intervals indicate the residuals, i.e., the difference between the model prediction and the observed value of the dependent variable (indicated by the red dot). [TOMASZ: WHY ARE THERE INTERVALS THAT DO NOT START AT THE CP PROFILE?] In this example the intervals show that the predicted values are larger than the observed values of the dependent variable for all neighbors, i.e., all residuals are negative. Thus, the model may provide biased predictions around the observation of interest. [TOMASZ: IF WE FOCUS ON THE RESIDUALS, WHY DO WE NEED THE PROFILES?]
-
-```{r CPfidelity1, echo=FALSE, fig.cap="(fig:CPfidelity1) Local fidelity plot [TOMASZ: WHICH DATA? WHICH OBSERVATION? WHICH MODEL?]. The black line shows the Cetris-paribus (CP) profile for the observation of interest. Grey lines show CP profiles for the neighbors of the observation from a validation dataset. Red intervals correspond to residuals - each interval extends from the model prediction for a selected neighbor to the observed value of the dependent variable (indicated by the red dot).", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/cp_fidelity_1.png")
-```
-
-This observation is confirmed by Figure \@ref(fig:CPfidelityBoxplot), which compares the distribution of all residuals from the validation dataset and the distribution of residuals for the neighbors. The plot shows that the  residuals for neighbors are shifted towards higher values. [TOMASZ: THIS MAKES NO SENSE. THE PLOT SUGGESTS POSITIVE RESIDUALS, WHEREAS ABOVE IT IS ARGUED THAT THE RESIDUALS ARE NEGATIVE.] This suggests that the model predictions  around the observation of interest are biased.
-
-
-```{r CPfidelityBoxplot, echo=FALSE, fig.cap="(fig:CPfidelityBoxplot) Distribution of residuals for the entire  validation dataset (grey boxplot) and for 15 selected neighbors to the observation of interest (red boxplot).", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/cp_fidelity_boxplot.png")
-```
 
 ## Pros and cons
 
-CP profiles offer a uniform, easy to comunicate and extendable approach to model exploration. Their graphical representation is easy to understand and explain. It is possible to present profiles for many variables or models in a single plot. By using the expected oscillations of CP profiles it is possible to select the most important variables for instane prediction. Two-dimensional CP profiles can be used to, for instance, identify the presence of pairwise interactions in a model. 
+Two-dimensional CP profiles can be used to identify the presence of pairwise interactions in a model. 
 
-There are several issues related to the use of the CP profiles. If explanatory variables are correlated, then changing one variable implies a change in the other. In such case, the application of the *Ceteris paribus* principle may lead to unrealistic settings, as it is not possible to keep one variable fixed while changing the other one. A special case are interactions, which require the use of 2D CP profiles that are more complex than the 1D ones. Also, in case of a model with hundreds or thousands of variables, the number of plots to inspect may be daunting. Finally, visualization of CP profiles for factors (categorical explanatory variables) is not trivial, especially for factors with many nominal (unordered) categories (like, for example, a ZIP-code). 
+But number of pairs may be large and 3d profiles are more difficult to read than 1d profiles.
+
 
 ## Code snippets for R
 
-In this section we present key features of the R package `ingredients` [@R-ingredients] which is a part of `DALEXverse` and covers all methods presented in this chapter. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
+In this section we present key features of the R package `ingredients` [@ingredientsRPackage] which is a part of `DALEXverse` and covers all methods presented in this chapter. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
 
-There are also other R packages that offer similar methods. For example, an interesting approach to model exploration based on similar principles  [TOMASZ: CETERIS-PARIBUS? IF NOT, WHY MENTION IT HERE?] is implemented in the `condvis` package [@JSSv081i05].
+There are also other R packages that offer similar functionality, like `condvis` [@JSSv081i05] or `ICEbox` [@ICEboxRPackage].
 
-In this section we use a random forest [@R-randomForest] model `model_titanic_rf` developed for the Titanic dataset (see Section \@ref{model_titanic_rf}). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
+In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
-library("titanic")
-titanic_small <- titanic_train[,c("Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked")]
-titanic_small$Survived <- factor(titanic_small$Survived)
-titanic_small$Sex <- factor(titanic_small$Sex)
-titanic_small$Embarked <- factor(titanic_small$Embarked)
-levels(titanic_small$Embarked)[1] = "N"
-titanic_small <- na.omit(titanic_small)
-library("randomForest")
-model_titanic_rf <- randomForest(Survived ~ Pclass + Sex + Age + SibSp + 
-                           Parch + Fare + Embarked, 
-                           data = titanic_small)
-
-```
-
-CP profiles are calculated in four steps with the `ingredients` package. 
-
-**1. Create an explainer - wrapper around model and validation data.**
-
-Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end we use the `explain()` function from the `DALEX` package [@R-DALEX]. The function requires at least four arguments: a model-object, a validation data frame, observed values of the dependent variable for the validation data, and a function that returns prediction scores. In the example below we use the training data as the validation dataset. Moreover, we do not specify the fourth argument, because the prediction-score function for `randomForest` objects is pre-implemented. [TOMASZ: SO, THE STATEMENT OF THE REQUIREMENT OF FOUR ARGUMENTS IS NOT PRECISE.]
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-explainer_titanic_rf <- explain(model_titanic_rf, data = titanic_small, y = titanic_small$Survived)
+library("randomForest")
+titanic <- na.omit(titanic)
+
+model_titanic_rf <- randomForest(survived == "yes" ~ gender + age + class + embarked +
+                                   fare + sibsp + parch,  data = titanic)
+explain_titanic_rf <- explain(model = model_titanic_rf, 
+                              data = titanic[,-9],
+                              y = titanic$survived == "yes", 
+                              label = "Random Forest v7")
 ```
 
-**2. Define the instance (observation) of interest.** 
+In order to calculate oscillations we need to first calculate Ceteris Paribus profiles for a selected observation. 
 
-CP profiles explore model around a single observation. Thus, in the exampe below, we define data frame `johny_d` with a single row. It describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. In particular, we compute the probability for each category of the dependent binary variable. 
+Let us use the `johny_d` instance again.
 
 ```{r, warning=FALSE, message=FALSE}
 johny_d <- data.frame(
-  Pclass = 1,
-  Sex = factor("male", levels = c("female", "male")),
-  Age = 8,
-  SibSp = 0,
-  Parch = 0,
-  Fare = 72,
-  Embarked = factor("C", levels = c("N","C","Q","S"))
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
 )
-
-predict(model_titanic_rf, johny_d, type = "prob")
 ```
 
-**3. Calculate CP profiles**
+2D profiles are calculated with the `ceteris_paribus_2d()` function. By default all pairs between continuous variables are being plotted, but one can limit number of variables for consideration through the `variables` argument.
 
-To obtain CP profiles, we use the `ceteris_paribus()` function. It requires the explainer-object and the instance data frame as arguments. By default, CP profiles are calculated for all numerical variables. To select a subset of variables, the `variables` argument can be used. As a result, the function yields a data frame with model predictions around the instance of interest.
-
-[TOMASZ: WHAT IS THE DEFAULT OUTPUT WHEN PRINTING THE RESULTING DATA FRAME?]
-```{r, warning=FALSE, message=FALSE}
-devtools::install_github("ModelOriented/ingredients")
+```{r, warning=FALSE, message=FALSE, fig.width=5, fig.height=5}
 library("ingredients")
-cp_titanic_rf <- ceteris_paribus(explainer_titanic_rf, johny_d, 
-                            variables = c("Age", "Fare", "Pclass", "SibSp"))
-cp_titanic_rf
+library("ggplot2")
+
+wi_rf_2d <- ceteris_paribus_2d(explain_titanic_rf, observation = titanic[31,], variables = c("age", "sibsp", "parch"))
+head(wi_rf_2d)
 ```
 
-**4. Plot CP profiles.**
+Result is an object of the class `ceteris_paribus_2d_explainer` with overloaded `print()` and `plot()` function.
 
-To obtain a graphical represenation of CP profiles, the generic `plot()` function can be applied to the data frame returend by the `ceteris_paribus()` function. It returns a `ggplot2` object that can be processed if needed. 
+```{r, warning=FALSE, message=FALSE, fig.width=8, fig.height=5}
+plot(wi_rf_2d) + 
+  theme(legend.position = "right", legend.direction = "vertical") + ggtitle("Ceteris Paribus 2D Profiles")
 
-The resulting plot can be enriched with additional data by adding functions `show_rugs` (adds rugs for the selected points), `show_observations` (adds observations), or `show_aggreagated_profiles` (see Section \@ref{variableEngeneering}). All these functions can take additional arguments to modify size, color or linetype.
-
-```{r, warning=FALSE, message=FALSE}
-plot(cp_titanic_rf) +
-  show_observations(cp_titanic_rf, 
-        variables = c("Age", "Fare", "Pclass", "SibSp")) 
 ```
 
-A very useful feature of the CP profiles is that profiles for two or more models may be superimposed in a single plot. Such an approach is sometimes called "contrastive explanations" and is very helpful for model comparisons. We will illustrate this approach by comparing the profiles for the random forest model with those obtained for a logistic regression model (see Section \@ref{model_titanic_lmr}).    
+In the presented example both variables `age` and `sibsp` are important and influence the model response.
 
-```{r, warning=FALSE, message=FALSE}
-library("rms")
-model_titanic_lmr <- lrm(Survived == "1" ~ Pclass + Sex + rcs(Age) + SibSp +
-                   Parch + Fare + Embarked, titanic_small)
-explainer_titanic_lmr <- explain(model_titanic_lmr, data = titanic_small, y = titanic_small$Survived,
-                                 predict_function = function(m,x) predict(m,x,type = "fitted"))
-cp_titanic_lmr <- ceteris_paribus(explainer_titanic_lmr, johny_d, 
-        variables = c("Age", "Fare", "Pclass", "SibSp"))
-cp_titanic_lmr
-```
-
-After obtaining the CP profiles for the logistic regression model, we can use function `plot()` to compare profiles for both models in a single chart. Toward this aim, we use both data frames as arguments for the function. The additional argument `color = "_label_"` sets color as a key for model.
-
-```{r, warning=FALSE, message=FALSE}
-plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_") +
-  show_observations(cp_titanic_rf, cp_titanic_lmr,
-        variables = c("Age", "Fare", "Pclass", "SibSp")) 
-```
-
-[TOMASZ: WE SHOULD PROVIDE COMMENTS FOR THE RESULTING PLOT.]
-
-**Oscillations**
-
-To calculate the variable importance measures based on the oscillations of CP profiles, we use the `calculate_oscillations()` function. We apply the function to the data frame returned by the `ceteris_paribus()` function. The result for the prediction of the Random Forest model for `johny_d` indicates that the most important variable is the age. To obtain a graphical representaton of the result, we can apply function `plot()` to the object returned by the `calculate_oscillations()` function.    
-
-```{r, warning=FALSE, message=FALSE}
-co_titanic_rf <- calculate_oscillations(cp_titanic_rf)
-co_titanic_rf
-plot(co_titanic_rf)
-```
-
-**Two-dimensional Ceteris-paribus Profiles**
-
-To create 2D CP profiles, we use the `ceteris_paribus_2d()` function. Its syntax resembles the one of the `ceteris_paribus()` function. 
-
-```{r, warning=FALSE, message=FALSE}
-cp2d_titanic_rf <- ceteris_paribus_2d(explainer_titanic_rf, observation = johny_d, 
-                 variables = c("Age","Fare", "Pclass"))
-plot(cp2d_titanic_rf, split_ncol = 2)
-```
-
-[TOMASZ: WE SHOULD PROVIDE COMMENTS FOR THE RESULTING PLOT.]
 
