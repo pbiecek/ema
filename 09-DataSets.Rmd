@@ -1,28 +1,49 @@
 # Data Sets {#DataSetsIntro}
 
-We illustrate techniques introduced in this book on three datasets: 
+We illustrate the techniques presented in this book by using three datasets: 
+   
+* *Sinking of the RMS Titanic* 
+* *Apartment prices* 
+* *Hire or Fire* 
 
-* *Sinking of the RMS Titanic* as an example of binary classification
-* *Apartment prices* as an example of regression model
-* *Hire or Fire* as an example of multi-class classification and interactions
+The first dataset will be used to illustrate the application of the techniques in the case of a predictive model for a binary dependent variable. The second one will provide an example for models for a continuous variable. Finally, the third dataset will be used for illustration of models for a categorical dependent variable.
+
+In this chapter, we provide a short description of each of the datasets, together with results of exploratory analyses. We also introduce models that will be used for illustration purposes in subsequent chapters. 
 
 ## Sinking of the RMS Titanic {#TitanicDataset}
 
 ![Titanic sinking by Willy Stöwer](figure/Titanic.jpg)
 
-Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Thanks to projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` we have a very rich and precise data about passengers. This dataset is available in the `stablelearner` package. After some variable transformation it is also avaliable in the `DALEX` package.
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. The data are available in a dataset included in the `stablelearner` package. The dataset, including some variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
 
+* *gender*, person's (passenger's or crew member's) gender, a factor (categorical variable) with two levels (categories)
+* *age*, person's age in years, a numerical variable; for adults, the age is given in (integer) years; for children younger than one year, the age is given as $x/12$, where $x$ is the number of months of child's age
+* *class*, the class in which the passenger travelled, or the duty class of a crew member; a factor with seven levels
+* *embarked*, the harbor in which the person embarked on the ship, a factor with four levels
+* *country*, person's home country, a factor with 48 levels
+* *fare*, the price of the ticket (only available for passengers; 0 for crew members), a numerical variable
+* *sibsp*, the number of siblings/spouses aboard the ship, a numerical variable
+* *parch*, the number of parents/children aboard the ship, a numerical variable
+* *survived*, a factor with two levels indicating whether the person survived or not
+
+Models considered for this dataset will use *survived* as the (binary) dependent variable. 
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(titanic, 2)
+str(titanic)
+levels(titanic$class)
+levels(titanic$embarked)
 ```
 
-### Data cleaning
 
-Feature of interest is the binary variable `survived`. Let's build some predictive models for this variable.
+### Data exploration
 
-First we need to do some data preprocessing. Columns with missing data are filled up
+It is always advisable to explore data before modelling. However, as this book is focused on model exploration, we will limit the data exploration part.
+
+Before exploring the data, we first do some pre-processing. In particular, the value of variables *age*, *country*, *sibsp*, *parch*, and *fare* is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own  (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing *age* values by the mean of the observed ones, i.e., 30. Missing *country* will be coded by "X". For *sibsp* and *parch*, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for *fare*, we use the value of 0.
+
+[TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR AGE. TAKING 0 CORRESPONDS TO "crew".]
 
 ```{r, warning=FALSE, message=FALSE}
 # missing country is replaced by "X"
@@ -35,19 +56,22 @@ titanic$sibsp[is.na(titanic$sibsp)] = 0
 titanic$parch[is.na(titanic$parch)] = 0
 ```
 
-### Data exploration
+After imputing the missing values, we investigate the association between survival status and the other variables. Figures XXX-XXX present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
-It is always a good idea to do data exploration before modelling. But since this book is focused on model exploration we will spend only a few lines on data exploration part. And we will limit ourselves to two-variable summaries for each variable.
+[TOMASZ: MAKE SEPARATE FIGURES SO THAT WE CAN REFER TO THEM. CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL "SURVIVAL" AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. CATEGORIZE FARE IN A SIMILAR WAY AS FOR AGE.]
+
+Figures XXX and XXX indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures XXX and XXX, i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure XXX indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure XXX shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures XXX and XXX do not suggest any noteworthy trends.        
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4}
 library("ggmosaic")
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, class), fill=survived)) +
-   labs(x="Passenger class", y="Survived?", title='Survival for the titanic per class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-
-ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
    labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+
+titanic$age_c <- cut(titanic$age,c(0,2,5,10,18,30,50,70,100))
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, age_c), fill=survived)) +
+   labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
@@ -57,16 +81,9 @@ ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
    labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
-   labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-
-
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
-   labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-
+   geom_mosaic(aes(x = product(survived, class), fill=survived)) +
+   labs(x="Passenger class", y="Survived?", title='Survival for the titanic per class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
 ```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=2, echo=FALSE}
@@ -77,19 +94,20 @@ ggplot(titanic, aes(survived, fare, color = survived)) +
   theme_drwhy()+ theme(legend.position = "none") + scale_color_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, echo=FALSE}
-titanic$age_c <- cut(titanic$age,c(0,2,5,10,18,30,50,70,100))
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4}
+library("ggmosaic")
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, age_c), fill=survived)) +
-   labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+   geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
+   labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
+   labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-### Logistic regression is always a good choice {#model_titanic_lmr}
+### Logistic regression {#model_titanic_lmr}
 
-The feature of interest `survival` is binary, thus a natural choice is a logistic regression. Most of predictive features are categorical except age. 
-
-There is no reason to expect a linear relation between age and odds of survival, thus for age we will use linear tail-restricted cubic splines available in the `rcs()` function in the `rms` package [@rms].
+The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we  use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. [TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE?] The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
@@ -99,44 +117,40 @@ titanic_lmr_v6
 ```
 
 
-### Random Forest to the rescue  {#model_titanic_rf}
+### Random forest {#model_titanic_rf}
 
-In addition to a logistic regression we will use a random forest model with default settings. Random forest is known for good performance, is able to grasp low-level variable interactions and is quite stable.
+As an alternative to a logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-level variable interactions, and is quite stable [TOMASZ: REFERENCE?]. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 
-Here we are using the `randomForest` package [@randomForestRNews].
+In the first instance, we fit a model with the same set of explanatory variables as the logistic regression model. The results of the model are stored in model-object `titanic_rf_v6`.
 
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + 
-                           parch + fare + embarked, 
+titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
                            data = titanic)
 titanic_rf_v6
 ```
 
-And a smaller model
+For comparison purposes, we also consider a model with only three explanatory variables: *class*, *gender*, and *age*.  The results of the model are stored in model-object `titanic_rf_v3`.
 
 ```{r, warning=FALSE, message=FALSE}
-titanic_rf_v3 <- randomForest(survived ~ class + gender + age, 
-                           data = titanic)
+titanic_rf_v3 <- randomForest(survived ~ class + gender + age, data = titanic)
 titanic_rf_v3
 ```
+   
+### Gradient boosting
 
-### Gradient boosting for interactions
-
-Last model that we will train on this dataset is the gradient boosting model. This family of models is known for being able to grasp deep interactions between variables.
-
-Here we are using the implementation from the `gbm` package [@gbm].
+Finally, we consider the gradient-boosting model. The model is known for being able to grasp deep interactions between variables. [TOMASZ: WHAT ARE "DEEP INTERACTIONS"? REFERENCE?] We use the same set of explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use the function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
 ```{r, warning=FALSE, message=FALSE}
 library("gbm")
-titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp +
-                     parch + fare + embarked, data = titanic, n.trees = 15000)
+titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
+                      data = titanic, n.trees = 15000)
 titanic_gbm_v6
 ```
 
-### Model predictions
+### Model predictions {#predictions_titanic}
 
-Having all three models let's see what are odds of surviving for a 2-years old boy that travels in the 3rd class with 1 parent and 3 siblings.
+Let us now compare predictions that are obtained from the three different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 2nd class with no parents nor siblings with a ticket costing 72 pounds. First, we create a data frame `henry` that contains the data describing the passenger.
 
 ```{r, warning=FALSE, message=FALSE}
 henry <- data.frame(
@@ -150,106 +164,151 @@ henry <- data.frame(
 )
 ```
 
-Logistic regression model says 47\% for survival.
+Subsequently, we use the generic function `predict()` to get the predicted probability of survival for the logistic regression model. 
 
 ```{r, warning=FALSE, message=FALSE}
-predict(titanic_lmr_v6, henry, type = "fitted")
+(pred_lmr = predict(titanic_lmr_v6, henry, type = "fitted"))
 ```
+The predicted probability is equal to `r round(pred_lmr, 2)`.
 
-Random forest model says 39\% for survival.
+We do the same for the random forest and gradient boosting models. 
 
 ```{r, warning=FALSE, message=FALSE}
-predict(titanic_rf_v6, henry, type = "prob")
+(pred_rf = predict(titanic_rf_v6, henry, type = "prob"))
+(pred_gbm = predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000))
 ```
 
-Gradient boosting model says 43.6\% for survival.
+As a result, we obtain the predicted probabilities of `r round(pred_rf[1,2], 2)` and `r round(pred_gbm, 2)`, respectively.
 
-```{r, warning=FALSE, message=FALSE}
-predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000)
-```
+The models lead to different probabilities. Thus, it might be of interest to understand the reason for the differences, as it could help us to decide which of the predictions we might want to trust. 
 
-Three different opinions. Which one should we trust?
-Tools introduced in following sections will help to understand how these models are different.
+[TOMASZ: GRADIENT-BOOSTING LEADS TO DIFFERENT PREDICTIONS AT EACH RUN. POSSIBLE TO "FREEZE" THE MODEL/PREDICTIONS? PERHAPS AT A RUN GIVING A DISTINCT PREDICTION? AT ONE POINT I GOT 0.6 FOR GBM, WHICH WAS MARKEDLY - AND INTERESTINGLY - DIFFERENT FROM LR AND RF.]
 
-## Apartment Prices {#ApartmentDataset}
+## Apartment prices {#ApartmentDataset}
 
 ![Warsaw skyscrapers by Artur Malinowski Flicker](figure/am1974_flicker.jpg)
 
-Predicting house prices is a common regression problem for machine learning. Various datasets for house prices are available at websites like Kaggle or UCI Machine Learning Repository. 
+Predicting house prices is a common exercise used in machine-learning courses. Various datasets for house prices are available at websites like Kaggle (https://www.kaggle.com) or UCI Machine Learning Repository (https://archive.ics.uci.edu). 
 
-In this book we will work with a very interesting version of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warsaw. But the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. 
+In this book we will work with an interesting version of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warszawa, the capital of Poland. However, the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. The natural question is which model should we choose? We will show that the model-explanation tools provide important insight into the key model characteristics and are helpful in model selection.
 
-Which one we should chose? Based on this dataset we show that visual explainers give a better understanding of key model characteristics and are very helpful in the model selection.
+The dataset is available in the `DALEX` package [@R-DALEX]. It contains 1000 observations (apartments) and six variables:
 
-The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single apartment. Features like surface, number of rooms, district or floor are used as predictive features. The problem here is to predict price per a square meter for an apartment, so it's a regression problem with continuous target. 
+* *m2.price*, apatments price per meter-squared (in EUR), a numerical variable
+* *construction.year*, the year of construction of the block of flats in which the apartment is located, a numerical variable
+* *surface*, apartment's total surface in squared meters, a numerical variable
+* *floor*, the floor at which the apartment is located (ground floor taken to be the first floor), a numerical integer variable with values from 1 to 10 
+* *no.rooms*, the total number of rooms, a numerical  variable with values from 1 to 6
+* *distric*, a factor with 10 levels indicating tha distric of Warszawa where the apartment is located
+
+Models considered for this dataset will use *m2.price* as the (continuous) dependent variable.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(apartments, 2)
-head(apartments_test, 2)
+str(apartments)
+table(apartments$floor)
+table(apartments$no.rooms)
+levels(apartments$district)
 ```
 
-### A tale of two models
+Model predictions will be obtained for a set of six apartments included in data frame `apartments_test`, also included in the `DALEX` package.
 
-Feature of interest is the variable `m2.price`, it's a price (EUR) for a square meter of an apartment. 
+```{r, warning=FALSE, message=FALSE}
+head(apartments_test)
+```
 
-Let's build two predictive models for this variable.
+### Data exploration
 
-For the champion we will use a linear model. Easy to train, easy to test, easy to understand.
+[TOMASZ: TO ADD, EVEN IF SHORT]
+
+### Linear regression {#model_apartments_lr}
+
+The dependent variable of interest, *m2.price*, is continuous. Thus, a natural choice to build a predictive model is  linear regression. We treat all the other variables in the `apartments` data frame as explanatory and include them in the model. The results of the model are stored in model-object `apartments_lm_v5`.
 
 ```{r, warning=FALSE, message=FALSE}
 apartments_lm_v5 <- lm(m2.price ~ ., data = apartments)
-predicted_apartments_lm <- predict(apartments_lm_v5, apartments_test)
-rmsd_lm <- sqrt(mean((predicted_apartments_lm - apartments_test$m2.price)^2))
-rmsd_lm
+apartments_lm_v5
 ```
 
-The root mean square difference for linear model calculated on test data  is `r round(rmsd_lm, 1)`.
+### Random forest {#model_apartments_rf}
 
-Now, let's train a challenger - a random forest model from `randomForest` package  [@R-randomForest]. Elastic, popular, able to handle non linear relations. 
+As an alternative to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
+The results of the model are stored in model-object `apartments_rf_v5`. 
 
 ```{r, warning=FALSE, message=FALSE}
 library("randomForest")
 set.seed(72)
 apartments_rf_v5 <- randomForest(m2.price ~ ., data = apartments)
+apartments_rf_v5
+```
+
+
+### Model predictions {#predictions_apartments}
+
+By aplying the `predict()` function to model-object `apartments_lm_v5` with `apartments_test` as the data frame for which predictions are to be computed, we obtain the predicted prices for the testing set of six apartments for the linear regression model. Subsequently, we compute the mean squared difference between the predicted and actual prices for the test apartments. We repeat the same steps for the random forest model.  
+
+```{r, warning=FALSE, message=FALSE}
+predicted_apartments_lm <- predict(apartments_lm_v5, apartments_test)
+rmsd_lm <- sqrt(mean((predicted_apartments_lm - apartments_test$m2.price)^2))
+rmsd_lm
+
+library("randomForest")
 predicted_apartments_rf <- predict(apartments_rf_v5, apartments_test)
 rmsd_rf <- sqrt(mean((predicted_apartments_rf - apartments_test$m2.price)^2))
 rmsd_rf
 ```
 
-The root mean square difference for random forest is `r round(rmsd_rf, 1)`.
+For the random forest model, the square-root of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is only minimally smaller than the value of `r round(rmsd_lm, 1)`, obtained for the linear regression model. Thus, the question we may face is: should we choose the model complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
 
-The challenger is better in terms of RMSD, but the difference between accuracies is smaller than 10 cents. Shall we choose the model complex but elastic model or the linear model?
+## Hire or fire {#HFDataset}
 
+Predictive models can be used to support decisions. For instance, they could be used in a human-resources department to decide whether, for instance, promote an employee. An advantage of using a model for this purpose would be the objectivity of the decision, which would not be subject to personal preferences of a manager. However, in such a situation, one would most likely want to understand what influences the model's prediction. 
 
-## Hire or Fire {#HFDataset}
+To illustrate such a situation, we will use the `HR` dataset that is available in the `DALEX` package [@R-DALEX]. It is an artificial set of data from a human-resources department of a call center. It contains 7847 observations (employees of the call center) and six variables:
 
-In this chapter we present an artificial dataset from Human Resources department in a Call Center. 
+* *gender*, person's gender, a factor with two levels
+* *age*, person's age in years, a numerical variable
+* *hours*, average number of working hours per week, a numerical variable
+* *evaluation*, the last evaluation score, a numerical variable with values 2 (fail), 3 (satisfactory), 4 (good), and 5 (veru good) [TOMASZ: CORRECT?] 
+* *salary*, the salary level, a numerical variable with values from 0 to 5 [TOMASZ: WHAT DOES 0 MEAN?]
+* *status*, a factor with three indicating whether the employee was fired, retained, or promoted
 
-The dataset is available in the `DALEX` package [@R-DALEX]. Each row corresponds to a single employee in a call center. Features like gender, age, average number of working hours per week, grade from the last evaluation and level of salary are used as predictive features.
-
-The goal here is to first build a model, that will guess when to fire and when to promote an employer, so it's a classification problem with three classes. 
-
-Why we need such model? We want to have objective decisions. That will not be subject to personal preferences of a manager. But is it possible to have an objective model? Would it be fair or it will just replicate some unfairness?
-
-We will use this example to show how to use prediction level explainers to better understand how the model works for selected cases.
+Models considered for this dataset will use *status* as the (categorical) dependent variable.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-head(HR)
+head(HR, 4)
+str(HR)
+table(HR$evaluation)
+table(HR$salary)
 ```
 
-In this book we are focused on model exploration rather than model building, thus for sake ok simplicity we will use two default models created with random forest [@R-randomForest] and generalized linear model [@R-nnet].
+### Multinomial logistic regression {#model_HR_mr}
+
+The dependent variable of interest, *status*, is categorical with three categories. Thus, a simple choice is to consider a multinomial logistic regression model [TOMASZ: REFERENCE]. We fit the model with the help of function `multinom` from package `nnet`. The function fits multinomial log-linear models by using the neural-networks approach. [TOMASZ: WHY THIS APPROACH?] We treat all variables other than `status` in the `HR` data frame as explanatory and include them in the model. The results of the model are stored in model-object `HR_glm_v5`.
+
+```{r, warning=FALSE, message=FALSE }
+library("nnet")
+HR_glm_v5 <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_glm_v5
+```
+
+### Random forest {#model_HR_rf}
+
+As an alternative to multinomial logisitc regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews]. 
+The results of the model are stored in model-object `HR_rf_v5`. 
 
 ```{r, warning=FALSE, message=FALSE }
 set.seed(59)
 library("randomForest")
 HR_rf_v5 <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-
-library("nnet")
-HR_glm_v5 <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_rf_v5
 ```
 
+### Model predictions {#predictions_HR}
+
+[TOMASZ: TO ADD]
 
 ```{r save_models, warning=FALSE, message=FALSE, echo=FALSE}
 link_to_data_models <- "models/titanic_lmr_v6.rda"
@@ -268,11 +327,9 @@ if (!file.exists(link_to_data_models)) {
 }
 ```
 
-## List of Models {#ListOfModels}
+## List of models {#ListOfModels}
 
-In previous sections we build a collection of predictive models for dataset about Sinking of RMS Titanic, apartment prices and Human Resources data. These models will be used in next chapters. 
-
-The table below summarizes all these models. You can download the binary object with the attached archivist hooks [@archivist].
+In the previous sections we have built several predictive models for differnt datasets. The models will be used in the rest of the book to illustrate the mdoel explanation methods and tools. For the ease of reference, we summarize the models in the table beloW. The binary model-objects can be donwloaded by using the attached `archivist` hooks [@archivist]. [TOMASZ: THIS IS USEFUL FOR E-BOOK. HOW ABOUT THE PRINTED VERSION?]
 
 | Model name   | Model generator | Dataset  | Variables  | Link to the model |
 |--------------|-----------------|----------|------------|-------|
