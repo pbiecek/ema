@@ -1,5 +1,8 @@
-# PM_VEE
+# Predictive Models: 
+# Visual Exploration, Explanation and Debugging
+## With examples in R (and Python)
 
-Predictive Models: Visualisation, Exploration and Explanation. With examples in R and python
+Work in progress 
+See the html website here: https://pbiecek.github.io/PM_VEE/
 
-Working version. See the html website here: https://pbiecek.github.io/PM_VEE/
+It's a part of DrWhy.AI project
