@@ -5,4 +5,4 @@
 Work in progress 
 See the html website here: https://pbiecek.github.io/PM_VEE/
 
-It's a part of DrWhy.AI project
+It's a part of the [DrWhy.AI](http://drwhy.ai/) project
