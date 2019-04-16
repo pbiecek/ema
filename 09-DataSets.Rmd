@@ -14,7 +14,7 @@ In this chapter, we provide a short description of each of the datasets, togethe
 
 ![Titanic sinking by Willy Stöwer](figure/Titanic.jpg)
 
-Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. The data are available in a dataset included in the `stablelearner` package. The dataset, including some variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. The data are available in a dataset included in the `stablelearner` package. The dataset, after some data cleaning and variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
 
 * *gender*, person's (passenger's or crew member's) gender, a factor (categorical variable) with two levels (categories)
 * *age*, person's age in years, a numerical variable; for adults, the age is given in (integer) years; for children younger than one year, the age is given as $x/12$, where $x$ is the number of months of child's age
@@ -43,17 +43,22 @@ It is always advisable to explore data before modelling. However, as this book i
 
 Before exploring the data, we first do some pre-processing. In particular, the value of variables *age*, *country*, *sibsp*, *parch*, and *fare* is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own  (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing *age* values by the mean of the observed ones, i.e., 30. Missing *country* will be coded by "X". For *sibsp* and *parch*, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for *fare*, we use the value of 0.
 
-[TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR AGE. TAKING 0 CORRESPONDS TO "crew".]
+[TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR AGE. TAKING 0 CORRESPONDS TO "crew". 
+PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs among classes, so maybe it should be a class average?]
 
 ```{r, warning=FALSE, message=FALSE}
 # missing country is replaced by "X"
 titanic$country[is.na(titanic$country)] = "X"
 # missing age is replaced by average (30)
 titanic$age[is.na(titanic$age)] = 30
-# missing fare, sibsp, parch are replaced by 0
-titanic$fare[is.na(titanic$fare)] = 0
+# missing sibsp, parch are replaced by 0
 titanic$sibsp[is.na(titanic$sibsp)] = 0
 titanic$parch[is.na(titanic$parch)] = 0
+# missing fare is replaced by class average
+tapply(titanic$fare, titanic$class, mean, na.rm = TRUE)
+titanic$fare[is.na(titanic$fare) & titanic$class == "1st"] = 89
+titanic$fare[is.na(titanic$fare) & titanic$class == "2nd"] = 22
+titanic$fare[is.na(titanic$fare) & titanic$class == "3rd"] = 13
 ```
 
 After imputing the missing values, we investigate the association between survival status and the other variables. Figures XXX-XXX present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
@@ -62,13 +67,17 @@ After imputing the missing values, we investigate the association between surviv
 
 Figures XXX and XXX indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures XXX and XXX, i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure XXX indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure XXX shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures XXX and XXX do not suggest any noteworthy trends.        
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4}
+```{r titanic_exploration_gender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_gender) .", out.width = '70%', fig.align='center'}
 library("ggmosaic")
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
    labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 
-titanic$age_c <- cut(titanic$age,c(0,2,5,10,18,30,50,70,100))
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
+   labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+
+titanic$age_c <- cut(titanic$age, c(0,2,5,10,18,30,50,70,100))
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, age_c), fill=survived)) +
    labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
