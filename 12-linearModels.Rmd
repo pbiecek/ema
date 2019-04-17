@@ -72,7 +72,7 @@ knitr::include_graphics("figure/attribution_1.png")
 
 ## Pros and Cons
 
-The proposed definition of $v(f, x^*, i)$ is linked neither with scale nor location of $X_i$; hence, it is easier to understand than, for instance, the standardized value of $\beta_i$. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. THE DEFINITION OF v() INVOLVES CENTERING.] For the classical linear model, $v(f, x^*, i)$ is not an approximation and it is directly linked with the structure of a model. An obvious diasadvantage is that the definition of $v(f, x^*, i)$ is very much linear-model based. Also, it does not, in any way, reduce the model complexity; it only presents model coefficients in a different way. [TOMASZ: I AM NOT SURE ABOUT THIS ARGUMENT. MODEL COMPLEXITY IS WHAT IT IS. HOW CAN WE REDUCE IT?]
+The introduced values $v(f, x^*, i)$ do not depend on neither scale nor location of $X_i$; hence, it is easier to understand than, for instance, the standardized value of $\beta_i$. For the classical linear model, $v(f, x^*, i)$ is not an approximation and it is directly linked with the structure of a model. An obvious diasadvantage is that the definition of $v(f, x^*, i)$ is very much linear-model based. Also, it does not, in any way, reduce the model complexity; if model has 10 parameters then the prediction is decomposed into 10 numbers. Maybe these numbers are easier to understand, but dimensionality of model description has not changed.
 
 
 ## Code snippets
@@ -82,11 +82,11 @@ In this section, we present an example of computing variable attributions using 
 To calculate variable attributions for a particular point, first we have got to define this point:
 
 ```{r, warning=FALSE, message=FALSE}
-new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2)
+dilbert <- data.frame(gender = factor("male", levels = c("male", "female")),
+                age = 57.7,
+                hours = 42.3,
+                evaluation = 2,
+                salary = 2)
 ```
 
 Variable attributions for linear and generalized linear models may be directly extracted by applying the `predict()` function, with the argument `type = "terms"`, to an object containing results of fitting of a model. To illustrate the approach for logistic regression, we build a logistic regression model for the binary variable `status == "fired"` and extract the estimated model coefficients:
@@ -98,11 +98,11 @@ coef(model_fired)
 ```
 For the new observation, the predicted value of the logit of the probability of being fired is obtained by applying the `predict()` function:
 ```{r, warning=FALSE, message=FALSE}
-as.vector(pred.inst <- predict(model_fired, new_observation)) # new pediction
+as.vector(pred.inst <- predict(model_fired, dilbert)) # new pediction
 ```
 On the other hand, variable attributions can be obtained by applying the `predict()` function with the `type="terms"` argument:
 ```{r, warning=FALSE, message=FALSE}
-(var.attr <- predict(model_fired, new_observation, type = "terms")) # attributions
+(var.attr <- predict(model_fired, dilbert, type = "terms")) # attributions
 ```
 The largest contributions to the prediction come from variables ''hours'' and ''evaluation.'' Variables ''gender'' and ''age'' slightly decrease the predicted value. The sum of the attributions is equal to
 ```{r, warning=FALSE, message=FALSE}
@@ -126,7 +126,7 @@ explainer_fired <- explain(model_fired,
                  y = HR$status == "fired",
                  label = "fired")
 
-(attribution <- single_prediction(explainer_fired, new_observation))
+(attribution <- single_prediction(explainer_fired, dilbert))
 ```
 After object `attribution` has been created, a plot presenting the variable attributions can be easily constructed:
 ```{r, warning=FALSE, message=FALSE}

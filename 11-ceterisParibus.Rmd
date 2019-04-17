@@ -27,9 +27,9 @@ CP technique is similar to the LIME method (see Chapter \@ref(LIME)). LIME and C
 
 In this section we introduce more formally uni-dimensional CP profiles. <!-- We consider the case of a continuous dependent variable, but the profiles can be easily generalized for other types. -->
 
-[PBI: Do we need to assume that model is correct? first sentence may be removed. TOMASZ: ADDED A FEW SENTENCES TO INDICATE THAT THE APPROXIMATION MAY BE WHATEVER WE WANT.]
+In predictive modeling we are interested a distribution of some target variable  $y$ given a vector containing values for explanatory covariates $x^*$. In the ideal world we would like to know the conditional distribution $Y | x^*$. Yet in practical applications we predict not the whole distribution but just some functions like expected value, some quantiles or variation. Without loss of generality we may assume that we model the expected value $E_Y(Y | x^*)$.
 
-Assume that $E_Y(Y | x^*) \approx f(x^*)$, where $f(x^*)$ is the value of the model at $x^*$, where $x^*$ is a vector containing values for explanatory covariates. Note that we do not require the approximation to be "good" in any particular sense; we simply assume that we have got a model that is used to estimate the expected value and provide predictions of the dependent variable. Our interest lies in the evalution of the quality of the predictions. If the model offers a "good" approximation of the expected value, it should be reflected in its satisfactory predictive performance. 
+Our model $f(x^*)$ is some approximation of this value of interest $E_Y(Y | x^*) \approx f(x^*)$. Note, that we do not assume that it is a good model, nor taht the approximation is precise. Just treat $f(x^*)$ as *some* approximation of $E_Y(Y | x^*)$. We do not require the approximation to be "good" in any particular sense; we simply assume that we have got a model that is used to estimate the expected value and provide predictions of the dependent variable. Our interest lies in the evalution of the quality of the predictions. If the model offers a "good" approximation of the expected value, it should be reflected in its satisfactory predictive performance. 
 
 We will use subscript $x^*_i$ to refer to the vector corresponding to the $i$-th observation in a dataset. We will use superscript $x^{*j}$ to refer to the $j$-th element of $x^*$, i.e., the $j$-th variable. Additionally, let $x^{*-j}$ denote a vector resultinig from removing the $j$-th element from vector $x^{*}$. Moreover, let $x^{*|j}=z$ denotes a vector in which the $j$-th element is equal to $z$ (a scalar). 
 
@@ -71,18 +71,21 @@ In this section we present key features of the R package `ingredients` [@ingredi
 
 Note that there are also other R packages that offer similar functionality, like `condvis` [@JSSv081i05], `pdp` [@pdpRPackage], `ICEbox` [@ICEboxRPackage], `ALEPlot` [@ALEPlotRPackage], `iml` [@imlRPackage].
 
-In this section we use the random forest [@R-randomForest] model developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
+In this section we use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
-[TOMASZ: SHOULD WE NOT RE-USE THE `titanic_rf_v6` OBJECT? ALSO, HOW ABOUT MISSING DATA IMPUTATION USED EARLIER?]
-
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("DALEX")
-titanic <- na.omit(titanic)
-head(titanic, 2)
-
 library("randomForest")
-model_titanic_rf <- randomForest(survived == "yes" ~ gender + age + class + embarked +
-                                   fare + sibsp + parch,  data = titanic)
+
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("DALEX")
+library("randomForest")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
 ```
 
 CP profiles are calculated in four steps with the `ingredients` package. 
@@ -100,10 +103,10 @@ Model-objects created with different libraries may have different internal struc
 In the example below we use the training data as the validation dataset. 
 
 ```{r, warning=FALSE, message=FALSE}
-explain_titanic_rf <- explain(model = model_titanic_rf, 
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
                               data = titanic[,-9],
                               y = titanic$survived == "yes", 
-                              label = "Random Forest v7")
+                              label = "Random Forest v6")
 ```
 
 **2. Define the instance (observation) of interest.** 
@@ -146,7 +149,7 @@ To obtain a graphical represenation of CP profiles, the generic `plot()` functio
 
 The resulting plot can be enriched with additional data by applying functions `show_rugs` (adds rugs for the selected points), `show_observations` (adds observations), or `show_aggreagated_profiles` (see Chapter  \@ref(variableEngeneering)). All these functions can take additional arguments to modify size, color, or linetype.
 
-```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=4}
+```{r titanicCeterisProfile01, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=4, fig.cap="Ceteris Paribus Profiles for the random forest model `titanic_rf_v6`.", out.width = '70%', fig.align='center'}
 library("ggplot2")
 plot(cp_titanic_rf) +
   show_observations(cp_titanic_rf, variables = c("age", "fare")) +

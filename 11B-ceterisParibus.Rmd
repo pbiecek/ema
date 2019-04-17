@@ -65,18 +65,23 @@ There are also other R packages that offer similar functionality, like `condvis`
 
 In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+```
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
-titanic <- na.omit(titanic)
-
-model_titanic_rf <- randomForest(survived == "yes" ~ gender + age + class + embarked +
-                                   fare + sibsp + parch,  data = titanic)
-explain_titanic_rf <- explain(model = model_titanic_rf, 
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
                               data = titanic[,-9],
                               y = titanic$survived == "yes", 
-                              label = "Random Forest v7")
+                              label = "Random Forest v6")
 ```
 
 In order to calculate oscillations we need to first calculate Ceteris Paribus profiles for a selected observation. 
@@ -108,7 +113,7 @@ head(wi_rf_2d)
 
 Result is an object of the class `ceteris_paribus_2d_explainer` with overloaded `print()` and `plot()` function.
 
-```{r, warning=FALSE, message=FALSE, fig.width=8, fig.height=5}
+```{r titanicCeterisParibus06, warning=FALSE, message=FALSE, fig.width=8, fig.height=5}
 plot(wi_rf_2d) + 
   theme(legend.position = "right", legend.direction = "vertical") + ggtitle("Ceteris Paribus 2D Profiles")
 

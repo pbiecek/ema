@@ -113,17 +113,23 @@ In this section we show how to use an R package `ingredients` [@R-ingredients] f
 
 In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref{model_titanic_rf}). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+```
+
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
-titanic <- na.omit(titanic)
 library("randomForest")
-titanic_rf_v6 <- randomForest(survived == "yes" ~ gender + age + class + embarked +
-                                   fare + sibsp + parch,  data = titanic)
-
 explain_titanic_rf <- explain(model = titanic_rf_v6, 
                               data = titanic[,-9],
                               y = titanic$survived == "yes", 
-                              label = "Random Forest v7")
+                              label = "Random Forest v6")
 ```
 
 Local diagnostic is specified for an instance. Let us define a new observation - 8 years old Johnny D, male passenger of the 1st class.
@@ -146,7 +152,7 @@ johny_d <- data.frame(
 
 First we will plot a Ceteri Paribus Profiles for the observation of interese.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicCeterisParibus03, warning=FALSE, message=FALSE}
 library("ingredients")
 library("ggplot2")
 
@@ -162,7 +168,7 @@ In the model chances of survival diminish with age. Johnny D is lucky to have ch
 
 Second we need to identify neighbors and plot their profiles.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicCeterisParibus04, warning=FALSE, message=FALSE}
 johny_neighbors <- select_neighbours(titanic, johny_d, n = 10, variables = c("age", "class", "gender"))
 
 cp_johny_neighbors <- ceteris_paribus(explain_titanic_rf, johny_neighbors, 
@@ -181,7 +187,7 @@ Almost all profiles behave in a similar way. The relation between age and model 
 
 And the last step is to add lines for residuals.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicCeterisParibus05, warning=FALSE, message=FALSE}
 plot(cp_johny) +
   show_profiles(cp_johny_neighbors, color = '#ceced9') + 
   show_observations(cp_johny, variables = "age") +

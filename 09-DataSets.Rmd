@@ -41,65 +41,63 @@ levels(titanic$embarked)
 
 It is always advisable to explore data before modelling. However, as this book is focused on model exploration, we will limit the data exploration part.
 
-Before exploring the data, we first do some pre-processing. In particular, the value of variables *age*, *country*, *sibsp*, *parch*, and *fare* is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own  (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing *age* values by the mean of the observed ones, i.e., 30. Missing *country* will be coded by "X". For *sibsp* and *parch*, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for *fare*, we use the value of 0.
-
-[TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR AGE. TAKING 0 CORRESPONDS TO "crew". 
-PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs among classes, so maybe it should be a class average?]
+Before exploring the data, we first do some pre-processing. In particular, the value of variables *age*, *country*, *sibsp*, *parch*, and *fare* is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own  (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing *age* values by the mean of the observed ones, i.e., 30. Missing *country* will be coded by "X". For *sibsp* and *parch*, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for *fare*, we use average fare in a give class, 0 for crew, 89 for 1st, 22 for 2nd and 13 for the third class respectively.
 
 ```{r, warning=FALSE, message=FALSE}
-# missing country is replaced by "X"
-titanic$country[is.na(titanic$country)] = "X"
 # missing age is replaced by average (30)
 titanic$age[is.na(titanic$age)] = 30
-# missing sibsp, parch are replaced by 0
-titanic$sibsp[is.na(titanic$sibsp)] = 0
-titanic$parch[is.na(titanic$parch)] = 0
+# missing country is replaced by "X"
+titanic$country <- as.character(titanic$country)
+titanic$country[is.na(titanic$country)] = "X"
+titanic$country <- factor(titanic$country)
 # missing fare is replaced by class average
-# tapply(titanic$fare, titanic$class, mean, na.rm = TRUE)
 titanic$fare[is.na(titanic$fare) & titanic$class == "1st"] = 89
 titanic$fare[is.na(titanic$fare) & titanic$class == "2nd"] = 22
 titanic$fare[is.na(titanic$fare) & titanic$class == "3rd"] = 13
+# missing sibsp, parch are replaced by 0
+titanic$sibsp[is.na(titanic$sibsp)] = 0
+titanic$parch[is.na(titanic$parch)] = 0
 ```
 
-After imputing the missing values, we investigate the association between survival status and the other variables. Figures XXX-XXX present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
+After imputing the missing values, we investigate the association between survival status and the other variables. Figures \@ref(titanic_exploration_gender)-\@ref(fig:titanic_exploration_fare) present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
-[TOMASZ:  CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL "SURVIVAL" AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. ]
+Figures \@ref(fig:titanicExplorationGender) and \@ref(fig:titanicExplorationAge)  indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures \@ref(fig:titanicExplorationParch) and \@ref(fig:titanicExplorationSibsp), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanicExplorationClass)  indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure \@ref(fig:titanicExplorationFare)  shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures \@ref(fig:titanicExplorationEmbarked) and \@ref(fig:titanicExplorationCountry) do not suggest any noteworthy trends.        
 
-Figures \@ref(fig:titanic_exploration_gender) and \@ref(fig:titanic_exploration_age)  indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures \@ref(fig:titanic_exploration_parch) and \@ref(fig:titanic_exploration_sibsp), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanic_exploration_class)  indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure \@ref(fig:titanic_exploration_fare)  shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures \@ref(fig:titanic_exploration_embarked) and \ref(fig:titanic_exploration_country) do not suggest any noteworthy trends.        
-
-```{r titanic_exploration_gender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_gender) Survival in different genders for the titanic data.", out.width = '70%', fig.align='center'}
+```{r titanicExplorationGender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival in different genders for the titanic data.", out.width = '70%', fig.align='center'}
 library("ggmosaic")
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
    labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r titanic_exploration_age, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_age) Survival in different age groups for the titanic data.", out.width = '70%', fig.align='center'}
+```{r titanicExplorationAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival in different age groups for the titanic data.", out.width = '70%', fig.align='center'}
 titanic$age_cat <- cut(titanic$age, c(0,2,5,10,18,30,50,70,100))
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, age_cat), fill=survived)) +
    labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r titanic_exploration_parch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_parch) Survival in different numbers of parents/children for the titanic data.", out.width = '70%', fig.align='center'}
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
-   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival for the titanic per Parents/Children') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-```
 
-```{r titanic_exploration_sibsp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_sibsp) Survival in different numbers of siblings/spouses for the titanic data.", out.width = '70%', fig.align='center'}
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
-   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-```
-
-```{r titanic_exploration_class, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_class) Survival for different classes in the titanic data.", out.width = '70%', fig.align='center'}
+```{r titanicExplorationClass, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival for different classes in the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, class), fill=survived)) +
    labs(x="Passenger class", y="Survived?", title='Survival for the titanic per class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r titanic_exploration_fare, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_fare) Survival as a function of fare in the titanic data.", fig.width=6, fig.height=2, echo=FALSE}
+```{r titanicExplorationEmbarked, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival for different port of embarking in the titanic data.",fig.width=6, fig.height=4}
+library("ggmosaic")
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
+   labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
+
+```{r titanicExplorationCountry, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival for different countries in the titanic data.",fig.width=6, fig.height=4}
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
+   labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
+
+```{r titanicExplorationFare, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival as a function of fare in the titanic data.", fig.width=6, fig.height=2, echo=FALSE}
 library("ggplot2")
 titanic$fare_cat <- cut(titanic$fare, c(-1,0,10,25,50,520), include.lowest = TRUE)
 ggplot(data = titanic) +
@@ -107,25 +105,26 @@ ggplot(data = titanic) +
    labs(x="Fare", y="Survived?", title='Survival for the titanic per fare') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r titanic_exploration_embarked, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_embarked) Survival for different port of embarking in the titanic data.",fig.width=6, fig.height=4}
-library("ggmosaic")
+```{r titanicExplorationParch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival in different numbers of parents/children for the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
-   labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+   geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
+   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival for the titanic per Parents/Children') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r titanic_exploration_country, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_country) Survival for different countries in the titanic data.",fig.width=6, fig.height=4}
+```{r titanicExplorationSibsp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival in different numbers of siblings/spouses for the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
-   labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+   geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
+   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
 ### Logistic regression {#model_titanic_lmr}
 
-The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we  use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. [TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE? PBI: it's not linear but something modeled with slines] The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
+The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we  use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. We also do not expect linear relation for the `fare` variable, but because of it's skewness we have not used splines for this variable. The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
+set.seed(1313)
+
 titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class + sibsp +
                    parch + fare + embarked, titanic)
 titanic_lmr_v6
@@ -138,8 +137,10 @@ As an alternative to a logistic regression model, we consider a random forest mo
 
 In the first instance, we fit a model with the same set of explanatory variables as the logistic regression model. The results of the model are stored in model-object `titanic_rf_v6`.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicRandomForest01, warning=FALSE, message=FALSE}
 library("randomForest")
+set.seed(1313)
+
 titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
                            data = titanic)
 titanic_rf_v6
@@ -147,7 +148,7 @@ titanic_rf_v6
 
 For comparison purposes, we also consider a model with only three explanatory variables: *class*, *gender*, and *age*.  The results of the model are stored in model-object `titanic_rf_v3`.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicRandomForest02, warning=FALSE, message=FALSE}
 titanic_rf_v3 <- randomForest(survived ~ class + gender + age, data = titanic)
 titanic_rf_v3
 ```
@@ -156,10 +157,10 @@ titanic_rf_v3
 
 Finally, we consider the gradient-boosting model. The model is known for being able to grasp deep interactions between variables. [TOMASZ: WHAT ARE "DEEP INTERACTIONS"? REFERENCE?] We use the same set of explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use the function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicGBM01, warning=FALSE, message=FALSE}
+library("gbm")
 set.seed(1313)
 
-library("gbm")
 titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
                       data = titanic, n.trees = 15000)
 titanic_gbm_v6
@@ -169,7 +170,7 @@ titanic_gbm_v6
 
 Let us now compare predictions that are obtained from the three different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 2nd class with no parents nor siblings with a ticket costing 72 pounds. First, we create a data frame `henry` that contains the data describing the passenger.
 
-```{r, warning=FALSE, message=FALSE}
+```{r titanicPred01, warning=FALSE, message=FALSE}
 henry <- data.frame(
             class = factor("2nd", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
             gender = factor("male", levels = c("female", "male")),
@@ -199,7 +200,6 @@ As a result, we obtain the predicted probabilities of `r round(pred_rf[1,2], 2)`
 
 The models lead to different probabilities. Thus, it might be of interest to understand the reason for the differences, as it could help us to decide which of the predictions we might want to trust. 
 
-<!--[TOMASZ: GRADIENT-BOOSTING LEADS TO DIFFERENT PREDICTIONS AT EACH RUN. POSSIBLE TO "FREEZE" THE MODEL/PREDICTIONS? PERHAPS AT A RUN GIVING A DISTINCT PREDICTION? AT ONE POINT I GOT 0.6 FOR GBM, WHICH WAS MARKEDLY - AND INTERESTINGLY - DIFFERENT FROM LR AND RF.]-->
 
 ## Apartment prices {#ApartmentDataset}
 
@@ -362,9 +362,11 @@ table(HR$evaluation)
 table(HR$salary)
 ```
 
+See Figures \@ref(fig:HRExplorationAge)-\@ref(fig:HRExplorationEvaluation) for some exploratory analysis.
+
 Young female and old male are being fired more frequently.
 
-```{r HR_exploration_age, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_age) HR status for age groups and gender.", out.width = '70%', fig.align='center'}
+```{r HRExplorationAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="HR status for age groups and gender.", out.width = '70%', fig.align='center'}
 HR$age_cat <- cut(HR$age, c(20,40,60))
 HR$age_gender <- paste(HR$gender, HR$age_cat)
 ggplot(data = HR) +
@@ -372,13 +374,13 @@ ggplot(data = HR) +
    labs(x="Gender and age", y="Promotions vs gender and age", title='Promoted of fired?') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
 ```
 
-```{r HR_exploration_salary, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_salary) HR status for salary groups.", out.width = '70%', fig.align='center'}
+```{r HRExplorationSalary, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="HR status for salary groups.", out.width = '70%', fig.align='center'}
 ggplot(data = HR) +
    geom_mosaic(aes(x = product(status, salary), fill=status)) +
    labs(x="Salary leve", y="Promoted of fired?", title='Promotions vs salary') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
 ```
 
-```{r HR_exploration_evaluation, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_evaluation) HR status for evaluation groups.", out.width = '70%', fig.align='center'}
+```{r HRExplorationEvaluation, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="HR status for evaluation groups.", out.width = '70%', fig.align='center'}
 ggplot(data = HR) +
    geom_mosaic(aes(x = product(status, evaluation), fill=status)) +
    labs(x="Evaluation", y="Promoted of fired?", title='Promotions vs evaluation') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
@@ -392,6 +394,8 @@ The dependent variable of interest, *status*, is categorical with three categori
 
 ```{r, warning=FALSE, message=FALSE }
 library("nnet")
+set.seed(1313)
+
 HR_glm_v5 <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
 HR_glm_v5
 ```
@@ -402,20 +406,41 @@ As an alternative to multinomial logisitc regression, we consider a random fores
 The results of the model are stored in model-object `HR_rf_v5`. 
 
 ```{r, warning=FALSE, message=FALSE }
-set.seed(59)
 library("randomForest")
+set.seed(1313)
+
 HR_rf_v5 <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
 HR_rf_v5
 ```
 
 ### Model predictions {#predictions_HR}
 
-[TOMASZ: TO ADD]
+As in previous chapters, we will see how to use models that we have just created.
+As s test case we will use a single employee of the call center, let's name him Dilbert.
+
+Dilbert is a male few years before 60. Working around 40h per week, poor evaluation and average salary.
+What are his chances for promotion or survival? 
+
+```{r, warning=FALSE, message=FALSE }
+dilbert <- data.frame(gender = factor("male", levels = c("male", "female")),
+                age = 57.7,
+                hours = 42.3,
+                evaluation = 2,
+                salary = 2)
+
+predict(HR_rf_v5, dilbert, type = "prob")
+
+predict(HR_glm_v5, dilbert, type = "prob")
+```
+
+As you see, they are not that high. It's likely that Dilbert will be fired in the next year. But why? We will try to answer this question in  next chapters.
+
 
 ```{r save_models, warning=FALSE, message=FALSE, echo=FALSE}
 link_to_data_models <- "models/titanic_lmr_v6.rda"
 
 if (!file.exists(link_to_data_models)) {
+  save(titanic, file = "models/titanic.rda")
   save(titanic_lmr_v6, file = "models/titanic_lmr_v6.rda")
   save(titanic_rf_v6, file = "models/titanic_rf_v6.rda")
   save(titanic_rf_v3, file = "models/titanic_rf_v3.rda")
@@ -431,14 +456,16 @@ if (!file.exists(link_to_data_models)) {
 
 ## List of models {#ListOfModels}
 
-In the previous sections we have built several predictive models for differnt datasets. The models will be used in the rest of the book to illustrate the mdoel explanation methods and tools. For the ease of reference, we summarize the models in the table beloW. The binary model-objects can be donwloaded by using the attached `archivist` hooks [@archivist]. [TOMASZ: THIS IS USEFUL FOR E-BOOK. HOW ABOUT THE PRINTED VERSION?]
+In the previous sections we have built several predictive models for different data sets. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
+
+For the ease of reference, we summarize the models in the table below. The binary model-objects can be downloaded by using the attached `archivist` hooks [@archivist]. By calling a function specified in the last column you will recreate a selected model in your local R environment.
 
 | Model name   | Model generator | Dataset  | Variables  | Link to the model |
 |--------------|-----------------|----------|------------|-------|
-| `titanic_lmr_v6`  | `rms:: lmr`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/f285c")` |
-| `titanic_rf_v6`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/92753")` |
-| `titanic_rf_v3`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class  |  `archivist:: aread("pbiecek/models/bcd20")` |
-| `titanic_gbm_v6`  | `gbm:: gbm`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/2bdad")` |
+| `titanic_lmr_v6`  | `rms:: lmr`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/ceb40")` |
+| `titanic_rf_v6`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/31570")` |
+| `titanic_rf_v3`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class  |  `archivist:: aread("pbiecek/models/855c1")` |
+| `titanic_gbm_v6`  | `gbm:: gbm`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/24e72")` |
 | `apartments_lm_v5`  | `stats:: lm`  |  `DALEX:: apartments` | construction .year, surface, floor, no.rooms, district  |  `archivist:: aread("pbiecek/models/55f19")` |
 |  `apartments_rf_v5` | `randomForest:: randomForest`  | `DALEX:: apartments`  | construction .year, surface, floor, no.rooms, district  | `archivist:: aread("pbiecek/models/fe7a5")`  |
 |  `HR_rf_v5` | `randomForest:: randomForest`  | `DALEX:: HR`  | gender, age, hours, evaluation, salary  | `archivist:: aread("pbiecek/models/1ecfd")`  |

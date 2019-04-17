@@ -62,14 +62,21 @@ In this section we present key features of the R package `ingredients` [@ingredi
 
 In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+```
+
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
-titanic <- na.omit(titanic)
 
-model_titanic_rf <- randomForest(survived == "yes" ~ gender + age + class + embarked +
-                                   fare + sibsp + parch,  data = titanic)
-explain_titanic_rf <- explain(model = model_titanic_rf, 
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
                               data = titanic[,-9],
                               y = titanic$survived == "yes", 
                               label = "Random Forest v7")
@@ -94,7 +101,7 @@ johny_d <- data.frame(
 
 Profiles are calculated with the `ceteris_paribus()` function.
 
-```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=7}
+```{r titanicCeterisProfile02, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=7, fig.cap="Ceteris Paribus Profiles for the random forest model `titanic_rf_v6`.", out.width = '70%', fig.align='center'}
 library("ingredients")
 library("ggplot2")
 
@@ -110,7 +117,7 @@ For selected profiles we can calculate oscillations with the `calculate_oscillat
 
 ```{r, warning=FALSE, message=FALSE, fig.width=5, fig.height=3}
 cpo_titanic_rf <- calculate_oscillations(cp_titanic_rf)
-cp_titanic_rf$`_ids_` = "Johny D"
+cpo_titanic_rf$`_ids_` = "Johny D"
 cpo_titanic_rf
 ```
 
