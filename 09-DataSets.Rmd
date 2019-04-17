@@ -63,52 +63,58 @@ titanic$fare[is.na(titanic$fare) & titanic$class == "3rd"] = 13
 
 After imputing the missing values, we investigate the association between survival status and the other variables. Figures XXX-XXX present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
-[TOMASZ: MAKE SEPARATE FIGURES SO THAT WE CAN REFER TO THEM. CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL "SURVIVAL" AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. CATEGORIZE FARE IN A SIMILAR WAY AS FOR AGE.]
+[TOMASZ:  CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL "SURVIVAL" AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. ]
 
-Figures XXX and XXX indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures XXX and XXX, i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure XXX indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure XXX shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures XXX and XXX do not suggest any noteworthy trends.        
+Figures \@ref(fig:titanic_exploration_gender) and \@ref(fig:titanic_exploration_age)  indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures \@ref(fig:titanic_exploration_parch) and \@ref(fig:titanic_exploration_sibsp), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanic_exploration_class)  indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure \@ref(fig:titanic_exploration_fare)  shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures \@ref(fig:titanic_exploration_embarked) and \ref(fig:titanic_exploration_country) do not suggest any noteworthy trends.        
 
-```{r titanic_exploration_gender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_gender) .", out.width = '70%', fig.align='center'}
+```{r titanic_exploration_gender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_gender) Survival in different genders for the titanic data.", out.width = '70%', fig.align='center'}
 library("ggmosaic")
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
    labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
 
+```{r titanic_exploration_age, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_age) Survival in different age groups for the titanic data.", out.width = '70%', fig.align='center'}
+titanic$age_cat <- cut(titanic$age, c(0,2,5,10,18,30,50,70,100))
 ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
-   labs(x="Gender", y="Survived?", title='Survival for the titanic per gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
-
-titanic$age_c <- cut(titanic$age, c(0,2,5,10,18,30,50,70,100))
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, age_c), fill=survived)) +
+   geom_mosaic(aes(x = product(survived, age_cat), fill=survived)) +
    labs(x="Age", y="Survived?", title='Survival for the titanic per age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
 
+```{r titanic_exploration_parch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_parch) Survival in different numbers of parents/children for the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
    labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival for the titanic per Parents/Children') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
 
+```{r titanic_exploration_sibsp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_sibsp) Survival in different numbers of siblings/spouses for the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
    labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
 
+```{r titanic_exploration_class, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_class) Survival for different classes in the titanic data.", out.width = '70%', fig.align='center'}
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, class), fill=survived)) +
    labs(x="Passenger class", y="Survived?", title='Survival for the titanic per class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=2, echo=FALSE}
+```{r titanic_exploration_fare, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_fare) Survival as a function of fare in the titanic data.", fig.width=6, fig.height=2, echo=FALSE}
 library("ggplot2")
-ggplot(titanic, aes(survived, fare, color = survived)) + 
-  geom_boxplot() + coord_flip() + scale_y_log10() +
-  ggtitle("The more you pay for ticket, the more likely is your survival") +
-  theme_drwhy()+ theme(legend.position = "none") + scale_color_manual(values = theme_drwhy_colors(2))
+titanic$fare_cat <- cut(titanic$fare, c(-1,0,10,25,50,520), include.lowest = TRUE)
+ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, fare_cat), fill=survived)) +
+   labs(x="Fare", y="Survived?", title='Survival for the titanic per fare') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
 ```
 
-```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4}
+```{r titanic_exploration_embarked, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_embarked) Survival for different port of embarking in the titanic data.",fig.width=6, fig.height=4}
 library("ggmosaic")
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
    labs(x="Embarked", y="Survived?", title='Survival for the titanic per Embarked') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
+```
 
+```{r titanic_exploration_country, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:titanic_exploration_country) Survival for different countries in the titanic data.",fig.width=6, fig.height=4}
 ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, country), fill=survived)) +
    labs(x="Country", y="Survived?", title='Survival for the titanic per country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(2))
@@ -116,7 +122,7 @@ ggplot(data = titanic) +
 
 ### Logistic regression {#model_titanic_lmr}
 
-The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we  use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. [TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE?] The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
+The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we  use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. [TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE? PBI: it's not linear but something modeled with slines] The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
@@ -151,6 +157,8 @@ titanic_rf_v3
 Finally, we consider the gradient-boosting model. The model is known for being able to grasp deep interactions between variables. [TOMASZ: WHAT ARE "DEEP INTERACTIONS"? REFERENCE?] We use the same set of explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use the function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
 ```{r, warning=FALSE, message=FALSE}
+set.seed(1313)
+
 library("gbm")
 titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
                       data = titanic, n.trees = 15000)
