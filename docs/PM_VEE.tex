@@ -754,19 +754,7 @@ should be a class average?{]}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{sibsp[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{sibsp)] =}\StringTok{ }\DecValTok{0}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{parch[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{parch)] =}\StringTok{ }\DecValTok{0}
 \CommentTok{# missing fare is replaced by class average}
-\KeywordTok{tapply}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare, titanic}\OperatorTok{$}\NormalTok{class, mean, }\DataTypeTok{na.rm =} \OtherTok{TRUE}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##              1st              2nd              3rd        deck crew 
-##         89.01734         21.50308         12.92786          0.00000 
-## engineering crew restaurant staff victualling crew 
-##          0.00000          0.00000          0.00000
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
+\CommentTok{# tapply(titanic$fare, titanic$class, mean, na.rm = TRUE)}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "1st"}\NormalTok{] =}\StringTok{ }\DecValTok{89}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "2nd"}\NormalTok{] =}\StringTok{ }\DecValTok{22}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "3rd"}\NormalTok{] =}\StringTok{ }\DecValTok{13}
@@ -971,11 +959,11 @@ stored in model-object \texttt{titanic\_rf\_v6}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 18.35%
+##         OOB estimate of  error rate: 18.49%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1401  95  0.06350267
-## yes  310 401  0.43600563
+## no  1395 101  0.06751337
+## yes  307 404  0.43178622
 \end{verbatim}
 
 For comparison purposes, we also consider a model with only three
@@ -998,11 +986,11 @@ results of the model are stored in model-object
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##         OOB estimate of  error rate: 20.75%
+##         OOB estimate of  error rate: 21.07%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1358 138  0.09224599
-## yes  320 391  0.45007032
+## no  1359 137  0.09157754
+## yes  328 383  0.46132208
 \end{verbatim}
 
 \hypertarget{gradient-boosting}{%
@@ -1093,8 +1081,8 @@ We do the same for the random forest and gradient boosting models.
 \end{Shaded}
 
 \begin{verbatim}
-##      no   yes
-## 1 0.642 0.358
+##     no  yes
+## 1 0.67 0.33
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1109,17 +1097,12 @@ We do the same for the random forest and gradient boosting models.
 ## [1] 0.4169878
 \end{verbatim}
 
-As a result, we obtain the predicted probabilities of 0.36 and 0.42,
+As a result, we obtain the predicted probabilities of 0.33 and 0.42,
 respectively.
 
 The models lead to different probabilities. Thus, it might be of
 interest to understand the reason for the differences, as it could help
 us to decide which of the predictions we might want to trust.
-
-{[}TOMASZ: GRADIENT-BOOSTING LEADS TO DIFFERENT PREDICTIONS AT EACH RUN.
-POSSIBLE TO ``FREEZE'' THE MODEL/PREDICTIONS? PERHAPS AT A RUN GIVING A
-DISTINCT PREDICTION? AT ONE POINT I GOT 0.6 FOR GBM, WHICH WAS MARKEDLY
-- AND INTERESTINGLY - DIFFERENT FROM LR AND RF.{]}
 
 \hypertarget{ApartmentDataset}{%
 \subsection{Apartment prices}\label{ApartmentDataset}}
@@ -1260,7 +1243,73 @@ in data frame \texttt{apartments\_test}, also included in the
 \hypertarget{data-exploration-1}{%
 \subsubsection{Data exploration}\label{data-exploration-1}}
 
-{[}TOMASZ: TO ADD, EVEN IF SHORT{]}
+Note that this is artificial dataset created to explain some differences
+between random forest and linear regression. So the data is more clean
+than a usual dataset. Nerveless let do some exploration.
+
+Distribution of square meter is slightly skewed.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_exploration_mi2-1.pdf}
+\caption{(\#fig:appartments\_exploration\_mi2)(fig:appartments\_exploration\_mi2)
+Survival for different countries in the titanic data.}
+\end{figure}
+
+There is some nonlinear (if any) relation between construction year and
+price.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_mi2_construction-1.pdf}
+\caption{(\#fig:appartments\_mi2\_construction)(fig:appartments\_mi2\_construction)
+Construction year vs price per sq meter}
+\end{figure}
+
+There is a sharp linear relation between surface and price.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_mi2_surface-1.pdf}
+\caption{(\#fig:appartments\_mi2\_surface)(fig:appartments\_mi2\_surface)
+Surface vs price per sq meter}
+\end{figure}
+
+There is a close to linear relation between floor and price.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_mi2_floor-1.pdf}
+\caption{(\#fig:appartments\_mi2\_floor)(fig:appartments\_mi2\_floor)
+Floor vs price per sq meter}
+\end{figure}
+
+There is a close to linear relation between no of rooms and price. But
+please note that surface and number of rooms are correlated.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_mi2_norooms-1.pdf}
+\caption{(\#fig:appartments\_mi2\_norooms)(fig:appartments\_mi2\_norooms)
+No rooms vs price per sq meter}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_surface_norooms-1.pdf}
+\caption{(\#fig:appartments\_surface\_norooms)(fig:appartments\_surface\_norooms)
+No rooms vs surface}
+\end{figure}
+
+Prices are different in different districts. Highest are in the
+Downtown.
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/appartments_mi2_district-1.pdf}
+\caption{(\#fig:appartments\_mi2\_district)(fig:appartments\_mi2\_district)
+District vs price per sq meter}
+\end{figure}
 
 \hypertarget{model_apartments_lr}{%
 \subsubsection{Linear regression}\label{model_apartments_lr}}
@@ -1285,15 +1334,15 @@ are stored in model-object \texttt{apartments\_lm\_v5}.
 ## 
 ## Coefficients:
 ##         (Intercept)    construction.year              surface  
-##            5020.139               -0.229              -10.238  
+##            5003.248               -0.229              -10.238  
 ##               floor             no.rooms      districtBielany  
-##             -99.482              -37.730               17.214  
-##     districtMokotow       districtOchota        districtPraga  
-##             918.380              926.254              -37.105  
-## districtSrodmiescie        districtUrsus      districtUrsynow  
-##            2080.611               29.942              -18.865  
-##        districtWola     districtZoliborz  
-##             -16.891              889.973
+##             -99.482              -37.730               34.106  
+##       districtPraga      districtUrsynow       districtBemowo  
+##             -20.214               -1.974               16.891  
+##       districtUrsus     districtZoliborz      districtMokotow  
+##              46.833              906.865              935.271  
+##      districtOchota  districtSrodmiescie  
+##             943.145             2097.502
 \end{verbatim}
 
 \hypertarget{model_apartments_rf}{%
@@ -1360,16 +1409,16 @@ steps for the random forest model.
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 282.9519
+## [1] 795.2587
 \end{verbatim}
 
 For the random forest model, the square-root of the mean squared
-difference is equal to 283. It is only minimally smaller than the value
-of 283.1, obtained for the linear regression model. Thus, the question
-we may face is: should we choose the model complex, but flexible
-random-forest model, or the simpler and easier to interpret linear
-model? In the subsequent chapters we will try to provide an answer to
-this question.
+difference is equal to 795.3. It is only minimally smaller than the
+value of 283.1, obtained for the linear regression model. Thus, the
+question we may face is: should we choose the model complex, but
+flexible random-forest model, or the simpler and easier to interpret
+linear model? In the subsequent chapters we will try to provide an
+answer to this question.
 
 \hypertarget{HFDataset}{%
 \subsection{Hire or fire}\label{HFDataset}}
@@ -1400,10 +1449,9 @@ six variables:
 \item
   \emph{evaluation}, the last evaluation score, a numerical variable
   with values 2 (fail), 3 (satisfactory), 4 (good), and 5 (veru good)
-  {[}TOMASZ: CORRECT?{]}
 \item
   \emph{salary}, the salary level, a numerical variable with values from
-  0 to 5 {[}TOMASZ: WHAT DOES 0 MEAN?{]}
+  0 (lowest) to 5 (highest)
 \item
   \emph{status}, a factor with three indicating whether the employee was
   fired, retained, or promoted
@@ -1467,18 +1515,51 @@ Models considered for this dataset will use \emph{status} as the
 ## 1105 1417 1461 1508 1316 1040
 \end{verbatim}
 
+Young female and old male are being fired more frequently.
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/HR_exploration_age-1}
+
+\}
+
+\textbackslash{}caption\{(fig:HR\_exploration\_age) HR status for age
+groups and gender.\}(\#fig:HR\_exploration\_age)
+\textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/HR_exploration_salary-1}
+
+\}
+
+\textbackslash{}caption\{(fig:HR\_exploration\_salary) HR status for
+salary groups.\}(\#fig:HR\_exploration\_salary)
+\textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/HR_exploration_evaluation-1}
+
+\}
+
+\textbackslash{}caption\{(fig:HR\_exploration\_evaluation) HR status for
+evaluation groups.\}(\#fig:HR\_exploration\_evaluation)
+\textbackslash{}end\{figure\}
+
 \hypertarget{model_HR_mr}{%
 \subsubsection{Multinomial logistic regression}\label{model_HR_mr}}
 
 The dependent variable of interest, \emph{status}, is categorical with
 three categories. Thus, a simple choice is to consider a multinomial
-logistic regression model {[}TOMASZ: REFERENCE{]}. We fit the model with
+logistic regression model \citep{Venables2010}. We fit the model with
 the help of function \texttt{multinom} from package \texttt{nnet}. The
 function fits multinomial log-linear models by using the neural-networks
-approach. {[}TOMASZ: WHY THIS APPROACH?{]} We treat all variables other
-than \texttt{status} in the \texttt{HR} data frame as explanatory and
-include them in the model. The results of the model are stored in
-model-object \texttt{HR\_glm\_v5}.
+approach.We chose this model to have a complex model that is smooth in
+contrary to random forest that relies on binary splits for continuous
+variables. We treat all variables other than \texttt{status} in the
+\texttt{HR} data frame as explanatory and include them in the model. The
+results of the model are stored in model-object \texttt{HR\_glm\_v5}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -2979,7 +3060,9 @@ estimated by the sample mean \(\bar x_i\). This leads to\\
 v(f, x^*, i) = \beta_i (x^*_i - \bar x_i).
 \] Note that the linear-model-based prediction may be re-expressed in
 the following way: \[
-f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] \equiv [average \ prediction] + \sum_{j=1}^p v(f, x^*, j).
+f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] 
+\] \[
+ \equiv [average \ prediction] + \sum_{j=1}^p v(f, x^*, j).
 \] Thus, the contributions of the explanatory variables are the
 differences between the model prediction for \(x^*\) and the average
 prediction.
@@ -2994,7 +3077,7 @@ coefficients and we work with an estimated model.
 
 Also, we assumed that the explanatory variables are independent, which
 may not be the case. We will return to this problem in Section
-{[}TOMASZ: INSERT REF{]}, when we will discuss interactions.
+\ref{iBreakDown}, when we will discuss interactions.
 
 \hypertarget{example-wine-quality}{%
 \subsection{Example: Wine quality}\label{example-wine-quality}}
@@ -3071,7 +3154,7 @@ coefficients:
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
-\NormalTok{model_fired <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(status }\OperatorTok{==}\StringTok{ "fired"} \OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ HR, }\DataTypeTok{family =} \StringTok{"binomial"}\NormalTok{)}
+\NormalTok{model_fired <-}\StringTok{ }\KeywordTok{glm}\NormalTok{(status }\OperatorTok{==}\StringTok{ "fired"} \OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ DALEX}\OperatorTok{::}\NormalTok{HR, }\DataTypeTok{family =} \StringTok{"binomial"}\NormalTok{)}
 \KeywordTok{coef}\NormalTok{(model_fired)}
 \end{Highlighting}
 \end{Shaded}
@@ -3561,9 +3644,8 @@ response with additional information.
 
 \includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-51-1.pdf}
 
-\hypertarget{variable-attribution-with-interactions}{%
-\section{Variable attribution with
-interactions}\label{variable-attribution-with-interactions}}
+\hypertarget{iBreakDown}{%
+\section{Variable attribution with interactions}\label{iBreakDown}}
 
 In the Section \ref{breakDown} we presented model agnostic approach for
 additive decomposition of a model prediction for a single observation.
@@ -4047,8 +4129,6 @@ package.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-58-1.pdf}
-
 Here we use the \texttt{iml} package, see more examples in
 \citep{imlPackage}.
 
@@ -4252,13 +4332,20 @@ dataset. See the Section \ref{HRdataset} for more details.
 \end{Shaded}
 
 \begin{verbatim}
-##   gender      age    hours evaluation salary   status
-## 1   male 32.58267 41.88626          3      1    fired
-## 2 female 41.21104 36.34339          2      5    fired
-## 3   male 37.70516 36.81718          3      0    fired
-## 4 female 30.06051 38.96032          3      2    fired
-## 5   male 21.10283 62.15464          5      3 promoted
-## 6   male 40.11812 69.53973          2      0    fired
+##   gender      age    hours evaluation salary   status age_cat
+## 1   male 32.58267 41.88626          3      1    fired (20,40]
+## 2 female 41.21104 36.34339          2      5    fired (40,60]
+## 3   male 37.70516 36.81718          3      0    fired (20,40]
+## 4 female 30.06051 38.96032          3      2    fired (20,40]
+## 5   male 21.10283 62.15464          5      3 promoted (20,40]
+## 6   male 40.11812 69.53973          2      0    fired (40,60]
+##       age_gender
+## 1   male (20,40]
+## 2 female (40,60]
+## 3   male (20,40]
+## 4 female (20,40]
+## 5   male (20,40]
+## 6   male (40,60]
 \end{verbatim}
 
 The problem here is to predict average price for square meter for an
@@ -4281,12 +4368,12 @@ package \citep{R-randomForest}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.49%
+##         OOB estimate of  error rate: 27.35%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2270  384      201   0.2049037
-## ok         528 1244      449   0.4398919
-## promoted   206  389     2176   0.2147239
+## fired     2269  387      199   0.2052539
+## ok         530 1251      440   0.4367402
+## promoted   196  394     2181   0.2129195
 \end{verbatim}
 
 \begin{Shaded}
@@ -4324,33 +4411,33 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 
 \begin{verbatim}
 ##       model_type case    label label_prob  model_r2 model_intercept
-## 1 classification    1    fired      0.784 0.1229568       0.2549494
-## 2 classification    1    fired      0.784 0.1229568       0.2549494
-## 3 classification    1    fired      0.784 0.1229568       0.2549494
-## 4 classification    1       ok      0.214 0.1301129       0.1884677
-## 5 classification    1       ok      0.214 0.1301129       0.1884677
-## 6 classification    1       ok      0.214 0.1301129       0.1884677
-## 7 classification    1 promoted      0.002 0.2803287       0.5167543
-## 8 classification    1 promoted      0.002 0.2803287       0.5167543
-## 9 classification    1 promoted      0.002 0.2803287       0.5167543
+## 1 classification    1    fired      0.784 0.1270477       0.2612806
+## 2 classification    1    fired      0.784 0.1270477       0.2612806
+## 3 classification    1    fired      0.784 0.1270477       0.2612806
+## 4 classification    1       ok      0.214 0.1276736       0.2127034
+## 5 classification    1       ok      0.214 0.1276736       0.2127034
+## 6 classification    1       ok      0.214 0.1276736       0.2127034
+## 7 classification    1 promoted      0.002 0.2884252       0.5279373
+## 8 classification    1 promoted      0.002 0.2884252       0.5279373
+## 9 classification    1 promoted      0.002 0.2884252       0.5279373
 ##   model_prediction    feature feature_value feature_weight
-## 1       0.64320321     gender           2.0    0.018638406
-## 2       0.64320321      hours          42.3    0.256064763
-## 3       0.64320321 evaluation           2.0    0.113550640
-## 4       0.45858087        age          57.7   -0.013851520
-## 5       0.45858087 evaluation           2.0    0.205469213
-## 6       0.45858087     salary           2.0    0.078495471
-## 7       0.00344001        age          57.7   -0.006718524
-## 8       0.00344001 evaluation           2.0   -0.317770612
-## 9       0.00344001      hours          42.3   -0.188825120
+## 1      0.627245626        age          57.7  -0.0012451888
+## 2      0.627245626      hours          42.3   0.2572479945
+## 3      0.627245626 evaluation           2.0   0.1099622667
+## 4      0.367029831        age          57.7  -0.0006019132
+## 5      0.367029831 evaluation           2.0   0.2066226123
+## 6      0.367029831      hours          42.3  -0.0516942229
+## 7      0.003383539     gender           2.0  -0.0023760345
+## 8      0.003383539 evaluation           2.0  -0.3166349392
+## 9      0.003383539      hours          42.3  -0.2055427677
 ##           feature_desc                      data          prediction
-## 1        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
+## 1           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 2 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 3      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 4           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 5      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
-## 6      1 < salary <= 2 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
-## 7           50.0 < age 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
+## 6 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
+## 7        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 8      evaluation <= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 9 37.6 < hours <= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 \end{verbatim}
@@ -4382,36 +4469,10 @@ package}}{The live package}}\label{the-live-package}}
                     \DataTypeTok{target_variable_name =} \StringTok{"status"}\NormalTok{, }\DataTypeTok{n_new_obs =} \DecValTok{500}\NormalTok{)}
 
 \NormalTok{local_model}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## Dataset: 
-##  Observations:  500 
-##  Variables:  6 
-##  Response variable:  status 
-## Explanation model: 
-##  Name:  regr.lm 
-##  Variable selection wasn't performed 
-##  Weights present in the explanation model 
-##  R-squared: 0.7596
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plot}\NormalTok{(local_model)}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-67-1.pdf}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plot}\NormalTok{(local_model, }\DataTypeTok{type =} \StringTok{"forest"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-67-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsubsection{\texorpdfstring{\textbf{The iml
@@ -4424,44 +4485,10 @@ package}}{The iml package}}\label{the-iml-package}}
 \NormalTok{explainer_rf =}\StringTok{ }\NormalTok{Predictor}\OperatorTok{$}\KeywordTok{new}\NormalTok{(rf_model, }\DataTypeTok{data =}\NormalTok{ HR[,}\DecValTok{1}\OperatorTok{:}\DecValTok{5}\NormalTok{])}
 \NormalTok{white_box =}\StringTok{ }\NormalTok{LocalModel}\OperatorTok{$}\KeywordTok{new}\NormalTok{(explainer_rf, }\DataTypeTok{x.interest =}\NormalTok{ new_observation[,}\DecValTok{1}\OperatorTok{:}\DecValTok{5}\NormalTok{], }\DataTypeTok{k =} \DecValTok{5}\NormalTok{)}
 \NormalTok{white_box}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-## Interpretation method:  LocalModel 
-## 
-## 
-## Analysed predictor: 
-## Prediction task: unknown 
-## 
-## 
-## Analysed data:
-## Sampling from data.frame with 7847 rows and 5 columns.
-## 
-## Head of results:
-##           beta x.recoded      effect x.original     feature feature.value
-## 1  0.062176640       1.0  0.06217664       male gender=male   gender=male
-## 2  0.005789257      57.7  0.33404015       57.7         age      age=57.7
-## 3 -0.090772953      42.3 -3.83969593       42.3       hours    hours=42.3
-## 4 -0.506977522       2.0 -1.01395504          2  evaluation  evaluation=2
-## 5 -0.031598533       2.0 -0.06319707          2      salary      salary=2
-## 6 -0.015944921       1.0 -0.01594492       male gender=male   gender=male
-##   .class
-## 1  fired
-## 2  fired
-## 3  fired
-## 4  fired
-## 5  fired
-## 6     ok
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{plot}\NormalTok{(white_box)}
 \end{Highlighting}
 \end{Shaded}
-
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-68-1.pdf}
 
 \hypertarget{comparision-of-prediction-level-explainers}{%
 \section{Comparision of prediction level
@@ -4867,13 +4894,13 @@ Let's calculate feature importance
 
 \begin{verbatim}
 ##            variable dropout_loss        label
-## 1      _full_model_     285.1355 randomForest
-## 2          no.rooms     391.0710 randomForest
-## 3 construction.year     410.5866 randomForest
-## 4             floor     445.2164 randomForest
-## 5           surface     480.1431 randomForest
-## 6          district     843.6519 randomForest
-## 7        _baseline_    1081.3710 randomForest
+## 1      _full_model_     794.5552 randomForest
+## 2          no.rooms     822.6120 randomForest
+## 3 construction.year     853.5165 randomForest
+## 4             floor     855.3036 randomForest
+## 5          district     860.7501 randomForest
+## 6           surface     871.8285 randomForest
+## 7        _baseline_    1130.2765 randomForest
 \end{verbatim}
 
 On a diagnostic plot is useful to present feature importance as an
@@ -4955,13 +4982,13 @@ functions and validation data.
 
 \begin{verbatim}
 ##            variable dropout_loss        label
-## 1      _full_model_     293.2729 randomForest
-## 2          no.rooms     389.4526 randomForest
-## 3 construction.year     416.1154 randomForest
-## 4             floor     453.9195 randomForest
-## 5           surface     480.4062 randomForest
-## 6          district     867.7050 randomForest
-## 7        _baseline_    1116.2616 randomForest
+## 1      _full_model_     799.9382 randomForest
+## 2          no.rooms     827.8470 randomForest
+## 3 construction.year     852.1447 randomForest
+## 4          district     857.3774 randomForest
+## 5             floor     874.5364 randomForest
+## 6           surface     898.5794 randomForest
+## 7        _baseline_    1104.9754 randomForest
 \end{verbatim}
 
 \begin{Shaded}
@@ -4976,13 +5003,13 @@ functions and validation data.
 
 \begin{verbatim}
 ##            variable dropout_loss label
-## 1      _full_model_     157.7938   svm
-## 2          no.rooms     221.4595   svm
-## 3 construction.year     365.2600   svm
-## 4             floor     439.8724   svm
-## 5           surface     527.2598   svm
-## 6          district     942.8512   svm
-## 7        _baseline_    1203.7571   svm
+## 1      _full_model_     960.1219   svm
+## 2          district     902.5403   svm
+## 3          no.rooms     956.8193   svm
+## 4 construction.year    1010.1792   svm
+## 5             floor    1041.8232   svm
+## 6           surface    1061.1809   svm
+## 7        _baseline_    1248.4173   svm
 \end{verbatim}
 
 Let's plot feature importance for all three models on a single plot.
@@ -5829,7 +5856,7 @@ namely \texttt{apartments} (here we do not have drift) and
 ##                    surface    6.8  
 ##                      floor    4.9  
 ##                   no.rooms    2.8  
-##                   district    2.8
+##                   district    2.6
 \end{verbatim}
 
 \begin{Shaded}
@@ -5916,7 +5943,7 @@ Here we are going to use the \texttt{drifter} package.
 \begin{verbatim}
 ##                   Variable  Shift
 ##   -------------------------------------
-##                  Residuals    3.6
+##                  Residuals    3.9
 \end{verbatim}
 
 \hypertarget{model-drift}{%
