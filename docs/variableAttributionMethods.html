@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-15">
+<meta name="date" content="2019-04-17">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -402,48 +402,48 @@ Figure 8.1: (fig:attribution1a)Relation between wine quality and concentration o
 <h2><span class="header-section-number">8.6</span> Code snippets</h2>
 <p>In this section, we present an example of computing variable attributions using the <code>HR</code> dataset (see Section <a href="DataSets.html#HRdataset">26.1</a> for more details).</p>
 <p>To calculate variable attributions for a particular point, first we have got to define this point:</p>
-<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb86-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
-<a class="sourceLine" id="cb86-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
-<a class="sourceLine" id="cb86-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
-<a class="sourceLine" id="cb86-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb86-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb88-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
+<a class="sourceLine" id="cb88-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
+<a class="sourceLine" id="cb88-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
+<a class="sourceLine" id="cb88-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb88-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a></code></pre></div>
 <p>Variable attributions for linear and generalized linear models may be directly extracted by applying the <code>predict()</code> function, with the argument <code>type = &quot;terms&quot;</code>, to an object containing results of fitting of a model. To illustrate the approach for logistic regression, we build a logistic regression model for the binary variable <code>status == &quot;fired&quot;</code> and extract the estimated model coefficients:</p>
-<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb87-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb87-2" data-line-number="2">model_fired &lt;-<span class="st"> </span><span class="kw">glm</span>(status <span class="op">==</span><span class="st"> &quot;fired&quot;</span> <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> HR, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
-<a class="sourceLine" id="cb87-3" data-line-number="3"><span class="kw">coef</span>(model_fired)</a></code></pre></div>
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb89-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb89-2" data-line-number="2">model_fired &lt;-<span class="st"> </span><span class="kw">glm</span>(status <span class="op">==</span><span class="st"> &quot;fired&quot;</span> <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> HR, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
+<a class="sourceLine" id="cb89-3" data-line-number="3"><span class="kw">coef</span>(model_fired)</a></code></pre></div>
 <pre><code>##  (Intercept)   gendermale          age        hours   evaluation 
 ##  5.737945729 -0.066803609 -0.001503314 -0.102021120 -0.425793369 
 ##       salary 
 ## -0.015740080</code></pre>
 <p>For the new observation, the predicted value of the logit of the probability of being fired is obtained by applying the <code>predict()</code> function:</p>
-<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb89-1" data-line-number="1"><span class="kw">as.vector</span>(pred.inst &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation)) <span class="co"># new pediction</span></a></code></pre></div>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" data-line-number="1"><span class="kw">as.vector</span>(pred.inst &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation)) <span class="co"># new pediction</span></a></code></pre></div>
 <pre><code>## [1] 0.3858406</code></pre>
 <p>On the other hand, variable attributions can be obtained by applying the <code>predict()</code> function with the <code>type=&quot;terms&quot;</code> argument:</p>
-<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" data-line-number="1">(var.attr &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation, <span class="dt">type =</span> <span class="st">&quot;terms&quot;</span>)) <span class="co"># attributions</span></a></code></pre></div>
+<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb93-1" data-line-number="1">(var.attr &lt;-<span class="st"> </span><span class="kw">predict</span>(model_fired, new_observation, <span class="dt">type =</span> <span class="st">&quot;terms&quot;</span>)) <span class="co"># attributions</span></a></code></pre></div>
 <pre><code>##        gender         age     hours evaluation      salary
 ## 1 -0.03361889 -0.02660691 0.7555555  0.5547197 0.007287334
 ## attr(,&quot;constant&quot;)
 ## [1] -0.8714962</code></pre>
 <p>The largest contributions to the prediction come from variables ‘’hours’’ and ‘’evaluation.’’ Variables ‘’gender’’ and ‘’age’’ slightly decrease the predicted value. The sum of the attributions is equal to</p>
-<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb93-1" data-line-number="1"><span class="kw">sum</span>(var.attr)</a></code></pre></div>
+<div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb95-1" data-line-number="1"><span class="kw">sum</span>(var.attr)</a></code></pre></div>
 <pre><code>## [1] 1.257337</code></pre>
 <p>The attribute <code>constant</code> of object <code>var.attr</code> provides the ‘’average’’ prediction, i.e., the predicted logit for an obsrvation defined by the means of the explanatory variables, as can be seen from the calculation below:</p>
-<div class="sourceCode" id="cb95"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb95-1" data-line-number="1"><span class="kw">coef</span>(model_fired)<span class="op">%*%</span><span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">mean</span>((HR<span class="op">$</span>gender<span class="op">==</span><span class="st">&quot;male&quot;</span>)), <span class="kw">mean</span>(HR<span class="op">$</span>age), <span class="kw">mean</span>(HR<span class="op">$</span>hours), </a>
-<a class="sourceLine" id="cb95-2" data-line-number="2">                      <span class="kw">mean</span>(HR<span class="op">$</span>evaluation), <span class="kw">mean</span>(HR<span class="op">$</span>salary))</a></code></pre></div>
+<div class="sourceCode" id="cb97"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb97-1" data-line-number="1"><span class="kw">coef</span>(model_fired)<span class="op">%*%</span><span class="kw">c</span>(<span class="dv">1</span>, <span class="kw">mean</span>((HR<span class="op">$</span>gender<span class="op">==</span><span class="st">&quot;male&quot;</span>)), <span class="kw">mean</span>(HR<span class="op">$</span>age), <span class="kw">mean</span>(HR<span class="op">$</span>hours), </a>
+<a class="sourceLine" id="cb97-2" data-line-number="2">                      <span class="kw">mean</span>(HR<span class="op">$</span>evaluation), <span class="kw">mean</span>(HR<span class="op">$</span>salary))</a></code></pre></div>
 <pre><code>##            [,1]
 ## [1,] -0.8714962</code></pre>
 <p>Adding the ‘’average’’ prediction to the sum of the variable attributions results in the new-observation prediction:</p>
-<div class="sourceCode" id="cb97"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb97-1" data-line-number="1"><span class="kw">attributes</span>(var.attr)<span class="op">$</span>constant <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(var.attr)</a></code></pre></div>
+<div class="sourceCode" id="cb99"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb99-1" data-line-number="1"><span class="kw">attributes</span>(var.attr)<span class="op">$</span>constant <span class="op">+</span><span class="st"> </span><span class="kw">sum</span>(var.attr)</a></code></pre></div>
 <pre><code>## [1] 0.3858406</code></pre>
 <p>Below we illustrate how to implement this approach with the <code>DALEX</code> package. Toward this end, functions <code>explain()</code> and <code>single_prediction()</code> can be used. Object <code>model_fired</code> stores the definition of the logistic-regression model used earlier in this section. The contents of object <code>attribution</code> correspond to the results obtained by using function <code>predict()</code>.</p>
-<div class="sourceCode" id="cb99"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb99-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb99-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb99-3" data-line-number="3">explainer_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(model_fired,</a>
-<a class="sourceLine" id="cb99-4" data-line-number="4">                 <span class="dt">data =</span> HR,</a>
-<a class="sourceLine" id="cb99-5" data-line-number="5">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
-<a class="sourceLine" id="cb99-6" data-line-number="6">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
-<a class="sourceLine" id="cb99-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb99-8" data-line-number="8">(attribution &lt;-<span class="st"> </span><span class="kw">single_prediction</span>(explainer_fired, new_observation))</a></code></pre></div>
+<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb101-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb101-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb101-3" data-line-number="3">explainer_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(model_fired,</a>
+<a class="sourceLine" id="cb101-4" data-line-number="4">                 <span class="dt">data =</span> HR,</a>
+<a class="sourceLine" id="cb101-5" data-line-number="5">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
+<a class="sourceLine" id="cb101-6" data-line-number="6">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
+<a class="sourceLine" id="cb101-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb101-8" data-line-number="8">(attribution &lt;-<span class="st"> </span><span class="kw">single_prediction</span>(explainer_fired, new_observation))</a></code></pre></div>
 <pre><code>##                    variable contribution variable_name variable_value
 ## 1               (Intercept)  0.363833312     Intercept              1
 ## hours        + hours = 42.3  0.109221944         hours           42.3
@@ -461,8 +461,8 @@ Figure 8.1: (fig:attribution1a)Relation between wine quality and concentration o
 ## gender       0.5952810   -1        6 fired
 ## 11           0.5952810    X        7 fired</code></pre>
 <p>After object <code>attribution</code> has been created, a plot presenting the variable attributions can be easily constructed:</p>
-<div class="sourceCode" id="cb101"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb101-1" data-line-number="1"><span class="kw">plot</span>(attribution)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb103-1" data-line-number="1"><span class="kw">plot</span>(attribution)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-45-1.png" width="672" /></p>
 
 </div>
 </div>

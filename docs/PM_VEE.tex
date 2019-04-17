@@ -131,7 +131,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-04-15}
+    \date{2019-04-17}
 
 \usepackage{booktabs}
 
@@ -621,10 +621,10 @@ collision with an iceberg. Projects like \emph{Encyclopedia titanica}
 \texttt{https://www.encyclopedia-titanica.org/} are a source of rich and
 precise data about Titanic's passengers. The data are available in a
 dataset included in the \texttt{stablelearner} package. The dataset,
-including some variable transformations, is also avaliable in the
-\texttt{DALEX} package. In particular, the `titanic' data frame contains
-2207 observations (for 1317 passengers and 890 crew members) and nine
-variables:
+after some data cleaning and variable transformations, is also avaliable
+in the \texttt{DALEX} package. In particular, the `titanic' data frame
+contains 2207 observations (for 1317 passengers and 890 crew members)
+and nine variables:
 
 \begin{itemize}
 \tightlist
@@ -740,7 +740,9 @@ observed value, i.e., 0. Finally, for \emph{fare}, we use the value of
 0.
 
 {[}TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR
-AGE. TAKING 0 CORRESPONDS TO ``crew''.{]}
+AGE. TAKING 0 CORRESPONDS TO ``crew''. PBI there are 7, 14, 5 missing
+values in the 1st/2nd/3rd class. Fare differs among classes, so maybe it
+should be a class average?{]}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -748,10 +750,26 @@ AGE. TAKING 0 CORRESPONDS TO ``crew''.{]}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{country[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{country)] =}\StringTok{ "X"}
 \CommentTok{# missing age is replaced by average (30)}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{age[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{age)] =}\StringTok{ }\DecValTok{30}
-\CommentTok{# missing fare, sibsp, parch are replaced by 0}
-\NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare)] =}\StringTok{ }\DecValTok{0}
+\CommentTok{# missing sibsp, parch are replaced by 0}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{sibsp[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{sibsp)] =}\StringTok{ }\DecValTok{0}
 \NormalTok{titanic}\OperatorTok{$}\NormalTok{parch[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{parch)] =}\StringTok{ }\DecValTok{0}
+\CommentTok{# missing fare is replaced by class average}
+\KeywordTok{tapply}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare, titanic}\OperatorTok{$}\NormalTok{class, mean, }\DataTypeTok{na.rm =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##              1st              2nd              3rd        deck crew 
+##         89.01734         21.50308         12.92786          0.00000 
+## engineering crew restaurant staff victualling crew 
+##          0.00000          0.00000          0.00000
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "1st"}\NormalTok{] =}\StringTok{ }\DecValTok{89}
+\NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "2nd"}\NormalTok{] =}\StringTok{ }\DecValTok{22}
+\NormalTok{titanic}\OperatorTok{$}\NormalTok{fare[}\KeywordTok{is.na}\NormalTok{(titanic}\OperatorTok{$}\NormalTok{fare) }\OperatorTok{&}\StringTok{ }\NormalTok{titanic}\OperatorTok{$}\NormalTok{class }\OperatorTok{==}\StringTok{ "3rd"}\NormalTok{] =}\StringTok{ }\DecValTok{13}
 \end{Highlighting}
 \end{Shaded}
 
@@ -765,37 +783,103 @@ provides the information about the proportion of non- and survivors.
 Note that, to construct the graphs for \emph{age} and \emph{fare}, we
 categorized the range of the observed values.
 
-{[}TOMASZ: MAKE SEPARATE FIGURES SO THAT WE CAN REFER TO THEM. CHANGE
-THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL ``SURVIVAL''
-AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. CATEGORIZE FARE
-IN A SIMILAR WAY AS FOR AGE.{]}
+{[}TOMASZ: CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE
+HORIZONTAL ``SURVIVAL'' AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE
+Y-AXIS. {]}
 
-Figures XXX and XXX indicate that the proportion of survivors was larger
-for females and children below 5 years of age. This is most likely the
-result of the "women and children first principle that is often evoked
-in situations that require evacuation of persons whose life is in
-danger. The principle can, perhaps, partially explain the trend seen in
-Figures XXX and XXX, i.e., a higher proportion of survivors among those
-with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure XXX
-indicates that passengers travelling in the first and second class had a
-higher chance of survival, perhaps due to the proximity of the location
-of their cabins to the deck. Interestingly, the proportion of survivors
-among crew deck was similar to the proportion of the first-class
-passengers. Figure XXX shows that the proportion of survivors increased
-with the fare, which is consistent with the fact that the proportion was
-higher for passengers travelling in the first and second class. Finally,
-Figures XXX and XXX do not suggest any noteworthy trends.
+Figures @ref(fig:titanic\_exploration\_gender) and
+@ref(fig:titanic\_exploration\_age) indicate that the proportion of
+survivors was larger for females and children below 5 years of age. This
+is most likely the result of the ``women and children first'' principle
+that is often evoked in situations that require evacuation of persons
+whose life is in danger. The principle can, perhaps, partially explain
+the trend seen in Figures @ref(fig:titanic\_exploration\_parch) and
+@ref(fig:titanic\_exploration\_sibsp), i.e., a higher proportion of
+survivors among those with 1-3 parents/children and 1-2 siblings/spouses
+aboard. Figure @ref(fig:titanic\_exploration\_class) indicates that
+passengers travelling in the first and second class had a higher chance
+of survival, perhaps due to the proximity of the location of their
+cabins to the deck. Interestingly, the proportion of survivors among
+crew deck was similar to the proportion of the first-class passengers.
+Figure @ref(fig:titanic\_exploration\_fare) shows that the proportion of
+survivors increased with the fare, which is consistent with the fact
+that the proportion was higher for passengers travelling in the first
+and second class. Finally, Figures
+@ref(fig:titanic\_exploration\_embarked) and
+\ref(fig:titanic\_exploration\_country) do not suggest any noteworthy
+trends.
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-3-1.pdf}
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-3-2.pdf}
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-3-3.pdf}
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-3-4.pdf}
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-3-5.pdf}
+\textbackslash{}begin\{figure\}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-4-1.pdf}
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/titanic_exploration_gender-1}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-5-1.pdf}
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-5-2.pdf}
+\}
+
+\textbackslash{}caption\{(fig:titanic\_exploration\_gender) Survival in
+different genders for the titanic
+data.\}(\#fig:titanic\_exploration\_gender)
+\textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/titanic_exploration_age-1}
+
+\}
+
+\textbackslash{}caption\{(fig:titanic\_exploration\_age) Survival in
+different age groups for the titanic
+data.\}(\#fig:titanic\_exploration\_age) \textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/titanic_exploration_parch-1}
+
+\}
+
+\textbackslash{}caption\{(fig:titanic\_exploration\_parch) Survival in
+different numbers of parents/children for the titanic
+data.\}(\#fig:titanic\_exploration\_parch) \textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/titanic_exploration_sibsp-1}
+
+\}
+
+\textbackslash{}caption\{(fig:titanic\_exploration\_sibsp) Survival in
+different numbers of siblings/spouses for the titanic
+data.\}(\#fig:titanic\_exploration\_sibsp) \textbackslash{}end\{figure\}
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.7\linewidth]{PM_VEE_files/figure-latex/titanic_exploration_class-1}
+
+\}
+
+\textbackslash{}caption\{(fig:titanic\_exploration\_class) Survival for
+different classes in the titanic
+data.\}(\#fig:titanic\_exploration\_class) \textbackslash{}end\{figure\}
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/titanic_exploration_fare-1.pdf}
+\caption{(\#fig:titanic\_exploration\_fare)(fig:titanic\_exploration\_fare)
+Survival as a function of fare in the titanic data.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/titanic_exploration_embarked-1.pdf}
+\caption{(\#fig:titanic\_exploration\_embarked)(fig:titanic\_exploration\_embarked)
+Survival for different port of embarking in the titanic data.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{PM_VEE_files/figure-latex/titanic_exploration_country-1.pdf}
+\caption{(\#fig:titanic\_exploration\_country)(fig:titanic\_exploration\_country)
+Survival for different countries in the titanic data.}
+\end{figure}
 
 \hypertarget{model_titanic_lmr}{%
 \subsubsection{Logistic regression}\label{model_titanic_lmr}}
@@ -806,9 +890,10 @@ not consider country as an explanatory variable. As there is no reason
 to expect a linear relationship between age and odds of survival, we use
 linear tail-restricted cubic splines, available in the \texttt{rcs()}
 function of the \texttt{rms} package \citep{rms}, to model the effect of
-age. {[}TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE?{]}
-The results of the model are stored in model-object
-\texttt{titanic\_lmr\_v6}, which will be used in subsequent chapters.
+age. {[}TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE?
+PBI: it's not linear but something modeled with slines{]} The results of
+the model are stored in model-object \texttt{titanic\_lmr\_v6}, which
+will be used in subsequent chapters.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -827,31 +912,31 @@ The results of the model are stored in model-object
 ##  
 ##                         Model Likelihood     Discrimination    Rank Discrim.    
 ##                            Ratio Test           Indexes           Indexes       
-##  Obs           2207    LR chi2     752.73    R2       0.404    C       0.817    
-##   FALSE        1496    d.f.            17    g        1.648    Dxy     0.635    
-##   TRUE          711    Pr(> chi2) <0.0001    gr       5.195    gamma   0.636    
+##  Obs           2207    LR chi2     752.06    R2       0.404    C       0.817    
+##   FALSE        1496    d.f.            17    g        1.647    Dxy     0.635    
+##   TRUE          711    Pr(> chi2) <0.0001    gr       5.191    gamma   0.636    
 ##  max |deriv| 0.0001                          gp       0.282    tau-a   0.277    
 ##                                              Brier    0.146                     
 ##  
 ##                         Coef    S.E.   Wald Z Pr(>|Z|)
-##  Intercept               4.5458 0.5460   8.33 <0.0001 
-##  gender=male            -2.7658 0.1587 -17.43 <0.0001 
-##  age                    -0.1186 0.0221  -5.37 <0.0001 
-##  age'                    0.6339 0.1629   3.89 <0.0001 
-##  age''                  -2.6621 0.7841  -3.39 0.0007  
-##  age'''                  2.8936 1.0131   2.86 0.0043  
-##  class=2nd              -1.1029 0.2486  -4.44 <0.0001 
-##  class=3rd              -2.0185 0.2466  -8.18 <0.0001 
-##  class=deck crew         1.1067 0.3468   3.19 0.0014  
-##  class=engineering crew -0.9287 0.2615  -3.55 0.0004  
-##  class=restaurant staff -3.1278 0.6571  -4.76 <0.0001 
-##  class=victualling crew -1.0473 0.2558  -4.09 <0.0001 
-##  sibsp                  -0.4574 0.1012  -4.52 <0.0001 
-##  parch                  -0.0970 0.0992  -0.98 0.3282  
-##  fare                    0.0021 0.0020   1.05 0.2928  
-##  embarked=Cherbourg      0.7725 0.2844   2.72 0.0066  
-##  embarked=Queenstown     0.2653 0.3411   0.78 0.4368  
-##  embarked=Southampton    0.2287 0.2119   1.08 0.2805  
+##  Intercept               4.5746 0.5480   8.35 <0.0001 
+##  gender=male            -2.7687 0.1586 -17.45 <0.0001 
+##  age                    -0.1180 0.0221  -5.35 <0.0001 
+##  age'                    0.6313 0.1628   3.88 0.0001  
+##  age''                  -2.6583 0.7840  -3.39 0.0007  
+##  age'''                  2.8977 1.0130   2.86 0.0042  
+##  class=2nd              -1.1390 0.2501  -4.56 <0.0001 
+##  class=3rd              -2.0627 0.2490  -8.28 <0.0001 
+##  class=deck crew         1.0672 0.3498   3.05 0.0023  
+##  class=engineering crew -0.9702 0.2648  -3.66 0.0002  
+##  class=restaurant staff -3.1712 0.6583  -4.82 <0.0001 
+##  class=victualling crew -1.0877 0.2596  -4.19 <0.0001 
+##  sibsp                  -0.4504 0.1006  -4.48 <0.0001 
+##  parch                  -0.0871 0.0987  -0.88 0.3776  
+##  fare                    0.0014 0.0020   0.70 0.4842  
+##  embarked=Cherbourg      0.7881 0.2836   2.78 0.0055  
+##  embarked=Queenstown     0.2745 0.3409   0.80 0.4208  
+##  embarked=Southampton    0.2343 0.2119   1.11 0.2689  
 ## 
 \end{verbatim}
 
@@ -886,11 +971,11 @@ stored in model-object \texttt{titanic\_rf\_v6}.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 18.31%
+##         OOB estimate of  error rate: 18.35%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1399  97  0.06483957
-## yes  307 404  0.43178622
+## no  1401  95  0.06350267
+## yes  310 401  0.43600563
 \end{verbatim}
 
 For comparison purposes, we also consider a model with only three
@@ -913,11 +998,11 @@ results of the model are stored in model-object
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##         OOB estimate of  error rate: 20.98%
+##         OOB estimate of  error rate: 20.75%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1356 140  0.09358289
-## yes  323 388  0.45428973
+## no  1358 138  0.09224599
+## yes  320 391  0.45007032
 \end{verbatim}
 
 \hypertarget{gradient-boosting}{%
@@ -933,6 +1018,8 @@ model-object \texttt{titanic\_gbm\_v6}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1313}\NormalTok{)}
+
 \KeywordTok{library}\NormalTok{(}\StringTok{"gbm"}\NormalTok{)}
 \NormalTok{titanic_gbm_v6 <-}\StringTok{ }\KeywordTok{gbm}\NormalTok{(survived }\OperatorTok{==}\StringTok{ "yes"} \OperatorTok{~}\StringTok{ }\NormalTok{class }\OperatorTok{+}\StringTok{ }\NormalTok{gender }\OperatorTok{+}\StringTok{ }\NormalTok{age }\OperatorTok{+}\StringTok{ }\NormalTok{sibsp }\OperatorTok{+}\StringTok{ }\NormalTok{parch }\OperatorTok{+}\StringTok{ }\NormalTok{fare }\OperatorTok{+}\StringTok{ }\NormalTok{embarked, }
                       \DataTypeTok{data =}\NormalTok{ titanic, }\DataTypeTok{n.trees =} \DecValTok{15000}\NormalTok{)}
@@ -992,10 +1079,10 @@ predicted probability of survival for the logistic regression model.
 
 \begin{verbatim}
 ##         1 
-## 0.4702145
+## 0.4556319
 \end{verbatim}
 
-The predicted probability is equal to 0.47.
+The predicted probability is equal to 0.46.
 
 We do the same for the random forest and gradient boosting models.
 
@@ -1007,7 +1094,7 @@ We do the same for the random forest and gradient boosting models.
 
 \begin{verbatim}
 ##      no   yes
-## 1 0.654 0.346
+## 1 0.642 0.358
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -1019,10 +1106,10 @@ We do the same for the random forest and gradient boosting models.
 \end{Shaded}
 
 \begin{verbatim}
-## [1] 0.4422346
+## [1] 0.4169878
 \end{verbatim}
 
-As a result, we obtain the predicted probabilities of 0.35 and 0.44,
+As a result, we obtain the predicted probabilities of 0.36 and 0.42,
 respectively.
 
 The models lead to different probabilities. Thus, it might be of
@@ -1710,11 +1797,11 @@ asumming that effects of all other variables are unchanged. The main
 goal is to understand how changes in a single explanatory variable
 affects model predictions.
 
-Explainers presented in this chaprter are linked to the second law
+Explainers presented in this chapter are linked to the second law
 introduced in Section \ref{three-single-laws}, i.e.~the law of
 ``Prediction's speculation.'' This is why the tools are also known as
 \emph{What-If model analysis} or \emph{Individual Conditional
-EXpectations} \citep{ICEbox}. It turns out that it is easier to
+Expectations} \citep{ICEbox}. It turns out that it is easier to
 understand how a black-box model is working if we can explore the model
 by investigating the influence of explanatory variables separately,
 changing one at a time.
@@ -1722,19 +1809,21 @@ changing one at a time.
 \hypertarget{intuition}{%
 \subsection{Intuition}\label{intuition}}
 
-Panel A of Figure \ref{fig:modelResponseCurveLine} presents a response
-surface for a \texttt{titanic\_lmr\_v6} model for two explanatory
-variables, \emph{age} and \emph{class}, from the \emph{titanic} dataset
-(see Section \ref{TitanicDataset}). We are interested in the change of
-the model prediction induced by each of the variables. Toward this end,
-we may want to explore the curvature of the response surface around a
-single point that is marked on the plot by a black dot. Ceteris-paribus
+Panel A of Figure \ref{fig:modelResponseCurveLine} presents response
+(prediction) surface for the \texttt{titanic\_lmr\_v6} model for two
+explanatory variables, \emph{age} and \emph{class}, from the
+\emph{titanic} dataset (see Section \ref{TitanicDataset}). We are
+interested in the change of the model prediction induced by each of the
+variables. Toward this end, we may want to explore the curvature of the
+response surface around a single point with \emph{age} equal to 47 and
+\emph{class} equal to ``1st,'' indicated in the plot. Ceteris-paribus
 (CP) profiles are one-dimensional profiles that examine the curvature
 across each dimension, i.e., for each variable. Panel B of Figure
 \ref{fig:modelResponseCurveLine} presents the profiles corresponding to
-\emph{age} and \emph{class}. In essence, a CP profile shows a
-conditional expectation of the dependent variable (response) for the
-particular explanatory variable.
+\emph{age} and \emph{class}. Note that, in the CP profile for
+\emph{age}, the point of interest is indicated by the black dot. In
+essence, a CP profile shows a conditional expectation of the dependent
+variable (response) for the particular explanatory variable.
 
 \begin{figure}
 
@@ -1745,7 +1834,7 @@ particular explanatory variable.
 \caption{(fig:modelResponseCurveLine) A) Model response (prediction) surface. Ceteris-paribus (CP) profiles marked with black curves help to understand the curvature of the surface while changing only a single explanatory variable. B) CP profiles for individual variables, age (continuous) and class (categorical).}\label{fig:modelResponseCurveLine}
 \end{figure}
 
-CP technique is similar to the LIME method (see Section \ref{LIME}).
+CP technique is similar to the LIME method (see Chapter \ref{LIME}).
 LIME and CP profiles examine the curvature of a model response-surface.
 The difference between these two methods lies in the fact that LIME
 approximates the black-box model of interest locally with a simpler
@@ -1761,17 +1850,26 @@ easier to intepret.
 In this section we introduce more formally uni-dimensional CP profiles.
 
 {[}PBI: Do we need to assume that model is correct? first sentence may
-be removed{]}
+be removed. TOMASZ: ADDED A FEW SENTENCES TO INDICATE THAT THE
+APPROXIMATION MAY BE WHATEVER WE WANT.{]}
 
 Assume that \(E_Y(Y | x^*) \approx f(x^*)\), where \(f(x^*)\) is the
-value of the model at \(x^*\). Note that \(x^*\) is a vector containing
-values for explanatory covariates. We will use subscript \(x^*_i\) to
-refer to the vector corresponding to the \(i\)-th observation in a
-dataset. We will use superscript \(x^{*j}\) to refer to the \(j\)-th
-element of \(x^*\), i.e., the \(j\)-th variable. Additionally, let
-\(x^{*-j}\) denote a vector resultinig from removing the \(j\)-th
-element from vector \(x^{*}\). Moreover, let \(x^{*|j}=z\) denotes a
-vector in which the \(j\)-th element is equal to \(z\) (a scalar).
+value of the model at \(x^*\), where \(x^*\) is a vector containing
+values for explanatory covariates. Note that we do not require the
+approximation to be ``good'' in any particular sense; we simply assume
+that we have got a model that is used to estimate the expected value and
+provide predictions of the dependent variable. Our interest lies in the
+evalution of the quality of the predictions. If the model offers a
+``good'' approximation of the expected value, it should be reflected in
+its satisfactory predictive performance.
+
+We will use subscript \(x^*_i\) to refer to the vector corresponding to
+the \(i\)-th observation in a dataset. We will use superscript
+\(x^{*j}\) to refer to the \(j\)-th element of \(x^*\), i.e., the
+\(j\)-th variable. Additionally, let \(x^{*-j}\) denote a vector
+resultinig from removing the \(j\)-th element from vector \(x^{*}\).
+Moreover, let \(x^{*|j}=z\) denotes a vector in which the \(j\)-th
+element is equal to \(z\) (a scalar).
 
 We define a one-dimensional CP profile for the model \(f()\), \(j\)-th
 explanatory variable, and point \(x^*\) as follows:
@@ -1786,16 +1884,18 @@ other variables in \(x^*\) are kept fixed at the values present in
 \(x^*\).
 
 For continuous explanatory variables a natural way to represent the CP
-function is to use a profile plot similar to the one presented in Figure
-\ref{fig:profileAgeRf}. In the figure, the dot presents an instance
-prediction, i.e., prediction \(f(x^*)\) for a single observation
-\(x^*\). The curve shows how the prediction would change if the value of
-a particular explanatory variable is changed (in this case, ``age''; see
-Section \ref{HFDataset}). It is worth oberving that the profile for
-logistic regression is smooth while for random forest model is expresses
-some variabilit. Moreover, for this instance (observation), the
-prediction would increase substantially if the value of the explanatory
-variable became lower than 20.
+function is to use a profile plot similar to the ones presented in
+Figure \ref{fig:profileAgeRf}. In the figure, the dot on the curves
+marks an instance prediction, i.e., prediction \(f(x^*)\) for a single
+observation \(x^*\). The curve itself shows how the prediction would
+change if the value of a particular explanatory variable changed. Figure
+\ref{fig:profileAgeRf} presents CP profiles for the \emph{age} variable
+in the logistic regression and random forest models for the Titanic
+dataset (see Section \ref{HFDataset}). It is worth oberving that the
+profile for the logistic regression model is smooth, while for the
+random forest model it shows more variability. Moreover, for this
+instance (observation), the prediction would increase substantially if
+the value of the explanatory variable became lower than 20.
 
 \textbackslash{}begin\{figure\}
 
@@ -1803,13 +1903,14 @@ variable became lower than 20.
 
 \}
 
-\textbackslash{}caption\{(fig:profileAgeRf) Ceteris-Paribus profile for
-two models, \texttt{titanic\_lmr\_v6} and \texttt{titanic\_rf\_v6} that
-predicts the probability of being rescued as a function of the
-age\}\label{fig:profileAgeRf} \textbackslash{}end\{figure\}
+\textbackslash{}caption\{(fig:profileAgeRf) Ceteris-paribus profiles for
+variable \texttt{age} for the logistic regression
+(\texttt{titanic\_lmr\_v6}) and random forest (\texttt{titanic\_rf\_v6}
+) models that predict the probability of surviving based on the Titanic
+data\}\label{fig:profileAgeRf} \textbackslash{}end\{figure\}
 
-For categorical explanatory variables a natural way to represent the CP
-function is to use barplot as the one presented in Figure
+For a categorical explanatory variable, a natural way to represent the
+CP function is to use a barplot similar to the ones presented in Figure
 \ref{fig:profileAgeRf2}.
 
 \textbackslash{}begin\{figure\}
@@ -1818,10 +1919,11 @@ function is to use barplot as the one presented in Figure
 
 \}
 
-\textbackslash{}caption\{(fig:profileAgeRf2) Ceteris-Paribus profile for
-two models, \texttt{titanic\_lmr\_v6} and \texttt{titanic\_rf\_v6} that
-predicts the probability of being rescued as a function of the
-class\}\label{fig:profileAgeRf2} \textbackslash{}end\{figure\}
+\textbackslash{}caption\{(fig:profileAgeRf2) Ceteris-paribus profiles
+for variable \texttt{class} for the logistic regression
+(\texttt{titanic\_lmr\_v6}) and random forest (\texttt{titanic\_rf\_v6}
+) models that predict the probability of surviving based on the Titanic
+data\}\label{fig:profileAgeRf2} \textbackslash{}end\{figure\}
 
 Usually, black-box models contain a large number of explanatory
 variables. However, CP profiles are legible even for tiny subplots,
@@ -1831,7 +1933,7 @@ at the same time keeping profiles for consecutive variables in separate
 panels, as shown in Figure \ref{fig:profileV4Rf}. It helps if these
 panels are ordered so that the most important profiles are listed first.
 We discuss a method to assess importance of CP profiles in the next
-subsection.
+chapter.
 
 \textbackslash{}begin\{figure\}
 
@@ -1840,30 +1942,31 @@ subsection.
 \}
 
 \textbackslash{}caption\{(fig:profileV4Rf) Ceteris-paribus profiles for
-all continuous explanatory variables in the
-\texttt{titanic\textquotesingle{}\ dataset\ for\ the}titanic\_rf\_v6`
-model\}\label{fig:profileV4Rf} \textbackslash{}end\{figure\}
+all continuous explanatory variables for the random forest
+(\texttt{titanic\_rf\_v6}) model for the \texttt{titanic}
+dataset\}\label{fig:profileV4Rf} \textbackslash{}end\{figure\}
 
 \hypertarget{pros-and-cons}{%
 \subsection{Pros and cons}\label{pros-and-cons}}
 
-CP profiles offer a uniform, easy to comunicate and extendable approach
-to model exploration. Their graphical representation is easy to
-understand and explain. It is possible to show profiles for many
-variables or models in a single plot.
+One-dimensional CP profiles,as presented in this chapter, offer a
+uniform, easy to comunicate and extendable approach to model
+exploration. Their graphical representation is easy to understand and
+explain. It is possible to show profiles for many variables or models in
+a single plot.
 
 There are several issues related to the use of the CP profiles. If
 explanatory variables are correlated, then changing one variable implies
 a change in the other. In such case, the application of the
 \emph{Ceteris paribus} principle may lead to unrealistic settings, as it
 is not possible to keep one variable fixed while changing the other one.
-A special case are interactions, which require the use of 2D CP profiles
-that are more complex than the 1D ones. Also, in case of a model with
-hundreds or thousands of variables, the number of plots to inspect may
-be daunting. Finally, visualization of CP profiles for factors
-(categorical explanatory variables) is not trivial, especially for
-factors with many nominal (unordered) categories (like, for example, a
-ZIP-code).
+A special case are interactions, which require the use of
+two-dimensional CP profiles that are more complex than one-dimensional
+ones. Also, in case of a model with hundreds or thousands of variables,
+the number of plots to inspect may be daunting. Finally, while barplots
+allow visualization of CP profiles for factors (categorical explanatory
+variables), their use becomes less trivial in case of factors with many
+nominal (unordered) categories (like, for example, a ZIP-code).
 
 \hypertarget{code-snippets-for-r}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r}}
@@ -1874,16 +1977,19 @@ In this section we present key features of the R package
 More details and examples can be found at
 \texttt{https://modeloriented.github.io/ingredients/}.
 
-There are also other R packages that offer similar functionality, like
-\texttt{condvis} \citep{JSSv081i05}, \texttt{pdp} \citep{pdpRPackage},
-\texttt{ICEbox} \citep{ICEboxRPackage}, \texttt{ALEPlot}
-\citep{ALEPlotRPackage}, \texttt{iml} \citep{imlRPackage}.
+Note that there are also other R packages that offer similar
+functionality, like \texttt{condvis} \citep{JSSv081i05}, \texttt{pdp}
+\citep{pdpRPackage}, \texttt{ICEbox} \citep{ICEboxRPackage},
+\texttt{ALEPlot} \citep{ALEPlotRPackage}, \texttt{iml}
+\citep{imlRPackage}.
 
-In this section we use a random forest \citep{R-randomForest} model
-\texttt{titanic\_rf\_v6} developed for the Titanic dataset (see Section
-\ref{TitanicDataset}). In particular, we deal with a binary
-classification problem - we want to predict the probability of survival
-for a selected passenger.
+In this section we use the random forest \citep{R-randomForest} model
+developed for the Titanic dataset (see Section \ref{TitanicDataset}). In
+particular, we deal with a binary classification problem - we want to
+predict the probability of survival for a selected passenger.
+
+{[}TOMASZ: SHOULD WE NOT RE-USE THE \texttt{titanic\_rf\_v6} OBJECT?
+ALSO, HOW ABOUT MISSING DATA IMPUTATION USED EARLIER?{]}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1897,9 +2003,9 @@ for a selected passenger.
 ##   gender age class    embarked       country  fare sibsp parch survived
 ## 1   male  42   3rd Southampton United States  7.11     0     0       no
 ## 2   male  13   3rd Southampton United States 20.05     0     2       no
-##     age_c
-## 1 (30,50]
-## 2 (10,18]
+##   age_cat fare_cat
+## 1 (30,50]   (0,10]
+## 2 (10,18]  (10,25]
 \end{verbatim}
 
 \begin{Shaded}
@@ -1918,7 +2024,7 @@ data.}
 
 Model-objects created with different libraries may have different
 internal structures. Thus, first, we have got to create a wrapper around
-the model. Toward this end we use the \texttt{explain()} function from
+the model. Toward this end, we use the \texttt{explain()} function from
 the \texttt{DALEX} package \citep{R-DALEX}. The function requires five
 arguments:
 
@@ -1960,6 +2066,9 @@ instance with the help of the `predict()' function. In particular, we
 compute the probability for each category of the dependent binary
 variable.
 
+{[}TOMASZ: IN THE DATA CHAPTER WE HAD DATA FRAME HENRY. SHOULD NOT WE
+RE-USE IT HERE?{]}
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{johny_d <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
@@ -1979,7 +2088,7 @@ variable.
 
 \begin{verbatim}
 ##         1 
-## 0.4511397
+## 0.4555335
 \end{verbatim}
 
 \textbf{3. Calculate CP profiles}
@@ -2006,12 +2115,12 @@ predictions.
 \begin{verbatim}
 ## Top profiles    : 
 ##     class gender        age sibsp parch fare    embarked    _yhat_ _vname_
-## 1     1st   male  0.1666667     0     0   72 Southampton 0.4845677     age
-## 1.1   1st   male  2.0000000     0     0   72 Southampton 0.4888091     age
-## 1.2   1st   male  4.0000000     0     0   72 Southampton 0.4832353     age
-## 1.3   1st   male  7.0000000     0     0   72 Southampton 0.4531397     age
-## 1.4   1st   male 10.0000000     0     0   72 Southampton 0.4179202     age
-## 1.5   1st   male 14.0000000     0     0   72 Southampton 0.2901186     age
+## 1     1st   male  0.1666667     0     0   72 Southampton 0.4817883     age
+## 1.1   1st   male  2.0000000     0     0   72 Southampton 0.4905560     age
+## 1.2   1st   male  4.0000000     0     0   72 Southampton 0.4901385     age
+## 1.3   1st   male  7.0000000     0     0   72 Southampton 0.4582002     age
+## 1.4   1st   male 10.0000000     0     0   72 Southampton 0.4251985     age
+## 1.5   1st   male 14.0000000     0     0   72 Southampton 0.3070365     age
 ##     _ids_          _label_
 ## 1       1 Random Forest v7
 ## 1.1     1 Random Forest v7
@@ -2023,7 +2132,7 @@ predictions.
 ## 
 ## Top observations:
 ##   class gender age sibsp parch fare    embarked    _yhat_          _label_
-## 1   1st   male   8     0     0   72 Southampton 0.4511397 Random Forest v7
+## 1   1st   male   8     0     0   72 Southampton 0.4555335 Random Forest v7
 ##   _ids_
 ## 1     1
 \end{verbatim}
@@ -2035,22 +2144,23 @@ To obtain a graphical represenation of CP profiles, the generic
 the \texttt{ceteris\_paribus()} function. It returns a \texttt{ggplot2}
 object that can be processed if needed.
 
-The resulting plot can be enriched with additional data by adding
+The resulting plot can be enriched with additional data by applying
 functions \texttt{show\_rugs} (adds rugs for the selected points),
 \texttt{show\_observations} (adds observations), or
-\texttt{show\_aggreagated\_profiles} (see Section
-@ref\{variableEngeneering\}). All these functions can take additional
-arguments to modify size, color or linetype.
+\texttt{show\_aggreagated\_profiles} (see Chapter
+\ref{variableEngeneering}). All these functions can take additional
+arguments to modify size, color, or linetype.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{)}
 \KeywordTok{plot}\NormalTok{(cp_titanic_rf) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{show_observations}\NormalTok{(cp_titanic_rf, }\DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"age"}\NormalTok{, }\StringTok{"fare"}\NormalTok{)) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Ceteris Paribus Profiles"}\NormalTok{, }\StringTok{"For the random forest model and titanic dataset"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-22-1.pdf}
 
 \hypertarget{ceterisParibusOscillations}{%
 \section{Ceteris Paribus Oscillations - a tool for local variable
@@ -2232,7 +2342,7 @@ Profiles are calculated with the \texttt{ceteris\_paribus()} function.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-28-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 For selected profiles we can calculate oscillations with the
 \texttt{calculate\_oscillations} function.
@@ -2247,10 +2357,10 @@ For selected profiles we can calculate oscillations with the
 
 \begin{verbatim}
 ##   _vname_ _ids_ oscillations
-## 1     age     1   0.21864350
-## 4   parch     1   0.16324640
-## 2    fare     1   0.07473998
-## 3   sibsp     1   0.02951691
+## 1     age     1   0.21530192
+## 4   parch     1   0.17182595
+## 2    fare     1   0.07820906
+## 3   sibsp     1   0.03507079
 \end{verbatim}
 
 The \texttt{calculate\_oscillations()} function returns an object of the
@@ -2267,7 +2377,7 @@ Use it to plot local variable importance for a selected observation
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-30-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 It looks like for Jony D. the two most important features are
 \texttt{age} and \texttt{parch}. Higher \texttt{age} of this passenger
@@ -2440,13 +2550,13 @@ the \texttt{variables} argument.
 \end{Shaded}
 
 \begin{verbatim}
-##          y_hat    new_x1 new_x2 vname1 vname2            label
-## 31   0.5977772 0.1666667   0.00    age  sibsp Random Forest v7
-## 31.1 0.5977772 0.1666667   0.08    age  sibsp Random Forest v7
-## 31.2 0.5977772 0.1666667   0.16    age  sibsp Random Forest v7
-## 31.3 0.5977772 0.1666667   0.24    age  sibsp Random Forest v7
-## 31.4 0.5977772 0.1666667   0.32    age  sibsp Random Forest v7
-## 31.5 0.5977772 0.1666667   0.40    age  sibsp Random Forest v7
+##        y_hat    new_x1 new_x2 vname1 vname2            label
+## 31   0.61491 0.1666667   0.00    age  sibsp Random Forest v7
+## 31.1 0.61491 0.1666667   0.08    age  sibsp Random Forest v7
+## 31.2 0.61491 0.1666667   0.16    age  sibsp Random Forest v7
+## 31.3 0.61491 0.1666667   0.24    age  sibsp Random Forest v7
+## 31.4 0.61491 0.1666667   0.32    age  sibsp Random Forest v7
+## 31.5 0.61491 0.1666667   0.40    age  sibsp Random Forest v7
 \end{verbatim}
 
 Result is an object of the class
@@ -2460,7 +2570,7 @@ Result is an object of the class
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-31-1.pdf}
 
 In the presented example both variables \texttt{age} and \texttt{sibsp}
 are important and influence the model response.
@@ -2733,7 +2843,7 @@ interese.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-37-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-34-1.pdf}
 
 In the model chances of survival diminish with age. Johnny D is lucky to
 have chances higher than 50\%.
@@ -2759,7 +2869,7 @@ Second we need to identify neighbors and plot their profiles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-38-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-35-1.pdf}
 
 Almost all profiles behave in a similar way. The relation between age
 and model response is on average decreasing for almost every neighbor.
@@ -2780,7 +2890,7 @@ And the last step is to add lines for residuals.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-39-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-36-1.pdf}
 
 Added residuals works increase the trust in this model. Neighbors that
 in fact died have lower profiles while neighbors that survived have
@@ -3096,7 +3206,7 @@ the variable attributions can be easily constructed:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-48-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-45-1.pdf}
 
 \hypertarget{breakDown}{%
 \section{Variable attributions}\label{breakDown}}
@@ -3335,12 +3445,12 @@ dataset and Random Forest model \citep{R-randomForest}. See the Section
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.42%
+##         OOB estimate of  error rate: 27.41%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2268  395      192   0.2056042
-## ok         526 1255      440   0.4349392
-## promoted   205  394     2172   0.2161674
+## fired     2276  385      194   0.2028021
+## ok         540 1250      431   0.4371905
+## promoted   208  393     2170   0.2168892
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -3380,8 +3490,8 @@ Let's construct a data frame with corresponding values.
 \end{Shaded}
 
 \begin{verbatim}
-##   fired  ok promoted
-## 1 0.798 0.2    0.002
+##   fired    ok promoted
+## 1 0.778 0.222        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -3408,26 +3518,26 @@ with variable attributions.
 \begin{verbatim}
 ##                                       contribution
 ## randomForest.fired: intercept                0.376
-## randomForest.fired: hours = 42               0.239
-## randomForest.fired: evaluation = 2           0.054
-## randomForest.fired: salary = 2              -0.256
-## randomForest.fired: age = 58                 0.090
-## randomForest.fired: gender = male            0.295
-## randomForest.fired: prediction               0.798
-## randomForest.ok: intercept                   0.275
-## randomForest.ok: hours = 42                 -0.047
-## randomForest.ok: evaluation = 2              0.097
-## randomForest.ok: salary = 2                  0.254
-## randomForest.ok: age = 58                   -0.084
-## randomForest.ok: gender = male              -0.296
-## randomForest.ok: prediction                  0.200
-## randomForest.promoted: intercept             0.349
-## randomForest.promoted: hours = 42           -0.192
-## randomForest.promoted: evaluation = 2       -0.151
+## randomForest.fired: hours = 42               0.240
+## randomForest.fired: evaluation = 2           0.062
+## randomForest.fired: salary = 2              -0.251
+## randomForest.fired: age = 58                 0.077
+## randomForest.fired: gender = male            0.274
+## randomForest.fired: prediction               0.778
+## randomForest.ok: intercept                   0.276
+## randomForest.ok: hours = 42                 -0.046
+## randomForest.ok: evaluation = 2              0.086
+## randomForest.ok: salary = 2                  0.248
+## randomForest.ok: age = 58                   -0.069
+## randomForest.ok: gender = male              -0.274
+## randomForest.ok: prediction                  0.222
+## randomForest.promoted: intercept             0.348
+## randomForest.promoted: hours = 42           -0.194
+## randomForest.promoted: evaluation = 2       -0.148
 ## randomForest.promoted: salary = 2            0.002
-## randomForest.promoted: age = 58             -0.007
-## randomForest.promoted: gender = male         0.001
-## randomForest.promoted: prediction            0.002
+## randomForest.promoted: age = 58             -0.009
+## randomForest.promoted: gender = male         0.000
+## randomForest.promoted: prediction            0.000
 \end{verbatim}
 
 The generic \texttt{plot()} function creates a Break Down plots.
@@ -3438,7 +3548,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-53-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-50-1.pdf}
 
 Add the \texttt{plot\_distributions\ =\ TRUE} argument to enrich model
 response with additional information.
@@ -3449,7 +3559,7 @@ response with additional information.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-54-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-51-1.pdf}
 
 \hypertarget{variable-attribution-with-interactions}{%
 \section{Variable attribution with
@@ -3650,12 +3760,12 @@ First a model needs to be trained.
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.22%
+##         OOB estimate of  error rate: 27.37%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2283  377      195   0.2003503
-## ok         535 1240      446   0.4416929
-## promoted   205  378     2188   0.2103934
+## fired     2259  388      208   0.2087566
+## ok         523 1254      444   0.4353895
+## promoted   199  386     2186   0.2111151
 \end{verbatim}
 
 Model exploration with the \texttt{breakDown2} package is performed in
@@ -3695,7 +3805,7 @@ Let's construct a data frame with corresponding values.
 
 \begin{verbatim}
 ##   fired    ok promoted
-## 1  0.78 0.218    0.002
+## 1 0.786 0.214        0
 ## attr(,"class")
 ## [1] "matrix" "votes"
 \end{verbatim}
@@ -3719,26 +3829,26 @@ with variable attributions.
 \end{Shaded}
 
 \begin{verbatim}
-##                                                contribution
-## randomForest.fired: intercept                         0.822
-## randomForest.fired: salary = 2                       -0.300
-## randomForest.fired: age = 58                          0.350
-## randomForest.fired: evaluation = 2                   -0.068
-## randomForest.fired: hours = 42                       -0.024
-## randomForest.fired: gender = male                     0.000
-## randomForest.fired: prediction                        0.780
-## randomForest.ok: intercept                            0.988
-## randomForest.ok: salary = 2                          -0.674
-## randomForest.ok: hours:age = 42:58                   -0.054
-## randomForest.ok: gender = male                        0.520
-## randomForest.ok: evaluation = 2                       0.000
-## randomForest.ok: prediction                           0.218
-## randomForest.promoted: intercept                      0.980
-## randomForest.promoted: salary = 2                    -0.526
-## randomForest.promoted: evaluation:hours = 2:42        0.026
-## randomForest.promoted: age = 58                       0.300
-## randomForest.promoted: gender = male                  0.000
-## randomForest.promoted: prediction                     0.002
+##                                          contribution
+## randomForest.fired: intercept                   0.820
+## randomForest.fired: salary = 2                 -0.298
+## randomForest.fired: age = 58                    0.366
+## randomForest.fired: evaluation = 2             -0.038
+## randomForest.fired: hours = 42                 -0.064
+## randomForest.fired: gender = male               0.000
+## randomForest.fired: prediction                  0.786
+## randomForest.ok: intercept                      0.996
+## randomForest.ok: salary = 2                    -0.686
+## randomForest.ok: hours:age = 42:58             -0.074
+## randomForest.ok: gender = male                  0.550
+## randomForest.ok: evaluation = 2                 0.000
+## randomForest.ok: prediction                     0.214
+## randomForest.promoted: intercept                0.988
+## randomForest.promoted: salary = 2              -0.570
+## randomForest.promoted: evaluation = 2          -0.296
+## randomForest.promoted: hours:age = 42:58        0.664
+## randomForest.promoted: gender = male            0.000
+## randomForest.promoted: prediction               0.000
 \end{verbatim}
 
 The generic \texttt{plot()} function creates a Break Down plots.
@@ -3749,7 +3859,7 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-59-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-56-1.pdf}
 
 \hypertarget{shapley}{%
 \section{Average variable attributions}\label{shapley}}
@@ -3937,7 +4047,7 @@ package.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-61-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-58-1.pdf}
 
 Here we use the \texttt{iml} package, see more examples in
 \citep{imlPackage}.
@@ -4251,7 +4361,7 @@ pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-69-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-66-1.pdf}
 
 \hypertarget{the-live-package}{%
 \subsubsection{\texorpdfstring{\textbf{The live
@@ -4293,7 +4403,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-70-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-67-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -4301,7 +4411,7 @@ package}}{The live package}}\label{the-live-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-70-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-67-2.pdf}
 
 \hypertarget{the-iml-package}{%
 \subsubsection{\texorpdfstring{\textbf{The iml
@@ -4351,7 +4461,7 @@ package}}{The iml package}}\label{the-iml-package}}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-71-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-68-1.pdf}
 
 \hypertarget{comparision-of-prediction-level-explainers}{%
 \section{Comparision of prediction level
@@ -4618,13 +4728,13 @@ their sex, age, class, fare and some other features available in the
 ## 4 female  39   3rd Southampton       England 20.05     1     1      yes
 ## 5 female  16   3rd Southampton        Norway  7.13     0     0      yes
 ## 6   male  25   3rd Southampton United States  7.13     0     0      yes
-##     age_c
-## 1 (30,50]
-## 2 (10,18]
-## 3 (10,18]
-## 4 (30,50]
-## 5 (10,18]
-## 6 (18,30]
+##   age_cat fare_cat
+## 1 (30,50]   (0,10]
+## 2 (10,18]  (10,25]
+## 3 (10,18]  (10,25]
+## 4 (30,50]  (10,25]
+## 5 (10,18]   (0,10]
+## 6 (18,30]   (0,10]
 \end{verbatim}
 
 Permutation based feature importance can be calculated with the
@@ -4775,7 +4885,7 @@ interval that start in a loss and ends in a loss of perturbed data.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-75-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-72-1.pdf}
 
 \hypertarget{more-models}{%
 \subsection{More models}\label{more-models}}
@@ -4890,7 +5000,7 @@ When we compare other features it looks like in all models the
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-78-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-75-1.pdf}
 
 There is interesting difference between linear model and others in the
 way how important is the \texttt{construction.year}. For linear model
@@ -5091,7 +5201,7 @@ Such average can be calculated with the
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-79-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-76-1.pdf}
 
 So for a single model and a single variable we get a profile. See an
 example in figure @ref\{pdp\_part\_2\}. It is much easier than following
@@ -5554,7 +5664,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-83-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-80-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -5562,7 +5672,7 @@ Model selection
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-83-2.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-80-2.pdf}
 
 \hypertarget{modelAuditing}{%
 \section{Residual Diagnostic}\label{modelAuditing}}

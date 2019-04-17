@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-15">
+<meta name="date" content="2019-04-17">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -338,76 +338,78 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="introduction-1" class="section level2">
 <h2><span class="header-section-number">4.1</span> Introduction</h2>
 <p><em>Ceteris paribus</em> is a Latin phrase meaning “other things held constant” or “all else unchanged.” In this chapter, we introduce a technique for model exploration based on the Ceteris paribus principle. In particular, we examine the influence of each explanatory variable, asumming that effects of all other variables are unchanged. The main goal is to understand how changes in a single explanatory variable affects model predictions.</p>
-<p>Explainers presented in this chaprter are linked to the second law introduced in Section <a href="index.html#three-single-laws">1.2</a>, i.e. the law of “Prediction’s speculation.” This is why the tools are also known as <em>What-If model analysis</em> or <em>Individual Conditional EXpectations</em> <span class="citation">(Goldstein et al. <a href="#ref-ICEbox">2015</a><a href="#ref-ICEbox">a</a>)</span>. It turns out that it is easier to understand how a black-box model is working if we can explore the model by investigating the influence of explanatory variables separately, changing one at a time.</p>
+<p>Explainers presented in this chapter are linked to the second law introduced in Section <a href="index.html#three-single-laws">1.2</a>, i.e. the law of “Prediction’s speculation.” This is why the tools are also known as <em>What-If model analysis</em> or <em>Individual Conditional Expectations</em> <span class="citation">(Goldstein et al. <a href="#ref-ICEbox">2015</a><a href="#ref-ICEbox">a</a>)</span>. It turns out that it is easier to understand how a black-box model is working if we can explore the model by investigating the influence of explanatory variables separately, changing one at a time.</p>
 </div>
 <div id="intuition" class="section level2">
 <h2><span class="header-section-number">4.2</span> Intuition</h2>
-<p>Panel A of Figure <a href="ceterisParibus.html#fig:modelResponseCurveLine">4.1</a> presents a response surface for a <code>titanic_lmr_v6</code> model for two explanatory variables, <em>age</em> and <em>class</em>, from the <em>titanic</em> dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">2.1</a>). We are interested in the change of the model prediction induced by each of the variables. Toward this end, we may want to explore the curvature of the response surface around a single point that is marked on the plot by a black dot. Ceteris-paribus (CP) profiles are one-dimensional profiles that examine the curvature across each dimension, i.e., for each variable. Panel B of Figure <a href="ceterisParibus.html#fig:modelResponseCurveLine">4.1</a> presents the profiles corresponding to <em>age</em> and <em>class</em>. In essence, a CP profile shows a conditional expectation of the dependent variable (response) for the particular explanatory variable.</p>
+<p>Panel A of Figure <a href="ceterisParibus.html#fig:modelResponseCurveLine">4.1</a> presents response (prediction) surface for the <code>titanic_lmr_v6</code> model for two explanatory variables, <em>age</em> and <em>class</em>, from the <em>titanic</em> dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">2.1</a>). We are interested in the change of the model prediction induced by each of the variables. Toward this end, we may want to explore the curvature of the response surface around a single point with <em>age</em> equal to 47 and <em>class</em> equal to “1st,” indicated in the plot. Ceteris-paribus (CP) profiles are one-dimensional profiles that examine the curvature across each dimension, i.e., for each variable. Panel B of Figure <a href="ceterisParibus.html#fig:modelResponseCurveLine">4.1</a> presents the profiles corresponding to <em>age</em> and <em>class</em>. Note that, in the CP profile for <em>age</em>, the point of interest is indicated by the black dot. In essence, a CP profile shows a conditional expectation of the dependent variable (response) for the particular explanatory variable.</p>
 <div class="figure" style="text-align: center"><span id="fig:modelResponseCurveLine"></span>
 <img src="figure/profile_age_class.png" alt="(fig:modelResponseCurveLine) A) Model response (prediction) surface. Ceteris-paribus (CP) profiles marked with black curves help to understand the curvature of the surface while changing only a single explanatory variable. B) CP profiles for individual variables, age (continuous) and class (categorical)." width="70%" />
 <p class="caption">
 Figure 4.1: (fig:modelResponseCurveLine) A) Model response (prediction) surface. Ceteris-paribus (CP) profiles marked with black curves help to understand the curvature of the surface while changing only a single explanatory variable. B) CP profiles for individual variables, age (continuous) and class (categorical).
 </p>
 </div>
-<p>CP technique is similar to the LIME method (see Section <a href="LIME.html#LIME">12</a>). LIME and CP profiles examine the curvature of a model response-surface. The difference between these two methods lies in the fact that LIME approximates the black-box model of interest locally with a simpler white-box model. Usually, the LIME model is sparse, i.e., contains fewer variables, and thus we have got to graphically investigate a smaller number of dimensions. On the other hand, the CP profiles present conditional predictions for every variable and, in most cases, are easier to intepret.</p>
+<p>CP technique is similar to the LIME method (see Chapter <a href="LIME.html#LIME">12</a>). LIME and CP profiles examine the curvature of a model response-surface. The difference between these two methods lies in the fact that LIME approximates the black-box model of interest locally with a simpler white-box model. Usually, the LIME model is sparse, i.e., contains fewer variables, and thus we have got to graphically investigate a smaller number of dimensions. On the other hand, the CP profiles present conditional predictions for every variable and, in most cases, are easier to intepret.</p>
 </div>
 <div id="method" class="section level2">
 <h2><span class="header-section-number">4.3</span> Method</h2>
 <p>In this section we introduce more formally uni-dimensional CP profiles. <!-- We consider the case of a continuous dependent variable, but the profiles can be easily generalized for other types. --></p>
-<p>[PBI: Do we need to assume that model is correct? first sentence may be removed]</p>
-<p>Assume that <span class="math inline">\(E_Y(Y | x^*) \approx f(x^*)\)</span>, where <span class="math inline">\(f(x^*)\)</span> is the value of the model at <span class="math inline">\(x^*\)</span>. Note that <span class="math inline">\(x^*\)</span> is a vector containing values for explanatory covariates. We will use subscript <span class="math inline">\(x^*_i\)</span> to refer to the vector corresponding to the <span class="math inline">\(i\)</span>-th observation in a dataset. We will use superscript <span class="math inline">\(x^{*j}\)</span> to refer to the <span class="math inline">\(j\)</span>-th element of <span class="math inline">\(x^*\)</span>, i.e., the <span class="math inline">\(j\)</span>-th variable. Additionally, let <span class="math inline">\(x^{*-j}\)</span> denote a vector resultinig from removing the <span class="math inline">\(j\)</span>-th element from vector <span class="math inline">\(x^{*}\)</span>. Moreover, let <span class="math inline">\(x^{*|j}=z\)</span> denotes a vector in which the <span class="math inline">\(j\)</span>-th element is equal to <span class="math inline">\(z\)</span> (a scalar).</p>
+<p>[PBI: Do we need to assume that model is correct? first sentence may be removed. TOMASZ: ADDED A FEW SENTENCES TO INDICATE THAT THE APPROXIMATION MAY BE WHATEVER WE WANT.]</p>
+<p>Assume that <span class="math inline">\(E_Y(Y | x^*) \approx f(x^*)\)</span>, where <span class="math inline">\(f(x^*)\)</span> is the value of the model at <span class="math inline">\(x^*\)</span>, where <span class="math inline">\(x^*\)</span> is a vector containing values for explanatory covariates. Note that we do not require the approximation to be “good” in any particular sense; we simply assume that we have got a model that is used to estimate the expected value and provide predictions of the dependent variable. Our interest lies in the evalution of the quality of the predictions. If the model offers a “good” approximation of the expected value, it should be reflected in its satisfactory predictive performance.</p>
+<p>We will use subscript <span class="math inline">\(x^*_i\)</span> to refer to the vector corresponding to the <span class="math inline">\(i\)</span>-th observation in a dataset. We will use superscript <span class="math inline">\(x^{*j}\)</span> to refer to the <span class="math inline">\(j\)</span>-th element of <span class="math inline">\(x^*\)</span>, i.e., the <span class="math inline">\(j\)</span>-th variable. Additionally, let <span class="math inline">\(x^{*-j}\)</span> denote a vector resultinig from removing the <span class="math inline">\(j\)</span>-th element from vector <span class="math inline">\(x^{*}\)</span>. Moreover, let <span class="math inline">\(x^{*|j}=z\)</span> denotes a vector in which the <span class="math inline">\(j\)</span>-th element is equal to <span class="math inline">\(z\)</span> (a scalar).</p>
 <p>We define a one-dimensional CP profile for the model <span class="math inline">\(f()\)</span>, <span class="math inline">\(j\)</span>-th explanatory variable, and point <span class="math inline">\(x^*\)</span> as follows:</p>
 <p><span class="math display">\[
 CP^{f, j, x^*}(z) \equiv f(x^{*|j} = z).
 \]</span>
 That is, CP profile is a function that provides the dependence of the (approximate) expected value (prediction) of the model for <span class="math inline">\(Y\)</span> on the value of <span class="math inline">\(j\)</span>-th explanatory variable <span class="math inline">\(z\)</span>, where <span class="math inline">\(z\)</span> is taken to go through the range of values typical for the variable and values of all other variables in <span class="math inline">\(x^*\)</span> are kept fixed at the values present in <span class="math inline">\(x^*\)</span>.</p>
-<p>For continuous explanatory variables a natural way to represent the CP function is to use a profile plot similar to the one presented in Figure <a href="ceterisParibus.html#fig:profileAgeRf">4.2</a>. In the figure, the dot presents an instance prediction, i.e., prediction <span class="math inline">\(f(x^*)\)</span> for a single observation <span class="math inline">\(x^*\)</span>. The curve shows how the prediction would change if the value of a particular explanatory variable is changed (in this case, “age”; see Section <a href="DataSetsIntro.html#HFDataset">2.3</a>). It is worth oberving that the profile for logistic regression is smooth while for random forest model is expresses some variabilit. Moreover, for this instance (observation), the prediction would increase substantially if the value of the explanatory variable became lower than 20.</p>
+<p>For continuous explanatory variables a natural way to represent the CP function is to use a profile plot similar to the ones presented in Figure <a href="ceterisParibus.html#fig:profileAgeRf">4.2</a>. In the figure, the dot on the curves marks an instance prediction, i.e., prediction <span class="math inline">\(f(x^*)\)</span> for a single observation <span class="math inline">\(x^*\)</span>. The curve itself shows how the prediction would change if the value of a particular explanatory variable changed. Figure <a href="ceterisParibus.html#fig:profileAgeRf">4.2</a> presents CP profiles for the <em>age</em> variable in the logistic regression and random forest models for the Titanic dataset (see Section <a href="DataSetsIntro.html#HFDataset">2.3</a>). It is worth oberving that the profile for the logistic regression model is smooth, while for the random forest model it shows more variability. Moreover, for this instance (observation), the prediction would increase substantially if the value of the explanatory variable became lower than 20.</p>
 <div class="figure" style="text-align: center"><span id="fig:profileAgeRf"></span>
-<img src="figure/profile_age_rf.png" alt="(fig:profileAgeRf) Ceteris-Paribus profile for two models, `titanic_lmr_v6` and `titanic_rf_v6` that predicts the probability of being rescued as a function of the age" width="70%" />
+<img src="figure/profile_age_rf.png" alt="(fig:profileAgeRf) Ceteris-paribus profiles for variable `age` for the logistic regression (`titanic_lmr_v6`) and random forest (`titanic_rf_v6` ) models that predict the probability of surviving based on the Titanic data" width="70%" />
 <p class="caption">
-Figure 4.2: (fig:profileAgeRf) Ceteris-Paribus profile for two models, <code>titanic_lmr_v6</code> and <code>titanic_rf_v6</code> that predicts the probability of being rescued as a function of the age
+Figure 4.2: (fig:profileAgeRf) Ceteris-paribus profiles for variable <code>age</code> for the logistic regression (<code>titanic_lmr_v6</code>) and random forest (<code>titanic_rf_v6</code> ) models that predict the probability of surviving based on the Titanic data
 </p>
 </div>
-<p>For categorical explanatory variables a natural way to represent the CP function is to use barplot as the one presented in Figure <a href="ceterisParibus.html#fig:profileAgeRf2">4.3</a>.</p>
+<p>For a categorical explanatory variable, a natural way to represent the CP function is to use a barplot similar to the ones presented in Figure <a href="ceterisParibus.html#fig:profileAgeRf2">4.3</a>.</p>
 <div class="figure" style="text-align: center"><span id="fig:profileAgeRf2"></span>
-<img src="figure/profile_class_rf.png" alt="(fig:profileAgeRf2) Ceteris-Paribus profile for two models, `titanic_lmr_v6` and `titanic_rf_v6` that predicts the probability of being rescued as a function of the class" width="70%" />
+<img src="figure/profile_class_rf.png" alt="(fig:profileAgeRf2) Ceteris-paribus profiles for variable `class` for the logistic regression (`titanic_lmr_v6`) and random forest (`titanic_rf_v6` ) models that predict the probability of surviving based on the Titanic data" width="70%" />
 <p class="caption">
-Figure 4.3: (fig:profileAgeRf2) Ceteris-Paribus profile for two models, <code>titanic_lmr_v6</code> and <code>titanic_rf_v6</code> that predicts the probability of being rescued as a function of the class
+Figure 4.3: (fig:profileAgeRf2) Ceteris-paribus profiles for variable <code>class</code> for the logistic regression (<code>titanic_lmr_v6</code>) and random forest (<code>titanic_rf_v6</code> ) models that predict the probability of surviving based on the Titanic data
 </p>
 </div>
-<p>Usually, black-box models contain a large number of explanatory variables. However, CP profiles are legible even for tiny subplots, created with techniques like sparklines or small multiples <span class="citation">(Tufte <a href="#ref-Tufte1986">1986</a>)</span>. In this way we can display a large number of profiles at the same time keeping profiles for consecutive variables in separate panels, as shown in Figure <a href="ceterisParibus.html#fig:profileV4Rf">4.4</a>. It helps if these panels are ordered so that the most important profiles are listed first. We discuss a method to assess importance of CP profiles in the next subsection.</p>
+<p>Usually, black-box models contain a large number of explanatory variables. However, CP profiles are legible even for tiny subplots, created with techniques like sparklines or small multiples <span class="citation">(Tufte <a href="#ref-Tufte1986">1986</a>)</span>. In this way we can display a large number of profiles at the same time keeping profiles for consecutive variables in separate panels, as shown in Figure <a href="ceterisParibus.html#fig:profileV4Rf">4.4</a>. It helps if these panels are ordered so that the most important profiles are listed first. We discuss a method to assess importance of CP profiles in the next chapter.</p>
 <div class="figure" style="text-align: center"><span id="fig:profileV4Rf"></span>
-<img src="figure/profile_v4_rf.png" alt="(fig:profileV4Rf) Ceteris-paribus profiles for all continuous explanatory variables in the `titanic' dataset for the `titanic_rf_v6` model" width="70%" />
+<img src="figure/profile_v4_rf.png" alt="(fig:profileV4Rf) Ceteris-paribus profiles for all continuous explanatory variables for the random forest (`titanic_rf_v6`) model for the `titanic` dataset" width="70%" />
 <p class="caption">
-Figure 4.4: (fig:profileV4Rf) Ceteris-paribus profiles for all continuous explanatory variables in the <code>titanic' dataset for the</code>titanic_rf_v6` model
+Figure 4.4: (fig:profileV4Rf) Ceteris-paribus profiles for all continuous explanatory variables for the random forest (<code>titanic_rf_v6</code>) model for the <code>titanic</code> dataset
 </p>
 </div>
 </div>
 <div id="pros-and-cons" class="section level2">
 <h2><span class="header-section-number">4.4</span> Pros and cons</h2>
-<p>CP profiles offer a uniform, easy to comunicate and extendable approach to model exploration. Their graphical representation is easy to understand and explain. It is possible to show profiles for many variables or models in a single plot.</p>
-<p>There are several issues related to the use of the CP profiles. If explanatory variables are correlated, then changing one variable implies a change in the other. In such case, the application of the <em>Ceteris paribus</em> principle may lead to unrealistic settings, as it is not possible to keep one variable fixed while changing the other one. A special case are interactions, which require the use of 2D CP profiles that are more complex than the 1D ones. Also, in case of a model with hundreds or thousands of variables, the number of plots to inspect may be daunting. Finally, visualization of CP profiles for factors (categorical explanatory variables) is not trivial, especially for factors with many nominal (unordered) categories (like, for example, a ZIP-code).</p>
+<p>One-dimensional CP profiles,as presented in this chapter, offer a uniform, easy to comunicate and extendable approach to model exploration. Their graphical representation is easy to understand and explain. It is possible to show profiles for many variables or models in a single plot.</p>
+<p>There are several issues related to the use of the CP profiles. If explanatory variables are correlated, then changing one variable implies a change in the other. In such case, the application of the <em>Ceteris paribus</em> principle may lead to unrealistic settings, as it is not possible to keep one variable fixed while changing the other one. A special case are interactions, which require the use of two-dimensional CP profiles that are more complex than one-dimensional ones. Also, in case of a model with hundreds or thousands of variables, the number of plots to inspect may be daunting. Finally, while barplots allow visualization of CP profiles for factors (categorical explanatory variables), their use becomes less trivial in case of factors with many nominal (unordered) categories (like, for example, a ZIP-code).</p>
 </div>
 <div id="code-snippets-for-r" class="section level2">
 <h2><span class="header-section-number">4.5</span> Code snippets for R</h2>
 <p>In this section we present key features of the R package <code>ingredients</code> <span class="citation">(Biecek <a href="#ref-ingredientsRPackage">2019</a>)</span> which is a part of <code>DALEXverse</code> and covers all methods presented in this chapter. More details and examples can be found at <code>https://modeloriented.github.io/ingredients/</code>.</p>
-<p>There are also other R packages that offer similar functionality, like <code>condvis</code> <span class="citation">(O’Connell, Hurley, and Domijan <a href="#ref-JSSv081i05">2017</a>)</span>, <code>pdp</code> <span class="citation">(Greenwell <a href="#ref-pdpRPackage">2017</a><a href="#ref-pdpRPackage">a</a>)</span>, <code>ICEbox</code> <span class="citation">(Goldstein et al. <a href="#ref-ICEboxRPackage">2015</a><a href="#ref-ICEboxRPackage">b</a>)</span>, <code>ALEPlot</code> <span class="citation">(Apley <a href="#ref-ALEPlotRPackage">2018</a><a href="#ref-ALEPlotRPackage">a</a>)</span>, <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage">2018</a><a href="#ref-imlRPackage">a</a>)</span>.</p>
-<p>In this section we use a random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">2.1</a>). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb61-2" data-line-number="2">titanic &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic)</a>
-<a class="sourceLine" id="cb61-3" data-line-number="3"><span class="kw">head</span>(titanic, <span class="dv">2</span>)</a></code></pre></div>
+<p>Note that there are also other R packages that offer similar functionality, like <code>condvis</code> <span class="citation">(O’Connell, Hurley, and Domijan <a href="#ref-JSSv081i05">2017</a>)</span>, <code>pdp</code> <span class="citation">(Greenwell <a href="#ref-pdpRPackage">2017</a><a href="#ref-pdpRPackage">a</a>)</span>, <code>ICEbox</code> <span class="citation">(Goldstein et al. <a href="#ref-ICEboxRPackage">2015</a><a href="#ref-ICEboxRPackage">b</a>)</span>, <code>ALEPlot</code> <span class="citation">(Apley <a href="#ref-ALEPlotRPackage">2018</a><a href="#ref-ALEPlotRPackage">a</a>)</span>, <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage">2018</a><a href="#ref-imlRPackage">a</a>)</span>.</p>
+<p>In this section we use the random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model developed for the Titanic dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">2.1</a>). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.</p>
+<p>[TOMASZ: SHOULD WE NOT RE-USE THE <code>titanic_rf_v6</code> OBJECT? ALSO, HOW ABOUT MISSING DATA IMPUTATION USED EARLIER?]</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb63-2" data-line-number="2">titanic &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic)</a>
+<a class="sourceLine" id="cb63-3" data-line-number="3"><span class="kw">head</span>(titanic, <span class="dv">2</span>)</a></code></pre></div>
 <pre><code>##   gender age class    embarked       country  fare sibsp parch survived
 ## 1   male  42   3rd Southampton United States  7.11     0     0       no
 ## 2   male  13   3rd Southampton United States 20.05     0     2       no
-##     age_c
-## 1 (30,50]
-## 2 (10,18]</code></pre>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb63-2" data-line-number="2">model_titanic_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>embarked <span class="op">+</span></a>
-<a class="sourceLine" id="cb63-3" data-line-number="3"><span class="st">                                   </span>fare <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch,  <span class="dt">data =</span> titanic)</a></code></pre></div>
+##   age_cat fare_cat
+## 1 (30,50]   (0,10]
+## 2 (10,18]  (10,25]</code></pre>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb65-2" data-line-number="2">model_titanic_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>embarked <span class="op">+</span></a>
+<a class="sourceLine" id="cb65-3" data-line-number="3"><span class="st">                                   </span>fare <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch,  <span class="dt">data =</span> titanic)</a></code></pre></div>
 <p>CP profiles are calculated in four steps with the <code>ingredients</code> package.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
-<p>Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end we use the <code>explain()</code> function from the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">b</a>)</span>. The function requires five arguments:</p>
+<p>Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end, we use the <code>explain()</code> function from the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a><a href="#ref-R-DALEX">b</a>)</span>. The function requires five arguments:</p>
 <ul>
 <li><code>model</code> a model-object,</li>
 <li><code>data</code> a validation data frame,</li>
@@ -416,41 +418,42 @@ Figure 4.4: (fig:profileV4Rf) Ceteris-paribus profiles for all continuous explan
 <li><code>label</code> a function that returns prediction scores, if not specified then it is extracted from the <code>class(model)</code>.</li>
 </ul>
 <p>In the example below we use the training data as the validation dataset.</p>
-<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" data-line-number="1">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> model_titanic_rf, </a>
-<a class="sourceLine" id="cb64-2" data-line-number="2">                              <span class="dt">data =</span> titanic[,<span class="op">-</span><span class="dv">9</span>],</a>
-<a class="sourceLine" id="cb64-3" data-line-number="3">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
-<a class="sourceLine" id="cb64-4" data-line-number="4">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v7&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" data-line-number="1">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> model_titanic_rf, </a>
+<a class="sourceLine" id="cb66-2" data-line-number="2">                              <span class="dt">data =</span> titanic[,<span class="op">-</span><span class="dv">9</span>],</a>
+<a class="sourceLine" id="cb66-3" data-line-number="3">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
+<a class="sourceLine" id="cb66-4" data-line-number="4">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v7&quot;</span>)</a></code></pre></div>
 <p><strong>2. Define the instance (observation) of interest.</strong></p>
 <p>CP profiles explore model around a single observation. Thus, in the exampe below, we define data frame <code>johny_d</code> with a single row. It describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()’ function. In particular, we compute the probability for each category of the dependent binary variable.</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb65-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb65-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
-<a class="sourceLine" id="cb65-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
-<a class="sourceLine" id="cb65-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
-<a class="sourceLine" id="cb65-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
-<a class="sourceLine" id="cb65-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb65-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb65-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
-<a class="sourceLine" id="cb65-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
-<a class="sourceLine" id="cb65-10" data-line-number="10">)</a>
-<a class="sourceLine" id="cb65-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb65-12" data-line-number="12"><span class="kw">predict</span>(explain_titanic_rf, johny_d)</a></code></pre></div>
+<p>[TOMASZ: IN THE DATA CHAPTER WE HAD DATA FRAME HENRY. SHOULD NOT WE RE-USE IT HERE?]</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb67-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb67-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
+<a class="sourceLine" id="cb67-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
+<a class="sourceLine" id="cb67-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
+<a class="sourceLine" id="cb67-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
+<a class="sourceLine" id="cb67-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb67-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb67-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
+<a class="sourceLine" id="cb67-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
+<a class="sourceLine" id="cb67-10" data-line-number="10">)</a>
+<a class="sourceLine" id="cb67-11" data-line-number="11"></a>
+<a class="sourceLine" id="cb67-12" data-line-number="12"><span class="kw">predict</span>(explain_titanic_rf, johny_d)</a></code></pre></div>
 <pre><code>##         1 
-## 0.4511397</code></pre>
+## 0.4555335</code></pre>
 <p><strong>3. Calculate CP profiles</strong></p>
 <p>To obtain CP profiles, we use the <code>ceteris_paribus()</code> function. It requires the explainer-object and the instance data frame as arguments. By default, CP profiles are calculated for all numerical variables. To select a subset of variables, the <code>variables</code> argument can be used.</p>
 <p>As a result, the function yields an object od the class <code>ceteris_paribus_explainer</code>. It is a data frame with model predictions.</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb67-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb67-2" data-line-number="2">cp_titanic_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_titanic_rf, johny_d, </a>
-<a class="sourceLine" id="cb67-3" data-line-number="3">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;fare&quot;</span>, <span class="st">&quot;class&quot;</span>, <span class="st">&quot;gender&quot;</span>))</a>
-<a class="sourceLine" id="cb67-4" data-line-number="4">cp_titanic_rf</a></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb69-2" data-line-number="2">cp_titanic_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_titanic_rf, johny_d, </a>
+<a class="sourceLine" id="cb69-3" data-line-number="3">                            <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;fare&quot;</span>, <span class="st">&quot;class&quot;</span>, <span class="st">&quot;gender&quot;</span>))</a>
+<a class="sourceLine" id="cb69-4" data-line-number="4">cp_titanic_rf</a></code></pre></div>
 <pre><code>## Top profiles    : 
 ##     class gender        age sibsp parch fare    embarked    _yhat_ _vname_
-## 1     1st   male  0.1666667     0     0   72 Southampton 0.4845677     age
-## 1.1   1st   male  2.0000000     0     0   72 Southampton 0.4888091     age
-## 1.2   1st   male  4.0000000     0     0   72 Southampton 0.4832353     age
-## 1.3   1st   male  7.0000000     0     0   72 Southampton 0.4531397     age
-## 1.4   1st   male 10.0000000     0     0   72 Southampton 0.4179202     age
-## 1.5   1st   male 14.0000000     0     0   72 Southampton 0.2901186     age
+## 1     1st   male  0.1666667     0     0   72 Southampton 0.4817883     age
+## 1.1   1st   male  2.0000000     0     0   72 Southampton 0.4905560     age
+## 1.2   1st   male  4.0000000     0     0   72 Southampton 0.4901385     age
+## 1.3   1st   male  7.0000000     0     0   72 Southampton 0.4582002     age
+## 1.4   1st   male 10.0000000     0     0   72 Southampton 0.4251985     age
+## 1.5   1st   male 14.0000000     0     0   72 Southampton 0.3070365     age
 ##     _ids_          _label_
 ## 1       1 Random Forest v7
 ## 1.1     1 Random Forest v7
@@ -462,16 +465,17 @@ Figure 4.4: (fig:profileV4Rf) Ceteris-paribus profiles for all continuous explan
 ## 
 ## Top observations:
 ##   class gender age sibsp parch fare    embarked    _yhat_          _label_
-## 1   1st   male   8     0     0   72 Southampton 0.4511397 Random Forest v7
+## 1   1st   male   8     0     0   72 Southampton 0.4555335 Random Forest v7
 ##   _ids_
 ## 1     1</code></pre>
 <p><strong>4. Plot CP profiles.</strong></p>
 <p>To obtain a graphical represenation of CP profiles, the generic <code>plot()</code> function can be applied to the data frame returend by the <code>ceteris_paribus()</code> function. It returns a <code>ggplot2</code> object that can be processed if needed.</p>
-<p>The resulting plot can be enriched with additional data by adding functions <code>show_rugs</code> (adds rugs for the selected points), <code>show_observations</code> (adds observations), or <code>show_aggreagated_profiles</code> (see Section @ref{variableEngeneering}). All these functions can take additional arguments to modify size, color or linetype.</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">plot</span>(cp_titanic_rf) <span class="op">+</span></a>
-<a class="sourceLine" id="cb69-2" data-line-number="2"><span class="st">  </span><span class="kw">show_observations</span>(cp_titanic_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;fare&quot;</span>)) <span class="op">+</span></a>
-<a class="sourceLine" id="cb69-3" data-line-number="3"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Ceteris Paribus Profiles&quot;</span>, <span class="st">&quot;For the random forest model and titanic dataset&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p>The resulting plot can be enriched with additional data by applying functions <code>show_rugs</code> (adds rugs for the selected points), <code>show_observations</code> (adds observations), or <code>show_aggreagated_profiles</code> (see Chapter <a href="variableEngeneering.html#variableEngeneering">16</a>). All these functions can take additional arguments to modify size, color, or linetype.</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
+<a class="sourceLine" id="cb71-2" data-line-number="2"><span class="kw">plot</span>(cp_titanic_rf) <span class="op">+</span></a>
+<a class="sourceLine" id="cb71-3" data-line-number="3"><span class="st">  </span><span class="kw">show_observations</span>(cp_titanic_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;fare&quot;</span>)) <span class="op">+</span></a>
+<a class="sourceLine" id="cb71-4" data-line-number="4"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Ceteris Paribus Profiles&quot;</span>, <span class="st">&quot;For the random forest model and titanic dataset&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 
 </div>
 </div>
