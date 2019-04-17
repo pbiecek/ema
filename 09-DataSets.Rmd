@@ -237,7 +237,68 @@ head(apartments_test)
 
 ### Data exploration
 
-[TOMASZ: TO ADD, EVEN IF SHORT]
+Note that this is artificial dataset created to explain some differences between random forest and linear regression. So the data is more clean than a usual dataset. Nerveless let do some exploration.
+
+Distribution of square meter is slightly skewed. 
+
+```{r appartments_exploration_mi2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartments_exploration_mi2) Survival for different countries in the titanic data."}
+ggplot(data = apartments) +
+   geom_histogram(aes(m2.price), binwidth = 100, color = "white") +
+   labs(x="Price per square meter", title='Distribution') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+There is some nonlinear (if any) relation between construction year and price.
+
+```{r appartments_mi2_construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartments_mi2_construction) Relation between construction year and price per sq meter"}
+ggplot(data = apartments, aes(construction.year, m2.price)) +
+   geom_point(size = 0.3) +
+  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+   labs(y="Price per square meter", x = "Construction year", title='Relation between square m2 and contruction year') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+There is a sharp linear relation between surface and price.
+
+```{r appartments_mi2_surface, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartments_mi2_surface) Relation between surface and price per sq meter"}
+ggplot(data = apartments, aes(surface, m2.price)) +
+   geom_point(size = 0.3) +
+  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+   labs(y="Price per square meter", x = "Surface year", title='Relation between surface and contruction year') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+There is a close to linear relation between floor and price. 
+
+```{r appartments_mi2_floor, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartments_mi2_floor) Relation between floor and price per sq meter"}
+ggplot(data = apartments, aes(floor, m2.price)) +
+   geom_point(size = 0.3) +
+  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+   labs(y="Price per square meter", x = "Floor", title='Relation between floor and price per square meter') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+There is a close to linear relation between no of rooms and price. But please note that surface and number of rooms are correlated.
+
+```{r appartments_mi2_norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartments_mi2_norooms) Relation between no rooms and price per sq meter"}
+ggplot(data = apartments, aes(no.rooms, m2.price)) +
+   geom_point(size = 0.3) +
+  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+   labs(y="Price per square meter", x = "No rooms", title='Relation between no rooms and price per square meter') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+```{r appartments_surface_norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartments_surface_norooms) Relation between no rooms and surface"}
+ggplot(data = apartments, aes(no.rooms, surface)) +
+   geom_point(size = 0.3) +
+  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+   labs(y="Surface", x = "No rooms", title='Relation between no rooms and price per square meter') + theme_drwhy() + theme(legend.position = "none") 
+```
+
+Prices are different in different districts. Highest are in the downtown.
+
+```{r appartments_mi2_district, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartments_mi2_district) Relation between district and price per sq meter"}
+apartments$district <- reorder(apartments$district, apartments$m2.price, mean)
+ggplot(data = apartments, aes(district, m2.price)) +
+   geom_violin(fill = "#371ea3") +
+  geom_boxplot(width = 0.2, coef = 100, color = "white", fill = "#371ea3") +
+   labs(y="Price per square meter", x = "", title='Relation between district and price per square meter') + theme_drwhy() + theme(legend.position = "none") + coord_flip()
+```
 
 ### Linear regression {#model_apartments_lr}
 
@@ -300,6 +361,30 @@ str(HR)
 table(HR$evaluation)
 table(HR$salary)
 ```
+
+Young female and old male are being fired more frequently.
+
+```{r HR_exploration_age, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_age) HR status for age groups and gender.", out.width = '70%', fig.align='center'}
+HR$age_cat <- cut(HR$age, c(20,40,60))
+HR$age_gender <- paste(HR$gender, HR$age_cat)
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, age_gender), fill=status)) +
+   labs(x="Gender", y="Promoted of fired?", title='Promoted of fired?') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
+```
+
+```{r HR_exploration_salary, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_salary) HR status for salary groups.", out.width = '70%', fig.align='center'}
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, salary), fill=status)) +
+   labs(x="Salary", y="Promoted of fired?", title='Promoted of fired?') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
+```
+
+```{r HR_exploration_evaluation, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:HR_exploration_evaluation) HR status for evaluation groups.", out.width = '70%', fig.align='center'}
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, evaluation), fill=status)) +
+   labs(x="Evaluation", y="Promoted of fired?", title='Promoted of fired?') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = theme_drwhy_colors(3))
+```
+
+
 
 ### Multinomial logistic regression {#model_HR_mr}
 
