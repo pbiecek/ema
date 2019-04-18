@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-17">
+<meta name="date" content="2019-04-18">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -546,10 +546,10 @@ Figure 10.1: (fig:bdInter1) Break Down Plot for variable attrbution with interac
 <p>The algorithm for Break Down for Interactions is also implemented in the <code>local_interactions</code> function from <code>breakDown2</code> package.</p>
 <p><strong>Model preparation</strong></p>
 <p>First a model needs to be trained.</p>
-<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb111-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX2&quot;</span>)</a>
-<a class="sourceLine" id="cb111-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb111-3" data-line-number="3">model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb111-4" data-line-number="4">model</a></code></pre></div>
+<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb114-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX2&quot;</span>)</a>
+<a class="sourceLine" id="cb114-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb114-3" data-line-number="3">model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb114-4" data-line-number="4">model</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = status ~ gender + age + hours + evaluation +      salary, data = HR) 
@@ -557,62 +557,64 @@ Figure 10.1: (fig:bdInter1) Break Down Plot for variable attrbution with interac
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.37%
+##         OOB estimate of  error rate: 27.25%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2259  388      208   0.2087566
-## ok         523 1254      444   0.4353895
-## promoted   199  386     2186   0.2111151</code></pre>
+## fired     2278  380      197   0.2021016
+## ok         530 1265      426   0.4304367
+## promoted   197  408     2166   0.2183327</code></pre>
 <p>Model exploration with the <code>breakDown2</code> package is performed in three steps.</p>
 <p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
 <p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX</code> package.</p>
-<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" data-line-number="1">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model,</a>
-<a class="sourceLine" id="cb113-2" data-line-number="2">                 <span class="dt">data =</span> HR,</a>
-<a class="sourceLine" id="cb113-3" data-line-number="3">                 <span class="dt">y =</span> HR<span class="op">$</span>status)</a></code></pre></div>
+<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" data-line-number="1">explainer_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model,</a>
+<a class="sourceLine" id="cb116-2" data-line-number="2">                 <span class="dt">data =</span> HR,</a>
+<a class="sourceLine" id="cb116-3" data-line-number="3">                 <span class="dt">y =</span> HR<span class="op">$</span>status)</a></code></pre></div>
 <p><strong>2. Select an observation of interest.</strong></p>
 <p>Break Down Plots decompose model prediction around a single observation. Let’s construct a data frame with corresponding values.</p>
-<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb114-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
-<a class="sourceLine" id="cb114-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
-<a class="sourceLine" id="cb114-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
-<a class="sourceLine" id="cb114-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb114-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb114-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb114-7" data-line-number="7"><span class="kw">predict</span>(model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb117-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
+<a class="sourceLine" id="cb117-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
+<a class="sourceLine" id="cb117-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
+<a class="sourceLine" id="cb117-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb117-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb117-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb117-7" data-line-number="7"><span class="kw">predict</span>(model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
 <pre><code>##   fired    ok promoted
-## 1 0.786 0.214        0
+## 1 0.804 0.188    0.008
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <p><strong>3. Calculate Break Down decomposition</strong></p>
 <p>The <code>local_interactions()</code> function calculates Break Down contributions for a selected model around a selected observation.</p>
 <p>The result from <code>local_interactions()</code> function is a data frame with variable attributions.</p>
-<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
-<a class="sourceLine" id="cb116-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">local_interactions</span>(explainer_rf,</a>
-<a class="sourceLine" id="cb116-3" data-line-number="3">                 new_observation)</a>
-<a class="sourceLine" id="cb116-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb116-5" data-line-number="5">bd_rf</a></code></pre></div>
-<pre><code>##                                          contribution
-## randomForest.fired: intercept                   0.820
-## randomForest.fired: salary = 2                 -0.298
-## randomForest.fired: age = 58                    0.366
-## randomForest.fired: evaluation = 2             -0.038
-## randomForest.fired: hours = 42                 -0.064
-## randomForest.fired: gender = male               0.000
-## randomForest.fired: prediction                  0.786
-## randomForest.ok: intercept                      0.996
-## randomForest.ok: salary = 2                    -0.686
-## randomForest.ok: hours:age = 42:58             -0.074
-## randomForest.ok: gender = male                  0.550
-## randomForest.ok: evaluation = 2                 0.000
-## randomForest.ok: prediction                     0.214
-## randomForest.promoted: intercept                0.988
-## randomForest.promoted: salary = 2              -0.570
-## randomForest.promoted: evaluation = 2          -0.296
-## randomForest.promoted: hours:age = 42:58        0.664
-## randomForest.promoted: gender = male            0.000
-## randomForest.promoted: prediction               0.000</code></pre>
+<div class="sourceCode" id="cb119"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb119-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb119-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">local_interactions</span>(explainer_rf,</a>
+<a class="sourceLine" id="cb119-3" data-line-number="3">                 new_observation)</a>
+<a class="sourceLine" id="cb119-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb119-5" data-line-number="5">bd_rf</a></code></pre></div>
+<pre><code>##                                       contribution
+## randomForest.fired: intercept                0.828
+## randomForest.fired: salary = 2              -0.306
+## randomForest.fired: age = 58                 0.376
+## randomForest.fired: evaluation = 2          -0.056
+## randomForest.fired: hours = 42              -0.038
+## randomForest.fired: gender = male            0.000
+## randomForest.fired: prediction               0.804
+## randomForest.ok: intercept                   0.986
+## randomForest.ok: salary = 2                 -0.642
+## randomForest.ok: age = 58                   -0.042
+## randomForest.ok: hours = 42                 -0.048
+## randomForest.ok: gender = male               0.550
+## randomForest.ok: evaluation = 2              0.000
+## randomForest.ok: prediction                  0.188
+## randomForest.promoted: intercept             0.990
+## randomForest.promoted: salary = 2           -0.574
+## randomForest.promoted: evaluation = 2       -0.314
+## randomForest.promoted: age = 58              0.832
+## randomForest.promoted: hours = 42           -0.130
+## randomForest.promoted: gender = male         0.000
+## randomForest.promoted: prediction            0.008</code></pre>
 <p>The generic <code>plot()</code> function creates a Break Down plots.</p>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-56-1.png" width="672" /></p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-54-1.png" width="672" /></p>
 
 </div>
 </div>

@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-17">
+<meta name="date" content="2019-04-18">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -401,8 +401,8 @@ Figure 12.1: (fig:LIME1) A schematic idea behind local model approximations. Pan
 <p>In this section we present example application of <code>lime</code> <span class="citation">(Pedersen and Benesty <a href="#ref-R-lime">2018</a>)</span> and <code>live</code> <span class="citation">(Staniak and Biecek <a href="#ref-R-live">2018</a>)</span> packages. Note that this method is also implemented in <code>iml</code> <span class="citation">(Molnar <a href="#ref-R-iml">2018</a><a href="#ref-R-iml">a</a>)</span> and other packages. These pacakages differ in some details and also results in different explanations.</p>
 <p><strong>Model preparation</strong></p>
 <p>In this section we will present examples based on the <code>HR</code> dataset. See the Section <a href="DataSets.html#HRdataset">26.1</a> for more details.</p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb124-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
+<div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb127-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb127-2" data-line-number="2"><span class="kw">head</span>(HR)</a></code></pre></div>
 <pre><code>##   gender      age    hours evaluation salary   status age_cat
 ## 1   male 32.58267 41.88626          3      1    fired (20,40]
 ## 2 female 41.21104 36.34339          2      5    fired (40,60]
@@ -418,9 +418,9 @@ Figure 12.1: (fig:LIME1) A schematic idea behind local model approximations. Pan
 ## 5   male (20,40]
 ## 6   male (40,60]</code></pre>
 <p>The problem here is to predict average price for square meter for an apartment. Let’s build a random forest model with <code>randomForest</code> package <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb126-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb126-3" data-line-number="3">rf_model</a></code></pre></div>
+<div class="sourceCode" id="cb129"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb129-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb129-2" data-line-number="2">rf_model &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb129-3" data-line-number="3">rf_model</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = status ~ gender + age + hours + evaluation +      salary, data = HR) 
@@ -434,24 +434,24 @@ Figure 12.1: (fig:LIME1) A schematic idea behind local model approximations. Pan
 ## fired     2269  387      199   0.2052539
 ## ok         530 1251      440   0.4367402
 ## promoted   196  394     2181   0.2129195</code></pre>
-<div class="sourceCode" id="cb128"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb128-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
-<a class="sourceLine" id="cb128-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
-<a class="sourceLine" id="cb128-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
-<a class="sourceLine" id="cb128-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
-<a class="sourceLine" id="cb128-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb128-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb128-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb131-1" data-line-number="1">new_observation &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
+<a class="sourceLine" id="cb131-2" data-line-number="2">                      <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
+<a class="sourceLine" id="cb131-3" data-line-number="3">                      <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
+<a class="sourceLine" id="cb131-4" data-line-number="4">                      <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb131-5" data-line-number="5">                      <span class="dt">salary =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb131-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb131-7" data-line-number="7"><span class="kw">predict</span>(rf_model, new_observation, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
 <pre><code>##   fired    ok promoted
 ## 1 0.784 0.214    0.002
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <div id="the-lime-pacakge" class="section level3">
 <h3><span class="header-section-number">12.5.1</span> <strong>The lime pacakge</strong></h3>
-<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb130-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
-<a class="sourceLine" id="cb130-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a>
-<a class="sourceLine" id="cb130-3" data-line-number="3">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], rf_model)</a>
-<a class="sourceLine" id="cb130-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb130-5" data-line-number="5">explanations</a></code></pre></div>
+<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
+<a class="sourceLine" id="cb133-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a>
+<a class="sourceLine" id="cb133-3" data-line-number="3">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], rf_model)</a>
+<a class="sourceLine" id="cb133-4" data-line-number="4">explanations &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], lime_rf, <span class="dt">n_labels =</span> <span class="dv">3</span>, <span class="dt">n_features =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb133-5" data-line-number="5">explanations</a></code></pre></div>
 <pre><code>##       model_type case    label label_prob  model_r2 model_intercept
 ## 1 classification    1    fired      0.784 0.1270477       0.2612806
 ## 2 classification    1    fired      0.784 0.1270477       0.2612806
@@ -482,36 +482,36 @@ Figure 12.1: (fig:LIME1) A schematic idea behind local model approximations. Pan
 ## 7        gender = male 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 8      evaluation &lt;= 3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002
 ## 9 37.6 &lt; hours &lt;= 46.3 2.0, 57.7, 42.3, 2.0, 2.0 0.784, 0.214, 0.002</code></pre>
-<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-66-1.png" width="672" /></p>
+<div class="sourceCode" id="cb135"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb135-1" data-line-number="1"><span class="kw">plot_features</span>(explanations)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-64-1.png" width="672" /></p>
 </div>
 <div id="the-live-package" class="section level3">
 <h3><span class="header-section-number">12.5.2</span> <strong>The live package</strong></h3>
-<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;live&quot;</span>)</a>
-<a class="sourceLine" id="cb133-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb133-3" data-line-number="3">new_observation<span class="op">$</span>status &lt;-<span class="st"> &quot;fired&quot;</span></a>
-<a class="sourceLine" id="cb133-4" data-line-number="4">explainer_rf_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
-<a class="sourceLine" id="cb133-5" data-line-number="5">                 <span class="dt">data =</span> HR,</a>
-<a class="sourceLine" id="cb133-6" data-line-number="6">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
-<a class="sourceLine" id="cb133-7" data-line-number="7">                 <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) <span class="kw">predict</span>(m,x, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)[,<span class="dv">1</span>],</a>
-<a class="sourceLine" id="cb133-8" data-line-number="8">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
-<a class="sourceLine" id="cb133-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb133-10" data-line-number="10">local_model &lt;-<span class="st"> </span><span class="kw">local_approximation</span>(explainer_rf_fired, new_observation, </a>
-<a class="sourceLine" id="cb133-11" data-line-number="11">                    <span class="dt">target_variable_name =</span> <span class="st">&quot;status&quot;</span>, <span class="dt">n_new_obs =</span> <span class="dv">500</span>)</a>
-<a class="sourceLine" id="cb133-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb133-13" data-line-number="13">local_model</a>
-<a class="sourceLine" id="cb133-14" data-line-number="14"><span class="kw">plot</span>(local_model)</a>
-<a class="sourceLine" id="cb133-15" data-line-number="15"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb136-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;live&quot;</span>)</a>
+<a class="sourceLine" id="cb136-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb136-3" data-line-number="3">new_observation<span class="op">$</span>status &lt;-<span class="st"> &quot;fired&quot;</span></a>
+<a class="sourceLine" id="cb136-4" data-line-number="4">explainer_rf_fired &lt;-<span class="st"> </span><span class="kw">explain</span>(rf_model,</a>
+<a class="sourceLine" id="cb136-5" data-line-number="5">                 <span class="dt">data =</span> HR,</a>
+<a class="sourceLine" id="cb136-6" data-line-number="6">                 <span class="dt">y =</span> HR<span class="op">$</span>status <span class="op">==</span><span class="st"> &quot;fired&quot;</span>,</a>
+<a class="sourceLine" id="cb136-7" data-line-number="7">                 <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) <span class="kw">predict</span>(m,x, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)[,<span class="dv">1</span>],</a>
+<a class="sourceLine" id="cb136-8" data-line-number="8">                 <span class="dt">label =</span> <span class="st">&quot;fired&quot;</span>)</a>
+<a class="sourceLine" id="cb136-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb136-10" data-line-number="10">local_model &lt;-<span class="st"> </span><span class="kw">local_approximation</span>(explainer_rf_fired, new_observation, </a>
+<a class="sourceLine" id="cb136-11" data-line-number="11">                    <span class="dt">target_variable_name =</span> <span class="st">&quot;status&quot;</span>, <span class="dt">n_new_obs =</span> <span class="dv">500</span>)</a>
+<a class="sourceLine" id="cb136-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb136-13" data-line-number="13">local_model</a>
+<a class="sourceLine" id="cb136-14" data-line-number="14"><span class="kw">plot</span>(local_model)</a>
+<a class="sourceLine" id="cb136-15" data-line-number="15"><span class="kw">plot</span>(local_model, <span class="dt">type =</span> <span class="st">&quot;forest&quot;</span>)</a></code></pre></div>
 </div>
 <div id="the-iml-package" class="section level3">
 <h3><span class="header-section-number">12.5.3</span> <strong>The iml package</strong></h3>
-<div class="sourceCode" id="cb134"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb134-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
-<a class="sourceLine" id="cb134-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb134-3" data-line-number="3">explainer_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(rf_model, <span class="dt">data =</span> HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>])</a>
-<a class="sourceLine" id="cb134-4" data-line-number="4">white_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(explainer_rf, <span class="dt">x.interest =</span> new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], <span class="dt">k =</span> <span class="dv">5</span>)</a>
-<a class="sourceLine" id="cb134-5" data-line-number="5">white_box</a>
-<a class="sourceLine" id="cb134-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb134-7" data-line-number="7"><span class="kw">plot</span>(white_box)</a></code></pre></div>
+<div class="sourceCode" id="cb137"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb137-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
+<a class="sourceLine" id="cb137-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb137-3" data-line-number="3">explainer_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(rf_model, <span class="dt">data =</span> HR[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>])</a>
+<a class="sourceLine" id="cb137-4" data-line-number="4">white_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(explainer_rf, <span class="dt">x.interest =</span> new_observation[,<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>], <span class="dt">k =</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb137-5" data-line-number="5">white_box</a>
+<a class="sourceLine" id="cb137-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb137-7" data-line-number="7"><span class="kw">plot</span>(white_box)</a></code></pre></div>
 
 </div>
 </div>

@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-17">
+<meta name="date" content="2019-04-18">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -387,80 +387,80 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="data-exploration" class="section level3">
 <h3><span class="header-section-number">2.1.1</span> Data exploration</h3>
 <p>It is always advisable to explore data before modelling. However, as this book is focused on model exploration, we will limit the data exploration part.</p>
-<p>Before exploring the data, we first do some pre-processing. In particular, the value of variables <em>age</em>, <em>country</em>, <em>sibsp</em>, <em>parch</em>, and <em>fare</em> is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing <em>age</em> values by the mean of the observed ones, i.e., 30. Missing <em>country</em> will be coded by “X”. For <em>sibsp</em> and <em>parch</em>, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for <em>fare</em>, we use the value of 0.</p>
-<p>[TOMASZ: FOR FARE, ONE COULD USE THE MEAN OF OBSERVED VALUES, AS FOR AGE. TAKING 0 CORRESPONDS TO “crew”.
-PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs among classes, so maybe it should be a class average?]</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co"># missing country is replaced by &quot;X&quot;</span></a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">titanic<span class="op">$</span>country[<span class="kw">is.na</span>(titanic<span class="op">$</span>country)] =<span class="st"> &quot;X&quot;</span></a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="co"># missing age is replaced by average (30)</span></a>
-<a class="sourceLine" id="cb9-4" data-line-number="4">titanic<span class="op">$</span>age[<span class="kw">is.na</span>(titanic<span class="op">$</span>age)] =<span class="st"> </span><span class="dv">30</span></a>
-<a class="sourceLine" id="cb9-5" data-line-number="5"><span class="co"># missing sibsp, parch are replaced by 0</span></a>
-<a class="sourceLine" id="cb9-6" data-line-number="6">titanic<span class="op">$</span>sibsp[<span class="kw">is.na</span>(titanic<span class="op">$</span>sibsp)] =<span class="st"> </span><span class="dv">0</span></a>
-<a class="sourceLine" id="cb9-7" data-line-number="7">titanic<span class="op">$</span>parch[<span class="kw">is.na</span>(titanic<span class="op">$</span>parch)] =<span class="st"> </span><span class="dv">0</span></a>
-<a class="sourceLine" id="cb9-8" data-line-number="8"><span class="co"># missing fare is replaced by class average</span></a>
-<a class="sourceLine" id="cb9-9" data-line-number="9"><span class="co"># tapply(titanic$fare, titanic$class, mean, na.rm = TRUE)</span></a>
-<a class="sourceLine" id="cb9-10" data-line-number="10">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;1st&quot;</span>] =<span class="st"> </span><span class="dv">89</span></a>
-<a class="sourceLine" id="cb9-11" data-line-number="11">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;2nd&quot;</span>] =<span class="st"> </span><span class="dv">22</span></a>
-<a class="sourceLine" id="cb9-12" data-line-number="12">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;3rd&quot;</span>] =<span class="st"> </span><span class="dv">13</span></a></code></pre></div>
-<p>After imputing the missing values, we investigate the association between survival status and the other variables. Figures XXX-XXX present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for <em>age</em> and <em>fare</em>, we categorized the range of the observed values.</p>
-<p>[TOMASZ: CHANGE THE ORDER, AS SUGGESTED IN THE R CODE. LABEL THE HORIZONTAL “SURVIVAL” AXIS WITH PROPORTIONS. IMPROVE LABELING OF THE Y-AXIS. ]</p>
-<p>Figures @ref(fig:titanic_exploration_gender) and @ref(fig:titanic_exploration_age) indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the “women and children first” principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures @ref(fig:titanic_exploration_parch) and @ref(fig:titanic_exploration_sibsp), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure @ref(fig:titanic_exploration_class) indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure @ref(fig:titanic_exploration_fare) shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures @ref(fig:titanic_exploration_embarked) and (fig:titanic_exploration_country) do not suggest any noteworthy trends.</p>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/titanic_exploration_gender-1.png" alt="(fig:titanic_exploration_gender) Survival in different genders for the titanic data." width="70%" />
+<p>Before exploring the data, we first do some pre-processing. In particular, the value of variables <em>age</em>, <em>country</em>, <em>sibsp</em>, <em>parch</em>, and <em>fare</em> is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing <em>age</em> values by the mean of the observed ones, i.e., 30. Missing <em>country</em> will be coded by “X”. For <em>sibsp</em> and <em>parch</em>, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for <em>fare</em>, we use average fare in a give class, 0 for crew, 89 for 1st, 22 for 2nd and 13 for the third class respectively.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co"># missing age is replaced by average (30)</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2">titanic<span class="op">$</span>age[<span class="kw">is.na</span>(titanic<span class="op">$</span>age)] =<span class="st"> </span><span class="dv">30</span></a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="co"># missing country is replaced by &quot;X&quot;</span></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4">titanic<span class="op">$</span>country &lt;-<span class="st"> </span><span class="kw">as.character</span>(titanic<span class="op">$</span>country)</a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">titanic<span class="op">$</span>country[<span class="kw">is.na</span>(titanic<span class="op">$</span>country)] =<span class="st"> &quot;X&quot;</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6">titanic<span class="op">$</span>country &lt;-<span class="st"> </span><span class="kw">factor</span>(titanic<span class="op">$</span>country)</a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co"># missing fare is replaced by class average</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;1st&quot;</span>] =<span class="st"> </span><span class="dv">89</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;2nd&quot;</span>] =<span class="st"> </span><span class="dv">22</span></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">titanic<span class="op">$</span>fare[<span class="kw">is.na</span>(titanic<span class="op">$</span>fare) <span class="op">&amp;</span><span class="st"> </span>titanic<span class="op">$</span>class <span class="op">==</span><span class="st"> &quot;3rd&quot;</span>] =<span class="st"> </span><span class="dv">13</span></a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="co"># missing sibsp, parch are replaced by 0</span></a>
+<a class="sourceLine" id="cb9-12" data-line-number="12">titanic<span class="op">$</span>sibsp[<span class="kw">is.na</span>(titanic<span class="op">$</span>sibsp)] =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb9-13" data-line-number="13">titanic<span class="op">$</span>parch[<span class="kw">is.na</span>(titanic<span class="op">$</span>parch)] =<span class="st"> </span><span class="dv">0</span></a></code></pre></div>
+<p>After imputing the missing values, we investigate the association between survival status and the other variables. Figures @ref(titanic_exploration_gender)-@ref(fig:titanic_exploration_fare) present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for <em>age</em> and <em>fare</em>, we categorized the range of the observed values.</p>
+<p>Figures <a href="DataSetsIntro.html#fig:titanicExplorationGender">2.1</a> and <a href="DataSetsIntro.html#fig:titanicExplorationAge">2.2</a> indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the “women and children first” principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures <a href="DataSetsIntro.html#fig:titanicExplorationParch">2.7</a> and <a href="DataSetsIntro.html#fig:titanicExplorationSibsp">2.8</a>, i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure <a href="DataSetsIntro.html#fig:titanicExplorationClass">2.3</a> indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure <a href="DataSetsIntro.html#fig:titanicExplorationFare">2.6</a> shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures <a href="DataSetsIntro.html#fig:titanicExplorationEmbarked">2.4</a> and <a href="DataSetsIntro.html#fig:titanicExplorationCountry">2.5</a> do not suggest any noteworthy trends.</p>
+<div class="figure" style="text-align: center"><span id="fig:titanicExplorationGender"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationGender-1.png" alt="Survival in different genders for the titanic data." width="70%" />
 <p class="caption">
-(#fig:titanic_exploration_gender)(fig:titanic_exploration_gender) Survival in different genders for the titanic data.
+Figure 2.1: Survival in different genders for the titanic data.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/titanic_exploration_age-1.png" alt="(fig:titanic_exploration_age) Survival in different age groups for the titanic data." width="70%" />
+<div class="figure" style="text-align: center"><span id="fig:titanicExplorationAge"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationAge-1.png" alt="Survival in different age groups for the titanic data." width="70%" />
 <p class="caption">
-(#fig:titanic_exploration_age)(fig:titanic_exploration_age) Survival in different age groups for the titanic data.
+Figure 2.2: Survival in different age groups for the titanic data.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/titanic_exploration_parch-1.png" alt="(fig:titanic_exploration_parch) Survival in different numbers of parents/children for the titanic data." width="70%" />
+<div class="figure" style="text-align: center"><span id="fig:titanicExplorationClass"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationClass-1.png" alt="Survival for different classes in the titanic data." width="70%" />
 <p class="caption">
-(#fig:titanic_exploration_parch)(fig:titanic_exploration_parch) Survival in different numbers of parents/children for the titanic data.
+Figure 2.3: Survival for different classes in the titanic data.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/titanic_exploration_sibsp-1.png" alt="(fig:titanic_exploration_sibsp) Survival in different numbers of siblings/spouses for the titanic data." width="70%" />
+<div class="figure"><span id="fig:titanicExplorationEmbarked"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationEmbarked-1.png" alt="Survival for different port of embarking in the titanic data." width="576" />
 <p class="caption">
-(#fig:titanic_exploration_sibsp)(fig:titanic_exploration_sibsp) Survival in different numbers of siblings/spouses for the titanic data.
+Figure 2.4: Survival for different port of embarking in the titanic data.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/titanic_exploration_class-1.png" alt="(fig:titanic_exploration_class) Survival for different classes in the titanic data." width="70%" />
+<div class="figure"><span id="fig:titanicExplorationCountry"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationCountry-1.png" alt="Survival for different countries in the titanic data." width="576" />
 <p class="caption">
-(#fig:titanic_exploration_class)(fig:titanic_exploration_class) Survival for different classes in the titanic data.
+Figure 2.5: Survival for different countries in the titanic data.
 </p>
 </div>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/titanic_exploration_fare-1.png" alt="(fig:titanic_exploration_fare) Survival as a function of fare in the titanic data." width="576" />
+<div class="figure"><span id="fig:titanicExplorationFare"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationFare-1.png" alt="Survival as a function of fare in the titanic data." width="576" />
 <p class="caption">
-(#fig:titanic_exploration_fare)(fig:titanic_exploration_fare) Survival as a function of fare in the titanic data.
+Figure 2.6: Survival as a function of fare in the titanic data.
 </p>
 </div>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/titanic_exploration_embarked-1.png" alt="(fig:titanic_exploration_embarked) Survival for different port of embarking in the titanic data." width="576" />
+<div class="figure" style="text-align: center"><span id="fig:titanicExplorationParch"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationParch-1.png" alt="Survival in different numbers of parents/children for the titanic data." width="70%" />
 <p class="caption">
-(#fig:titanic_exploration_embarked)(fig:titanic_exploration_embarked) Survival for different port of embarking in the titanic data.
+Figure 2.7: Survival in different numbers of parents/children for the titanic data.
 </p>
 </div>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/titanic_exploration_country-1.png" alt="(fig:titanic_exploration_country) Survival for different countries in the titanic data." width="576" />
+<div class="figure" style="text-align: center"><span id="fig:titanicExplorationSibsp"></span>
+<img src="PM_VEE_files/figure-html/titanicExplorationSibsp-1.png" alt="Survival in different numbers of siblings/spouses for the titanic data." width="70%" />
 <p class="caption">
-(#fig:titanic_exploration_country)(fig:titanic_exploration_country) Survival for different countries in the titanic data.
+Figure 2.8: Survival in different numbers of siblings/spouses for the titanic data.
 </p>
 </div>
 </div>
 <div id="model_titanic_lmr" class="section level3">
 <h3><span class="header-section-number">2.1.2</span> Logistic regression</h3>
-<p>The dependent variable of interest, <em>survival</em>, is binary. Thus, a natural choice to build a predictive model is logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the <code>rcs()</code> function of the <code>rms</code> package <span class="citation">(Harrell Jr <a href="#ref-rms">2018</a>)</span>, to model the effect of age. [TOMASZ: IS THERE A REASON TO ASSUME A LINEAR EFFECT OF FARE? PBI: it’s not linear but something modeled with slines] The results of the model are stored in model-object <code>titanic_lmr_v6</code>, which will be used in subsequent chapters.</p>
+<p>The dependent variable of interest, <em>survival</em>, is binary. Thus, a natural choice to build a predictive model is logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the <code>rcs()</code> function of the <code>rms</code> package <span class="citation">(Harrell Jr <a href="#ref-rms">2018</a>)</span>, to model the effect of age. We also do not expect linear relation for the <code>fare</code> variable, but because of it’s skewness we have not used splines for this variable. The results of the model are stored in model-object <code>titanic_lmr_v6</code>, which will be used in subsequent chapters.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;rms&quot;</span>)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2">titanic_lmr_v6 &lt;-<span class="st"> </span><span class="kw">lrm</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span><span class="kw">rcs</span>(age) <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span></a>
-<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="st">                   </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, titanic)</a>
-<a class="sourceLine" id="cb10-4" data-line-number="4">titanic_lmr_v6</a></code></pre></div>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb10-4" data-line-number="4">titanic_lmr_v6 &lt;-<span class="st"> </span><span class="kw">lrm</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span><span class="kw">rcs</span>(age) <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span></a>
+<a class="sourceLine" id="cb10-5" data-line-number="5"><span class="st">                   </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, titanic)</a>
+<a class="sourceLine" id="cb10-6" data-line-number="6">titanic_lmr_v6</a></code></pre></div>
 <pre><code>## Logistic Regression Model
 ##  
 ##  lrm(formula = survived == &quot;yes&quot; ~ gender + rcs(age) + class + 
@@ -500,9 +500,11 @@ PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs amo
 <p>As an alternative to a logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-level variable interactions, and is quite stable [TOMASZ: REFERENCE?]. To fit the model, we apply the <code>randomForest()</code> function, with default settings, from the package with the same name <span class="citation">(Liaw and Wiener <a href="#ref-randomForestRNews">2002</a>)</span>.</p>
 <p>In the first instance, we fit a model with the same set of explanatory variables as the logistic regression model. The results of the model are stored in model-object <code>titanic_rf_v6</code>.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">titanic_rf_v6 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, </a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">                           <span class="dt">data =</span> titanic)</a>
-<a class="sourceLine" id="cb12-4" data-line-number="4">titanic_rf_v6</a></code></pre></div>
+<a class="sourceLine" id="cb12-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">titanic_rf_v6 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, </a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">                           <span class="dt">data =</span> titanic)</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">titanic_rf_v6</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = survived ~ class + gender + age + sibsp +      parch + fare + embarked, data = titanic) 
@@ -510,10 +512,10 @@ PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs amo
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 18.76%
+##         OOB estimate of  error rate: 18.62%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1390 106  0.07085561
+## no  1393 103  0.06885027
 ## yes  308 403  0.43319269</code></pre>
 <p>For comparison purposes, we also consider a model with only three explanatory variables: <em>class</em>, <em>gender</em>, and <em>age</em>. The results of the model are stored in model-object <code>titanic_rf_v3</code>.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">titanic_rf_v3 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age, <span class="dt">data =</span> titanic)</a>
@@ -525,18 +527,18 @@ PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs amo
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 1
 ## 
-##         OOB estimate of  error rate: 20.57%
+##         OOB estimate of  error rate: 21.02%
 ## Confusion matrix:
 ##       no yes class.error
-## no  1371 125  0.08355615
-## yes  329 382  0.46272855</code></pre>
+## no  1367 129  0.08622995
+## yes  335 376  0.47116737</code></pre>
 </div>
 <div id="gradient-boosting" class="section level3">
 <h3><span class="header-section-number">2.1.4</span> Gradient boosting</h3>
 <p>Finally, we consider the gradient-boosting model. The model is known for being able to grasp deep interactions between variables. [TOMASZ: WHAT ARE “DEEP INTERACTIONS”? REFERENCE?] We use the same set of explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use the function <code>gbm()</code> from the <code>gbm</code> package <span class="citation">(Ridgeway <a href="#ref-gbm">2017</a>)</span>. The results of the model are stored in model-object <code>titanic_gbm_v6</code>.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb16-3" data-line-number="3"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
+<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb16-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb16-4" data-line-number="4">titanic_gbm_v6 &lt;-<span class="st"> </span><span class="kw">gbm</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch <span class="op">+</span><span class="st"> </span>fare <span class="op">+</span><span class="st"> </span>embarked, </a>
 <a class="sourceLine" id="cb16-5" data-line-number="5">                      <span class="dt">data =</span> titanic, <span class="dt">n.trees =</span> <span class="dv">15000</span>)</a></code></pre></div>
 <pre><code>## Distribution not specified, assuming bernoulli ...</code></pre>
@@ -566,15 +568,14 @@ PBI there are 7, 14, 5 missing values in the 1st/2nd/3rd class. Fare differs amo
 <p>The predicted probability is equal to 0.46.</p>
 <p>We do the same for the random forest and gradient boosting models.</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1">(<span class="dt">pred_rf =</span> <span class="kw">predict</span>(titanic_rf_v6, henry, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>))</a></code></pre></div>
-<pre><code>##      no   yes
-## 1 0.706 0.294
+<pre><code>##     no  yes
+## 1 0.66 0.34
 ## attr(,&quot;class&quot;)
 ## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1">(<span class="dt">pred_gbm =</span> <span class="kw">predict</span>(titanic_gbm_v6, henry, <span class="dt">type =</span> <span class="st">&quot;response&quot;</span>, <span class="dt">n.trees =</span> <span class="dv">15000</span>))</a></code></pre></div>
 <pre><code>## [1] 0.4169878</code></pre>
-<p>As a result, we obtain the predicted probabilities of 0.29 and 0.42, respectively.</p>
+<p>As a result, we obtain the predicted probabilities of 0.34 and 0.42, respectively.</p>
 <p>The models lead to different probabilities. Thus, it might be of interest to understand the reason for the differences, as it could help us to decide which of the predictions we might want to trust.</p>
-<!--[TOMASZ: GRADIENT-BOOSTING LEADS TO DIFFERENT PREDICTIONS AT EACH RUN. POSSIBLE TO "FREEZE" THE MODEL/PREDICTIONS? PERHAPS AT A RUN GIVING A DISTINCT PREDICTION? AT ONE POINT I GOT 0.6 FOR GBM, WHICH WAS MARKEDLY - AND INTERESTINGLY - DIFFERENT FROM LR AND RF.]-->
 </div>
 </div>
 <div id="ApartmentDataset" class="section level2">
@@ -770,30 +771,33 @@ The results of the model are stored in model-object <code>apartments_rf_v5</code
 <pre><code>## 
 ##    0    1    2    3    4    5 
 ## 1105 1417 1461 1508 1316 1040</code></pre>
+<p>See Figures <a href="DataSetsIntro.html#fig:HRExplorationAge">2.9</a>-<a href="DataSetsIntro.html#fig:HRExplorationEvaluation">2.11</a> for some exploratory analysis.</p>
 <p>Young female and old male are being fired more frequently.</p>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/HR_exploration_age-1.png" alt="(fig:HR_exploration_age) HR status for age groups and gender." width="70%" />
+<div class="figure" style="text-align: center"><span id="fig:HRExplorationAge"></span>
+<img src="PM_VEE_files/figure-html/HRExplorationAge-1.png" alt="HR status for age groups and gender." width="70%" />
 <p class="caption">
-(#fig:HR_exploration_age)(fig:HR_exploration_age) HR status for age groups and gender.
+Figure 2.9: HR status for age groups and gender.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/HR_exploration_salary-1.png" alt="(fig:HR_exploration_salary) HR status for salary groups." width="70%" />
+<div class="figure" style="text-align: center"><span id="fig:HRExplorationSalary"></span>
+<img src="PM_VEE_files/figure-html/HRExplorationSalary-1.png" alt="HR status for salary groups." width="70%" />
 <p class="caption">
-(#fig:HR_exploration_salary)(fig:HR_exploration_salary) HR status for salary groups.
+Figure 2.10: HR status for salary groups.
 </p>
 </div>
-<div class="figure" style="text-align: center">
-<img src="PM_VEE_files/figure-html/HR_exploration_evaluation-1.png" alt="(fig:HR_exploration_evaluation) HR status for evaluation groups." width="70%" />
+<div class="figure" style="text-align: center"><span id="fig:HRExplorationEvaluation"></span>
+<img src="PM_VEE_files/figure-html/HRExplorationEvaluation-1.png" alt="HR status for evaluation groups." width="70%" />
 <p class="caption">
-(#fig:HR_exploration_evaluation)(fig:HR_exploration_evaluation) HR status for evaluation groups.
+Figure 2.11: HR status for evaluation groups.
 </p>
 </div>
 <div id="model_HR_mr" class="section level3">
 <h3><span class="header-section-number">2.3.1</span> Multinomial logistic regression</h3>
 <p>The dependent variable of interest, <em>status</em>, is categorical with three categories. Thus, a simple choice is to consider a multinomial logistic regression model <span class="citation">(Venables and Ripley <a href="#ref-Venables2010">2010</a>)</span>. We fit the model with the help of function <code>multinom</code> from package <code>nnet</code>. The function fits multinomial log-linear models by using the neural-networks approach.We chose this model to have a complex model that is smooth in contrary to random forest that relies on binary splits for continuous variables. We treat all variables other than <code>status</code> in the <code>HR</code> data frame as explanatory and include them in the model. The results of the model are stored in model-object <code>HR_glm_v5</code>.</p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;nnet&quot;</span>)</a>
-<a class="sourceLine" id="cb55-2" data-line-number="2">HR_glm_v5 &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
+<a class="sourceLine" id="cb55-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb55-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb55-4" data-line-number="4">HR_glm_v5 &lt;-<span class="st"> </span><span class="kw">multinom</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a></code></pre></div>
 <pre><code>## # weights:  21 (12 variable)
 ## initial  value 8620.810629 
 ## iter  10 value 7002.127738
@@ -822,10 +826,11 @@ The results of the model are stored in model-object <code>apartments_rf_v5</code
 <h3><span class="header-section-number">2.3.2</span> Random forest</h3>
 <p>As an alternative to multinomial logisitc regression, we consider a random forest model. To fit the model, we apply the <code>randomForest()</code> function, with default settings, from the package with the same name <span class="citation">(Liaw and Wiener <a href="#ref-randomForestRNews">2002</a>)</span>.
 The results of the model are stored in model-object <code>HR_rf_v5</code>.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">set.seed</span>(<span class="dv">59</span>)</a>
-<a class="sourceLine" id="cb59-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb59-3" data-line-number="3">HR_rf_v5 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
-<a class="sourceLine" id="cb59-4" data-line-number="4">HR_rf_v5</a></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb59-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb59-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb59-4" data-line-number="4">HR_rf_v5 &lt;-<span class="st"> </span><span class="kw">randomForest</span>(status <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>hours <span class="op">+</span><span class="st"> </span>evaluation <span class="op">+</span><span class="st"> </span>salary, <span class="dt">data =</span> HR)</a>
+<a class="sourceLine" id="cb59-5" data-line-number="5">HR_rf_v5</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = status ~ gender + age + hours + evaluation +      salary, data = HR) 
@@ -833,21 +838,40 @@ The results of the model are stored in model-object <code>HR_rf_v5</code>.</p>
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 2
 ## 
-##         OOB estimate of  error rate: 27.31%
+##         OOB estimate of  error rate: 27.46%
 ## Confusion matrix:
 ##          fired   ok promoted class.error
-## fired     2274  384      197   0.2035026
-## ok         525 1255      441   0.4349392
-## promoted   201  395     2175   0.2150848</code></pre>
+## fired     2270  388      197   0.2049037
+## ok         530 1243      448   0.4403422
+## promoted   202  390     2179   0.2136413</code></pre>
 </div>
 <div id="predictions_HR" class="section level3">
 <h3><span class="header-section-number">2.3.3</span> Model predictions</h3>
-<p>[TOMASZ: TO ADD]</p>
+<p>As in previous chapters, we will see how to use models that we have just created.
+As s test case we will use a single employee of the call center, let’s name him Dilbert.</p>
+<p>Dilbert is a male few years before 60. Working around 40h per week, poor evaluation and average salary.
+What are his chances for promotion or survival?</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" data-line-number="1">dilbert &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;male&quot;</span>, <span class="st">&quot;female&quot;</span>)),</a>
+<a class="sourceLine" id="cb61-2" data-line-number="2">                <span class="dt">age =</span> <span class="fl">57.7</span>,</a>
+<a class="sourceLine" id="cb61-3" data-line-number="3">                <span class="dt">hours =</span> <span class="fl">42.3</span>,</a>
+<a class="sourceLine" id="cb61-4" data-line-number="4">                <span class="dt">evaluation =</span> <span class="dv">2</span>,</a>
+<a class="sourceLine" id="cb61-5" data-line-number="5">                <span class="dt">salary =</span> <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb61-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb61-7" data-line-number="7"><span class="kw">predict</span>(HR_rf_v5, dilbert, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<pre><code>##   fired    ok promoted
+## 1 0.778 0.218    0.004
+## attr(,&quot;class&quot;)
+## [1] &quot;matrix&quot; &quot;votes&quot;</code></pre>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="kw">predict</span>(HR_glm_v5, dilbert, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>)</a></code></pre></div>
+<pre><code>##      fired         ok   promoted 
+## 0.56369601 0.40630786 0.02999612</code></pre>
+<p>As you see, they are not that high. It’s likely that Dilbert will be fired in the next year. But why? We will try to answer this question in next chapters.</p>
 </div>
 </div>
 <div id="ListOfModels" class="section level2">
 <h2><span class="header-section-number">2.4</span> List of models</h2>
-<p>In the previous sections we have built several predictive models for differnt datasets. The models will be used in the rest of the book to illustrate the mdoel explanation methods and tools. For the ease of reference, we summarize the models in the table beloW. The binary model-objects can be donwloaded by using the attached <code>archivist</code> hooks <span class="citation">(Biecek and Kosinski <a href="#ref-archivist">2017</a>)</span>. [TOMASZ: THIS IS USEFUL FOR E-BOOK. HOW ABOUT THE PRINTED VERSION?]</p>
+<p>In the previous sections we have built several predictive models for different data sets. The models will be used in the rest of the book to illustrate the model explanation methods and tools.</p>
+<p>For the ease of reference, we summarize the models in the table below. The binary model-objects can be downloaded by using the attached <code>archivist</code> hooks <span class="citation">(Biecek and Kosinski <a href="#ref-archivist">2017</a>)</span>. By calling a function specified in the last column you will recreate a selected model in your local R environment.</p>
 <table>
 <colgroup>
 <col width="23%" />
@@ -871,28 +895,28 @@ The results of the model are stored in model-object <code>HR_rf_v5</code>.</p>
 <td><code>rms:: lmr</code></td>
 <td><code>DALEX:: titanic</code></td>
 <td>gender, age, class, sibsp, parch, fare, embarked</td>
-<td><code>archivist:: aread(&quot;pbiecek/models/f285c&quot;)</code></td>
+<td><code>archivist:: aread(&quot;pbiecek/models/ceb40&quot;)</code></td>
 </tr>
 <tr class="even">
 <td><code>titanic_rf_v6</code></td>
 <td><code>randomForest:: randomForest</code></td>
 <td><code>DALEX:: titanic</code></td>
 <td>gender, age, class, sibsp, parch, fare, embarked</td>
-<td><code>archivist:: aread(&quot;pbiecek/models/92753&quot;)</code></td>
+<td><code>archivist:: aread(&quot;pbiecek/models/31570&quot;)</code></td>
 </tr>
 <tr class="odd">
 <td><code>titanic_rf_v3</code></td>
 <td><code>randomForest:: randomForest</code></td>
 <td><code>DALEX:: titanic</code></td>
 <td>gender, age, class</td>
-<td><code>archivist:: aread(&quot;pbiecek/models/bcd20&quot;)</code></td>
+<td><code>archivist:: aread(&quot;pbiecek/models/855c1&quot;)</code></td>
 </tr>
 <tr class="even">
 <td><code>titanic_gbm_v6</code></td>
 <td><code>gbm:: gbm</code></td>
 <td><code>DALEX:: titanic</code></td>
 <td>gender, age, class, sibsp, parch, fare, embarked</td>
-<td><code>archivist:: aread(&quot;pbiecek/models/2bdad&quot;)</code></td>
+<td><code>archivist:: aread(&quot;pbiecek/models/24e72&quot;)</code></td>
 </tr>
 <tr class="odd">
 <td><code>apartments_lm_v5</code></td>

@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-04-17">
+<meta name="date" content="2019-04-18">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -384,45 +384,43 @@ Figure 6.2: (fig:profile2dAll) Ceteris-paribus profile for all pairs of explanat
 <p>In this section we present key features of the R package <code>ingredients</code> <span class="citation">(Biecek <a href="#ref-ingredientsRPackage">2019</a>)</span> which is a part of <code>DALEXverse</code> and covers all methods presented in this chapter. More details and examples can be found at <code>https://modeloriented.github.io/ingredients/</code>.</p>
 <p>There are also other R packages that offer similar functionality, like <code>condvis</code> <span class="citation">(O’Connell, Hurley, and Domijan <a href="#ref-JSSv081i05">2017</a>)</span> or <code>ICEbox</code> <span class="citation">(Goldstein et al. <a href="#ref-ICEboxRPackage">2015</a><a href="#ref-ICEboxRPackage">b</a>)</span>.</p>
 <p>In this section we use a random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">2.1</a>). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb76-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb76-3" data-line-number="3">titanic &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic)</a>
-<a class="sourceLine" id="cb76-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb76-5" data-line-number="5">model_titanic_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span> <span class="op">~</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age <span class="op">+</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>embarked <span class="op">+</span></a>
-<a class="sourceLine" id="cb76-6" data-line-number="6"><span class="st">                                   </span>fare <span class="op">+</span><span class="st"> </span>sibsp <span class="op">+</span><span class="st"> </span>parch,  <span class="dt">data =</span> titanic)</a>
-<a class="sourceLine" id="cb76-7" data-line-number="7">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> model_titanic_rf, </a>
-<a class="sourceLine" id="cb76-8" data-line-number="8">                              <span class="dt">data =</span> titanic[,<span class="op">-</span><span class="dv">9</span>],</a>
-<a class="sourceLine" id="cb76-9" data-line-number="9">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
-<a class="sourceLine" id="cb76-10" data-line-number="10">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v7&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" data-line-number="1">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
+<a class="sourceLine" id="cb77-2" data-line-number="2">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb78-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb78-3" data-line-number="3">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6, </a>
+<a class="sourceLine" id="cb78-4" data-line-number="4">                              <span class="dt">data =</span> titanic[,<span class="op">-</span><span class="dv">9</span>],</a>
+<a class="sourceLine" id="cb78-5" data-line-number="5">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
+<a class="sourceLine" id="cb78-6" data-line-number="6">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v6&quot;</span>)</a></code></pre></div>
 <p>In order to calculate oscillations we need to first calculate Ceteris Paribus profiles for a selected observation.</p>
 <p>Let us use the <code>johny_d</code> instance again.</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb77-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
-<a class="sourceLine" id="cb77-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
-<a class="sourceLine" id="cb77-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
-<a class="sourceLine" id="cb77-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
-<a class="sourceLine" id="cb77-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb77-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb77-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
-<a class="sourceLine" id="cb77-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
-<a class="sourceLine" id="cb77-10" data-line-number="10">)</a></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb79-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb79-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
+<a class="sourceLine" id="cb79-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
+<a class="sourceLine" id="cb79-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
+<a class="sourceLine" id="cb79-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
+<a class="sourceLine" id="cb79-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb79-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
+<a class="sourceLine" id="cb79-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
+<a class="sourceLine" id="cb79-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
+<a class="sourceLine" id="cb79-10" data-line-number="10">)</a></code></pre></div>
 <p>2D profiles are calculated with the <code>ceteris_paribus_2d()</code> function. By default all pairs between continuous variables are being plotted, but one can limit number of variables for consideration through the <code>variables</code> argument.</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb78-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb78-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
-<a class="sourceLine" id="cb78-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb78-4" data-line-number="4">wi_rf_2d &lt;-<span class="st"> </span><span class="kw">ceteris_paribus_2d</span>(explain_titanic_rf, <span class="dt">observation =</span> titanic[<span class="dv">31</span>,], <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;sibsp&quot;</span>, <span class="st">&quot;parch&quot;</span>))</a>
-<a class="sourceLine" id="cb78-5" data-line-number="5"><span class="kw">head</span>(wi_rf_2d)</a></code></pre></div>
-<pre><code>##        y_hat    new_x1 new_x2 vname1 vname2            label
-## 31   0.61491 0.1666667   0.00    age  sibsp Random Forest v7
-## 31.1 0.61491 0.1666667   0.08    age  sibsp Random Forest v7
-## 31.2 0.61491 0.1666667   0.16    age  sibsp Random Forest v7
-## 31.3 0.61491 0.1666667   0.24    age  sibsp Random Forest v7
-## 31.4 0.61491 0.1666667   0.32    age  sibsp Random Forest v7
-## 31.5 0.61491 0.1666667   0.40    age  sibsp Random Forest v7</code></pre>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb80-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
+<a class="sourceLine" id="cb80-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb80-4" data-line-number="4">wi_rf_2d &lt;-<span class="st"> </span><span class="kw">ceteris_paribus_2d</span>(explain_titanic_rf, <span class="dt">observation =</span> johny_d, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;sibsp&quot;</span>, <span class="st">&quot;parch&quot;</span>))</a>
+<a class="sourceLine" id="cb80-5" data-line-number="5"><span class="kw">head</span>(wi_rf_2d)</a></code></pre></div>
+<pre><code>##     y_hat    new_x1 new_x2 vname1 vname2            label
+## 1   0.444 0.1666667   0.00    age  sibsp Random Forest v6
+## 1.1 0.444 0.1666667   0.08    age  sibsp Random Forest v6
+## 1.2 0.444 0.1666667   0.16    age  sibsp Random Forest v6
+## 1.3 0.444 0.1666667   0.24    age  sibsp Random Forest v6
+## 1.4 0.444 0.1666667   0.32    age  sibsp Random Forest v6
+## 1.5 0.444 0.1666667   0.40    age  sibsp Random Forest v6</code></pre>
 <p>Result is an object of the class <code>ceteris_paribus_2d_explainer</code> with overloaded <code>print()</code> and <code>plot()</code> function.</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="kw">plot</span>(wi_rf_2d) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb80-2" data-line-number="2"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">legend.direction =</span> <span class="st">&quot;vertical&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;Ceteris Paribus 2D Profiles&quot;</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-31-1.png" width="768" /></p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb82-1" data-line-number="1"><span class="kw">plot</span>(wi_rf_2d) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb82-2" data-line-number="2"><span class="st">  </span><span class="kw">theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;right&quot;</span>, <span class="dt">legend.direction =</span> <span class="st">&quot;vertical&quot;</span>) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(<span class="st">&quot;Ceteris Paribus 2D Profiles&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/titanicCeterisParibus06-1.png" width="768" /></p>
 <p>In the presented example both variables <code>age</code> and <code>sibsp</code> are important and influence the model response.</p>
 
 </div>
