@@ -3,30 +3,21 @@ output:
   pdf_document: default
   html_document: default
 ---
-# Ceteris Paribus Oscillations - a tool for local variable importance  {#ceterisParibusOscillations}
+# Ceteris Paribus Oscillations - a Tool for Local Variable-importance  {#ceterisParibusOscillations}
 
-## Introduction
+## Introduction {#CPOscIntro}
 
-Visual examination of Ceteris Paribus Profiles is insightful, but for a model with a large number of explanatory variables we may end up with a large number of plots which may be overwhelming. To prioritize between profiles we need a measure that would summarize the impact of a selected variable on model's predictions. We will propose now a solution closely linked with CP profiles, but the issue is also discussed also in the next chapter.
+Visual examination of Ceteris-paribus (CP) profiles is insightful, but for a model with a large number of explanatory variables we may end up with a large number of plots which may be overwhelming. To prioritize between the profiles we need a measure that would summarize the impact of a selected variable on model's predictions. In this chapter we describe a solution closely linked with CP profiles. An alternative is also discussed in the Chapter XXX [TOMASZ: PROVIDE LINK].
 
+## Intuition {#CPOscIntuition}
 
-## Intuition
+To assign importance to CP profiles, we can use the concept of profile oscillations. In particular, the larger influence of an explanatory variable on prediction at a particular instance, the larger the fluctuations along the corresponding CP profile. For a variable that exercises little or no influence on model prediction, the profile will be flat or will barely change. Figure \@ref(fig:CPVIPprofiles) illustrates the idea behind measuring oscillations. The figure corresponds to the CP profiles presented in Figure \@ref(fig:profileV4Rf). [TOMASZ: IN CHAPTER ON CP-PROFILES WE USED A FIGURE FOR THE RF MODEL. IT MIGHT BE WORTH TO USE CONSISTENTLY PICTURES FOR THE SAME MODEL TO BE ABLE TO LINK THE CONCEPTS. MOREOVER: SHOULD WE NOT USE "HENRY" AS THE EXAMPLE?] The larger the highlighted area, the more important is the variable.
 
-To assign importance to CP profiles, we can use the concept of profile oscillations. In particular, the larger influence of an explanatory variable on prediction at a particular instance, the larger the fluctuations along the corresponding CP profile. For a variable that exercises little or no influence on model prediction, the profile will be flat or will barely change. Figure \@ref(fig:CPVIPprofiles) illustrates the idea behind measuring oscillations. The larger the highlighted area, the more important is the variable.
-
-
-```{r CPVIPprofiles, echo=FALSE, fig.cap="(fig:CPVIPprofiles) The value of the red are area summarizes CP oscillations and provides the average absolute deviations between the CP profile and the instance prediction. This example is for the `titanic_lmer_v6` model and the `titanic` dataset", out.width = '70%', fig.align='center'}
+```{r CPVIPprofiles, echo=FALSE, fig.cap="(fig:CPVIPprofiles) The value of the colored area summarizes the CP oscillations and provides the mean of the absolute deviations between the CP profile and the instance prediction. Example for the `titanic_lmr_v6` model.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/oscillations_all_lmr.png")
 ```
 
-Figure \@ref(fig:CPVIP1) provides a plot of variable importance measures for different variables for the `titanic_lmer_v6` and the `titanic` dataset. The wider the interval, the larger the CP-profile oscillations for a particular explanatory variable. Thus, Figure \@ref(fig:CPVIP1) indicates that the most important variable for prediction for a selected observation is `age`, followed by `sibsp`. 
-
-```{r CPVIP1, echo=FALSE, fig.cap="(fig:CPVIP1) Variable-importance measures calculated for Ceteris-paribus oscillations for observation ID: 31. This example is for the `titanic_lmer_v6` model and the `titanic` dataset", out.width = '50%', fig.align='center'}
-knitr::include_graphics("figure/oscillations_all_lmr_plot.png")
-```
-
-
-## Method
+## Method {#CPOscMethod}
 
 Let us formalize this concept now. Denote by $g^j(z)$ the probability density function of the distribution of the $j$-th explanatory variable. The summary measure of the variable's importance for model prediction at point $x$, $vip^{CP}_j(x)$, computed based on the variable's CP profile, is defined as follows: 
 
@@ -46,21 +37,25 @@ f(x_1, x_2) = x_1 * x_2,
 $$
 where $x_1$ and $x_2$ take values in $[0,1]$. Consider prediction for an observation described by vector $x^* = (0,1)$. In that case, the importance of $X_1$ is larger than $X_2$. This is because the CP profile for the first variable, given by the values of function $f(z,1)=z$, will have oscillations, while the profile for the second variable will show no oscillation, because it is given by function $f(0,z)=0$. Obviously, the situation is reversed for $x^*=(1,0)$. 
 
+## Example: Titanic data {#CPOscExample}
 
-## Pros and cons
+Figure \@ref(fig:CPVIP1) provides a plot of variable importance measures for different continuous explanatory variables for the logistic regression model (`titanic_lmr_v6`) for observation 31. [TOMASZ: SHOULD WE NOT USE "HENRY" AS THE EXAMPLE?] The wider the interval, the larger the CP-profile oscillations for a particular explanatory variable. Thus, Figure \@ref(fig:CPVIP1) indicates that the most important variable for prediction for the selected observation is `age`, followed by `sibsp`. [TOMASZ: WHY NO MEASURES FOR FACTORS?] 
 
-By using oscillations of Ceteris Paribus profiles it is possible to select the most important variables for a single instance. The methodology is easy to extend to two or more variables. Oscillations are easy to interpret.
+```{r CPVIP1, echo=FALSE, fig.cap="(fig:CPVIP1) Variable-importance measures calculated for Ceteris-paribus oscillations for observation ID: 31 based on the `titanic_lmr_v6` model", out.width = '50%', fig.align='center'}
+knitr::include_graphics("figure/oscillations_all_lmr_plot.png")
+```
 
-There are several issues related to the use of the CP oscillations. Two most serious are:
+## Pros and cons {#CPOscProsCons}
 
-* if two variables are correlated, then Ceteris Paribus profiles may be misleading as they do not take correlations into account.
-* local feature importance do not sum up to model prediction. In next sections we will introduce variable attribution measures that eliminate this problem.
+Oscillations of CP profiels are easy to interpret and understand. By using the average of oscillations it is possible to select the most important variables for instance prediction. The methodology can easily be extended to two or more variables. 
 
-## Code snippets for R
+There are several issues related to the use of the CP oscillations. For instance, the oscillations may not be of help in situations when the use of CP profiles may itself be problematic (e.g., in the case of correlated explanatory variables or interactions - see Section \@ref(CPProsCons)). An important issue is that the local variable importances do not sum up to the instance prediction for which they are calculated. In Chapter XXX we will introduce measures that address this problem.
 
-In this section we present key features of the R package `ingredients` [@ingredientsRPackage] which is a part of `DALEXverse` and covers all methods presented in this chapter. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
+## Code snippets for R {#CPOscR}
 
-In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
+In this section, we present key features of the R package `ingredients` [@ingredientsRPackage], which is a part of `DALEXverse` and covers all methods presented in this chapter. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
+
+As an example, we use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic <- archivist::aread("pbiecek/models/27e5c")
@@ -72,6 +67,8 @@ load("models/titanic_rf_v6.rda")
 load("models/titanic.rda")
 ```
 
+First, we have got to create a wrapper around the model (see Section \@ref(CPR)). 
+
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
@@ -82,12 +79,12 @@ explain_titanic_rf <- explain(model = titanic_rf_v6,
                               label = "Random Forest v7")
 ```
 
-In order to calculate oscillations we need to first calculate  Ceteris Paribus profiles for a selected observation. 
+Moreover, to calculate oscillations, we have got to calculate CP profiles for a selected observation. Let us use  `henry` as the instance prediction of interest.
 
-Let us use the `johny_d` instance again.
+[TOMASZ: WHY NOT USING THE PRE-DEFINED DATA FRAME?]
 
 ```{r, warning=FALSE, message=FALSE}
-johny_d <- data.frame(
+henry <- data.frame(
   class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
                                   "restaurant staff", "victualling crew")),
   gender = factor("male", levels = c("female", "male")),
@@ -99,37 +96,35 @@ johny_d <- data.frame(
 )
 ```
 
-Profiles are calculated with the `ceteris_paribus()` function.
+CP Profiles are calculated with the `ceteris_paribus()` function.
 
-```{r titanicCeterisProfile02, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=7, fig.cap="Ceteris Paribus Profiles for the random forest model `titanic_rf_v6`.", out.width = '70%', fig.align='center'}
+```{r titanicCeterisProfile02, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=7, fig.cap="Ceteris-paribus profiles for the random forest model `titanic_rf_v6` and Henry.", out.width = '70%', fig.align='center'}
 library("ingredients")
 library("ggplot2")
 
-cp_titanic_rf <- ceteris_paribus(explain_titanic_rf, johny_d, 
+cp_titanic_rf <- ceteris_paribus(explain_titanic_rf, henry, 
                             variables = c("age", "fare", "sibsp", "parch"))
 
 plot(cp_titanic_rf) +
   show_observations(cp_titanic_rf, variables = c("age", "fare", "sibsp", "parch")) +
-  ggtitle("Ceteris Paribus Profiles", "For the random forest model and titanic dataset")
+  ggtitle("Ceteris-paribus Profiles", "For the random forest, Titanic dataset, and Henry")
 ```
 
-For selected profiles we can calculate oscillations with the `calculate_oscillations` function.
+For the selected profiles, we calculate the average oscillations with the `calculate_oscillations()` function. [TOMASZ: NO FACTORS?]
 
 ```{r, warning=FALSE, message=FALSE, fig.width=5, fig.height=3}
 cpo_titanic_rf <- calculate_oscillations(cp_titanic_rf)
-cpo_titanic_rf$`_ids_` = "Johny D"
+cpo_titanic_rf$`_ids_` = "Henry"
 cpo_titanic_rf
 ```
 
-The `calculate_oscillations()` function returns an object of the class `ceteris_paribus_oscillations`, which has a form of a data frame but has also overloaded `plot()` function.
-
-Use it to plot local variable importance for a selected observation
+The `calculate_oscillations()` function returns an object of class `ceteris_paribus_oscillations`, which has a form of a data frame, but has also an overloaded `plot()` function. We can use the latter function to plot the local variable-importance measures for the instance of interst.
 
 ```{r, warning=FALSE, message=FALSE, fig.width=5, fig.height=3}
 plot(cpo_titanic_rf) +
   ggtitle("Ceteris Paribus Oscillations",
-          "For model_titanic_rf model")
+          "For model_titanic_rf")
 ```
 
-It looks like for Jony D. the two most important features are `age` and `parch`. Higher `age` of this passenger would significantly lower the chances of survival while higher `parch` would increase these odds.
-
+It looks like that, for the prediction of probability of surviving of Henry, the two most important explanatory variables are `age` and `parch`. If Henry were older, this would significantly lower the chances of survival. One the other hand, Henry were not travelling alone, this would increase these chances. [TOMASZ: HOW CAN THHIS BE SEEN FROM THE PLOT? BARS FOR BOTH AGE AND PARCH ARE POSITIVE, AND YET THEIR INTERPRETATION GOES IN DIFFERENT DIRECTIONS?]
+ 
