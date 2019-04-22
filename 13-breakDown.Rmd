@@ -10,28 +10,28 @@ Break Down Plots solve problems with both these approaches.
 ## Intuition
 
 For any model we may repeat the intuition presented in the Section \@ref(variableAttributionMethods) to calculate variable contribution as shifts in expected model response after conditioning over consecutive variables.
-This intuition is presented in Figure \@ref(BDPrice4). 
+This intuition is presented in Figure \@ref(fig:BDPrice4). 
 
 Panel A shows distribution of model responses. The row `all data` shows the model response of the validation dataset. The red dot stands for average model response and it is an estimate of expected model response $E [f(x)]$.
 
 Since we want to calculate effects of particular values of selected variables we then condition over these variables in a sequential manner. 
-The next row in panel A corresponds to average model prediction for observations with variable `surface` fixed to value `35`. The next for corresponds to average model prediction with variables `surface` set to `35` and `floor` set to `1`, and so on. The top row corresponds to model response for $x^*$.
+The next row in panel A corresponds to average model prediction for observations with variable `class` fixed to value `1st`. The next for corresponds to average model prediction with variables `class` set to `1st` and `age` set to `0`, and so on. The last row corresponds to model response for $x^*$.
 
 Black lines in the panel A show how prediction for a single point changes after coordinate $i$ is replaced by the $x^*_i$. But finally we are not interested in particular changes, not even in distributions but only in averages - expected model responses.
 
 The most minimal form that shows important information is presented in the panel C.
-Positive values are presented with green bars while negative differences are marked with yellow bar. They sum up to final model prediction, which is denoted by a grey bar in this example.
+Positive values are presented with green bars while negative differences are marked with red bar. They sum up to final model prediction, which is denoted by a violet bar in this example.
 
 
-```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The last row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The first row shows model prediction for a single point. Red dots stand for averages. B) Blue arrows shows how the average conditional response change, these values are variables contributions. C) Only variable contributions are presented. ", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/bd_price_4.png")
+```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The first row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The last row shows model prediction for a single point. Red dots stand for averages. B) Red dots stands for average conditional model response. C) Only variable contributions are presented, i.e. differences between consecutive conditional expectations. ", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/break_down_distr.png")
 ```
 
 
 ## Method
 
 
-Again, let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ on prediction of model $f()$ in point $x^*$. 
+Again, as in previous chapter, let $v(f, x^*, i)$ stands for the contribution of variable $x_i$ to prediction of model $f()$ in point $x^*$. 
 
 We expect that such contribution will sum up to the model prediction in a given point (property called *local accuracy*), so
 $$
@@ -51,20 +51,23 @@ v(f, x^*_i, i) = E [f(X) | X_1 = x_1^*, \ldots, X_i = x_i^*] - E [f(X) | X_1 = x
 $$
 In other words the contribution of variable $i$ is the difference between expected model response conditioned on first $i$ variables minus the model response conditioned on first $i-1$ variables.
 
-Such proposition fulfills the *local accuracy* condition, but unfortunately variable contributions depends on the ordering of variables. 
+Such proposition fulfills the *local accuracy* condition.
 
+Unfortunately, for non-additive models, variable contributions depend on the ordering of variables. See for example Figure \@ref(fig:ordering). In the first ordering the contribution of variable `age` is calculated as 0.01, while in the second the contribution is calculated as 0.13. Such differences are related to the lack of additivness of the model $f()$. 
  
 ```{r ordering, echo=FALSE, fig.cap="(fig:ordering) Two different paths between average model prediction and the model prediction for a selected observation. Black dots stand for conditional average, red arrows stands for changes between conditional averages.", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/ordering.png")
 ```
 
 
-See for example Figure \@ref(fig:ordering). In the first ordering the contribution of variable `age` is calculated as 0.01, while in the second the contribution is calculated as 0.13. Such differences are related to the lack of additivness of the model $f()$. Propositions presented in next two sections present different solutions for this problem.
+There are different attempts to solve the problem with the ordering. 
+
+A. choose an ordering in which variables with largest contributions are first. In this chapter we will describe a heuristic behind this approach.
+B. identify interactions that causes difference in attributions for different orderings and show these interactions. In the chapter \@ref(iBreakDown) we will describe a heuristic behind this idea.
+C. calculate average across all possible orderings. There is $p!$ possible orderings, be the may quite accurately approximate the average. This approach will be presented in the chapter \@ref(shapley).
 
 
-
-The approach for variable attribution presented in the Section \@ref(modelAgnosticAttribution) has the property of *local accuracy*, but variable contributions depends on the variable ordering.
-
+So, let's start with approach A. 
 The easiest way to solve this problem is to use two-step procedure. In the first step variables are ordered and in the second step the consecutive conditioning is applied to ordered variables.
 
 First step of this algorithm is to determine the order of variables for conditioning. 
@@ -90,7 +93,11 @@ $$
 The time complexity of the first step id $O(p)$ where $p$ is the number of variables and the time complexity of the second step is also $O(p)$.
 
 
-## Example: Hire or Fire?
+## Example: Titanic data
+
+PBI: in this section, should we replicate figures and data already presented in Figure fig:BDPrice4 ? 
+
+Old:
 
 Let us consider a random forest model created for HR data. The average model response is $\bar f(x) = 0.385586$. For a selected observation $x^*$ the table below presents scores for particular variables.
 
@@ -245,6 +252,7 @@ It can be presented after setting `plot_distributions = TRUE` in the `plot()` fu
 ```{r, warning=FALSE, message=FALSE}
 bd_rf_distr <- break_down(explain_titanic_rf,
                  johny_d,
+                 order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),
                  keep_distributions = TRUE)
 plot(bd_rf_distr, plot_distributions = TRUE) 
 ```
