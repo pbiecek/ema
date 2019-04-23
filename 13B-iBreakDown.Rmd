@@ -1,12 +1,46 @@
-# iBreakDown for variable attributions with interactions  {#iBreakDown}
+# iBreakDown for Variable Attributions with Interactions  {#iBreakDown}
 
-In the Section \@ref(breakDown) we presented model agnostic approach for additive decomposition of a model prediction for a single observation. 
+In the Section \@ref(breakDown) we presented a model agnostic approach to additive decomposition of model predictions into an additive attributions. We also showed that the proposed attribution depends on the ordering of variables.
 
-For non-additive models the variables contributions depend on values of other variables. 
+Lack of additivness means, that effect of one variable is modulated by another variable(s). In such pair (or larger tuple) particular variables do not contribute independently, therefore in model explanations they should be presented together.
 
 In this section we present an algorithm that identifies interactions between pairs of variables and include such interactions in variable decomposition plots. Here we present an algorithm for pairs of variables, but it can be easily generalized to larger number of variables.
 
 ## Intuition
+
+First we need to understand what does it mean hat two variables are in interaction.
+We will use real data from the Titanic dataset. Table \@ref(tab:titanicMaleSurvival) shows survival statistics for men on titanic. For the sake of simplicity we consider only two variables - age (dychotomized into two levels: (boys 0-16 years old) and adults (17+ years old)) and class.
+
+Suppose that we would like to explain factors that contribute to the survival of kids from the second class. As we can read, the survival for yound passagers from 2nd class is 45.8% (survived 11 out of 24 passangers in this group). It is higher than overall survival for men on titanic which is 10.3% (survived 352 out of 3432).
+
+
+Table: (\#tab:titanicMaleSurvival) Survival rates for men on Titanic. Ratio shows how many survived  
+
+|Class / Age      |Kids (0-16)    |Adults (>16)    |Total            |
+|:----------------|:--------------|:---------------|:----------------|
+|1st              |5/10 = 50%     |57/350 = 16.3%  |62/360 = 17.2%   |
+|2nd              |11/24 = 45.8%  |13/332 = 3.9%   |24/356 = 6.7%    |
+|3rd              |17/122 = 13.9% |58/860 = 6.7%   |75/982 = 7.6%    |
+|deck crew        |               |43/132 = 32.6%  |43/132 = 32.6%   |
+|engineering crew |               |71/648 = 11%    |71/648 = 11%     |
+|restaurant staff |               |1/134 = 0.7%    |1/134 = 0.7%     |
+|victualling crew |0/6 = 0%       |76/814 = 9.3%   |76/820 = 9.3%    |
+|Total            |33/162 = 20.4% |319/3270 = 9.8% |352/3432 = 10.3% |
+
+
+```{r, eval=FALSE, echo=FALSE}
+library(DALEX)
+
+titanicM <- titanic[titanic$gender == "male",]
+tab3 <- addmargins(table(titanicM$class, titanicM$age > 16, titanicM$survived))
+
+table_formated <- apply(tab3, 1:2, function(x) {
+  paste0(x[2], "/", sum(x), " = ", round(100*x[2]/sum(x), 1), "%")
+})
+knitr::kable(table_formated, booktabs = TRUE,
+  caption = 'Caption.')
+```
+
 
 The key idea here is to identify interactions between variables. 
 This can be done in two steps. 
@@ -15,6 +49,8 @@ This can be done in two steps.
 2. Second, we calculate effect for pair of variables. If this effect is different than the sum of consecutive variables then it may be an interaction.
 
 TODO: easy example for interaction
+
+
 
 ## Method
 
