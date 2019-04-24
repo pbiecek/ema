@@ -1,31 +1,41 @@
 # iBreakDown for Variable Attributions with Interactions  {#iBreakDown}
 
-In the Section \@ref(breakDown) we presented a model agnostic approach to additive decomposition of model predictions into an additive attributions. We also showed that the proposed attribution depends on the ordering of variables.
+**PBI: note that we are using completly different notations here and in the prev chapter. Let's keep only one, but which one?**
 
-Lack of additivness means, that effect of one variable is modulated by another variable(s). In such pair (or larger tuple) particular variables do not contribute independently, therefore in model explanations they should be presented together.
+
+In the Section \@ref(breakDown) we presented a model agnostic approach to additive decomposition of model predictions. We also showed that for non-additive moedls the proposed attribution depends on the ordering of variables.
+
+Lack of additivness means, that effect of one variable is modulated by another variable(s). In such pair (or larger tuple) a single variable does not contribute independently, therefore in model explanations they should be presented together.
 
 In this section we present an algorithm that identifies interactions between pairs of variables and include such interactions in variable decomposition plots. Here we present an algorithm for pairs of variables, but it can be easily generalized to larger number of variables.
 
 ## Intuition
 
-First we need to understand what does it mean hat two variables are in interaction.
-We will use real data from the Titanic dataset. Table \@ref(tab:titanicMaleSurvival) shows survival statistics for men on titanic. For the sake of simplicity we consider only two variables - age (dychotomized into two levels: (boys 0-16 years old) and adults (17+ years old)) and class.
+First, let's see an example of an interaction between two variables.
+We will use real data from the Titanic dataset. Table \@ref(tab:titanicMaleSurvival) shows survival statistics for men on Titanic. For the sake of simplicity, in this example we consider only two variables - `age` and `class`. In the data `age` is a continuous variable, but again, for simplicity we have dychotomized it into two levels: boys (0-16 years old) and adults (17+ years old).
 
-Suppose that we would like to explain factors that contribute to the survival of kids from the second class. As we can read, the survival for yound passagers from 2nd class is 45.8% (survived 11 out of 24 passangers in this group). It is higher than overall survival for men on titanic which is 10.3% (survived 352 out of 3432).
+Suppose that we would like to explain factors that contribute to the survival of kids from the second class. As we can read, the survival for young passengers from 2nd class is 91.7% (survived 11 out of 12 male passengers in this group). It is higher than survival for men on titanic which is 20.5% (survived 352 out of 1716 men). So the question is, how age and class contribute to this higher survival?
 
+Let us consider two explanations, that correspond to two different orderings:
 
-Table: (\#tab:titanicMaleSurvival) Survival rates for men on Titanic. Ratio shows how many survived  
+* Overall men survival is 20.5%, but when we condition on male passengers from 2nd class the survival is even lower, i.e. 13.5%. Thus effect of the 2nd class is negative, it decreases the probability of survival by 7 percent points. Being a kid in the 2nd class is very lucky though. It changes of survival increase from 13.5% (male 2nd class) to 91.7% (boys from 2nd class). It's an increase by 78.2 percent points. So the contributions are -7% for class and +78.2% for age.
+* Overall men survival is 20.5%, but when we condition on young man then the survival is higher, i.e. 40.7%. Thus the effect of age is positive, being a boy increases the probability of survival by 20.2 percent points. Being a kid in 2nd class is even better, it changes the survival increase from 40.7% (boys) to 91.7% (boys from 2nd class). It's an increase by 51 percent points. So the contributions are +51% for class and +20.2% for age.
 
-|Class / Age      |Kids (0-16)    |Adults (>16)    |Total            |
-|:----------------|:--------------|:---------------|:----------------|
-|1st              |5/10 = 50%     |57/350 = 16.3%  |62/360 = 17.2%   |
-|2nd              |11/24 = 45.8%  |13/332 = 3.9%   |24/356 = 6.7%    |
-|3rd              |17/122 = 13.9% |58/860 = 6.7%   |75/982 = 7.6%    |
-|deck crew        |               |43/132 = 32.6%  |43/132 = 32.6%   |
-|engineering crew |               |71/648 = 11%    |71/648 = 11%     |
-|restaurant staff |               |1/134 = 0.7%    |1/134 = 0.7%     |
-|victualling crew |0/6 = 0%       |76/814 = 9.3%   |76/820 = 9.3%    |
-|Total            |33/162 = 20.4% |319/3270 = 9.8% |352/3432 = 10.3% |
+As we see these two paths leads to two very different explanations. They differ not only in the size but also in the sign of attributed importance.
+It has happend because one variable modulate effect on the second variable as the moedl is not additive. Below we will show how to deal with such cases.
+
+Table: (\#tab:titanicMaleSurvival) Survival rates for men on Titanic. Ratios show how many survived in each Class/Age category.
+
+|Class / Age      |Kids (0-16)    |Adults (>16)     |Total            |
+|:----------------|:--------------|:----------------|:----------------|
+|1st              |5/5 = 100%     |57/175 = 32.6%   |62/180 = 34.4%   |
+|2nd              |11/12 = 91.7%  |13/166 = 7.8%    |24/178 = 13.5%   |
+|3rd              |17/61 = 27.9%  |58/430 = 13.5%   |75/491 = 15.3%   |
+|deck crew        |               |43/66 = 65.2%    |43/66 = 65.2%    |
+|engineering crew |               |71/324 = 21.9%   |71/324 = 21.9%   |
+|restaurant staff |               |1/67 = 1.5%      |1/67 = 1.5%      |
+|victualling crew |0/3 = 0%       |76/407 = 18.7%   |76/410 = 18.5%   |
+|Total            |33/81 = 40.7%  |319/1635 = 19.5% |352/1716 = 20.5% |
 
 
 ```{r, eval=FALSE, echo=FALSE}
@@ -42,90 +52,250 @@ knitr::kable(table_formated, booktabs = TRUE,
 ```
 
 
-The key idea here is to identify interactions between variables. 
-This can be done in two steps. 
+The key intuition behind an iBreakDown algorithm is to include variable interactions to the visual explanations. 
+To do this we need to identify some candidated for interactions. Here we propose a very simple algorithm that will do this in two steps. 
 
-1. First we determine variable contributions for each variable independently.
-2. Second, we calculate effect for pair of variables. If this effect is different than the sum of consecutive variables then it may be an interaction.
-
-TODO: easy example for interaction
+1. First it will calculate variable contributions for each variable independently.
+2. Second it will calculate joint effect for each pair of variables. If this effect is different than the sum of separate variables then such pair is identified as candidate for an interaction.
 
 
 
 ## Method
 
-This algorithm is also composed out of two steps. In the first step variables and pairs of variables are ordered in terms of their importance, while in the second step the consecutive conditioning is applied to ordered variables.
+Identification of interactions in the model is performed in three steps [@iBreakDownRPackage]
 
+* Calculate a *single-step* contribution for each variable.
+* Calculate a *single-step* contribution for every pair of variables. Subtract individual contributions to assess the size of non additivness.
+* Order interaction effects and additive effects in a list to determin the final order for conditioning/explanations. 
 
-To determine an importance of variables and pairs of variables following scores are being calculated.
+This simple intuition may be generalized into higher order interactions. 
 
-For a single variable
+### Single step contributions
+
+For a feature $x_i$ we may define a single-step contribution as
+$$
+\Delta_i =  \mathbb{E}[f(x)|x_i = x^*_i] - \mathbb{E}[f(x)].
+$$
+
+The expected model prediction $\mathbb{E}[f(x)]$ is sometimes called baseline or intercept and may be denoted as $\Delta_\varnothing$.
+
+Expected value $\mathbb{E}[f(x)|x_i = x^*_i]$ corresponds to an average prediction of a model $f$ if feature $x_i$ is fixed on $x_i^{*}$ coordinate from the observation to explain $x^{*}$.
+
+I.e. the $\Delta_i$ is the difference between expected model response after conditioning on $i$ variable minus the expected model response. $\Delta_i$ measures a naive single-step local variable importance, it indicates how much the average prediction of model $f$ changes if feature $x_i$ is set on $x^*_i$. 
+
+### Two steps contributions
+
+For a pair of variables $x_i$, $x_j$ we introduce a single-step contribution as
+$$
+\Delta_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] - \mathbb{E}[f(x)].
+$$
+
+And non additive component of this contribution as
 
 $$
-score_1(f, x^*, i) = \left| E [f(X)|X_i = x^*_i]  - E [f(X)]\right|
+\Delta^{I}_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] -  \mathbb{E}[f(x)|x_i = x^*_i] -  \mathbb{E}[f(x)|x_j = x^*_j] + \mathbb{E}[f(x)].
 $$
-For pairs of variables
 
-$$
-score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - E [f(X)|X_i = x^*_i] - E [f(X)| X_j = x^*_j]+ E [f(X)] \right|
-$$
-Note that this is equivalent to 
+Or equivalently
 
 $$
-score_2(f, x^*, (i,j)) = \left| E [f(X)|X_i = x^*_i, X_j = x^*_j] - score_1 (f, x^*, i) - score_1 (f, x^*, j) + baseline \right|
+\Delta^{I}_{ij} = \Delta_{ij} - \Delta_i - \Delta_j. 
 $$
-In other words the $score_1(f, x^*, i)$ measures how much the average model response changes if variable $x_i$ is set to $x_i^*$, which is some index of local variable importance. On the other hand the $score_2(f, x^*, (i,j))$ measures how much the change is different than additive composition of changes for $x_i$ and $x_j$, which is some index of local interaction importance.
 
-Note, that for additive models $score_2(f, x^*, (i,j))$ shall be close to zero. So the larger is this value the larger deviation from additivness.
+### Sequential contributions
 
+The $\Delta^{I}_{ij}$ is the difference between collective effect of variables $x_i$ and $x_j$ denoted as $\Delta_{ij}$ and their additive effects $\Delta_{i}$ and $\Delta_{j}$. Therefore, $\Delta^{I}_{ij}$ measures the importance of local lack-of-additivnes (aka. interaction) between features $i$ and $j$.
+For additive models $\Delta^{I}_{ij}$ should small~for any $i$, $j$.
 
-The second step of the algorithm is the sequential conditioning. In this version in every new step we condition on a single variable of pair of variables in an order determined by $score_1$ and $score_2$.
+Note that contributions $\Delta_{i}$ do not sum to final model prediction. We only use them to determine the order of features in which the instance shall be explained. To calculate contributions that have the property of *local accuracy* we need to introduce one more symbol, that corresponds to the added contribution of feature $i$ to the set of features~$J$. 
 
-The complexity of the first step id $O(p^2)$ where $p$ stands for the number of variables. The complexity of the second step is $O(p)$.
+$$
+\Delta_{i|J} = \mathbf{E}[f(X)| x_{J\cup\{i\}} = x_{J\cup\{i\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] =     \Delta_{J\cup\{i\}} - \Delta_{J}.
+$$
 
-## Example: Hire or Fire?
+And for pairs of features
 
-Again, let us consider a HR dataset. 
-The table below shows $score_1$ and $score_2$ calculated for consecutive variables.
+$$
+\Delta_{ij|J} = \mathbf{E}[f(X)| x_{J\cup\{i,j\}} = x_{J\cup\{i,j\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] = 
+    \Delta_{J\cup\{i,j\}} - \Delta_{J}.
+$$
 
-|                  | Ei f(X) |    score1|  score2  |
-|:-----------------|--------:|---------:|---------:|
-|hours             | 0.616200|  0.230614|          |
-|salary            | 0.225528| -0.160058|          |
-|age:gender        | 0.516392|          |  0.146660|
-|salary:age        | 0.266226|          |  0.062026|
-|salary:hours      | 0.400206|          | -0.055936|
-|evaluation        | 0.430994|  0.045408|          |
-|hours:age         | 0.635662|          |  0.040790|
-|salary:evaluation | 0.238126|          | -0.032810|
-|age               | 0.364258| -0.021328|          |
-|evaluation:hours  | 0.677798|          |  0.016190|
-|salary:gender     | 0.223292|          | -0.007710|
-|evaluation:age    | 0.415688|          |  0.006022|
-|gender            | 0.391060|  0.005474|          |
-|hours:gender      | 0.626478|          |  0.004804|
-|evaluation:gender | 0.433814|          | -0.002654|
+Once the order of single-step importance is determined based on $\Delta_i$ and $\Delta^{I}_{ij}$ scores, the final explanation is the attribution to the sequence of $\Delta_{i|J}$ scores. These contributions sum up to the model predictions, because
 
-Once we determined the order, we can calculate sequential conditionings. In the first step we condition over variable `hours`, then over `salary`. The third position is occupied by interaction between `age:gender` thus we add both variables to the conditioning
+$$
+\Delta_{1,2...p} = f(x^*) - E[f(X)].
+$$
 
-|variable               | cumulative| contribution|
-|:----------------------|-----------:|------------:|
-|(Intercept)            |    0.385586|     0.385586|
-|* hours = 42           |    0.616200|     0.230614|
-|* salary = 2           |    0.400206|    -0.215994|
-|* age:gender = 58:male |    0.796856|     0.396650|
-|* evaluation = 2       |    0.778000|    -0.018856|
-|final_prognosis        |    0.778000|     0.778000|
+This approach can be generalized to interactions between any number of variables.
+
+The complexity of the calculation of single step attributions is $O(p)$ where $p$ stands for the number of variables, wile complexity for all pairs is $O(p^2)$. The complexity of the consecutive conditioning is $O(p)$, thus the complexity of whole algorithm is $O(p^2)$.
+
+## Example: Titanic
+
+In this example we will use a random forest model for Titanic data and Johny D example - an 8 years old boy from 1st class. 
+
+In Table \@ref(tab:titanicIBreakDownList) we showed expected model responses $\mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j]$, single-step effects $\Delta_{ij}$ and non-additive effects $\Delta^{I}_{ij}$ for each variable and each pair of variables. All these values are calculated locally for Johny D. These values are sorted along local importance, most important to the top. 
+
+Based on this ordering a following sequence of variables are indentified as informative: `age`, `fare:class`, `gender`. `embarked`, `sibsp` and `parch`.
+
+Once the ordering is specified, in the table \@ref(tab:titanicIBreakDownList2) we showed how the sequential attribution is calculated. These values are then presented in the iBreakDown plot \@ref(fig:iBreakDownTitanicExamplePlot).
 
 
+Table: (\#tab:titanicIBreakDownList) For each variable and each pair of variables we calculated the expected conditional model response, the difference between conditional model response and the baseline and for pairs of variables the non-additive contribution. Rows are sorted according to the absolute value of the last column (if provided).
 
-## Break Down Plots
+|Variable        |$E[f(x)|x_{ij}= x^*_{ij}]$| $\Delta_{ij}$ | $\Delta^I_{ij}$|
+|:---------------|-----:|------:|---------:|
+|age             | 0.505|  0.270|          |
+|fare:class      | 0.333|  0.098|    -0.231|
+|class           | 0.420|  0.185|          |
+|fare:age        | 0.484|  0.249|    -0.164|
+|fare            | 0.379|  0.143|          |
+|gender          | 0.110| -0.125|          |
+|age:class       | 0.591|  0.355|    -0.100|
+|age:gender      | 0.451|  0.215|     0.070|
+|fare:gender     | 0.280|  0.045|     0.027|
+|embarked        | 0.225| -0.011|          |
+|embarked:age    | 0.504|  0.269|     0.010|
+|parch:gender    | 0.100| -0.136|    -0.008|
+|sibsp           | 0.243|  0.008|          |
+|sibsp:age       | 0.520|  0.284|     0.007|
+|sibsp:class     | 0.422|  0.187|    -0.006|
+|embarked:fare   | 0.374|  0.138|     0.006|
+|sibsp:gender    | 0.113| -0.123|    -0.005|
+|fare:parch      | 0.380|  0.145|     0.005|
+|parch:sibsp     | 0.236|  0.001|    -0.004|
+|parch           | 0.232| -0.003|          |
+|parch:age       | 0.500|  0.264|    -0.002|
+|embarked:gender | 0.101| -0.134|     0.002|
+|embarked:parch  | 0.223| -0.012|     0.001|
+|fare:sibsp      | 0.387|  0.152|     0.001|
+|embarked:class  | 0.409|  0.173|    -0.001|
+|gender:class    | 0.296|  0.061|     0.001|
+|embarked:sibsp  | 0.233| -0.002|     0.001|
+|parch:class     | 0.418|  0.183|     0.000|
 
-Break Down Plots for interactions are similar in structure as plots for single variables. The only difference is that in some rows pair of variable is listed in a single row. See an example in Figure \@ref(BDPrice4). 
 
-```{r bdInter1, echo=FALSE, fig.cap="(fig:bdInter1) Break Down Plot for variable attrbution with interactions ", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/bd_inter_1.png")
+
+Table: (\#tab:titanicIBreakDownList2) Based on identified order we calculated the expected conditional model response and the difference between conditional model response with and without a specified variable. These values are plotted in the iBreakDown plot.
+
+|Variable               | $\Delta_{i|J}$| $\Delta_{J\cup\{i\}}$ |
+|:----------------------|------------:|-----------:|
+|intercept              |             |   0.235    |
+|age = 8                |    0.269    |   0.505    |
+|fare:class = 72:1st    |    0.039    |   0.544    |
+|gender = male          |   -0.083    |   0.461    |
+|embarked = Southampton |   -0.002    |   0.458    |
+|sibsp = 0              |   -0.006    |   0.452    |
+|parch = 0              |   -0.030    |   0.422    |
+
+
+```{r iBreakDownTitanicExamplePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:iBreakDownTitanicExamplePlot) Break Down Plots with interactions for Johny D. ", out.width = '80%', fig.align='center'}
+library("DALEX")
+library("iBreakDown")
+library("randomForest")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,-9],
+                              y = titanic$survived == "yes") 
+
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+predict_function <- function(m,x) predict(m, x, type = "prob")[,2]
+data <- titanic[,c(1:4,6:8)]
+x <- titanic_rf_v6
+p <- ncol(data)
+new_observation <- johny_d
+
+plot(break_down(explain_titanic_rf, johny_d, interactions = TRUE))
 ```
+
+```{r iBreakDownTitanicExample, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+library("DALEX")
+library("randomForest")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,-9],
+                              y = titanic$survived == "yes")
+
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+predict_function <- function(m,x) predict(m, x, type = "prob")[,2]
+data <- titanic[,c(1:4,6:8)]
+x <- titanic_rf_v6
+p <- ncol(data)
+new_observation <- johny_d
+
+break_down(explain_titanic_rf, johny_d, interactions = TRUE)
+interaction_preference <- 1
+keep_distributions = FALSE
+label = "rf_model"
+
+common_variables <- intersect(colnames(new_observation), 
+            colnames(data))
+        new_observation <- new_observation[, common_variables, 
+            drop = FALSE]
+        data <- data[, common_variables, drop = FALSE]
+        
+    target_yhat_all <- predict_function(x, new_observation)
+    selected_target = 1
+        single_predict_function <- function(...) {
+            predictions <- predict_function(...)
+            if (!is.null(dim(predictions))) {
+                return(predictions[selected_target])
+            }
+            predictions
+        }
+        target_yhat <- single_predict_function(x, new_observation)
+        baseline_yhat <- mean(single_predict_function(x, data))
+        average_yhats <- unlist(iBreakDown:::calculate_1d_changes(x, new_observation, 
+            data, single_predict_function))
+        diffs_1d <- average_yhats - baseline_yhat
+        feature_path_1d <- data.frame(E = average_yhats, diff = diffs_1d, adiff = abs(diffs_1d), 
+            diff_norm = diffs_1d, adiff_norm = abs(diffs_1d), 
+            ind1 = 1:p, ind2 = NA)
+        rownames(feature_path_1d) <- gsub(rownames(feature_path_1d), 
+            pattern = ".yhats", replacement = "")
+        inds <- data.frame(ind1 = unlist(lapply(2:p, function(i) i:p)), 
+            ind2 = unlist(lapply(2:p, function(i) rep(i - 1, 
+                p - i + 1))))
+        changes <- iBreakDown:::calculate_2d_changes(x, new_observation, data, 
+            single_predict_function, inds, diffs_1d)
+        diffs_2d <- changes$average_yhats - baseline_yhat
+        diffs_2d_norm <- changes$average_yhats_norm - baseline_yhat
+        feature_path_2d <- data.frame(E = changes$average_yhats, diff = diffs_2d, adiff = abs(diffs_2d) * 
+            interaction_preference, diff_norm = diffs_2d_norm, 
+            adiff_norm = abs(diffs_2d_norm) * interaction_preference, 
+            ind1 = inds$ind1, ind2 = inds$ind2)
+        feature_path <- rbind(feature_path_1d, feature_path_2d)
+        
+knitr::kable(feature_path[order(-feature_path$adiff_norm),c(1,2,4)])
+
+knitr::kable(as.data.frame(break_down(explain_titanic_rf, johny_d, interactions = TRUE))[,c(1,2,5)])
+
+```
+
 
 
 ## Pros and cons
@@ -140,60 +310,89 @@ Break Down for interactions shares many features of Break Down for single variab
 
 **Cons**
 
-- For large number of variables, the consideration of all interactions is both time consuming and sensitive to noise as the number of $score_2$ scores grow faster than number of $score_1$. 
+- For large number of variables, the consideration of all interactions is both time consuming and sensitive to noise as the number of pairs grow faster than number of variables. 
+- Identification of interaction is not based on significance testing, it's purely based on absolute empirical effects, thus for small samples this procedure is prone to errors.
 
 
 ## Code snippets for R
 
-The algorithm for Break Down for Interactions is also implemented in the `local_interactions` function from  `breakDown2` package. 
+In this section we present key features of the `iBreakDown` package for R [@iBreakDownRPackage]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/iBreakDown/`.
+
+All steps are very similar to these presented in the previouse chapter for variable attributions. The only difference is that the `break_down()` function will now take `interactions = FALSE` argument.
 
 **Model preparation**
 
-First a model needs to be trained.
+As in previous chapters we will use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)).
+Using the same model will help us (1) to understand how the Break Down method works, (2) to compare these explanations against methods presented in previous chapters.
 
-```{r, warning=FALSE, message=FALSE}
-library("DALEX2")
+So let restore the `titanic_rf_v6` model.
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("DALEX")
 library("randomForest")
-model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-model
+
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
 ```
 
-Model exploration with the `breakDown2` package is performed in three steps. 
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("DALEX")
+library("randomForest")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+```
+
+Model exploration with the `iBreakDown` package is performed in three steps. 
 
 **1. Create an explainer - wrapper around model and validation data.**
 
-Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package.
+Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
+
+This function was introduced in detailes in the \@ref(codeSnippetsCeterisParibus) section.
 
 ```{r, warning=FALSE, message=FALSE}
-explainer_rf <- explain(model,
-                 data = HR,
-                 y = HR$status)
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,-9],
+                              y = titanic$survived == "yes", 
+                              label = "Random Forest v6")
 ```
 
 **2. Select an observation of interest.** 
 
 Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
 
-```{r, warning=FALSE, message=FALSE}
-new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2)
+Here again we will use a data frame `johny_d` with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. 
 
-predict(model, new_observation, type = "prob")
+```{r, warning=FALSE, message=FALSE}
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+predict(explain_titanic_rf, johny_d)
 ```
 
 **3. Calculate Break Down decomposition**
 
-The `local_interactions()` function calculates Break Down contributions for a selected model around a selected observation. 
+The `iBreakDown::break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
 
-The result from `local_interactions()` function is a data frame with variable attributions.
+The result from `break_down()` function is a data frame with additive attributions for selected observation.
+
+The simplest use case is to set only the arguments - model explainers and observation of interest.
+
+By default only additive attributions are calculated. Use `interactions = TRUE` argument to look for interactions.
 
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
-bd_rf <- local_interactions(explainer_rf,
-                 new_observation)
+bd_rf <- break_down(explain_titanic_rf,
+                 johny_d,
+                 interactions = TRUE)
 
 bd_rf
 ```
@@ -202,6 +401,4 @@ The generic `plot()` function creates a Break Down plots.
 ```{r, warning=FALSE, message=FALSE}
 plot(bd_rf) 
 ```
-
-
 
