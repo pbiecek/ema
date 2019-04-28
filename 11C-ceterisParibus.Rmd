@@ -3,115 +3,104 @@ output:
   pdf_document: default
   html_document: default
 ---
-#  Local diagnostic with Ceteris-Paribus profiles {#ceterisParibusWankardu}
+#  Local Diagnostics With Ceteris-paribus Profiles {#ceterisParibusWankardu}
 
-## Introduction
+## Introduction {#cPLocDiagIntro}
 
-What do you think, is it possible that model is good on average but terrible for some observations?
+It may happen that, while the global predictive performance of the model is good, model predictions for some observations are very bad. In this chapter, we present two local-diagnostics techniques that can address this issue. IN particulat, we focus on fidelity plots: the plot of CP profiles for nearest neighbors and the local-fidelity plot.
 
-I think that most of us would agree. But how we can check if a single prediction is ,,unlucky''? In this chapter we present two techniques for local model diagnostic that are based on Ceteris Paribus Profiles.
+The idea behind fidelity plots is to select a number of observatons ("neighbors") from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.
 
-It may happen that global performance of the model is good, while for some particular observations the fit is very bad. Local fidelity helps to understand how good is the model fit at a particular observation. In this section we show how to use Ceteris Paribus profiles to validate local model fidelity. 
+## Intuition {#cPLocDiagIntuition}
 
-The idea behind fidelity plots is to select a number of observatons ("neighbors") from the validation dataset that are closest to the observation of interest. Then for the selected observations we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbours, we may add residuals to the plot to evaluate the local fit of the model.
+One approach to local model diagnostics is to examine how the model behaves for observations from the training dataset. Figure \@ref(fig:profileWith10NN) presents CP profiles for the instance of interest and its 10 nearest neighbors. The profiles are almost parallel and very close to each other. This suggests that model predictions are  stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.
 
-## Intuition
-
-We want to diagnose model behavior around a single instance prediction. 
-
-One approach to local model validation is to examine how model behaves for points from training data. 
-See for example profiles presented in Figure \@ref(fig:profileWith10NN). Ceteris Paribus Profiles are almost parallel and close to each other what suggests that model is stable around the point of interest. 
-
-It looks like small changes in the model input (represented by nearest neighbors) do not influence model response in an unpredicted way.
-
-```{r profileWith10NN, echo=FALSE, fig.cap="(fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines). Note that these profiles are almost parallel and close to each other what suggests the stability of the model. This example is based on the `titanic_rf_b6` model and the `titanic` dataset", out.width = '50%', fig.align='center'}
+```{r profileWith10NN, echo=FALSE, fig.cap="(fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the `titanic_rf_b6` model. The profiles are almost parallel and close to each other what suggests the stability of the model.", out.width = '50%', fig.align='center'}
 knitr::include_graphics("figure/example_cp.png")
 ```
 
-Once we consider nearest neighbors we can also look closer on the model fit around a specific point of interest.
-See for example the Figure \@ref(fig:profileBack2BackHist). The back-to-back histogram shows distribution of residuals for the whole validation data and selected neighbors.
+Once we have selected the nearest neighbors, we can also look closer at the model fit around the point of interest.
+Figure \@ref(fig:profileBack2BackHist) presents histograms of residuals for the entire dataset and the selected neighbors. The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable average performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This sugests that, on average, the model predictions are biased for the instance of interest.
 
-Distribution of residuals for the whole validation dataset is rather symmetric and centered around 0. Residuals for neighbors are centered on 500, what means that the average model bias around the point of interest is close to 500.
-
-In the figure we showed an example in which residuals for nearest neighbors are larger than average residuals. Thus the local model fit is smaller than the global model fit.
-
-```{r profileBack2BackHist, echo=FALSE, fig.cap="(fig:profileBack2BackHist) Back-to-back histograms for residuals calculated with the `apartments_rf_v5` model on `apartments` data. Upper panel correspond to residuals calculated for all observations in the validation dataset while the bottom panel correspond to residuals calculated for nearest neighbors. Their residuals are higher than average model residuals.", out.width = '70%', fig.align='center'}
+```{r profileBack2BackHist, echo=FALSE, fig.cap="(fig:profileBack2BackHist) Histograms of residuals for the `apartments_rf_v5`. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/bb_hist.png")
 ```
 
+## Method {#cPLocDiagMethod}
 
-## Method
-
-Local diagnostic is based on three elements.
+The proposed method is based on three elements:
 
 * identification of nearest neighbors,
-* calculation and visualization of Ceteris Paribus profiles for selected neighbors,
-* analysis of residuals for nearest neighbors.
+* calculation and visualization of CP  profiles for the selected neighbors, and
+* analysis of residuals for the neighbors.
 
-Let us discuss them point by point.
+In what follows we discuss each of the elements in more detail.
 
-### Nearest neighbors
+### Nearest neighbors {#cPLocDiagNeighbors}
 
-How many nearest neighbors shall we choose and what metric can we use?
+There are two important questions related to the selection of the neighbors "nearest" to the instance (observation) of interest:
 
-Answer for both questions is of course *it depends*. 
+* How many neighbors should we choose?
+* What metric should be used to measure the "proximity" of observations?
 
-* The smaller the number of neighbors is the more local is the analysis. But very small numbers lead to larger variability of the diagnosis. The default value in the `select_neighbours()` function is `n = 20`.
-* The distance measure if very important. The higher the dimension the more crucial is this choice. For tabular data we additionally need to face a problem of different distributions of different features. The default choice in the `select_neighbours()` function is to use `distance = gower_dist()` function from the `gower` package [@gowerRPackage]. The Gower distance is an average from normalized distances $d_k()$ calculated for particular features. 
+The answer to both questions is, of course, *it depends*. 
 
-$$
-d_{gower}(x^i, x^j) = \frac 1p \sum_{k=1}^p d_k(x_k^i, x_k^j).
-$$
-* Distance can be calculated based on selected variables. In the `select_neighbours()` function one can specify them in the `variables` argument.  
-
-### Profiles for neighbors
-
-Once nearest neighbors are identified we can compare Ceteris Paribus profiles for selected variables. 
-
-If the number of features is large, then we can easily end up with bunch of very similar small plots with spaghetti profiles. Better strategy would be to focus only on profiles for the k-most important features. In this chapter we show profiles only for a single variable. This makes examples easier to read without reducing the generality.
-
-For better readability we show only profiles for continuous variables.
-
-### Residuals
-
-Ceteris Paribus profiles that assess model stability. In addition we can add examination of the local residuals that assess local model fit.
-
-Residuals for observation $x^i$ are here defined as the difference between the observed $y^i$ and predicted $x^i$, that is
+* The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of theresults. In practice, we tend to use 20 neighbors as the default. [TOMASZ: WHY?]
+* The metric if very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accomodating variables of different natuer (categorical, continuous). For categorial variables, we additionally face the problem of different distributions of categories for different variables. [TOMASZ: RE-WRITTEN. BUT - ARE THERE NO DIFFERENCES IN DISTRIBUTIONS OF CONTINUOUS COVARIATES? NOT SURE WHAT IS MEANT HERE.] Our default choice is the Gower similarity measure:
 
 $$
-r^i = y^i - f(x^i).
+d_{gower}(x_i, x_j) = \frac 1p \sum_{k=1}^p d_k(x_i^k, x_j^k),
 $$
+where $x_i$ is a $p$-dimensional vector of explanatory covariates for the $i$-th observation and $d_k(x_i^k,x_j^k)$ is the distance between values of the $k$-th variable for the $i$-th and $j$-th observations. Note that $d_k()$ depends on the nature of the variable. For instance, for a continuous variable it is equal to  $|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}$, i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply $I(x_i^k=x_j^k)$, where $I()$ is the indicator function. Note that $p$ may be equal to the number of all explanatory variables included in the model, or only a subset of them.
 
-### Local Fidelity Plot
+Once we have decided on the numer of neighbors, we can use the chosen metric to select the required number observations "closest" to the one of interest.
 
-Both residuals and Ceteris Paribus Profiles for nearest neighbors can be presented in a single plot, called Local Fidelity Plot. See an example in the Figure  \@ref(fig:localFidelityPlots).
+### Profiles for neighbors {#cPLocDiagProfiles}
 
-Such plots are complex as they convey lots of information. Yet it is not that hard to learn how to read this information. 
+Once nearest neighbors are identified, we can graphically compare CP profiles for selected (or all) variables. 
 
-The Figure  \@ref(fig:localFidelityPlots) shows meaning of every element of the plot. For a single instance, here the passenger Johnny D, we can read how large are residuals for its neighbor, whatever residuals are biased or symmetric, if Ceteris Profiles are stable and parallel.
+For a model with a large number of variables we may end up with a large number of plots. If the number of features is large, then we may easily end up with a large number of plots. In such a case a better strategy is to focus only on $K$ most important variables, selected by using the variable-importance measure (see Chapter  \@ref(ceterisParibusOscillations)).
 
+### Local fidelity plot {#cPLocDiagLFplot}
 
-```{r localFidelityPlots, echo=FALSE, fig.cap="(fig:localFidelityPlots) Elements of Local Fidelity Plots. Vertical intervals correspond to residuals, the smaller the more accurate is the model. Residuals are color coded, so we can easier recognized if they are biased or not, here there are balanced. Ceteris Paribus Profiles for neighbors are marked with grey lines. Stable model will have profiles close to each other; additive model will have parallel lines.", out.width = '70%', fig.align='center'}
+CP profiles are helpful to assess the model stability. In addition, we can enhance the plot by adding residuals to it to allow evaluation of the local model fit. For model $f()$ and observation $i$ described by the vector of explanatory variables $x_i$, the residual is the difference between the observed and predicted value of the dependent variable $Y_i$, i.e.,
+
+$$
+r_i = y_i - f(x_i).
+$$
+Note that, for a binary variable, the resiudal is the difference between 0 or 1, depending on how we code "success," and the predicted probability of "success." [TOMASZ: HOW ABOUT A CATEGORICAL VARIABLE?]  
+
+The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local fidelity plot. 
+
+## Example: Titanic data {#cPLocDiagExample}
+
+As an example, we will use the predictions for the random forest model for the Titanic data (see Section \@ref(model_titanic_rf)). We show profiles only for a single continuous explanatory variable, *age*. This makes the example easier to read without reducing the generality. [TOMASZ: NOT SURE. WOULD BE USEFUL TO SEE AN EXAMPLE FOR A FACTOR.]
+
+Figure \@ref(fig:localFidelityPlots) presents a detailed explanation of the elements of a local fidelity plot. The plot includes nine [TOMASZ: CORRECT?] nearest neighbors of Henry (see Section \@ref(predictions_titanic)). Profiles are quite apart from each other, which indicates potential instability of model predictions. [TOMASZ: CORRECT?] However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.
+
+[TOMASZ: HENRY, NOT JOHNNY D, I GUESS. SOME TYPOS IN THE PLOT TO BE CORRECTED]
+
+```{r localFidelityPlots, echo=FALSE, fig.cap="(fig:localFidelityPlots) Elements of a local fidelity plot. The green line shows the Ceteris-paribus profile for the instance of intererst. Profiles forthe nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/localFidelityPlots.png")
 ```
 
 
-## Pros and cons
+## Pros and cons {#cPLocDiagProsCons}
 
-Local diagnostic plots may be very helpful to validate if
+Local fidelity plots may be very helpful to validate if
 
-* model is additive locally (CP profiles are parallel),
-* model is stable locally (CP profiles are close to each other),
-* local fit is good (residuals are small and symmetric).
+* the model is locally additive, as for such models the CP profiles should be parallel
+* the model is locally stable, as in that case the CP profiles should be close to each other
+* the model fit for the instance of interest is good, as in that case the residuals should be small and balanced around 0.
 
-The drawback is that such plots are quite complex and lack objective measures for quality of fit. As most diagnostic tools it’s suited for exploratory analysis.
+The drawback is that such plots are quite complex and lack objective measures of the quality of the model fit. Thus, they are mainly suitable for exploratory analysis.
 
 
-## Code snippets for R
+## Code snippets for R {#cPLocDiagR}
 
-In this section we show how to use an R package `ingredients` [@R-ingredients] for the Local Fidelity Plots. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
+In this section, we show how to use the R package `ingredients` [@R-ingredients] to contruct local fidelity plots. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
 
-In this section we use a random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref{model_titanic_rf}). In particular, we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
+We use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(model_titanic_rf)) as the example. Recall that we deal with a binary classification problem - we want to predict the probability of survival for a selected passenger.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic <- archivist::aread("pbiecek/models/27e5c")
@@ -123,6 +112,8 @@ load("models/titanic_rf_v6.rda")
 load("models/titanic.rda")
 ```
 
+First, we have got to create a wrapper around the model (see Section \@ref(CPR)). 
+
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
@@ -132,10 +123,12 @@ explain_titanic_rf <- explain(model = titanic_rf_v6,
                               label = "Random Forest v6")
 ```
 
-Local diagnostic is specified for an instance. Let us define a new observation - 8 years old Johnny D, male passenger of the 1st class.
+Local fidelity plots pertain to a single-instance prediction. We will use `henry` as the instance of interest.
+
+[TOMASZ: WHY NOT USING THE PRE-DEFINED DATA FRAME?]
 
 ```{r, warning=FALSE, message=FALSE}
-johny_d <- data.frame(
+henry <- data.frame(
   class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
                                   "restaurant staff", "victualling crew")),
   gender = factor("male", levels = c("female", "male")),
@@ -147,54 +140,43 @@ johny_d <- data.frame(
 )
 ```
 
-
-### Start with Ceteris Paribus Profile
-
-First we will plot a Ceteri Paribus Profiles for the observation of interese.
+Using data frame `henry`, we construct the CP profile for *age* by applying the `ceteris_paribus()` function to the wrapper object. Note that we use argument `variable_splits = list(age = 0:70)`. [TOMASZ: EXPLAIN] We also mark  the instance of interest in the plot with the help of the `show_observations()` function. 
 
 ```{r titanicCeterisParibus03, warning=FALSE, message=FALSE}
 library("ingredients")
 library("ggplot2")
 
-cp_johny <- ceteris_paribus(explain_titanic_rf, johny_d, variable_splits = list(age = 0:70))
-plot(cp_johny) +
-  show_observations(cp_johny, variables = "age") +
-  ggtitle("Ceteris Paribus Profile for Johnny D","Calculated for titanic_rf_v6 model")
+cp_henry <- ceteris_paribus(explain_titanic_rf, henry, variable_splits = list(age = 0:70))
+plot(cp_henry) +
+  show_observations(cp_henry, variables = "age") +
+  ggtitle("Ceteris-paribus Profile for Henry","Calculated for the titanic_rf_v6 model")
 ```
 
-In the model chances of survival diminish with age. Johnny D is lucky to have chances higher than 50%.
-
-### Add profiles for neighbors
-
-Second we need to identify neighbors and plot their profiles.
+Subsequently, we identify 10 nearest neighbors of `henry`. For the selection of the neighbors, we use three explanatory covariates, *age*, *gender*, and *class*, specified in the `variables` argument. Note that we do not use the `distance` argument; hence, the default, i.e., Gower's distance, is used. 
 
 ```{r titanicCeterisParibus04, warning=FALSE, message=FALSE}
-johny_neighbors <- select_neighbours(titanic, johny_d, n = 10, variables = c("age", "class", "gender"))
-
-cp_johny_neighbors <- ceteris_paribus(explain_titanic_rf, johny_neighbors, 
-                                      y = johny_neighbors$survived == "yes",
-                                      variable_splits = list(age = 0:70))
-
-plot(cp_johny) +
-  show_profiles(cp_johny_neighbors, color = '#ceced9') + 
-  show_observations(cp_johny, variables = "age") +
-  ggtitle("Ceteris Paribus Profile for Johnny D and neighbors","Calculated for titanic_rf_v6 model")
+henry_neighbors <- select_neighbours(titanic, henry, n = 10, variables = c("age", "class", "gender"))
 ```
 
-Almost all profiles behave in a similar way. The relation between age and model response is on average decreasing for almost every neighbor.
-
-### Add residuals for neighbors
-
-And the last step is to add lines for residuals.
+After selecting the neighbors, we use function `ceteris_paribus()` to construct their CP profiles and we apply function `show_profiles()` to add the profiles to the plot for `henry`. Note that in the `ceteris_paribus()` function call we use argument `y = henry_neighbors$survived == "yes"`. [TOMASZ: EXPLAIN] 
 
 ```{r titanicCeterisParibus05, warning=FALSE, message=FALSE}
-plot(cp_johny) +
-  show_profiles(cp_johny_neighbors, color = '#ceced9') + 
-  show_observations(cp_johny, variables = "age") +
-  show_residuals(cp_johny_neighbors, variables = "age") +
-  ggtitle("Local Fidelity Plot for Johnny D","Calculated for titanic_rf_v6 model")
+cp_henry_neighbors <- ceteris_paribus(explain_titanic_rf, henry_neighbors, 
+                                      y = henry_neighbors$survived == "yes",
+                                      variable_splits = list(age = 0:70))
+plot(cp_henry) +
+#  show_profiles(cp_henry_neighbors, color = '#ceced9') + 
+  show_observations(cp_henry, variables = "age") +
+  ggtitle("Ceteris Paribus Profile for Henry and neighbors","Calculated for titanic_rf_v6 model")
 ```
 
-Added residuals works increase the trust in this model. Neighbors that in fact died have lower profiles while neighbors that survived have predictions higher than 50%.
+Finally, we add to the CP-profiles plot the intervals representing residuals for each neighbor. Toward this aim, we apply function `show_residuals()`. As a result, we obtain the local fidelity plot for `henry`.
 
+```{r titanicCeterisParibus06, warning=FALSE, message=FALSE}
+plot(cp_henry) +
+#  show_profiles(cp_henry_neighbors, color = '#ceced9') + 
+  show_observations(cp_henry, variables = "age") +
+#  show_residuals(cp_henry_neighbors, variables = "age") +
+  ggtitle("Local Fidelity Plot for Henry","Calculated for titanic_rf_v6 model")
+```
 
