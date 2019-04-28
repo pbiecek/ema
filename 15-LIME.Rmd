@@ -1,20 +1,30 @@
-# LIME for local model approximation {#LIME}
+# Local Interpretable Model-Agnostic Explanations (LIME) {#LIME}
 
-A different approach to explanations of a single observations is through surrogate models. Models that easy to understand and are similar to black box model around the point of interest.
+A different approach to explanations of a single instance is through surrogate models. Models that easy to understand and are similar to black box model around the instance of interest.
 
 Variable attribution methods, that were presented in the Section \@ref(breakDown) are not interested in the local curvature of the model. They rather compare model prediction against average model prediction and they use probability structure of the dataset.
 
 
 The complementary approach would be to directly explore information about model curvature around point of interest.
-In the section \@ref(ceterisParibus) we introduced Ceteris Paribus tool for such what-if analysis. But the limitation of ceteris Paribus pltos is that they explore changes along single dimension or pairs of dimensions.
+In the section \@ref(ceterisParibus) we introduced Ceteris Paribus tool for such what-if analysis. But the limitation of ceteris Paribus plots is that they explore changes along single dimension or pairs of dimensions.
 
-In this section we describe an another approach based on local approximations with white-box models. This approach will also investigate local curvature of the model but indirectly, through surrogate white-box models.
+In this section we describe another approach based on local approximations with white-box models. This approach will also investigate local curvature of the model but indirectly, through surrogate white-box models.
 
 
 The most known method from this class if LIME (Local Interpretable Model-Agnostic Explanations), introduced in the paper *Why Should I Trust You?: Explaining the Predictions of Any Classifier* [@lime]. This methods and it's clones are now implemented in various R and python packages, see for example [@R-lime], [@R-live] or [@R-iml].
 
 
 ## Intuition
+
+The intuition is presented in Figure \@ref(fig:LIME1). We want to understand some complex model as the one presented in panel B in a point makes with a black cross. As the model may be complex and describe in high dimension, we need to perform two things: find a interpretable representation of these features, fit a simple - easier to interpret model that can be used to better understand the model.
+
+Interpretable representation is case specific, for image data one can use some super-pixels or other large chunks of the image, for tabular data it's still not clear how to construct interpretable features. 
+
+Local model is usually a simple model like linear regression of decision tree that can be directly interpret.
+
+```{r LIME1, echo=FALSE, fig.cap="(fig:LIME1) A schematic idea behind local model approximations. Panel A shows training data, colors correspond to classes. Panel B shows results from the Random Forest model, here the LIME algorithm starts. Panel C shows new data sampled around the point of interest. The color corresponds to model response. Panel D shows fitted linear model that approximated the random forest model around point of interest", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/circle_4panels.png")
+```
 
 ## Method
 
@@ -32,17 +42,13 @@ M^*(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g)
 $$
 where $G$ is a family of white box models (e.g. linear models), $\Pi_{x^*}$ is neighbourhood of $x^*$ and $\Omega$ stands for model complexity.
 
-```{r LIME1, echo=FALSE, fig.cap="(fig:LIME1) A schematic idea behind local model approximations. Panel A shows training data, colors correspond to classess. Panel B showhs results fom the Random Forest model, whis is where the algorithm starts. Panel C shows new data sampled around the point of interest. Their color correspond to model response. Panel D shows fitted linear model that approximated the random forest model around point of interest", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/circle_4panels.png")
-```
-
 
 
 The algorithm is composed from three steps:
 
 * Identification of interpretable data representations,
 * Local sampling around the point of interest,
-* Fitting a white box model in this neighbouhood
+* Fitting a white box model in this neighborhood
 
 **Identification of interpretable data representations**
 
@@ -50,12 +56,11 @@ For image data, single pixel is not an interpretable feature. In this step the i
 
 **Local sampling around the point of interest**
 
-Once the interpretable data representation is identified, then the neighbourhood around point of interest needs to be explored. 
+Once the interpretable data representation is identified, then the neighborhood around point of interest needs to be explored. 
 
-**Fitting a white box model in this neighbouhood**
+**Fitting a white box model in this neighborhood**
 
 Any model that is easy to interpret may be fitted to this data, like decision tree or rule based system. However in practice the most common family of models are linear models.
-
 
 
 
@@ -80,7 +85,7 @@ Local approximations are model agnostic, can be applied to any predictive model.
 
 In this section we present key features of the R package `iBreakDown` [@iBreakDownRPackage]  which is a part of `DrWhy.AI` universe and covers methods presented in this chapter. 
 
-Note that there are also other R packages that offer similar functionality, like `lime` [@R-lime] which is a port of LIME python library [@shapPackage], `live` [@R-live] and `localModel` [@localModelPackage] and `iml` [@imlRPackage]. These packages are different in a way how they handle continuous variables (`lime` performs global discretization, `localModel` local discretization while `live` and `iml` works directly on continuous variables), what kind of local model is fit to the black-box model and how new instances are being sampled. For these reasons these pacakages results different explanations.
+Note that there are also other R packages that offer similar functionality, like `lime` [@R-lime] which is a port of LIME python library [@shapPackage], `live` [@R-live] and `localModel` [@localModelPackage] and `iml` [@imlRPackage]. These packages are different in a way how they handle continuous variables (`lime` performs global discretization, `localModel` local discretization while `live` and `iml` works directly on continuous variables), what kind of local model is fit to the black-box model and how new instances are being sampled. For these reasons these packages results different explanations.
 
 Below we present explanations returned for these four methods for the Johny D and `titanic_rf_v6` model.
 
@@ -196,3 +201,4 @@ plot(iml_white_box)
 ```{r limeExplIMLTitanic, echo=FALSE, fig.cap="(fig:limeExplIMLTitanic) Explanations for Johny D generated by the iml package. ", out.width = '80%', fig.align='center'}
 knitr::include_graphics("figure/lime_expl_iml_titanic.png")
 ```
+
