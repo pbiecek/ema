@@ -58,13 +58,6 @@ Any model that is easy to interpret may be fitted to this data, like decision tr
 
 
 
-## Example: Hire or Fire?
-
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-
-```
-
 
 ## Pros and cons
 
@@ -73,97 +66,133 @@ Local approximations are model agnostic, can be applied to any predictive model.
 **Pros**
 
 * This method is highly adopted in text analysis and image analysis, in part thanks to the interpretable data representations. 
-* The intuition behind the model is straightforward
-* Model explanations are sparse, thus only small number of features is used
+* The intuition behind the model is straightforward.
+* Model explanations are sparse, thus only small number of features is used what makes them easier to read.
 
 **Cons**
 
-* For continuous variables and tabular data it is not that easy to find interpretable representations
+* For continuous variables and tabular data it is not that easy to find interpretable representations. IMHO this problem is not solved yet.
 * The black-box model approximated the data and the white box model approximates the black box model. We do not have control over the quality of local fit of the white box model, thus the surrogate model may be misleading.
-* Due to the *curse of dimensionality*, for high dimensional space points are sparse.
-
+* Due to the *curse of dimensionality*, for high dimensional space points are sparse. Measuring of being local is tricky.
 
 
 ## Code snippets for R
 
-In this section we present example application of `lime` [@R-lime] and `live` [@R-live] packages. Note that this method is also implemented in `iml` [@R-iml] and other packages. These pacakages differ in some details and also results in different explanations.
+In this section we present key features of the R package `iBreakDown` [@iBreakDownRPackage]  which is a part of `DrWhy.AI` universe and covers methods presented in this chapter. 
 
-**Model preparation**
+Note that there are also other R packages that offer similar functionality, like `lime` [@R-lime] which is a port of LIME python library [@shapPackage], `live` [@R-live] and `localModel` [@localModelPackage] and `iml` [@imlRPackage]. These packages are different in a way how they handle continuous variables (`lime` performs global discretization, `localModel` local discretization while `live` and `iml` works directly on continuous variables), what kind of local model is fit to the black-box model and how new instances are being sampled. For these reasons these pacakages results different explanations.
 
-In this section we will present examples based on the `HR` dataset. See the Section \@ref(HRdataset) for more details.
+Below we present explanations returned for these four methods for the Johny D and `titanic_rf_v6` model.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("DALEX")
-head(HR)
-```
-
-The problem here is to predict average price for square meter for an apartment. Let's build a random forest model with `randomForest` package  [@R-randomForest].
-
-```{r, warning=FALSE, message=FALSE}
 library("randomForest")
-rf_model <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
-rf_model
+
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+johny_d <- archivist::aread("pbiecek/models/e3596")
 ```
 
-```{r, warning=FALSE, message=FALSE}
-new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2)
-
-predict(rf_model, new_observation, type = "prob")
-```
 
 ### **The lime pacakge**
 
-```{r, warning=FALSE, message=FALSE}
-library("lime")
-model_type.randomForest <- function(x, ...) "classification"
-lime_rf <- lime(HR[,1:5], rf_model)
-explanations <- lime::explain(new_observation[,1:5], lime_rf, n_labels = 3, n_features = 3)
-explanations
+An example code snippet for the `lime` package is presented below. Key parts are function `lime::lime` which creates an explainer and `lime::explain` which evaluates explanations.
 
-plot_features(explanations)
+Resulting explanations are presented in Figure \@ref(fig:limeExplLIMETitanic).
 
-```
+For continuous variables `lime` package discretizes features by using quartiles. This is why in the explanation we have `age < 22`. 
 
-### **The live package**
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("live")
+library("lime")
+model_type.randomForest <- function(x, ...) "classification"
+lime_rf <- lime(titanic[,colnames(johny_d)], titanic_rf_v6)
+lime_expl <- lime::explain(johny_d, lime_rf, labels = "yes", n_features = 4, n_permutations = 1000)
+lime_expl
 
-new_observation$status <- "fired"
-explainer_rf_fired <- explain(rf_model,
-                 data = HR,
-                 y = HR$status == "fired",
-                 predict_function = function(m,x) predict(m,x, type = "prob")[,1],
-                 label = "fired")
+#      model_type case label label_prob  model_r2 model_intercept model_prediction
+#1 classification    1    no      0.602 0.5806297       0.5365448        0.5805939
+#2 classification    1    no      0.602 0.5806297       0.5365448        0.5805939
+#3 classification    1    no      0.602 0.5806297       0.5365448        0.5805939
+#4 classification    1    no      0.602 0.5806297       0.5365448        0.5805939
+#  feature feature_value feature_weight  feature_desc                 data   prediction
+#1    fare            72     0.00640936  21.00 < fare 1, 2, 8, 0, 0, 72, 4 0.602, 0.398
+#2  gender             2     0.30481181 gender = male 1, 2, 8, 0, 0, 72, 4 0.602, 0.398
+#3   class             1    -0.16690730   class = 1st 1, 2, 8, 0, 0, 72, 4 0.602, 0.398
+#4     age             8    -0.10026475     age <= 22 1, 2, 8, 0, 0, 72, 4 0.602, 0.398
 
-local_model <- local_approximation(explainer_rf_fired, new_observation, 
-                    target_variable_name = "status", n_new_obs = 500)
-
-local_model
-plot(local_model)
-plot(local_model, type = "forest")
+plot_features(lime_expl)
 ```
 
+```{r limeExplLIMETitanic, echo=FALSE, fig.cap="(fig:limeExplLIMETitanic) Explanations for Johny D generated by the lime package. ", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/lime_expl_lime_titanic.png")
+```
+
+### **The localModel package**
+
+An example code snippet for the `localModel` package is presented below. Key parts are function `DALEX::explain` which creates an explainer and `individual_surrogate_model` which fits a local model.
+
+Resulting explanations are presented in Figure \@ref(fig:limeExplLocalModelTitanic).
+
+For continuous variables `localModel` package discretizes features by using local Ceteris Paribus Profiles. This is why in the explanation we have `age < 15`. As we show in the Ceteris Paribus Chapter \@ref(ceterisParibus) the largest drop in survival is observed around 15 years old boys. 
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("localModel")
+
+localModel_rf <- DALEX::explain(model = titanic_rf_v6,
+                     data = titanic[,colnames(johny_d)])
+localModel_lok <- individual_surrogate_model(localModel_rf, johny_d,
+                                        size = 1000, seed = 1313)
+localModel_lok
+#   estimated                    variable dev_ratio response
+#1 0.23479837                (Model mean) 0.6521442         
+#2 0.14483341                 (Intercept) 0.6521442         
+#3 0.08081853 class = 1st, 2nd, deck crew 0.6521442         
+#4 0.00000000     gender = female, NA, NA 0.6521442         
+#5 0.23282293                age <= 15.36 0.6521442         
+#6 0.02338929                fare > 31.05 0.6521442    
+plot(localModel_lok)
+```
+
+
+```{r limeExplLocalModelTitanic, echo=FALSE, fig.cap="(fig:limeExplLocalModelTitanic) Explanations for Johny D generated by the localModel package. ", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
+```
 
 ### **The iml package**
 
+An example code snippet for the `iml` package is presented below. Key parts are function `Predictor$new` which creates an explainer and `LocalModel$new` which fits local model.
+
+Resulting explanations are presented in Figure \@ref(fig:limeExplIMLTitanic).
+
+For continuous variables like `age` the `iml` package approximates this feature without any discretization. As we showed in the Ceteris Paribus Chapter \@ref(ceterisParibus), the profile for age is constant in the interval 0-15, this is why here age is not an important feature. 
+
+
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("iml")
+iml_rf = Predictor$new(titanic_rf_v6, data = titanic[,colnames(johny_d)])
+iml_white_box = LocalModel$new(iml_rf, x.interest = johny_d, k = 6)
+iml_white_box
+#Interpretation method:  LocalModel 
+#
+#Analysed predictor: 
+#Prediction task: unknown 
+#
+#Analysed data:
+#Sampling from data.frame with 2207 rows and 7 columns.
+#
+#Head of results:
+#          beta x.recoded     effect  x.original              feature
+#1 -0.158368701         1 -0.1583687         1st            class=1st
+#2  1.739826204         1  1.7398262        male          gender=male
+#3  0.018515945         0  0.0000000           0                sibsp
+#4 -0.001484918        72 -0.1069141          72                 fare
+#5  0.131819869         1  0.1318199 Southampton embarked=Southampton
+#6  0.158368701         1  0.1583687         1st            class=1st
 
-explainer_rf = Predictor$new(rf_model, data = HR[,1:5])
-white_box = LocalModel$new(explainer_rf, x.interest = new_observation[,1:5], k = 5)
-white_box
-
-plot(white_box)
-
+plot(iml_white_box) 
 ```
 
-
-
-
-
-
+```{r limeExplIMLTitanic, echo=FALSE, fig.cap="(fig:limeExplIMLTitanic) Explanations for Johny D generated by the iml package. ", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/lime_expl_iml_titanic.png")
+```
