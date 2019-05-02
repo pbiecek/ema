@@ -166,11 +166,13 @@ titanic_gbm_v6
 
 ### Model predictions {#predictions_titanic}
 
-Let us now compare predictions that are obtained from the three different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 2nd class with no parents nor siblings with a ticket costing 72 pounds. First, we create a data frame `henry` that contains the data describing the passenger.
+Let us now compare predictions that are obtained from the three different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 1st class with no parents nor siblings with a ticket costing 72 pounds. 
+
+First, we create a data frame `johny_d` that contains the data describing the passenger.
 
 ```{r titanicPred01, warning=FALSE, message=FALSE}
-henry <- data.frame(
-            class = factor("2nd", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
+johny_d <- data.frame(
+            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
             gender = factor("male", levels = c("female", "male")),
             age = 8,
             sibsp = 0,
@@ -183,15 +185,15 @@ henry <- data.frame(
 Subsequently, we use the generic function `predict()` to get the predicted probability of survival for the logistic regression model. 
 
 ```{r, warning=FALSE, message=FALSE}
-(pred_lmr <- predict(titanic_lmr_v6, henry, type = "fitted"))
+(pred_lmr <- predict(titanic_lmr_v6, johny_d, type = "fitted"))
 ```
 The predicted probability is equal to `r round(pred_lmr, 2)`.
 
 We do the same for the random forest and gradient boosting models. 
 
 ```{r, warning=FALSE, message=FALSE}
-(pred_rf <- predict(titanic_rf_v6, henry, type = "prob"))
-(pred_gbm <- predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000))
+(pred_rf <- predict(titanic_rf_v6, johny_d, type = "prob"))
+(pred_gbm <- predict(titanic_gbm_v6, johny_d, type = "response", n.trees = 15000))
 ```
 
 As a result, we obtain the predicted probabilities of `r round(pred_rf[1,2], 2)` and `r round(pred_gbm, 2)`, respectively.
@@ -254,12 +256,12 @@ Table \@ref(tab:archivistHooksOfModelsTitanic) summaries created models and corr
 
 Table: (\#tab:archivistHooksOfModelsTitanic) Predictive models created for the `titanic` dataset. 
 
-| Model name   | Model generator | Variables  | Link to the model | Link to the explainer |
-|--------------|-----------------|------------|-------------------|-----------------------|
-| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/ceb40")` | `archivist:: aread("pbiecek/models/4bd4d")` |
-| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/1f938")` | `archivist:: aread("pbiecek/models/4bd4d")` |
-| `titanic_rf_v3`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class  |  `archivist:: aread("pbiecek/models/855c1")` | `archivist:: aread("pbiecek/models/92754")` |
-| `titanic_gbm_v6`  | `gbm:: gbm`  v.2.1.5 | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/24e72")` | `archivist:: aread("pbiecek/models/84d5f")` |
+| Model name   | Model generator | Variables  | Archivist hooks |
+|--------------|-----------------|------------|-----------------|
+| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  Get the model: `archivist:: aread("pbiecek/models/ceb40")`. Get the explainer: `archivist:: aread("pbiecek/models/4bd4d")` |
+| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/1f938")`. Get the explainer: `archivist:: aread("pbiecek/models/4bd4d")` |
+| `titanic_rf_v3`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class  | Get the model:  `archivist:: aread("pbiecek/models/855c1")`. Get the explainer: `archivist:: aread("pbiecek/models/92754")` |
+| `titanic_gbm_v6`  | `gbm:: gbm`  v.2.1.5 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/24e72")`. Get the explainer: `archivist:: aread("pbiecek/models/84d5f")` |
 
 Table: (\#tab:archivistHooksOfDataFramesTitanic) Data frames created for the `titanic` example. 
 
@@ -409,6 +411,21 @@ rmsd_rf
 
 For the random forest model, the square-root of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is only minimally smaller than the value of `r round(rmsd_lm, 1)`, obtained for the linear regression model. [TOMASZ: AN ISSUE HERE - THE VALUES ARE NOW MUCH DIFFERENT.] Thus, the question we may face is: should we choose the model complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
 
+## List of objects for the `apartments` example  {#ListOfModelsApartments}
+
+In the previous sections we have built several predictive models for the `apartments` data set. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
+
+For the ease of reference, we summarize the models in the table below. The binary model-objects can be downloaded by using the attached `archivist` hooks [@archivist]. By calling a function specified in the last column you will recreate a selected model in your local R environment.
+
+Table: (\#tab:archivistHooksOfModelsApartments) Predictive models created for the `apartments` dataset. 
+
+| Model name   | Model generator | Variables  | Archivist hooks |
+|--------------|-----------------|------------|-----------------|
+| `apartments_lm_v5`  | `stats:: lm` v.3.5.3  |  construction .year, surface, floor, no.rooms, district  | Get the model: `archivist:: aread("pbiecek/models/55f19")`. Get the explainer:  TODO: add if needed |
+|  `apartments_rf_v5` | `randomForest:: randomForest` v.4.6.14 | construction .year, surface, floor, no.rooms, district  | Get the model: `archivist:: aread("pbiecek/models/fe7a5")`. Get the explainer: TODO: add if needed |
+
+
+
 ## Hire or fire {#HFDataset}
 
 Predictive models can be used to support decisions. For instance, they could be used in a human-resources department to decide whether, for instance, promote an employee. An advantage of using a model for this purpose would be the objectivity of the decision, which would not be subject to personal preferences of a manager. However, in such a situation, one would most likely want to understand what influences the model's prediction. 
@@ -510,6 +527,23 @@ pred_HR_glm
 
 For both models, the predicted probability of promotion is low; it is more likely that Dilbert will be fired. It is of interest to understand why such prediction is made? Moreover, random forest yields a higher probability of firing (`r round(pred_HR_rf[1], 2)`) than the multinomial regression model (`r round(pred_HR_glm[1], 2)`). We may want to learn where does this difference come from? We will try to answer these questions in subsequent chapters.
 
+## List of objects for the `HR` example  {#ListOfModelsHR}
+
+In the previous sections we have built several predictive models for the `HR` data set. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
+
+For the ease of reference, we summarize the models in the table below. The binary model-objects can be downloaded by using the attached `archivist` hooks [@archivist]. By calling a function specified in the last column you will recreate a selected model in your local R environment.
+
+Table: (\#tab:archivistHooksOfModelsHR) Predictive models created for the `HR` dataset. 
+
+| Model name   | Model generator | Variables  | Archivist hooks |
+|--------------|-----------------|------------|-----------------|
+|  `HR_rf_v5` | `randomForest:: randomForest`   v.4.6.14  | gender, age, hours, evaluation, salary  | Get the model:  `archivist:: aread("pbiecek/models/1ecfd")`. Get the explainer: TODO: add if needed |
+|  `HR_glm_v5` | `stats:: glm`  v.3.5.3  | gender, age, hours, evaluation, salary  | Get the model:  `archivist:: aread("pbiecek/models/f0244")`. Get the explainer: TODO: add if needed |
+
+
+
+
+
 
 ```{r save_models, warning=FALSE, message=FALSE, echo=FALSE}
 link_to_data_models <- "models/titanic_lmr_v6.rda"
@@ -528,22 +562,3 @@ if (!file.exists(link_to_data_models)) {
   save(HR_glm_v5, file = "models/HR_glm_v5.rda")
 }
 ```
-
-## List of models {#ListOfModels}
-
-In the previous sections we have built several predictive models for different data sets. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
-
-For the ease of reference, we summarize the models in the table below. The binary model-objects can be downloaded by using the attached `archivist` hooks [@archivist]. By calling a function specified in the last column you will recreate a selected model in your local R environment.
-
-| Model name   | Model generator | Dataset  | Variables  | Link to the model |
-|--------------|-----------------|----------|------------|-------|
-| `titanic_lmr_v6`  | `rms:: lmr`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/ceb40")` |
-| `titanic_rf_v6`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/31570")` |
-| `titanic_rf_v3`  | `randomForest:: randomForest`  | `DALEX:: titanic`  | gender, age, class  |  `archivist:: aread("pbiecek/models/855c1")` |
-| `titanic_gbm_v6`  | `gbm:: gbm`  | `DALEX:: titanic`  | gender, age, class, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/24e72")` |
-| `apartments_lm_v5`  | `stats:: lm`  |  `DALEX:: apartments` | construction .year, surface, floor, no.rooms, district  |  `archivist:: aread("pbiecek/models/55f19")` |
-|  `apartments_rf_v5` | `randomForest:: randomForest`  | `DALEX:: apartments`  | construction .year, surface, floor, no.rooms, district  | `archivist:: aread("pbiecek/models/fe7a5")`  |
-|  `HR_rf_v5` | `randomForest:: randomForest`  | `DALEX:: HR`  | gender, age, hours, evaluation, salary  | `archivist:: aread("pbiecek/models/1ecfd")`  |
-|  `HR_glm_v5` | `stats:: glm`  | `DALEX:: HR`  | gender, age, hours, evaluation, salary  | `archivist:: aread("pbiecek/models/f0244")`  |
-
-
