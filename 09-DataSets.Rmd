@@ -321,7 +321,7 @@ ggplot(data = apartments) +
 
 Figure  \@ref(fig:appartmentsMi2Construction) suggests (possibly) a nonlinear relation between *construction.year* and *m2.price*.
 
-```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartmentsMi2Construction) Price per meter-squared vs. construction year"}
+```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Construction) Price per meter-squared vs. construction year"}
 ggplot(data = apartments, aes(construction.year, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
@@ -330,7 +330,7 @@ ggplot(data = apartments, aes(construction.year, m2.price)) +
 
 Figure \@ref(fig:appartmentsMi2Surface) indicates a linear relation between *surface* and *m2.price*.
 
-```{r appartmentsMi2Surface, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartmentsMi2Surface) Price per meter-squared vs. surface"}
+```{r appartmentsMi2Surface, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Surface) Price per meter-squared vs. surface"}
 ggplot(data = apartments, aes(surface, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
@@ -339,27 +339,28 @@ ggplot(data = apartments, aes(surface, m2.price)) +
 
 Relation between *floor* and *m2.price* is also close to linear, as seen in Figure \@ref(fig:appartmentsMi2Floor).
 
-```{r appartmentsMi2Floor, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartmentsMi2Floor) Price per meter-squared vs. floor"}
+```{r appartmentsMi2Floor, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Floor) Price per meter-squared vs. floor"}
 ggplot(data = apartments, aes(floor, m2.price)) +
-   geom_point(size = 0.3) +
+  geom_violin(aes(group = floor), se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
+   geom_jitter(size = 0.3, width = 0.15, height = 0) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Floor", title='Price per meter-squared vs. floor') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Floor", title='Price per meter-squared vs. floor') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:10)
 ```
 
 There is a close to linear relation between *no.rooms* and *m2.price*, as suggested by Figure \@ref(fig:appartmentsMi2Norooms). It is worth noting that, quite naturally, surface and number of rooms are correlated (see Figure appartments_surface_norooms).
 
-```{r appartmentsMi2Norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartmentsMi2Norooms) Price per meter-squared vs. number of rooms"}
-ggplot(data = apartments, aes(no.rooms, m2.price)) +
-   geom_point(size = 0.3) +
-  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Number of rooms", title='Price per meter-squared vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") 
+```{r appartmentsMi2Norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Norooms) Price per meter-squared vs. number of rooms"}
+ggplot(data = apartments, aes(no.rooms, m2.price, group = no.rooms)) +
+  geom_violin(se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
+   geom_jitter(size = 0.3, width = 0.15, height = 0) +
+   labs(y="Price per meter-squared", x = "Number of rooms", title='Price per meter-squared vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") + scale_x_continuous(breaks = 1:6)
 ```
 
-```{r appartmentsSurfaceNorooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=4, fig.height=4, fig.cap="(fig:appartmentsSurfaceNorooms) Surface vs. number of rooms"}
-ggplot(data = apartments, aes(no.rooms, surface)) +
-   geom_point(size = 0.3) +
-  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Surface (meter-squared)", x = "Number of rooms", title='Relation between no rooms and price per square meter') + theme_drwhy() + theme(legend.position = "none") 
+```{r appartmentsSurfaceNorooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsSurfaceNorooms) Surface vs. number of rooms"}
+ggplot(data = apartments, aes(no.rooms, surface, group = no.rooms)) +
+  geom_violin(se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
+   geom_jitter(size = 0.3, width = 0.15, height = 0) +
+   labs(y="Surface (meter-squared)", x = "Number of rooms", title='Relation between no rooms and price per square meter') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:6)
 ```
 
 Prices depend on district. Violin plots in Figure \@ref(fig:appartmentsMi2District) indicate that the highest prices per meter-squeared are observed in Srodmiescie (Downtown).
@@ -386,10 +387,16 @@ apartments_lm_v5
 As an alternative to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 The results of the model are stored in model-object `apartments_rf_v5`. 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, eval = FALSE}
 library("randomForest")
 set.seed(72)
 apartments_rf_v5 <- randomForest(m2.price ~ ., data = apartments)
+apartments_rf_v5
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("randomForest")
+load("models/apartments_rf_v5.rda")
 apartments_rf_v5
 ```
 
@@ -403,13 +410,12 @@ predicted_apartments_lm <- predict(apartments_lm_v5, apartments_test)
 rmsd_lm <- sqrt(mean((predicted_apartments_lm - apartments_test$m2.price)^2))
 rmsd_lm
 
-library("randomForest")
 predicted_apartments_rf <- predict(apartments_rf_v5, apartments_test)
 rmsd_rf <- sqrt(mean((predicted_apartments_rf - apartments_test$m2.price)^2))
 rmsd_rf
 ```
 
-For the random forest model, the square-root of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is only minimally smaller than the value of `r round(rmsd_lm, 1)`, obtained for the linear regression model. [TOMASZ: AN ISSUE HERE - THE VALUES ARE NOW MUCH DIFFERENT.] Thus, the question we may face is: should we choose the model complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
+For the random forest model, the square-root of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is only minimally smaller than the value of `r round(rmsd_lm, 1)`, obtained for the linear regression model. Thus, the question we may face is: should we choose the model complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
 
 ## List of objects for the `apartments` example  {#ListOfModelsApartments}
 
