@@ -32,8 +32,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="breakDown.html">
-<link rel="next" href="shapley.html">
+<link rel="prev" href="index.html">
+<link rel="next" href="PythonCodeSnippets.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -344,475 +344,99 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="iBreakDown" class="section level1">
-<h1><span class="header-section-number">Chapter 12</span> iBreakDown for Variable Attributions with Interactions</h1>
-<p><strong>PBI: note that we are using completly different notations here and in the prev chapter. Let’s keep only one, but which one?</strong></p>
-<p>In the Section <a href="breakDown.html#breakDown">11</a> we presented a model agnostic approach to additive decomposition of model predictions. We also showed that for non-additive moedls the proposed attribution depends on the ordering of variables.</p>
-<p>Lack of additivness means, that effect of one variable is modulated by another variable(s). In such pair (or larger tuple) a single variable does not contribute independently, therefore in model explanations they should be presented together.</p>
-<p>In this section we present an algorithm that identifies interactions between pairs of variables and include such interactions in variable decomposition plots. Here we present an algorithm for pairs of variables, but it can be easily generalized to larger number of variables.</p>
-<div id="intuition-2" class="section level2">
-<h2><span class="header-section-number">12.1</span> Intuition</h2>
-<p>First, let’s see an example of an interaction between two variables.
-We will use real data from the Titanic dataset. Table <a href="iBreakDown.html#tab:titanicMaleSurvival">12.1</a> shows survival statistics for men on Titanic. For the sake of simplicity, in this example we consider only two variables - <code>age</code> and <code>class</code>. In the data <code>age</code> is a continuous variable, but again, for simplicity we have dychotomized it into two levels: boys (0-16 years old) and adults (17+ years old).</p>
-<p>Suppose that we would like to explain factors that contribute to the survival of kids from the second class. As we can read, the survival for young passengers from 2nd class is 91.7% (survived 11 out of 12 male passengers in this group). It is higher than survival for men on titanic which is 20.5% (survived 352 out of 1716 men). So the question is, how age and class contribute to this higher survival?</p>
-<p>Let us consider two explanations, that correspond to two different orderings:</p>
+<div id="RCodeSnippets" class="section level1">
+<h1><span class="header-section-number">Chapter 2</span> DIY with R</h1>
+<p>In next chapters we will introduce different methods for global and instance level explanation and exploration of predictive models.</p>
+<p>After each method there is a section with code snippets for R. Below you will find a short instruduction what do you need to replicate these results.</p>
+<div id="how-to-install-dependencies" class="section level2">
+<h2><span class="header-section-number">2.1</span> How to install dependencies</h2>
+<p>Obviously you need R <span class="citation">(R Core Team <a href="#ref-RcoreT">2018</a>)</span>. It is always better to use the newest version, but make sure that you have at least R in version 3.5. You can download R from <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a>.</p>
+<p>It is much easier to work with R if you have a good editor. There is plenty of choices, but if you just begun the journey then think about the RStudio editor - open source and enterprise ready tool for R. Download the latest version from <a href="https://www.rstudio.com/" class="uri">https://www.rstudio.com/</a>.</p>
+<p>Once you get the R and the editor, now you need to install required packages.
+First which you need is the <code>DALEX</code> package, it’s an entry point to solutions introduced in this book. Get this package with following line executed in the R command line.</p>
+<pre><code>install.packages(&quot;DALEX&quot;)</code></pre>
+<p>Along with <code>DALEX</code> all hard requirements will be installed, like <code>ggplot2</code> package for data visualization. To use all examples in this book you will need two additional packages <code>ingredients</code> and <code>iBreakDown</code>. The easiest way to get them and other useful weak dependencies is to call following line.</p>
+<pre><code>DALEX::install_dependencies()</code></pre>
+<p>Now you have installed everything that is needed to follow examples presented in this book.</p>
+</div>
+<div id="how-to-work-with-dalex" class="section level2">
+<h2><span class="header-section-number">2.2</span> How to work with <code>DALEX</code></h2>
+<p>To do model exploration with <code>DALEX</code> you need to first create a model and then prepare the model for exploration.</p>
+<p>There is lots of different packages in R that can be used to train a model. There are some structure specific packages, like <code>randomForest</code> for Random Forest Classification and Regression models <span class="citation">(Liaw and Wiener <a href="#ref-randomForest">2002</a><a href="#ref-randomForest">a</a>)</span>, <code>gbm</code> for Generalized Boosted Regression Models <span class="citation">(Ridgeway <a href="#ref-gbm">2017</a>)</span>, extensions for Generalized Linear Models <span class="citation">(Harrell Jr <a href="#ref-rms">2018</a>)</span> or many others. There is also a number of packages that works like model factories, can be used for training models of different structures. Most known are <code>h2o</code> which is a connector to H2O <span class="citation">(LeDell et al. <a href="#ref-h2oPackage">2019</a>)</span>, <code>caret</code> <span class="citation">(Jed Wing et al. <a href="#ref-caret">2016</a>)</span> and its successor <code>parsnip</code> <span class="citation">(Kuhn and Vaughan <a href="#ref-parsnipPackage">2019</a>)</span>, very powerful and extensible <code>mlr</code> <span class="citation">(Bischl et al. <a href="#ref-mlr">2016</a>)</span> or <code>keras</code> which is a wrapper to python library with the same name <span class="citation">(Allaire and Chollet <a href="#ref-kerasPackage">2019</a>)</span>.</p>
+<p>It’s greater to have such large choice when it comes to modeling; unfortunately these packages have different interfaces and different parameters.
+Model-objects created with different libraries may have different internal structures. The main goal of the <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a>)</span> is to create a level of abstraction around a model that makes it easier to explore and explain the model.</p>
+<p>Function <code>DALEX::explain</code> is THE function for model wrapping. The function requires five arguments:</p>
 <ul>
-<li>Overall men survival is 20.5%, but when we condition on male passengers from 2nd class the survival is even lower, i.e. 13.5%. Thus effect of the 2nd class is negative, it decreases the probability of survival by 7 percent points. Being a kid in the 2nd class is very lucky though. It changes of survival increase from 13.5% (male 2nd class) to 91.7% (boys from 2nd class). It’s an increase by 78.2 percent points. So the contributions are -7% for class and +78.2% for age.</li>
-<li>Overall men survival is 20.5%, but when we condition on young man then the survival is higher, i.e. 40.7%. Thus the effect of age is positive, being a boy increases the probability of survival by 20.2 percent points. Being a kid in 2nd class is even better, it changes the survival increase from 40.7% (boys) to 91.7% (boys from 2nd class). It’s an increase by 51 percent points. So the contributions are +51% for class and +20.2% for age.</li>
+<li><code>model</code>, a model-object,</li>
+<li><code>data</code>, a data frame with validation data,</li>
+<li><code>y</code>, observed values of the dependent variable for the validation data, it an optional argument, required for explainers focused on model validation and benchmarking,</li>
+<li><code>predict_function</code>, a function that returns prediction scores; if not specified, then a default <code>predict()</code> function is used. Note that for some models the default <code>predict()</code> function returns classes, in such cases you should provide a function that will return numerical scores.</li>
+<li><code>label</code>, a name of a model; if not specified, then it is extracted from the <code>class(model)</code>. This name will be presented in Figures so it is better to make it informative.</li>
 </ul>
-<p>As we see these two paths leads to two very different explanations. They differ not only in the size but also in the sign of attributed importance.
-It has happend because one variable modulate effect on the second variable as the moedl is not additive. Below we will show how to deal with such cases.</p>
-<table>
-<caption><span id="tab:titanicMaleSurvival">Table 12.1: </span> Survival rates for men on Titanic. Ratios show how many survived in each Class/Age category.</caption>
-<thead>
-<tr class="header">
-<th align="left">Class / Age</th>
-<th align="left">Kids (0-16)</th>
-<th align="left">Adults (&gt;16)</th>
-<th align="left">Total</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">1st</td>
-<td align="left">5/5 = 100%</td>
-<td align="left">57/175 = 32.6%</td>
-<td align="left">62/180 = 34.4%</td>
-</tr>
-<tr class="even">
-<td align="left">2nd</td>
-<td align="left">11/12 = 91.7%</td>
-<td align="left">13/166 = 7.8%</td>
-<td align="left">24/178 = 13.5%</td>
-</tr>
-<tr class="odd">
-<td align="left">3rd</td>
-<td align="left">17/61 = 27.9%</td>
-<td align="left">58/430 = 13.5%</td>
-<td align="left">75/491 = 15.3%</td>
-</tr>
-<tr class="even">
-<td align="left">deck crew</td>
-<td align="left"></td>
-<td align="left">43/66 = 65.2%</td>
-<td align="left">43/66 = 65.2%</td>
-</tr>
-<tr class="odd">
-<td align="left">engineering crew</td>
-<td align="left"></td>
-<td align="left">71/324 = 21.9%</td>
-<td align="left">71/324 = 21.9%</td>
-</tr>
-<tr class="even">
-<td align="left">restaurant staff</td>
-<td align="left"></td>
-<td align="left">1/67 = 1.5%</td>
-<td align="left">1/67 = 1.5%</td>
-</tr>
-<tr class="odd">
-<td align="left">victualling crew</td>
-<td align="left">0/3 = 0%</td>
-<td align="left">76/407 = 18.7%</td>
-<td align="left">76/410 = 18.5%</td>
-</tr>
-<tr class="even">
-<td align="left">Total</td>
-<td align="left">33/81 = 40.7%</td>
-<td align="left">319/1635 = 19.5%</td>
-<td align="left">352/1716 = 20.5%</td>
-</tr>
-</tbody>
-</table>
-<p>The key intuition behind an iBreakDown algorithm is to include variable interactions to the visual explanations.
-To do this we need to identify some candidated for interactions. Here we propose a very simple algorithm that will do this in two steps.</p>
-<ol style="list-style-type: decimal">
-<li>First it will calculate variable contributions for each variable independently.</li>
-<li>Second it will calculate joint effect for each pair of variables. If this effect is different than the sum of separate variables then such pair is identified as candidate for an interaction.</li>
-</ol>
+<p>For example, let’s train a random forest model for binary classification on <code>titanic</code> dataset.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">titanic &lt;-<span class="st"> </span><span class="kw">na.omit</span>(titanic)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">titanic_rf &lt;-<span class="st"> </span><span class="kw">randomForest</span>(survived <span class="op">~</span><span class="st"> </span>class <span class="op">+</span><span class="st"> </span>gender <span class="op">+</span><span class="st"> </span>age, <span class="dt">data =</span> titanic)</a></code></pre></div>
+<p>Here we create a wrapper for this model. We specified directly validation dataset (in the example below we use the training data as the validation dataset), the predict function and the label.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf, </a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">            <span class="dt">data =</span> titanic[, <span class="kw">c</span>(<span class="st">&quot;class&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;gender&quot;</span>)],</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">            <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>,</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">            <span class="dt">predict_function =</span> <span class="cf">function</span>(m, x) <span class="kw">predict</span>(m, x, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>),</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">            <span class="dt">label =</span> <span class="st">&quot;Random Forest 3 vars&quot;</span>)</a></code></pre></div>
+<p>For most popular models there are predefined <code>predict_function</code>’s so we can make the call shorter.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf, </a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">            <span class="dt">data =</span> titanic[, <span class="kw">c</span>(<span class="st">&quot;class&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;gender&quot;</span>)])</a></code></pre></div>
+<p>You will find more examples in the <a href="#ExplainersTitanicRCode"><strong>??</strong></a> section.</p>
 </div>
-<div id="method-2" class="section level2">
-<h2><span class="header-section-number">12.2</span> Method</h2>
-<p>Identification of interactions in the model is performed in three steps <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span></p>
-<ul>
-<li>Calculate a <em>single-step</em> contribution for each variable.</li>
-<li>Calculate a <em>single-step</em> contribution for every pair of variables. Subtract individual contributions to assess the size of non additivness.</li>
-<li>Order interaction effects and additive effects in a list to determin the final order for conditioning/explanations.</li>
-</ul>
-<p>This simple intuition may be generalized into higher order interactions.</p>
-<div id="single-step-contributions" class="section level3">
-<h3><span class="header-section-number">12.2.1</span> Single step contributions</h3>
-<p>For a feature <span class="math inline">\(x_i\)</span> we may define a single-step contribution as
-<span class="math display">\[
-\Delta_i =  \mathbb{E}[f(x)|x_i = x^*_i] - \mathbb{E}[f(x)].
-\]</span></p>
-<p>The expected model prediction <span class="math inline">\(\mathbb{E}[f(x)]\)</span> is sometimes called baseline or intercept and may be denoted as <span class="math inline">\(\Delta_\varnothing\)</span>.</p>
-<p>Expected value <span class="math inline">\(\mathbb{E}[f(x)|x_i = x^*_i]\)</span> corresponds to an average prediction of a model <span class="math inline">\(f\)</span> if feature <span class="math inline">\(x_i\)</span> is fixed on <span class="math inline">\(x_i^{*}\)</span> coordinate from the observation to explain <span class="math inline">\(x^{*}\)</span>.</p>
-<p>I.e. the <span class="math inline">\(\Delta_i\)</span> is the difference between expected model response after conditioning on <span class="math inline">\(i\)</span> variable minus the expected model response. <span class="math inline">\(\Delta_i\)</span> measures a naive single-step local variable importance, it indicates how much the average prediction of model <span class="math inline">\(f\)</span> changes if feature <span class="math inline">\(x_i\)</span> is set on <span class="math inline">\(x^*_i\)</span>.</p>
-</div>
-<div id="two-steps-contributions" class="section level3">
-<h3><span class="header-section-number">12.2.2</span> Two steps contributions</h3>
-<p>For a pair of variables <span class="math inline">\(x_i\)</span>, <span class="math inline">\(x_j\)</span> we introduce a single-step contribution as
-<span class="math display">\[
-\Delta_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] - \mathbb{E}[f(x)].
-\]</span></p>
-<p>And non additive component of this contribution as</p>
-<p><span class="math display">\[
-\Delta^{I}_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] -  \mathbb{E}[f(x)|x_i = x^*_i] -  \mathbb{E}[f(x)|x_j = x^*_j] + \mathbb{E}[f(x)].
-\]</span></p>
-<p>Or equivalently</p>
-<p><span class="math display">\[
-\Delta^{I}_{ij} = \Delta_{ij} - \Delta_i - \Delta_j. 
-\]</span></p>
-</div>
-<div id="sequential-contributions" class="section level3">
-<h3><span class="header-section-number">12.2.3</span> Sequential contributions</h3>
-<p>The <span class="math inline">\(\Delta^{I}_{ij}\)</span> is the difference between collective effect of variables <span class="math inline">\(x_i\)</span> and <span class="math inline">\(x_j\)</span> denoted as <span class="math inline">\(\Delta_{ij}\)</span> and their additive effects <span class="math inline">\(\Delta_{i}\)</span> and <span class="math inline">\(\Delta_{j}\)</span>. Therefore, <span class="math inline">\(\Delta^{I}_{ij}\)</span> measures the importance of local lack-of-additivnes (aka. interaction) between features <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span>.
-For additive models <span class="math inline">\(\Delta^{I}_{ij}\)</span> should small~for any <span class="math inline">\(i\)</span>, <span class="math inline">\(j\)</span>.</p>
-<p>Note that contributions <span class="math inline">\(\Delta_{i}\)</span> do not sum to final model prediction. We only use them to determine the order of features in which the instance shall be explained. To calculate contributions that have the property of <em>local accuracy</em> we need to introduce one more symbol, that corresponds to the added contribution of feature <span class="math inline">\(i\)</span> to the set of features~<span class="math inline">\(J\)</span>.</p>
-<p><span class="math display">\[
-\Delta_{i|J} = \mathbf{E}[f(X)| x_{J\cup\{i\}} = x_{J\cup\{i\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] =     \Delta_{J\cup\{i\}} - \Delta_{J}.
-\]</span></p>
-<p>And for pairs of features</p>
-<p><span class="math display">\[
-\Delta_{ij|J} = \mathbf{E}[f(X)| x_{J\cup\{i,j\}} = x_{J\cup\{i,j\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] = 
-    \Delta_{J\cup\{i,j\}} - \Delta_{J}.
-\]</span></p>
-<p>Once the order of single-step importance is determined based on <span class="math inline">\(\Delta_i\)</span> and <span class="math inline">\(\Delta^{I}_{ij}\)</span> scores, the final explanation is the attribution to the sequence of <span class="math inline">\(\Delta_{i|J}\)</span> scores. These contributions sum up to the model predictions, because</p>
-<p><span class="math display">\[
-\Delta_{1,2...p} = f(x^*) - E[f(X)].
-\]</span></p>
-<p>This approach can be generalized to interactions between any number of variables.</p>
-<p>The complexity of the calculation of single step attributions is <span class="math inline">\(O(p)\)</span> where <span class="math inline">\(p\)</span> stands for the number of variables, wile complexity for all pairs is <span class="math inline">\(O(p^2)\)</span>. The complexity of the consecutive conditioning is <span class="math inline">\(O(p)\)</span>, thus the complexity of whole algorithm is <span class="math inline">\(O(p^2)\)</span>.</p>
-</div>
-</div>
-<div id="example-titanic" class="section level2">
-<h2><span class="header-section-number">12.3</span> Example: Titanic</h2>
-<p>In this example we will use a random forest model for Titanic data and Johny D example - an 8 years old boy from 1st class.</p>
-<p>In Table <a href="iBreakDown.html#tab:titanicIBreakDownList">12.2</a> we showed expected model responses <span class="math inline">\(\mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j]\)</span>, single-step effects <span class="math inline">\(\Delta_{ij}\)</span> and non-additive effects <span class="math inline">\(\Delta^{I}_{ij}\)</span> for each variable and each pair of variables. All these values are calculated locally for Johny D. These values are sorted along local importance, most important to the top.</p>
-<p>Based on this ordering a following sequence of variables are indentified as informative: <code>age</code>, <code>fare:class</code>, <code>gender</code>. <code>embarked</code>, <code>sibsp</code> and <code>parch</code>.</p>
-<p>Once the ordering is specified, in the table <a href="iBreakDown.html#tab:titanicIBreakDownList2">12.3</a> we showed how the sequential attribution is calculated. These values are then presented in the iBreakDown plot <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">12.1</a>.</p>
-<table>
-<caption><span id="tab:titanicIBreakDownList">Table 12.2: </span> For each variable and each pair of variables we calculated the expected conditional model response, the difference between conditional model response and the baseline and for pairs of variables the non-additive contribution. Rows are sorted according to the absolute value of the last column (if provided).</caption>
-<thead>
-<tr class="header">
-<th align="left">Variable</th>
-<th align="right"><span class="math inline">\(E[f(x)|x_{ij}= x^*_{ij}]\)</span></th>
-<th align="right"><span class="math inline">\(\Delta_{ij}\)</span></th>
-<th align="right"><span class="math inline">\(\Delta^I_{ij}\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">age</td>
-<td align="right">0.505</td>
-<td align="right">0.270</td>
-<td align="right"></td>
-</tr>
-<tr class="even">
-<td align="left">fare:class</td>
-<td align="right">0.333</td>
-<td align="right">0.098</td>
-<td align="right">-0.231</td>
-</tr>
-<tr class="odd">
-<td align="left">class</td>
-<td align="right">0.420</td>
-<td align="right">0.185</td>
-<td align="right"></td>
-</tr>
-<tr class="even">
-<td align="left">fare:age</td>
-<td align="right">0.484</td>
-<td align="right">0.249</td>
-<td align="right">-0.164</td>
-</tr>
-<tr class="odd">
-<td align="left">fare</td>
-<td align="right">0.379</td>
-<td align="right">0.143</td>
-<td align="right"></td>
-</tr>
-<tr class="even">
-<td align="left">gender</td>
-<td align="right">0.110</td>
-<td align="right">-0.125</td>
-<td align="right"></td>
-</tr>
-<tr class="odd">
-<td align="left">age:class</td>
-<td align="right">0.591</td>
-<td align="right">0.355</td>
-<td align="right">-0.100</td>
-</tr>
-<tr class="even">
-<td align="left">age:gender</td>
-<td align="right">0.451</td>
-<td align="right">0.215</td>
-<td align="right">0.070</td>
-</tr>
-<tr class="odd">
-<td align="left">fare:gender</td>
-<td align="right">0.280</td>
-<td align="right">0.045</td>
-<td align="right">0.027</td>
-</tr>
-<tr class="even">
-<td align="left">embarked</td>
-<td align="right">0.225</td>
-<td align="right">-0.011</td>
-<td align="right"></td>
-</tr>
-<tr class="odd">
-<td align="left">embarked:age</td>
-<td align="right">0.504</td>
-<td align="right">0.269</td>
-<td align="right">0.010</td>
-</tr>
-<tr class="even">
-<td align="left">parch:gender</td>
-<td align="right">0.100</td>
-<td align="right">-0.136</td>
-<td align="right">-0.008</td>
-</tr>
-<tr class="odd">
-<td align="left">sibsp</td>
-<td align="right">0.243</td>
-<td align="right">0.008</td>
-<td align="right"></td>
-</tr>
-<tr class="even">
-<td align="left">sibsp:age</td>
-<td align="right">0.520</td>
-<td align="right">0.284</td>
-<td align="right">0.007</td>
-</tr>
-<tr class="odd">
-<td align="left">sibsp:class</td>
-<td align="right">0.422</td>
-<td align="right">0.187</td>
-<td align="right">-0.006</td>
-</tr>
-<tr class="even">
-<td align="left">embarked:fare</td>
-<td align="right">0.374</td>
-<td align="right">0.138</td>
-<td align="right">0.006</td>
-</tr>
-<tr class="odd">
-<td align="left">sibsp:gender</td>
-<td align="right">0.113</td>
-<td align="right">-0.123</td>
-<td align="right">-0.005</td>
-</tr>
-<tr class="even">
-<td align="left">fare:parch</td>
-<td align="right">0.380</td>
-<td align="right">0.145</td>
-<td align="right">0.005</td>
-</tr>
-<tr class="odd">
-<td align="left">parch:sibsp</td>
-<td align="right">0.236</td>
-<td align="right">0.001</td>
-<td align="right">-0.004</td>
-</tr>
-<tr class="even">
-<td align="left">parch</td>
-<td align="right">0.232</td>
-<td align="right">-0.003</td>
-<td align="right"></td>
-</tr>
-<tr class="odd">
-<td align="left">parch:age</td>
-<td align="right">0.500</td>
-<td align="right">0.264</td>
-<td align="right">-0.002</td>
-</tr>
-<tr class="even">
-<td align="left">embarked:gender</td>
-<td align="right">0.101</td>
-<td align="right">-0.134</td>
-<td align="right">0.002</td>
-</tr>
-<tr class="odd">
-<td align="left">embarked:parch</td>
-<td align="right">0.223</td>
-<td align="right">-0.012</td>
-<td align="right">0.001</td>
-</tr>
-<tr class="even">
-<td align="left">fare:sibsp</td>
-<td align="right">0.387</td>
-<td align="right">0.152</td>
-<td align="right">0.001</td>
-</tr>
-<tr class="odd">
-<td align="left">embarked:class</td>
-<td align="right">0.409</td>
-<td align="right">0.173</td>
-<td align="right">-0.001</td>
-</tr>
-<tr class="even">
-<td align="left">gender:class</td>
-<td align="right">0.296</td>
-<td align="right">0.061</td>
-<td align="right">0.001</td>
-</tr>
-<tr class="odd">
-<td align="left">embarked:sibsp</td>
-<td align="right">0.233</td>
-<td align="right">-0.002</td>
-<td align="right">0.001</td>
-</tr>
-<tr class="even">
-<td align="left">parch:class</td>
-<td align="right">0.418</td>
-<td align="right">0.183</td>
-<td align="right">0.000</td>
-</tr>
-</tbody>
-</table>
-<table>
-<caption><span id="tab:titanicIBreakDownList2">Table 12.3: </span> Based on identified order we calculated the expected conditional model response and the difference between conditional model response with and without a specified variable. These values are plotted in the iBreakDown plot.</caption>
-<thead>
-<tr class="header">
-<th align="left">Variable</th>
-<th align="right"><span class="math inline">\(\Delta_{i|J}\)</span></th>
-<th align="right"><span class="math inline">\(\Delta_{J\cup\{i\}}\)</span></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">intercept</td>
-<td align="right"></td>
-<td align="right">0.235</td>
-</tr>
-<tr class="even">
-<td align="left">age = 8</td>
-<td align="right">0.269</td>
-<td align="right">0.505</td>
-</tr>
-<tr class="odd">
-<td align="left">fare:class = 72:1st</td>
-<td align="right">0.039</td>
-<td align="right">0.544</td>
-</tr>
-<tr class="even">
-<td align="left">gender = male</td>
-<td align="right">-0.083</td>
-<td align="right">0.461</td>
-</tr>
-<tr class="odd">
-<td align="left">embarked = Southampton</td>
-<td align="right">-0.002</td>
-<td align="right">0.458</td>
-</tr>
-<tr class="even">
-<td align="left">sibsp = 0</td>
-<td align="right">-0.006</td>
-<td align="right">0.452</td>
-</tr>
-<tr class="odd">
-<td align="left">parch = 0</td>
-<td align="right">-0.030</td>
-<td align="right">0.422</td>
-</tr>
-</tbody>
-</table>
-<div class="figure" style="text-align: center"><span id="fig:iBreakDownTitanicExamplePlot"></span>
-<img src="PM_VEE_files/figure-html/iBreakDownTitanicExamplePlot-1.png" alt="(fig:iBreakDownTitanicExamplePlot) Break Down Plots with interactions for Johny D. " width="80%" />
-<p class="caption">
-Figure 12.1: (fig:iBreakDownTitanicExamplePlot) Break Down Plots with interactions for Johny D.
-</p>
-</div>
-</div>
-<div id="pros-and-cons-2" class="section level2">
-<h2><span class="header-section-number">12.4</span> Pros and cons</h2>
-<p>Break Down for interactions shares many features of Break Down for single variables. Below we summarize unique strengths and weaknesses of this approach.</p>
-<p><strong>Pros</strong></p>
-<ul>
-<li>If interactions are present in the model, then additive contributions may be misleading. In such case the identification of interactions leads to better explanations.</li>
-<li>Complexity of Break Down Algorithm is quadratic, what is not that bad if number of features is small or moderate.</li>
-</ul>
-<p><strong>Cons</strong></p>
-<ul>
-<li>For large number of variables, the consideration of all interactions is both time consuming and sensitive to noise as the number of pairs grow faster than number of variables.</li>
-<li>Identification of interaction is not based on significance testing, it’s purely based on absolute empirical effects, thus for small samples this procedure is prone to errors.</li>
-</ul>
-</div>
-<div id="code-snippets-for-r-1" class="section level2">
-<h2><span class="header-section-number">12.5</span> Code snippets for R</h2>
-<p>In this section we present key features of the <code>iBreakDown</code> package for R <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span>. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package <code>https://modeloriented.github.io/iBreakDown/</code>.</p>
-<p>All steps are very similar to these presented in the previouse chapter for variable attributions. The only difference is that the <code>break_down()</code> function will now take <code>interactions = FALSE</code> argument.</p>
-<p><strong>Model preparation</strong></p>
-<p>As in previous chapters we will use the random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">4.1</a>).
-Using the same model will help us (1) to understand how the Break Down method works, (2) to compare these explanations against methods presented in previous chapters.</p>
-<p>So let restore the <code>titanic_rf_v6</code> model.</p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb124-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb124-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb124-4" data-line-number="4">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
-<a class="sourceLine" id="cb124-5" data-line-number="5">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a></code></pre></div>
-<p>Model exploration with the <code>iBreakDown</code> package is performed in three steps.</p>
-<p><strong>1. Create an explainer - wrapper around model and validation data.</strong></p>
-<p>Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the <code>explain()</code> function from <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a>)</span>.</p>
-<p>This function was introduced in detailes in the <a href="#codeSnippetsCeterisParibus"><strong>??</strong></a> section.</p>
-<div class="sourceCode" id="cb125"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb125-1" data-line-number="1">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6, </a>
-<a class="sourceLine" id="cb125-2" data-line-number="2">                              <span class="dt">data =</span> titanic[,<span class="op">-</span><span class="dv">9</span>],</a>
-<a class="sourceLine" id="cb125-3" data-line-number="3">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
-<a class="sourceLine" id="cb125-4" data-line-number="4">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v6&quot;</span>)</a></code></pre></div>
-<p><strong>2. Select an observation of interest.</strong></p>
-<p>Break Down Plots decompose model prediction around a single observation. Let’s construct a data frame with corresponding values.</p>
-<p>Here again we will use a data frame <code>johny_d</code> with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()’ function.</p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb126-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
-<a class="sourceLine" id="cb126-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
-<a class="sourceLine" id="cb126-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
-<a class="sourceLine" id="cb126-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
-<a class="sourceLine" id="cb126-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb126-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb126-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
-<a class="sourceLine" id="cb126-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
-<a class="sourceLine" id="cb126-10" data-line-number="10">)</a>
-<a class="sourceLine" id="cb126-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb126-12" data-line-number="12"><span class="kw">predict</span>(explain_titanic_rf, johny_d)</a></code></pre></div>
-<pre><code>## [1] 0.422</code></pre>
-<p><strong>3. Calculate Break Down decomposition</strong></p>
-<p>The <code>iBreakDown::break_down()</code> function calculates Break Down contributions for a selected model around a selected observation.</p>
-<p>The result from <code>break_down()</code> function is a data frame with additive attributions for selected observation.</p>
-<p>The simplest use case is to set only the arguments - model explainers and observation of interest.</p>
-<p>By default only additive attributions are calculated. Use <code>interactions = TRUE</code> argument to look for interactions.</p>
-<div class="sourceCode" id="cb128"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb128-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
-<a class="sourceLine" id="cb128-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">break_down</span>(explain_titanic_rf,</a>
-<a class="sourceLine" id="cb128-3" data-line-number="3">                 johny_d,</a>
-<a class="sourceLine" id="cb128-4" data-line-number="4">                 <span class="dt">interactions =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb128-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb128-6" data-line-number="6">bd_rf</a></code></pre></div>
-<pre><code>##                                          contribution
-## Random Forest v6: intercept                     0.235
-## Random Forest v6: age = 8                       0.270
-## Random Forest v6: fare:class = 72:1st           0.039
-## Random Forest v6: gender = male                -0.083
-## Random Forest v6: embarked = Southampton       -0.003
-## Random Forest v6: sibsp = 0                    -0.006
-## Random Forest v6: parch = 0                    -0.030
-## Random Forest v6: prediction                    0.422</code></pre>
-<p>The generic <code>plot()</code> function creates a Break Down plots.</p>
-<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb130-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-66-1.png" width="672" /></p>
-
+<div id="how-to-work-with-archivist" class="section level2">
+<h2><span class="header-section-number">2.3</span> How to work with <code>archivist</code></h2>
+<p>In next chapters we will be focused on exploration of predictive models. We do not want to waste space nor time to replicate code for model development. This is where <code>archivist</code> will help.</p>
+<p>The <code>archivist</code> package <span class="citation">(Biecek and Kosinski <a href="#ref-archivist">2017</a>)</span> is design to store, share and manage of R objects. We will use it to easily access R models and explainers.</p>
+<p>To install the package just copy following line to the R command line.</p>
+<pre><code>install.pacakges(&quot;archivist&quot;)</code></pre>
+<p>Then you can use <code>aread()</code> function to get R objects from any remote repository.</p>
+<p>In this book we use a GitHub repository <code>models</code> hosted at <a href="https://github.com/pbiecek/models" class="uri">https://github.com/pbiecek/models</a>. To download a model with md5 hash <code>ceb40</code> one can call following line.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/ceb40&quot;</span>)</a></code></pre></div>
+<p>It returns a random forest model. Since md5 hash <code>ceb40</code> defines model uniquely, you will get exactly the same model and same explanations.</p>
+<p>In next chapters precalculated model explainers will be accessed with <code>archivist</code> hooks.</p>
 </div>
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
-<div id="ref-iBreakDownRPackage">
-<p>Gosiewska, Alicja, and Przemyslaw Biecek. 2019a. “iBreakDown: Uncertainty of Model Explanations for Non-additive Predictive Models.” <a href="https://arxiv.org/abs/1903.11420v1">https://arxiv.org/abs/1903.11420v1</a>.</p>
+<div id="ref-RcoreT">
+<p>R Core Team. 2018. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</p>
 </div>
-<div id="ref-R-randomForest">
-<p>Breiman, Leo, Adele Cutler, Andy Liaw, and Matthew Wiener. 2018. <em>RandomForest: Breiman and Cutler’s Random Forests for Classification and Regression</em>. <a href="https://CRAN.R-project.org/package=randomForest">https://CRAN.R-project.org/package=randomForest</a>.</p>
+<div id="ref-randomForest">
+<p>Liaw, Andy, and Matthew Wiener. 2002a. “Classification and Regression by randomForest.” <em>R News</em> 2 (3): 18–22. <a href="http://CRAN.R-project.org/doc/Rnews/">http://CRAN.R-project.org/doc/Rnews/</a>.</p>
+</div>
+<div id="ref-gbm">
+<p>Ridgeway, Greg. 2017. <em>Gbm: Generalized Boosted Regression Models</em>. <a href="https://CRAN.R-project.org/package=gbm">https://CRAN.R-project.org/package=gbm</a>.</p>
+</div>
+<div id="ref-rms">
+<p>Harrell Jr, Frank E. 2018. <em>Rms: Regression Modeling Strategies</em>. <a href="https://CRAN.R-project.org/package=rms">https://CRAN.R-project.org/package=rms</a>.</p>
+</div>
+<div id="ref-h2oPackage">
+<p>LeDell, Erin, Navdeep Gill, Spencer Aiello, Anqi Fu, Arno Candel, Cliff Click, Tom Kraljevic, et al. 2019. <em>H2o: R Interface for ’H2o’</em>. <a href="https://CRAN.R-project.org/package=h2o">https://CRAN.R-project.org/package=h2o</a>.</p>
+</div>
+<div id="ref-caret">
+<p>Jed Wing, Max Kuhn. Contributions from, Steve Weston, Andre Williams, Chris Keefer, Allan Engelhardt, Tony Cooper, Zachary Mayer, et al. 2016. <em>Caret: Classification and Regression Training</em>. <a href="https://CRAN.R-project.org/package=caret">https://CRAN.R-project.org/package=caret</a>.</p>
+</div>
+<div id="ref-parsnipPackage">
+<p>Kuhn, Max, and Davis Vaughan. 2019. <em>Parsnip: A Common Api to Modeling and Analysis Functions</em>. <a href="https://CRAN.R-project.org/package=parsnip">https://CRAN.R-project.org/package=parsnip</a>.</p>
+</div>
+<div id="ref-mlr">
+<p>Bischl, Bernd, Michel Lang, Lars Kotthoff, Julia Schiffner, Jakob Richter, Erich Studerus, Giuseppe Casalicchio, and Zachary M. Jones. 2016. “mlr: Machine Learning in R.” <em>Journal of Machine Learning Research</em> 17 (170): 1–5. <a href="http://jmlr.org/papers/v17/15-066.html">http://jmlr.org/papers/v17/15-066.html</a>.</p>
+</div>
+<div id="ref-kerasPackage">
+<p>Allaire, JJ, and François Chollet. 2019. <em>Keras: R Interface to ’Keras’</em>. <a href="https://CRAN.R-project.org/package=keras">https://CRAN.R-project.org/package=keras</a>.</p>
 </div>
 <div id="ref-R-DALEX">
 <p>Biecek, Przemyslaw. 2018. <em>DALEX: Descriptive mAchine Learning Explanations</em>. <a href="https://pbiecek.github.io/DALEX/">https://pbiecek.github.io/DALEX/</a>.</p>
+</div>
+<div id="ref-archivist">
+<p>Biecek, Przemyslaw, and Marcin Kosinski. 2017. “archivist: An R Package for Managing, Recording and Restoring Data Analysis Results.” <em>Journal of Statistical Software</em> 82 (11): 1–28. <a href="https://doi.org/10.18637/jss.v082.i11">https://doi.org/10.18637/jss.v082.i11</a>.</p>
 </div>
 </div>
             </section>
@@ -820,8 +444,8 @@ Using the same model will help us (1) to understand how the Break Down method wo
           </div>
         </div>
       </div>
-<a href="breakDown.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="shapley.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="PythonCodeSnippets.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
