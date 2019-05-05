@@ -200,7 +200,24 @@ As a result, we obtain the predicted probabilities of `r round(pred_rf[1,2], 2)`
 
 The models lead to different probabilities. Thus, it might be of interest to understand the reason for the differences, as it could help us to decide which of the predictions we might want to trust. 
 
-### Explainers {@ExplainersTitanicRCode}
+
+Note that for some examples we will use another instance with lower chances of survival. Let's call him, Henry.
+
+```{r, warning=FALSE, message=FALSE}
+henry <- data.frame(
+            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
+            gender = factor("male", levels = c("female", "male")),
+            age = 47,
+            sibsp = 0,
+            parch = 0,
+            fare = 25,
+            embarked = factor("Cherbourg", levels = c("Belfast","Cherbourg","Queenstown","Southampton"))
+)
+
+(pred_gbm <- predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000))
+```
+
+### Explainers {#ExplainersTitanicRCode}
 
 Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end, we use the `explain()` function from the `DALEX` package [@R-DALEX]. The function requires five arguments: 
 
@@ -219,6 +236,7 @@ Each explainer wraps suitable `predict()` function, validation data set and the 
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
+                                 predict_function = function(m, x) predict(m, x, type = "fitted"),
                                  label = "Logistic Regression v6")
 explain_titanic_rf_v6 <- explain(model = titanic_rf_v6, 
                                  data = titanic[, -9],
@@ -258,8 +276,8 @@ Table: (\#tab:archivistHooksOfModelsTitanic) Predictive models created for the `
 
 | Model name   | Model generator | Variables  | Archivist hooks |
 |--------------|-----------------|------------|-----------------|
-| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  Get the model: `archivist:: aread("pbiecek/models/ceb40")`. Get the explainer: `archivist:: aread("pbiecek/models/4bd4d")` |
-| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/1f938")`. Get the explainer: `archivist:: aread("pbiecek/models/4bd4d")` |
+| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  Get the model: `archivist:: aread("pbiecek/models/ceb40")`. Get the explainer: `archivist:: aread("pbiecek/models/2b9b6")` |
+| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/1f938")`. Get the explainer: `archivist:: aread("pbiecek/models/9b971")` |
 | `titanic_rf_v3`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class  | Get the model:  `archivist:: aread("pbiecek/models/855c1")`. Get the explainer: `archivist:: aread("pbiecek/models/92754")` |
 | `titanic_gbm_v6`  | `gbm:: gbm`  v.2.1.5 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/24e72")`. Get the explainer: `archivist:: aread("pbiecek/models/84d5f")` |
 
@@ -269,7 +287,7 @@ Table: (\#tab:archivistHooksOfDataFramesTitanic) Data frames created for the `ti
 |--------------|----------|------------|---------------------|
 | `titanic` dataset with imputed missing values  | 2207  | gender, age, class, embarked, country, fare, sibsp, parch, survived |  `archivist:: aread("pbiecek/models/27e5c")` |
 | `johny_d` is 8 years old boy that travels in the 1st class without parents  | 1 | class, gender, age, sibsp, parch, fare, embarked  |  `archivist:: aread("pbiecek/models/e3596")` |
-| `henry` is 40 years old male passenger from the 1st class  | 1 | class, gender, age, sibsp, parch, fare, embarked |   |
+| `henry` is 47 years old male passenger from the 1st class, paid 25 and embarked at Cherbourg  | 1 | class, gender, age, sibsp, parch, fare, embarked |  `archivist:: aread("pbiecek/models/a6538")`  |
 
 
 
