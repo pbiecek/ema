@@ -1,15 +1,8 @@
-# BreakDown for Additive Variable Attributions {#breakDown}
+# Break Down for Additive Variable Attributions {#breakDown}
 
-**PBI: note that we are using completly different notations here and in the next chapter. Let's keep only one, but which one?**
+In the Section \@ref(ceterisParibusOscillations) we introduced a method for assessment of local variable importance based on Ceteris Paribus Profiles. But the main disadvantage of this method is that importance scores do not sum up to final model predictions.
 
-
-
-In the Section \@ref(variableAttributionMethods) we introduced a method for calculation of variable attributions for linear models.
-This method is accurate, based directly on the linear structure of the model. But for most popular machine learning models we cannot assume that they are linear nor even additive. 
-
-In the Section \@ref(ceterisParibusOscillations) we introduced a method for calculation of local variable importance based on Ceteris Paribus Profiles. But the main disadvantage of this method is that importance scores do not sum up to final model predictions.
-
-Break Down Plots solve problems with both these approaches. Note that the described method is also similar to the EXPLAIN algorithm introduced in  [@explainPaper] and implemented in [@explainPackage] package.
+In this chapter we introduce Break Down Plots which solve this problem. Note that the described method is also similar to the EXPLAIN algorithm introduced in  [@explainPaper] and implemented in [@explainPackage] package.
 
 ## Intuition
 
@@ -148,67 +141,29 @@ Break Down approach is model agnostic, can be applied to any predictive model th
 
 ## Code snippets for R
 
-In this section we present key features of the `iBreakDown` package for R [@iBreakDownRPackage]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/iBreakDown/`.
+In this section we present key features of the `iBreakDown` package for R [@iBreakDownRPackage] which is a part of `DrWhy.AI` universe. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/iBreakDown/`.
 
-**Model preparation**
+In this section, we use a random forest classification model developed in the chapter \@ref(TitanicDataset), namely the `titanic_rf_v6` model. It is trained to predict probability of survival from sinking of Titanic. Instance level explanations are calculated for a single observation `henry` - 47 years old passenger that travels 1st class.
 
-As in previous chapters we will use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)).
-Using the same model will help us (1) to understand how the Break Down method works, (2) to compare these explanations against methods presented in previous chapters.
-
-So let restore the `titanic_rf_v6` model.
+`DALEX` explainers for both models and the Henry data are retrieved via `archivist` hooks as listed in Chapter \@ref(ListOfModelsTitanic). 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("DALEX")
 library("randomForest")
+explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 
-titanic <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+library("DALEX")
+johny_d <- archivist::aread("pbiecek/models/e3596")
+johny_d
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-library("DALEX")
 library("randomForest")
-load("models/titanic_rf_v6.rda")
-load("models/titanic.rda")
+library("DALEX")
+load("models/explain_rf_v6.rda")
+load("models/johny_d.rda")
 ```
 
-Model exploration with the `iBreakDown` package is performed in three steps. 
-
-**1. Create an explainer - wrapper around model and validation data.**
-
-Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
-
-This function was introduced in detailes in the \@ref(codeSnippetsCeterisParibus) section.
-
-```{r, warning=FALSE, message=FALSE}
-explain_titanic_rf <- explain(model = titanic_rf_v6, 
-                              data = titanic[,-9],
-                              y = titanic$survived == "yes", 
-                              label = "Random Forest v6")
-```
-
-**2. Select an observation of interest.** 
-
-Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
-
-Here again we will use a data frame `johny_d` with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. 
-
-```{r, warning=FALSE, message=FALSE}
-johny_d <- data.frame(
-  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
-                                  "restaurant staff", "victualling crew")),
-  gender = factor("male", levels = c("female", "male")),
-  age = 8,
-  sibsp = 0,
-  parch = 0,
-  fare = 72,
-  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
-)
-
-predict(explain_titanic_rf, johny_d)
-```
-
-**3. Calculate Break Down decomposition**
+### Basic usage for the `break_down` function
 
 The `iBreakDown::break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
 
@@ -218,16 +173,18 @@ The simplest use case is to set only the arguments - model explainers and observ
 
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
-bd_rf <- break_down(explain_titanic_rf,
+bd_rf <- break_down(explain_rf_v6,
                  johny_d)
-
 bd_rf
 ```
 
-The generic `plot()` function creates a Break Down plots. 
+The generic `plot()` function creates Break Down plots. 
+
 ```{r, warning=FALSE, message=FALSE}
 plot(bd_rf) 
 ```
+
+### Advanced usage for the `break_down` function
 
 The function `break_down()` can take more arguments. The most commonly used are:
 
@@ -243,7 +200,7 @@ First we will specify order. You can use integer indexes or variable names. Note
 
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
-bd_rf_order <- break_down(explain_titanic_rf,
+bd_rf_order <- break_down(explain_rf_v6,
                  johny_d,
                  order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"))
 plot(bd_rf_order, max_features = 3) 
@@ -254,7 +211,7 @@ The `plot_distributions = TRUE` argument of `break_down()` function enriches mod
 It can be presented after setting `plot_distributions = TRUE` in the `plot()` function. Conditional distributions are presented as vioplots. Red dots stand for conditional average model response. Thin black lines between vioplots correspond to predictions for individual observations. With them we can trace how model predictions change after consecutive conditionings.
 
 ```{r, warning=FALSE, message=FALSE}
-bd_rf_distr <- break_down(explain_titanic_rf,
+bd_rf_distr <- break_down(explain_rf_v6,
                  johny_d,
                  order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),
                  keep_distributions = TRUE)
