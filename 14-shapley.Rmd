@@ -1,52 +1,218 @@
-# Average variable attributions {#shapley}
+# SHapley Additive exPlanations (SHAP) and Average Variable Attributions {#shapley}
 
-In the Section \@ref(modelAgnosticAttribution) we show the problem related to the ordering of variables. In the Section \@ref(breakDown) we show an approach in which the ordering was determined based on single step assessment of variable importance.
+In the Section \@ref(variableAttributionMethods) we show a procedure that attributes parts of model prediction to input features. We also show that in the presence of interactions attributions depend on the feature ordering. One solution to this problem is introduced in section \@ref(breakDown) - just find an ordering that put most important features to the front. Other solution is introduced in the Section \@ref(iBreakDown) - identify interactions and show interactions in model explanations.
 
-In this section we introduce other, very popular approach for additive variable attribution. The problem of contributions that depends on the variable ordering is solved by averaging over all possible orderings.
+In this section we introduce another, very popular approach that deal with feature ordering. Basically, the problem of ordering is solved by averaging over all possible orderings. Or at least some large number of sampled orderings. Additionally, such average is closely linked with Shapley values developed originally for cooperative games.
 
-This method is motivated with results in cooperative game theory and was first introduced in [@Strumbelj2014]. Wide adoption of this method comes with a NIPS 2017 paper [@SHAP] and python library SHAP `https://github.com/slundberg/shap`. Authors of the SHAP method introduced also efficient algorithm for tree-based models, see [@TreeSHAP].
+This approach was first introduced in [@imeJLMR] and [@Strumbelj2014]. Wide adoption of this method comes with a NIPS 2017 paper [@SHAP] and python library SHAP [@shapPackage]. Authors of the SHAP (SHapley Additive exPlanations) method introduced an efficient algorithm for tree-based models [@TreeSHAP] and show that Shapley values is an unification of a collection of different commonly used techniques for model explanations.
 
 ## Intuition
 
-Since in sequential attribution effect depends on the ordering. Here the idea is to average across all possible orderings.
+Figure \@ref(fig:shap10orderings) shows Break Down attributions for 10 random orderings for Titanic dataset. As we see there are differences, most striking are that depending on the order features like `fare` or `class` may have positive or negative effect. 
 
-TODO:  a nice example
+```{r shap10orderings, echo=FALSE, fig.cap="(fig:shap10orderings) Break Down plots for 10 random orderings. Each panel shows a single ordering", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/shap_10_replicates.png")
+```
+
+
+SHAP attributions are averages across all (or at least large number) of different orderings. See for example Figure \@ref(fig:shapOrdering). In a single plot we summarize all orderings from Figure \@ref(fig:shap10orderings). Violet boxplots show distributions for attributions for a selected variable. 
+
+```{r shapOrdering, echo=FALSE, fig.cap="(fig:shapOrdering) Summary for 10 random orderings. Boxplots show distribution of feature attributions. Bars stand for average attributions.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/shap_ordering.png")
+```
+
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+library("DALEX")
+library("iBreakDown")
+library("randomForest")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,-9],
+                              y = titanic$survived == "yes") 
+
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+library(patchwork)
+set.seed(13)
+
+rsample <- lapply(1:10, function(i){
+  new_order <- sample(1:7)
+  bd <- break_down(explain_titanic_rf, johny_d, order = new_order)
+  bd$variable <- as.character(bd$variable)
+  bd$variable[bd$variable == "embarked = Southampton"] = "embarked = S"
+  bd$label = paste("random order no.", i)
+  plot(bd) + scale_y_continuous(limits = c(0.1, 0.6), name = "", breaks = seq(0.1, 0.6, 0.1))
+})
+
+rsample[[1]] +
+rsample[[2]] +
+rsample[[3]] +
+rsample[[4]] + 
+rsample[[5]] + 
+rsample[[6]] + 
+rsample[[7]] + 
+rsample[[8]] + 
+rsample[[9]] + 
+rsample[[10]] + plot_layout(ncol = 2)
+
+plot(break_down(explain_titanic_rf, johny_d, order = 1:7))
+
+res <- iBreakDown::local_attributions_uncertainty(explain_titanic_rf, johny_d)
+plot(res)
+
+library(ggplot2)
+shap_attributions <- break_down_uncertainty(explain_titanic_rf, johny_d, path = "average")
+shap_attributions$label = "The `titanic_rf_v6` random forest model"
+plot(shap_attributions) + ggtitle("Average attribbutions for Johny D")
+
+shap_attributions[shap_attributions$B == 0,"mean"]
+knitr::kable(as.data.frame(shap_attributions[shap_attributions$B == 0,c(3,1)]))
+
+```
 
 ## Method
 
-The name *Shapley Values* comes from the solution in cooperative game theory attributed to Lloyd Shapley. The original problem was to assess how important is each player to the overall cooperation, and what payoff can he or she reasonably expect from the coalition? [@shapleybook1952]
+SHapley Additive exPlanations are based on *Shapley Values*, a solution concept in cooperative game theory developed by Lloyd Shapley. 
 
-In the context of model interpretability the payoff is the average model response while the players are the variables in the conditioning. Then Formula for variable contributions is following.
+Consider a following problem. A coalition of players cooperates, and obtains a certain overall gain from that cooperation. Players are not identical, different players may have different importance. Cooperation is beneficial, from cooperation they got more than from individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question [@shapleybook1952].
 
+Now let's translate this problem to machine learning settings. Instead of players we have features and instead of coalitions we have specific settings of values for features in the coalition. The payoff from a coalition is the model response for a selected setting. Problem to solve: how to distribute model response to particular features.
+Shapley values are defined for a single instance $x^*$. The idea of using Shapley values for feature attribution was introduced in [@imeJLMR]. Here we present a different notation more suited with approach presented in previous sections.
+
+Let $v(S)$ stand for value of coalition of $S$ features, defined as
+$$
+v(x^*, S) = E[f(X) | X_S = x^*_S].
+$$
+The value is defined as expected model response given features in the set $S$ are set to values in the selected instance $x^*$. Expected value averages across all features that are not in the set $S$.
+
+A special case is for empty coalition. Its value is an expected model response
+$$
+v(x^*, \emptyset) = E[f(X)].
+$$
+
+Shapley values may be defined as
+$$
+\varphi(i) = \frac{1}{p!} \sum_{\pi} [v(x^*, \pi(i) \cup \{i\}) - v(x^*, \pi(i))]  
+$$
+where $p$ is a number of all features, $p!$ is number of all possible orderings, $\pi$ is an ordering and $\pi(i)$ are all features in the ordering $\pi$ that appear before feature $i$. Thus the $v(\pi(i) \cup \{i\}) - v(\pi(i))$ corresponds to a difference in value of a coalition $v(\pi(i))$ when feature $i$ is added to it.
+
+Of course for large $p$ it is not feasible to consider all $p!$ permutations. A Monte Carlo estimator of this value was introduced in [@Strumbelj2014] and efficient implementation of Shapley values was introduced in [@SHAP]. Later in this chapter we will use a crude estimator on $\varphi(i)$ in which instead of all $p!$ permutations we average across $B$ randomly selected permutations.
+
+Alternative formulation of Shapley values averages across coalitions not orderings.
 
 $$
-v(f, x^*, i) = \frac 1{|P|}\sum_{S \subseteq P\setminus \{i\}}  {{|P|-1}\choose{|S|}}^{-1} \left(E [f(X) | X_{S \cup \{i\}} = x^*_{S \cup \{i\}}] - E [f(X) | X_{S} = x^*_{S}]\right)
+\varphi(i) = \frac 1{p}\sum_{S \subseteq \{1:p\}\setminus \{i\}}  {{p-1}\choose{|S|}}^{-1} \left[ v(x^*, S \cup \{i\}) - v (x^*, S) \right]
 $$
-where $P = \{1, \ldots, p\}$ is the set of all variables.
-The intuition beyond this contribution is following. We consider all possible orderings of variables (yes, there is $2^p$ of them) and calculate the contribution of variable $i$ as an average from contributions calculated in particular orderings.
 
-The part $E[f(X) | X_{S \cup \{i\}} = x^*_{S \cup \{i\}}] - E [f(X) | X_{S} = x^*_{S}]$ is the contribution of variable $i$ which is introduces after variables from $S$.
-
-Time complexity of this method is $O(2^p)$ where $p$ stands for the number of variables. Such complexity makes this method impractical for most cases. Fortunately it is enough to assess this value. [@Strumbelj2014] proposed to use sampling. [@TreeSHAP] proposed fast implementations for tree based ensembles.
+Note that the number of all subsets is $2^{p-1}$ is much smaller than number of all orderings $p!$. Binomial coefficients weight according to number of ordering with selected prefix coalition.
 
 **Properties**
 
-Shaply values have (as a single unique solution) following properties
+Shapley values are proven to be fair. And here fairness means that they are a single unique solution with following properties. Proved for cooperative games and then translated to machine learning.
 
-* Local accuracy. Sum of attributions is equal to the model response.
+* Symmetry. If two features are interchangeable, i.e. contribute equally to all coalitions 
+
 $$
-f(x^*) = \sum_{i}	v(f, x^*, i) 
+\forall_{S} v(x^*, S \cup \{i\}) = v(x^*, S \cup \{j\})
 $$
-* Missingness, if simplified (add to notation) input is 0, then it's impact is also 0
+
+then they should have equal Shapley values
+
 $$
-x_i^* = 0 implies	v(f, x^*, i) = 0
+\varphi(i) = \varphi(j).
 $$
-* Consistency, if a new model $g$ is larger for model $f$ then it's attributions are larger than attributions for $f$.
+
+* Dummy feature. If a features does not contribute to any coalitions 
+$$
+\forall_{S} v(x^*, S \cup \{i\}) = v(x^*, S)
+$$
+
+then it should have Shapley value equal to 0
+
+$$
+\varphi(i) = 0.
+$$
+
+* Additivity. If a model $f$ is sum of two other models $g$ and $h$ then Shapley value calculated for model $f$ is a sum of Shapley values for $g$ and $h$.
+
+* Local accuracy. Sum of Shapley values is equal to the model response
+
+$$
+f(x^*) - v(x^*, \emptyset) = \sum_{i=1}^p	\varphi(i). 
+$$
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("DALEX")
+library("randomForest")
+library("ggplot2")
+library("iBreakDown")
+load("models/titanic_rf_v6.rda")
+load("models/titanic.rda")
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,c(1:4,6:8)],
+                              y = titanic$survived == "yes", 
+                              label = "Random Forest v6")
 
 
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+shap_johny <- shap(explain_titanic_rf, johny_d, B = 25)
+```
+
+## Titanic
+
+Let us again consider explanation for prediction of the `titanic_rf_v6` model for *Johny D*, an 8-years old boy from 1st class. 
+
+In Figure \@ref(fig:shappJohny02) we have presented distribution of attributions for random 25 orderings.
+As we see, young age of Johny D has positive effect in all orderings. An average age-effect is equal $0.2525$. Similarly, effect of being male is in all cases negative for this model, on average the negative effect is $-0.0908$. 
+
+Things get complicated for `fare` and `class` features. Depending on the order one or another is largely positive or negative. In the section \@ref(iBreakDown) we showed them as a pair, which should not be separated. Here we show average attributions for each feature.
+
+```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:shappJohny02) Average attributions for Johny D. Violet boxplots show distributions of attributions.", out.width = '80%', fig.align='center'}
+plot(shap_johny) + ggtitle("Average attributions for Johny D")
+```
+
+Note, that in most applications the detailed information about distribution of orderings will be unnecessary complicated.
+So it is more common to keep only information about Shapley values as it is presented in Figure \@ref(fig:shappJohny01).
+
+```{r shappJohny01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:shappJohny01) Average attributions for Johny D. ", out.width = '80%', fig.align='center'}
+plot(shap_johny, show_boxplots = FALSE) + ggtitle("Average attributions for Johny D")
+```
+
+Table \@ref(tab:shapOrderingTable) shows average attributions for Johny D.
 
 
-## Example: Hire or Fire?
+Table: (\#tab:shapOrderingTable) Average attributions for Johny D.
+
+|feature       | avg. attribution|
+|:-------------|------------:|
+|age = 8       |    0.2525   |
+|class = 1st   |    0.0246   |
+|embarked = Southampton |   -0.0032   |
+|fare = 72     |    0.0140   |
+|gender = male |   -0.0943   |
+|parch = 0     |   -0.0097   |
+|sibsp = 0     |    0.0027   |
 
 
 ## Pros and cons
@@ -57,31 +223,101 @@ Shapley Values give a uniform approach to decompose model prediction into parts 
 
 - There is a nice theory based on cooperative games.
 - [@SHAP] shows that this method unifies different approaches to additive features attribution, like  DeepLIFT, Layer-Wise Relevance Propagation, LIME.
-- There is efficient implementation available for Python.
-- [@SHAP] shows more desired properties of this method, like symmetry or additivity.
+- There is an efficient implementation available for Python and ports or reimplementations for R.
+- [@SHAP] shows more desired properties of this method, like symmetry or Local accuracy.
 
 **Cons**
 
 - The exact calculation of Shapley values is time consuming.
-- If the model is not additive, then the Shaply scores may be misleading. And there is no way to determine if model is far from additiveness.
+- If the model is not additive, then the Shapley scores may be misleading. And there is no way to determine if model is far from additiveness.
+- In the cooperation games the goal was to distribute payoff among payers, but in machine learning we want to understand how players affect payoff. Thus we are not limited to independent payoffs for players.
 
-Note that fully additive model solutions presented in sections \@ref(modelAgnosticAttribution), \@ref(breakDown) and \@ref(shapley) lead to same variable contributions.
-
+Note that for an additive model other approaches like these presented in Sections \@ref(modelAgnosticAttribution), \@ref(breakDown) and \@ref(shapley) lead to same variable contributions.
 
 ## Code snippets for R
 
-In this section we will present an example based on the `HR` dataset and Random Forest model [@R-randomForest]. See the Section \@ref(HRdataset) for more details.
+In this section we present key features of the R package `iBreakDown` [@iBreakDownRPackage]  which is a part of `DrWhy.AI` universe and covers methods presented in this chapter. More details and examples can be found at `https://modeloriented.github.io/iBreakDown/`.
 
-```{r, message=FALSE, warning=FALSE}
+Note that there are also other R packages that offer similar functionality, like `shapper` [@shapperPackage] which is a wrapper over SHAP python library [@shapPackage] and `iml` [@imlRPackage].
+
+In this section, we use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). 
+
+So let restore the `titanic_rf_v6` model and explainer created with the `explain()` function from `DALEX` package [@R-DALEX].
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("DALEX")
 library("randomForest")
-set.seed(123)
-model_rf <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+
+titanic <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+explain_titanic_rf <- explain(model = titanic_rf_v6, 
+                              data = titanic[,c(1:4,6:8)],
+                              y = titanic$survived == "yes", 
+                              label = "Random Forest v6")
 ```
 
-First, we use a `shapper` package - a wrapper over SHAP python package.
+Here again we will use a data frame `johny_d` with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. 
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE}
+johny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                  "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+predict(explain_titanic_rf, johny_d)
+```
+
+First, we will recreate Figure \@ref(fig:shappJohny01). To do this we use function `iBreakDown::shap()` that calculates `B` random orderings and average Shapley contributions. This function takes an explainer created with `DALEX::explain()` function and an observation for which attributions shall be calculated. Additionally one can specify `B` number of orderings to sample.
+
+The generic function `plot()` shows Shapley values with corresponding boxplots.
+
+```{r, warning=FALSE, message=FALSE}
+library("iBreakDown")
+
+shap_johny <- shap(explain_titanic_rf, johny_d, B = 25)
+plot(shap_johny) 
+```
+
+Figure \@ref(fig:shappJohny02) is generated in the same way. The only difference is that boxplots are not plotted. Use the `show_boxplots` argument to decide whatever they shall be added or not.
+
+```{r, warning=FALSE, message=FALSE}
+plot(shap_johny,  show_boxplots = FALSE) 
+```
+
+Function `shap()` results a data frame with attributions for every ordering. Having all these values we can calculated not only Shapley values (averages) but also some other statistics, like quintiles or range for feature attributions.
+
+```{r, warning=FALSE, message=FALSE}
+shap_johny
+
+library("dplyr")
+shap_johny %>%
+  group_by(variable) %>%
+  summarise(avg = mean(contribution),
+            q10 = quantile(contribution, 0.1),
+            q90 = quantile(contribution, 0.9)) %>%
+  arrange(-abs(avg))
+```
+
+
+
+
+
+
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+
+library("shapper")
+shapper_johny <- shapper::individual_variable_effect(explain_titanic_rf, johny_d)
+shapper_johny <- shapper::individual_variable_effect(titanic_rf_v6, titanic[,c(1:4,6:8)], DALEX:::yhat.randomForest, johny_d)
+
+
+
 library("shapper")
 Y_train <- HR$status
 x_train <- HR[ , -6]
@@ -101,7 +337,7 @@ new_observation <- data.frame(gender = 1,
 x <- individual_variable_effect(x = model_rfs, data = x_train, predict_function = p_fun,
                                new_observation = new_observation)
 
-#plot(x)
+plot(x)
 library("ggplot2")
 
 x$`_vname_` <- reorder(x$`_vname_`, x$`_attribution_`, function(z) -sum(abs(z)))
@@ -125,32 +361,3 @@ ggplot(x, aes(x=`_vname_`, xend=`_vname_`,
 ```
 
 
-Here we use the `iml` package, see more examples in [@imlPackage].
-
-
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
-library("iml")
-explainer_rf = Predictor$new(model_rf, data = HR, type="prob")
-```
-
-Explanations for a new observation.
-
-```{r, message=FALSE, warning=FALSE, eval=FALSE, eval=FALSE}
-new_observation <- data.frame(gender = factor("male", levels = c("male", "female")),
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2,
-                      status = factor("fired"))
-
-shapley = Shapley$new(explainer_rf, x.interest = new_observation)
-shapley
-```
-
-And the plot with Shapley attributions.
-
-```{r, message=FALSE, warning=FALSE, eval=FALSE, eval=FALSE}
-plot(shapley)
-```
-
-See more examples for `iml` package in the [@molnar] book.
