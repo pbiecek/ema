@@ -1,103 +1,65 @@
-# DIY with R  {#RCodeSnippets}
+# Do-it-yourself With R  {#RCodeSnippets}
 
-In next chapters we will introduce different methods for global and instance level explanation and exploration of predictive models.
+In our book we introduce different methods for instance-level and global explanation and exploration of predictive models. In each chapter, there is a section with code snippets for R that show how a particular method has been implemented. In this chapter we provide a short description of steps that will allow the reader to replicate the results presented for various methods.
 
-After each method there is a section with code snippets for R. Below you will find a short instruduction what do you need to replicate these results.
+## What to install?
 
-## How to install dependencies
+Obviously, R [@RcoreT] is needed. It is always better to use the newest version, but at least R in version 3.5 should be used. R can be downloaded from https://cran.r-project.org/.
 
-Obviously you need R [@RcoreT]. It is always better to use the newest version, but make sure that you have at least R in version 3.5. You can download R from https://cran.r-project.org/.
+A good editor makes working with R much easier. There is a plenty of choices, but, especially for beginners, it is worth considering the RStudio editor, an open-source and enterprise-ready tool for R. It can be downloaded from  https://www.rstudio.com/.
 
-It is much easier to work with R if you have a good editor. There is plenty of choices, but if you just begun the journey then think about the RStudio editor - open source and enterprise ready tool for R. Download the latest version from  https://www.rstudio.com/.
+Once R and the editor are available, the required packages should be installed.
 
-Once you get the R and the editor, now you need to install required packages.
-First which you need is the `DALEX` package, it's an entry point to solutions introduced in this book. Get this package with following line executed in the R command line.
+The most important one is the `DALEX` package. It is the entry point to solutions introduced in this book. The  packagecan be installed  by executing the following line from the R command line:
 
 ```
 install.packages("DALEX")
 ```
 
-Along with `DALEX` all hard requirements will be installed, like `ggplot2` package for data visualization. To use all examples in this book you will need two additional packages `ingredients` and `iBreakDown`. The easiest way to get them and other useful weak dependencies is to call following line.
+Installation of `DALEX` will automatically take care about installation of other hard requirements (packages required by it), like the `ggplot2` package for data visualization. 
+
+To repeat all examples in this book, two additional packages are needed: `ingredients` and `iBreakDown`. The easiest way to get them, including other useful weak dependencies, is to execute the following command:
 
 ```
 DALEX::install_dependencies()
 ```
 
-Now you have installed everything that is needed to follow examples presented in this book.
+## How to work with `DALEX`?
 
-## How to work with `DALEX`
+To conduct model exploration with `DALEX`, first, a model has to be created. Then the model has got to be prepared for exploration.
 
-To do model exploration with `DALEX` you need to first create a model and then prepare the model for exploration.
+There are many packages in R that can be used to construct a model. There are some structure-specific packages, like `randomForest` for Random-Forest Classification and Regression models [@randomForest], `gbm` for Generalized Boosted Regression Models [@gbm], extensions for Generalized Linear Models [@rms], or many others. There is also a number of packages that can be used for constucting models with different structures. Thes include the `h2o` package [@h2oPackage], `caret` [@caret] and its successor `parsnip` [@parsnipPackage], a very powerful and extensible `mlr` [@mlr], or `keras` that is a wrapper to Python library with the same name [@kerasPackage].
 
-There is lots of different packages in R that can be used to train a model. There are some structure specific packages, like `randomForest` for Random Forest Classification and Regression models [@randomForest], `gbm` for Generalized Boosted Regression Models [@gbm], extensions for Generalized Linear Models [@rms] or many others. There is also a number of packages that works like model factories, can be used for training models of different structures. Most known are `h2o` which is a connector to H2O [@h2oPackage], `caret` [@caret] and its successor `parsnip` [@parsnipPackage], very powerful and extensible `mlr` [@mlr] or `keras` which is a wrapper to python library with the same name [@kerasPackage].
-
-It's greater to have such large choice when it comes to modeling; unfortunately these packages have different interfaces and different parameters.
-Model-objects created with different libraries may have different internal structures. The main goal of the `DALEX` package [@R-DALEX] is to create a level of abstraction around a model that makes it easier to explore and explain the model.
+While it is great to have such a large choice of tools for constructing models, the downside is that different  packages have different interfaces and different arguments. Moreover, model-objects created with different packages  may have different internal structures. The main goal of the `DALEX` package [@R-DALEX] is to create a level of abstraction around a model that makes it easier to explore and explain the model.
 
 Function `DALEX::explain` is THE function for model wrapping. The function requires five arguments: 
 
-* `model`, a model-object,
-* `data`, a data frame with validation data,
-* `y`, observed values of the dependent variable for the validation data, it an optional argument, required for explainers focused on model validation and benchmarking, 
-* `predict_function`, a function that returns prediction scores; if not specified, then a default `predict()` function is used. Note that for some models the default `predict()` function returns classes, in such cases you should provide a function that will return numerical scores. 
-* `label`, a name of a model; if not specified, then it is extracted from the `class(model)`. This name will be presented in Figures so it is better to make it informative.
+* `model`, a model-object;
+* `data`, a data frame with validation data;
+* `y`, observed values of the dependent variable for the validation data; it is an optional argument, required for explainers focused on model validation and benchmarking.
+* `predict_function`, a function that returns prediction scores; if not specified, then a default `predict()` function is used. Note that, for some models, the default `predict()` function returns classes; in such cases you should provide a function that will return numerical scores. 
+* `label`, a name of a model; if not specified, then it is extracted from the `class(model)`. This name will be presented in figures, so it is recommended to make the name informative.
 
-For example, let's train a random forest model for binary classification on `titanic` dataset.
+See an example in the section \@ref(ExplainersTitanicRCode).
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("DALEX")
-titanic <- na.omit(titanic)
+## How to work with `archivist`?
 
-library("randomForest")
-titanic_rf <- randomForest(survived ~ class + gender + age, data = titanic)
-```
+As we will focus on exploration of predictive models, we prefer not to waste space nor time on replication of the code necessary for model development. This is where the `archivist` packages helps.
 
-Here we create a wrapper for this model. We specified directly validation dataset (in the example below we use the training data as the validation dataset), the predict function and the label. 
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-explain_titanic_rf <- explain(model = titanic_rf, 
-            data = titanic[, c("class", "age", "gender")],
-            y = titanic$survived == "yes",
-            predict_function = function(m, x) predict(m, x, type = "prob"),
-            label = "Random Forest 3 vars")
-```
-
-For most popular models there are predefined `predict_function`'s so we can make the call shorter. 
-
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-explain_titanic_rf <- explain(model = titanic_rf, 
-            data = titanic[, c("class", "age", "gender")])
-```
-
-You will find more examples in the \@ref(ExplainersTitanicRCode) section.
-
-## How to work with `archivist`
-
-In next chapters we will be focused on exploration of predictive models. We do not want to waste space nor time to replicate code for model development. This is where `archivist` will help.
-
-The `archivist` package [@archivist] is design to store, share and manage of R objects. We will use it to easily access R models and explainers. 
-
-To install the package just copy following line to the R command line.
+The `archivist` package [@archivist] is designed to store, share, and manage R objects. We will use it to easily access R models and explainers. To install the package, the following command should be executed in the R command line:
 
 ```
-install.pacakges("archivist")
+install.packages("archivist")
 ```
 
-Then you can use `aread()` function to get R objects from any remote repository. 
-
-In this book we use a GitHub repository `models` hosted at https://github.com/pbiecek/models. To download a model with md5 hash `ceb40` one can call following line.
+Once the package has been installed, function `aread()` can be used to retrieve R objects from any remote repository. For this book, we use a GitHub repository `models` hosted at https://github.com/pbiecek/models. For instance, to download a model with the md5 hash `ceb40`, the following command has to be executed:
 
 ```{r, eval=FALSE}
 archivist::aread("pbiecek/models/ceb40")
 ```
 
-It returns a random forest model. Since md5 hash `ceb40` defines model uniquely, you will get exactly the same model and same explanations.
-
-In next chapters precalculated model explainers will be accessed with `archivist` hooks.
+Since the md5 hash `ceb40` uniquely defines the model, referring to the repository object results in using exactly the same model and the same explanations. Thus, in the subsequent chapters, pre-constructed model explainers will be accessed with `archivist` hooks.
 
 
-
-# DIY with Python  {#PythonCodeSnippets}
-
+# Do-it-yourself With Python  {#PythonCodeSnippets}
 
