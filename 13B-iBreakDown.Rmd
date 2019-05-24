@@ -1,7 +1,5 @@
 # iBreakDown for Variable Attributions with Interactions  {#iBreakDown}
 
-**PBI: note that we are using completly different notations here and in the prev chapter. Let's keep only one, but which one?**
-
 
 In the Section \@ref(breakDown) we presented a model agnostic approach to additive decomposition of model predictions. We also showed that for non-additive moedls the proposed attribution depends on the ordering of variables.
 
@@ -74,56 +72,56 @@ This simple intuition may be generalized into higher order interactions.
 
 For a feature $x_i$ we may define a single-step contribution as
 $$
-\Delta_i =  \mathbb{E}[f(x)|x_i = x^*_i] - \mathbb{E}[f(x)].
+\Delta^j =  \mathbb{E}[f(x)|x^j = x_*^j] - \mathbb{E}[f(x)].
 $$
 
 The expected model prediction $\mathbb{E}[f(x)]$ is sometimes called baseline or intercept and may be denoted as $\Delta_\varnothing$.
 
-Expected value $\mathbb{E}[f(x)|x_i = x^*_i]$ corresponds to an average prediction of a model $f$ if feature $x_i$ is fixed on $x_i^{*}$ coordinate from the observation to explain $x^{*}$.
+Expected value $\mathbb{E}[f(x)|x^j = x_*^j]$ corresponds to an average prediction of a model $f$ if feature $x_j$ is fixed on $x^j_*$ coordinate from the observation to explain $x_*$.
 
-I.e. the $\Delta_i$ is the difference between expected model response after conditioning on $i$ variable minus the expected model response. $\Delta_i$ measures a naive single-step local variable importance, it indicates how much the average prediction of model $f$ changes if feature $x_i$ is set on $x^*_i$. 
+I.e. the $\Delta^j$ is the difference between expected model response after conditioning on $j$ variable minus the expected model response. $\Delta^j$ measures a naive single-step local variable importance, it indicates how much the average prediction of model $f$ changes if feature $x^j$ is set on $x_*^j$. 
 
 ### Two steps contributions
 
 For a pair of variables $x_i$, $x_j$ we introduce a single-step contribution as
 $$
-\Delta_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] - \mathbb{E}[f(x)].
+\Delta^{ij} =  \mathbb{E}[f(x)|x^i = x_*^i, x^j = x_*^j] - \mathbb{E}[f(x)].
 $$
 
 And non additive component of this contribution as
 
 $$
-\Delta^{I}_{ij} =  \mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j] -  \mathbb{E}[f(x)|x_i = x^*_i] -  \mathbb{E}[f(x)|x_j = x^*_j] + \mathbb{E}[f(x)].
+\Delta_{I}^{ij} =  \mathbb{E}[f(x)|x^i = x_*^i, x^j = x_*^j] -  \mathbb{E}[f(x)|x^i = x_*^i] -  \mathbb{E}[f(x)|x^j = x_*^j] + \mathbb{E}[f(x)].
 $$
 
 Or equivalently
 
 $$
-\Delta^{I}_{ij} = \Delta_{ij} - \Delta_i - \Delta_j. 
+\Delta_{I}^{ij} = \Delta^{ij} - \Delta^i - \Delta^j. 
 $$
 
 ### Sequential contributions
 
-The $\Delta^{I}_{ij}$ is the difference between collective effect of variables $x_i$ and $x_j$ denoted as $\Delta_{ij}$ and their additive effects $\Delta_{i}$ and $\Delta_{j}$. Therefore, $\Delta^{I}_{ij}$ measures the importance of local lack-of-additivnes (aka. interaction) between features $i$ and $j$.
-For additive models $\Delta^{I}_{ij}$ should small~for any $i$, $j$.
+The $\Delta_{I}^{ij}$ is the difference between collective effect of variables $x^i$ and $x^j$ denoted as $\Delta^{ij}$ and their additive effects $\Delta^{i}$ and $\Delta^{j}$. Therefore, $\Delta_{I}^{ij}$ measures the importance of local lack-of-additivnes (aka. interaction) between features $i$ and $j$.
+For additive models $\Delta_{I}^{ij}$ should be small~for any $i$, $j$.
 
-Note that contributions $\Delta_{i}$ do not sum to final model prediction. We only use them to determine the order of features in which the instance shall be explained. To calculate contributions that have the property of *local accuracy* we need to introduce one more symbol, that corresponds to the added contribution of feature $i$ to the set of features~$J$. 
+Note that contributions $\Delta^{i}$ do not sum to final model prediction. We only use them to determine the order of features in which the instance shall be explained. To calculate contributions that have the property of *local accuracy* we need to introduce one more symbol, that corresponds to the added contribution of feature $i$ to the set of features~$J$. 
 
 $$
-\Delta_{i|J} = \mathbf{E}[f(X)| x_{J\cup\{i\}} = x_{J\cup\{i\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] =     \Delta_{J\cup\{i\}} - \Delta_{J}.
+\Delta^{i|J} = \mathbf{E}[f(X)| x^{J\cup\{i\}} = x^{J\cup\{i\}}_{*}] -  \mathbf{E}[f(X)| x^{J} = x^{J}_{*}] =     \Delta^{J\cup\{i\}} - \Delta^{J}.
 $$
 
 And for pairs of features
 
 $$
-\Delta_{ij|J} = \mathbf{E}[f(X)| x_{J\cup\{i,j\}} = x_{J\cup\{i,j\}}^{*}] -  \mathbf{E}[f(X)| x_{J} = x_{J}^{*}] = 
-    \Delta_{J\cup\{i,j\}} - \Delta_{J}.
+\Delta^{ij|J} = \mathbf{E}[f(X)| x^{J\cup\{i,j\}} = x^{J\cup\{i,j\}}_{*}] -  \mathbf{E}[f(X)| x^{J} = x^{J}_{*}] = 
+    \Delta^{J\cup\{i,j\}} - \Delta^{J}.
 $$
 
-Once the order of single-step importance is determined based on $\Delta_i$ and $\Delta^{I}_{ij}$ scores, the final explanation is the attribution to the sequence of $\Delta_{i|J}$ scores. These contributions sum up to the model predictions, because
+Once the order of single-step importance is determined based on $\Delta^i$ and $\Delta_{I}^{ij}$ scores, the final explanation is the attribution to the sequence of $\Delta^{i|J}$ scores. These contributions sum up to the model predictions, because
 
 $$
-\Delta_{1,2...p} = f(x^*) - E[f(X)].
+\Delta^{1,2...p} = f(x_*) - E[f(X)].
 $$
 
 This approach can be generalized to interactions between any number of variables.
@@ -134,7 +132,7 @@ The complexity of the calculation of single step attributions is $O(p)$ where $p
 
 In this example we will use a random forest model for Titanic data and Johny D example - an 8 years old boy from 1st class. 
 
-In Table \@ref(tab:titanicIBreakDownList) we showed expected model responses $\mathbb{E}[f(x)|x_i = x^*_i, x_j = x^*_j]$, single-step effects $\Delta_{ij}$ and non-additive effects $\Delta^{I}_{ij}$ for each variable and each pair of variables. All these values are calculated locally for Johny D. These values are sorted along local importance, most important to the top. 
+In Table \@ref(tab:titanicIBreakDownList) we showed expected model responses $\mathbb{E}[f(x)|x^i = x_*^i, x^j = x_*^j]$, single-step effects $\Delta^{ij}$ and non-additive effects $\Delta_{I}^{ij}$ for each variable and each pair of variables. All these values are calculated locally for Johny D. These values are sorted along local importance, most important to the top. 
 
 Based on this ordering a following sequence of variables are indentified as informative: `age`, `fare:class`, `gender`. `embarked`, `sibsp` and `parch`.
 
@@ -143,7 +141,7 @@ Once the ordering is specified, in the table \@ref(tab:titanicIBreakDownList2) w
 
 Table: (\#tab:titanicIBreakDownList) For each variable and each pair of variables we calculated the expected conditional model response, the difference between conditional model response and the baseline and for pairs of variables the non-additive contribution. Rows are sorted according to the absolute value of the last column (if provided).
 
-|Variable        |$E[f(x)|x_{ij}= x^*_{ij}]$| $\Delta_{ij}$ | $\Delta^I_{ij}$|
+|Variable        |$E[f(x):x^{ij}= x_*^{ij}]$| $\Delta^{ij}$ | $\Delta_I^{ij}$|
 |:---------------|-----:|------:|---------:|
 |age             | 0.505|  0.270|          |
 |fare:class      | 0.333|  0.098|    -0.231|
@@ -178,7 +176,7 @@ Table: (\#tab:titanicIBreakDownList) For each variable and each pair of variable
 
 Table: (\#tab:titanicIBreakDownList2) Based on identified order we calculated the expected conditional model response and the difference between conditional model response with and without a specified variable. These values are plotted in the iBreakDown plot.
 
-|Variable               | $\Delta_{i|J}$| $\Delta_{J\cup\{i\}}$ |
+|Variable               | $\Delta^{i:J}$| $\Delta^{J\cup\{i\}}$ |
 |:----------------------|------------:|-----------:|
 |intercept              |             |   0.235    |
 |age = 8                |    0.269    |   0.505    |
@@ -318,67 +316,32 @@ Break Down for interactions shares many features of Break Down for single variab
 
 In this section we present key features of the `iBreakDown` package for R [@iBreakDownRPackage]. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/iBreakDown/`.
 
-All steps are very similar to these presented in the previouse chapter for variable attributions. The only difference is that the `break_down()` function will now take `interactions = FALSE` argument.
+All steps are very similar to these presented in the previouse chapter for variable attributions. The only difference is that the `break_down()` function will now take `interactions = TRUE` argument.
 
 **Model preparation**
 
 As in previous chapters we will use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)).
 Using the same model will help us (1) to understand how the Break Down method works, (2) to compare these explanations against methods presented in previous chapters.
 
-So let restore the `titanic_rf_v6` model.
+So let restore the `explain_rf_v6` explainer
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("DALEX")
 library("randomForest")
+explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 
-titanic <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
+library("DALEX")
+johny_d <- archivist::aread("pbiecek/models/e3596")
+johny_d
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
-library("DALEX")
 library("randomForest")
-load("models/titanic_rf_v6.rda")
-load("models/titanic.rda")
+library("DALEX")
+load("models/explain_rf_v6.rda")
+load("models/johny_d.rda")
+johny_d
 ```
 
-Model exploration with the `iBreakDown` package is performed in three steps. 
-
-**1. Create an explainer - wrapper around model and validation data.**
-
-Since all other functions work in a model agnostic fashion, first we need to define a wrapper around the model. Here we are using the `explain()` function from `DALEX` package [@R-DALEX].
-
-This function was introduced in detailes in the \@ref(codeSnippetsCeterisParibus) section.
-
-```{r, warning=FALSE, message=FALSE}
-explain_titanic_rf <- explain(model = titanic_rf_v6, 
-                              data = titanic[,-9],
-                              y = titanic$survived == "yes", 
-                              label = "Random Forest v6")
-```
-
-**2. Select an observation of interest.** 
-
-Break Down Plots decompose model prediction around a single observation. Let's construct a data frame with corresponding values.
-
-Here again we will use a data frame `johny_d` with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. 
-
-```{r, warning=FALSE, message=FALSE}
-johny_d <- data.frame(
-  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
-                                  "restaurant staff", "victualling crew")),
-  gender = factor("male", levels = c("female", "male")),
-  age = 8,
-  sibsp = 0,
-  parch = 0,
-  fare = 72,
-  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
-)
-
-predict(explain_titanic_rf, johny_d)
-```
-
-**3. Calculate Break Down decomposition**
 
 The `iBreakDown::break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
 
@@ -390,7 +353,7 @@ By default only additive attributions are calculated. Use `interactions = TRUE` 
 
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
-bd_rf <- break_down(explain_titanic_rf,
+bd_rf <- break_down(explain_rf_v6,
                  johny_d,
                  interactions = TRUE)
 
