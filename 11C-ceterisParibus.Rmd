@@ -9,11 +9,11 @@ output:
 
 It may happen that, while the global predictive performance of the model is good, model predictions for some observations are very bad. In this chapter, we present two local-diagnostics techniques that can address this issue. In particular, we focus on fidelity plots: the plot of CP profiles for nearest neighbors and the local-fidelity plot.
 
-The idea behind fidelity plots is to select a number of observatons ("neighbors") from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.
+The idea behind fidelity plots is to select a number of observations ("neighbors") from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.
 
 ## Intuition {#cPLocDiagIntuition}
 
-One approach to local model diagnostics is to examine how the predictions vary for observations from the training dataset. Figure \@ref(fig:profileWith10NN) presents CP profiles for the instance of interest and its 10 nearest neighbors for the random forest model for the the Tianic dataset (Section \@ref(model-titanic-rf)). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.
+One approach to local model diagnostics is to examine how the predictions vary for observations from the training dataset. Figure \@ref(fig:profileWith10NN) presents CP profiles for the instance of interest and its 10 nearest neighbors for the random forest model for the Titanic dataset (Section \@ref(model-titanic-rf)). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.
 
 ```{r profileWith10NN, echo=FALSE, fig.cap="(fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the `titanic_rf_b6` model. The profiles are almost parallel and close to each other what suggests the stability of the model.", out.width = '50%', fig.align='center'}
 knitr::include_graphics("figure/example_cp.png")
@@ -45,15 +45,15 @@ There are two important questions related to the selection of the neighbors "nea
 
 The answer to both questions is, of course, *it depends*. 
 
-* The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neghbors works fine. However, one should always take into account computational time, the size of the dataset, and other possibly important factors. [TOMASZ: "WHICH FACTORS? IMPORTANT" REGARDING WHAT? UNCLEAR]
-* The metric if very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accomodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:
+* The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neighbors works fine. However, one should always take into account computational time (smaller number of neighbors results in quicker calculations) and the size of the dataset (small dataset prefers smaller sets of neighbors). [PBI: updated]
+* The metric if very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accommodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:
 
 $$
 d_{gower}(x_i, x_j) = \frac 1p \sum_{k=1}^p d^k(x_i^k, x_j^k),
 $$
 where $x_i$ is a $p$-dimensional vector of explanatory covariates for the $i$-th observation and $d^k(x_i^k,x_j^k)$ is the distance between values of the $k$-th variable for the $i$-th and $j$-th observations. Note that $d^k()$ depends on the nature of the variable. For instance, for a continuous variable it is equal to  $|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}$, i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply $I(x_i^k = x_j^k)$, where $I()$ is the indicator function. Note that $p$ may be equal to the number of all explanatory variables included in the model, or only a subset of them.
 
-Once we have decided on the numer of neighbors, we can use the chosen metric to select the required number observations "closest" to the one of interest.
+Once we have decided on the number of neighbors, we can use the chosen metric to select the required number observations "closest" to the one of interest.
 
 ### Profiles for neighbors {#cPLocDiagProfiles}
 
@@ -68,18 +68,29 @@ CP profiles are helpful to assess the model stability. In addition, we can enhan
 $$
 r_i = y_i - f(x_i).
 $$
-Note that, for a binary variable, the residual is the difference between 0 or 1, depending on how we code "success," and the predicted probability of "success." [TOMASZ: HOW ABOUT A CATEGORICAL VARIABLE?]  
+Note that, for a binary variable, the residual is the difference between 0 or 1, depending on how we code "success," and the predicted probability of "success." 
+For multiresponse models it is common to perform such analysis for each class separately, in the one-vs-all settings.
+[PBI: updated]  
 
 The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot. 
 
 ## Example: Titanic data {#cPLocDiagExample}
 
-As an example, we will use the predictions for the random forest model for the Titanic data (see Section \@ref(model-titanic-rf)). We show profiles only for a single continuous explanatory variable, *age*. This makes the example easier to read without reducing the generality. [TOMASZ: NOT SURE. WOULD BE USEFUL TO SEE AN EXAMPLE FOR A FACTOR.]
+As an example, we will use the predictions for the random forest model for the Titanic data (see Section \@ref(model-titanic-rf)). We show profiles only for a single continuous explanatory variable, *age*. This makes the example easier to read without reducing the generality
 
 Figure \@ref(fig:localFidelityPlots) presents a detailed explanation of the elements of a local-fidelity plot. The plot includes eight nearest neighbors of Henry (see Section \@ref(predictions-titanic)). Profiles are quite apart from each other, which indicates potential instability of model predictions. However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.
 
+[PBI:adde] Figure \@ref(fig:localFidelityPlots2) presents an example for categorical variable `class`. Henry and his neighbors traveled in class `1st` and in corresponding panels we see how particular odds of survival change according to model predictions if `1st` class is replaced by `2nd` (in most cases they will be lowered) or `deck crew` (in most cases they will increase). Such plots help to detect interactions, as we see that for different passengers the same change (let's say from `1st` class to `3rd` class) results in different model responses (for some passengers it increases for other decreases predictions).
+
+
 ```{r localFidelityPlots, echo=FALSE, fig.cap="(fig:localFidelityPlots) Elements of a local-fidelity plot. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/localFidelityPlots.png")
+```
+
+
+
+```{r localFidelityPlots2, echo=FALSE, fig.cap="(fig:localFidelityPlots2) Elements of a local-fidelity plot for categorical variable. The plot summarizes categorical variable `class`. In each panel we present conditional model responses how model prediction would change if the class is changed from class `1st` to a selected class. The local fidelity problem is constructed for Henry and his 10 neighbors. Dots stands for original model predictions for these neighbors as if they are in class `1st`, end of the interval corresponds to model predictions after swapping class to a selected one. In the first panel we see that for most neighbors change from class `1st` to `2nd` decreases model response, maybe except two neighbors with low chances anyway. On the contrary third panel corresponds to the `deck crew` members, for most neighbors chances of survival increase after changing the class from `1st` to `desk crew`.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/cp_fidelity_2.png")
 ```
 
 
@@ -89,13 +100,13 @@ Local-fidelity plots may be very helpful to check if
 
 * the model is locally additive, as for such models the CP profiles should be parallel;
 * the model is locally stable, as in that case the CP profiles should be close to each other;
-* the model fit for the instance of interest is good, as in that case the residuals should be small and their distriubtion should be balanced around 0.
+* the model fit for the instance of interest is good, as in that case the residuals should be small and their distribution should be balanced around 0.
 
 The drawback is that such plots are quite complex and lack objective measures of the quality of the model fit. Thus, they are mainly suitable for an exploratory analysis.
 
 ## Code snippets for R {#cPLocDiagR}
 
-In this section, we show how to use the R package `ingredients` [@R-ingredients] to contruct local-fidelity plots. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
+In this section, we show how to use the R package `ingredients` [@R-ingredients] to construct local-fidelity plots. More details and examples can be found at `https://modeloriented.github.io/ingredients/`.
 
 We use the random forest model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(model-titanic-rf) ) as the example. Recall that we try to address a classification problem for a binary dependent variable - we want to predict the probability of survival for a selected passenger.
 
@@ -110,7 +121,7 @@ henry <- archivist::aread("pbiecek/models/a6538")
 henry
 ```
 
-We will show how to construct Figure \@ref(fig:profileWith10NN). Toward this aim we need some number of passengers most similar to `henry`. To select the ''neighbors'', we use the `select_neighbours()` function from the `ingredients' package. It returns `n` observations (by default, 20) most similar to the observation of interest accroding to the `distance` measure (by default, the Gower distance is used). 
+We will show how to construct Figure \@ref(fig:profileWith10NN). Toward this aim we need some number of passengers most similar to `henry`. To select the ''neighbors'', we use the `select_neighbours()` function from the `ingredients' package. It returns `n` observations (by default, 20) most similar to the observation of interest according to the `distance` measure (by default, the Gower distance is used). 
 
 In the example below, we select 10 nearest neighbors to `henry` find from the `titanic` dataset. Note that the similarity is based only on two explanatory variables, *gender*, and *class*, as indicated in the argument `variables`.  
 
@@ -160,4 +171,5 @@ plot(cp_henry_neighbors, color = '#ceced9') +
 #  show_residuals(cp_henry_neighbors, variables = "age") +
   ggtitle("Local-fidelity plot for Henry","Calculated for the titanic_rf_v6 model")
 ```
+
 
