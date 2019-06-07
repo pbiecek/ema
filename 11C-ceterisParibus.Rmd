@@ -45,7 +45,7 @@ There are two important questions related to the selection of the neighbors "nea
 
 The answer to both questions is, of course, *it depends*. 
 
-* The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neighbors works fine. However, one should always take into account computational time (smaller number of neighbors results in quicker calculations) and the size of the dataset (small dataset prefers smaller sets of neighbors). [PBI: updated]
+* The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neighbors works fine. However, one should always take into account computational time (smaller number of neighbors results in quicker calculations) and the size of the dataset (for a small dataset, smaller sets of neighbors may be preferred). [PBI: updated]
 * The metric if very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accommodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:
 
 $$
@@ -68,28 +68,26 @@ CP profiles are helpful to assess the model stability. In addition, we can enhan
 $$
 r_i = y_i - f(x_i).
 $$
-Note that, for a binary variable, the residual is the difference between 0 or 1, depending on how we code "success," and the predicted probability of "success." 
-For multiresponse models it is common to perform such analysis for each class separately, in the one-vs-all settings.
+Note that, for a binary variable, the residual is the difference between the value of 0 or 1, depending on how we code "success," and the value of the predicted probability of "success." This defintion also applies to categorical responses, as it is common to define, in such case, a binary "success" indicator and compute the predicted probaiblity of "success" for each category separately.
 [PBI: updated]  
 
 The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot. 
 
 ## Example: Titanic data {#cPLocDiagExample}
 
-As an example, we will use the predictions for the random forest model for the Titanic data (see Section \@ref(model-titanic-rf)). We show profiles only for a single continuous explanatory variable, *age*. This makes the example easier to read without reducing the generality
+As an example, we will use the predictions for the random forest model for the Titanic data (see Section \@ref(model-titanic-rf)). 
 
-Figure \@ref(fig:localFidelityPlots) presents a detailed explanation of the elements of a local-fidelity plot. The plot includes eight nearest neighbors of Henry (see Section \@ref(predictions-titanic)). Profiles are quite apart from each other, which indicates potential instability of model predictions. However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.
+Figure \@ref(fig:localFidelityPlots) presents a detailed explanation of the elements of a local-fidelity plot for  *age*, a continuous explanatory variable. The plot includes eight nearest neighbors of Henry (see Section \@ref(predictions-titanic)). Profiles are quite apart from each other, which indicates potential instability of model predictions. However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.
 
-[PBI:added] Figure \@ref(fig:localFidelityPlots2) presents an example for categorical variable `class`. Henry and his neighbors traveled in class `1st` and in corresponding panels we see how particular odds of survival change according to model predictions if `1st` class is replaced by `2nd` (in most cases they will be lowered) or `deck crew` (in most cases they will increase). Such plots help to detect interactions, as we see that for different passengers the same change (let's say from `1st` class to `3rd` class) results in different model responses (for some passengers it increases for other decreases predictions).
+[PBI:added] Figure \@ref(fig:localFidelityPlots2) presents a local-fidelity plot for the categorical explanatory variable `class`. Henry and his neighbors traveled in the `1st` class. In different panels we see how the predicted probabilityof survival changes if  the `1st` class is replaced, for instance, by the `2nd` (in most cases, they probability will be reduced) or the `deck crew` (in most cases, the probability will increase). Such plots can help to detect interactions, as we see that the same change (let's say, from the `1st` to the `3rd` class) results in a different change of the model prediction.
 
-
-```{r localFidelityPlots, echo=FALSE, fig.cap="(fig:localFidelityPlots) Elements of a local-fidelity plot. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.", out.width = '70%', fig.align='center'}
+```{r localFidelityPlots, echo=FALSE, fig.cap="(fig:localFidelityPlots) Elements of a local-fidelity plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/localFidelityPlots.png")
 ```
 
 
 
-```{r localFidelityPlots2, echo=FALSE, fig.cap="(fig:localFidelityPlots2) Elements of a local-fidelity plot for categorical variable. The plot summarizes categorical variable `class`. In each panel we present conditional model responses how model prediction would change if the class is changed from class `1st` to a selected class. The local fidelity problem is constructed for Henry and his 10 neighbors. Dots stands for original model predictions for these neighbors as if they are in class `1st`, end of the interval corresponds to model predictions after swapping class to a selected one. In the first panel we see that for most neighbors change from class `1st` to `2nd` decreases model response, maybe except two neighbors with low chances anyway. On the contrary third panel corresponds to the `deck crew` members, for most neighbors chances of survival increase after changing the class from `1st` to `desk crew`.", out.width = '70%', fig.align='center'}
+```{r localFidelityPlots2, echo=FALSE, fig.cap="(fig:localFidelityPlots2) The local-fidelity plot for the categorical explanatory variable `class` in the random effects model for the Titanic data, Henry, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from  `1st` to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the `1st` to the `2nd` class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to `deck crew` members increases the predicted probability.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/cp_fidelity_2.png")
 ```
 

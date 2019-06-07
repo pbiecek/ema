@@ -28,31 +28,29 @@ vip_{CP}^j(x_*) = \int_{\mathcal R} |h^{j}_{x_*}(z) - f(x_*)| g^j(z)dz=E_{X^j}\l
 
 Thus, $vip_{CP}^j(x_*)$ is the expected absolute deviation of the CP profile from the model prediction for $x_*$ over the distribution $g^j(z)$ for the $j$-th explanatory variable.
 
-The true distribution of $j$-th explanatory variable is, in most cases, unknown. Thus we have few options how to calculate \@ref(eq:VIPCPdef). 
+The true distribution of $j$-th explanatory variable is, in most cases, unknown. Thus, there are several options how to calculate \@ref(eq:VIPCPdef). 
 
-One is to calculate just the area under the Ceteris Paribus curve, what corresponds to the uniform distribution for $g^j(z)$ in the range of variable $x^j$. A straightforward estimator of $vip_{CP}^{j,uni}(x_*)$ is
+One is to calculate just the area under the CP curve, i.e., to assume that $g^j(z)$ is a uniform distribution for  the range of variable $x^j$. It folows then that a straightforward estimator of $vip_{CP}^{j,uni}(x_*)$ is
 
 \begin{equation}
-\widehat{vip}_{CP}^{j,uni}(x_*) = \frac 1k \sum_{i=1}^k |h^{j}_{x_*}(x^{j}_k) - f(x_*)|,
-(\#eq:VIPCPest)
+\widehat{vip}_{CP}^{j,uni}(x_*) = \frac 1k \sum_{l=1}^k |h^{j}_{x_*}(z_l) - f(x_*)|,
+(\#eq:VIPCPuni)
 \end{equation}
 
-Where $x^{j}_k$ is a vector of $k$ points selected for variable $x^{j}$. For a continuous variable one can use equispaced points, or for any variable one can use all unique values for $x^{j}$ in the considered dataset.
+where $z_l$ ($l=1, \ldots, k$) are the selected values of the $j$-th explanatory variable. For instance, one can select use all unique values of $x^{j}$ in the considered dataset. Alternatively, for a continuous variable, one can use an equi-distant grid of values.
 
-Another approach is to use empirical marginal distribution for $x^{j}$. This leads to a straightforward estimator of $vip_{CP}^{j,emp}(x_*)$ defined as
+Another approach is to use the empirical distribution for $x^{j}$. This leads to the estimator of $vip_{CP}^{j,emp}(x_*)$ defined as
 
 \begin{equation}
 \widehat{vip}_{CP}^{j,emp}(x_*) = \frac 1n \sum_{i=1}^n |h^{j}_{x_*}(x^{j}_i) - f(x_*)|,
-(\#eq:VIPCPest)
+(\#eq:VIPCPemp)
 \end{equation}
 
 where index $i$ goes through all observations in a dataset. 
 
-**Note** The choice of $\widehat{vip}_{CP}^{j,emp}(x_*)$ is preferred  when we have enough data to accurately estimate the empirical distribution and then the distribution is not uniform. The $\widehat{vip}_{CP}^{j,uni}(x_*)$ is in most cases quicker to calculate and is preferred if we look for fast approximations. 
+The use of of $\widehat{vip}_{CP}^{j,emp}(x_*)$ is preferred when there are enough data to accurately estimate the empirical distribution and when the distribution is not uniform. On the other hand, $\widehat{vip}_{CP}^{j,uni}(x_*)$ is in most cases quicker to compute and, therefore, it is preferred if we look for fast approximations. 
 
-
-
-**Note** The importance of an explanatory variable for instance prediction may be very different for different points $x_*$. For example, consider model 
+It is worth noting that the importance of an explanatory variable for instance prediction may be very different for different points $x_*$. For example, consider model 
 $$
 f(x_1, x_2) = x_1 * x_2,
 $$
@@ -114,12 +112,14 @@ library("ggplot2")
 cp_titanic_rf <- ceteris_paribus(explain_rf_v6, henry)
 ```
 
-The resulting object can subsequently be processed with the `calculate_oscillations()` function to calculate the oscillations and the variable-importance-measure estimates \@ref(eq:VIPCPest).
+The resulting object can subsequently be processed with the `calculate_oscillations()` function to calculate the oscillations and the estimated value of the variable-importance measure \@ref(eq:VIPCPdef).
 
 ```{r titanicCeterisProfile02D, warning=FALSE, message=FALSE}
 oscillations_titanic_rf <- calculate_oscillations(cp_titanic_rf)
 oscillations_titanic_rf
 ```
+
+Note that, by default, `calculate_oscillations()` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$, given in \@ref(eq:VIPCPuni), using all unique values of the explanatory variable as the grid points.
 
 The `calculate_oscillations()` function returns an object of class `ceteris_paribus_oscillations`, which has a form of a data frame, but has also an overloaded `plot()` function. We can use the latter function to plot the local variable-importance measures for the instance of interest. 
 
@@ -130,14 +130,9 @@ plot(oscillations_titanic_rf) + ggtitle("Ceteris Paribus Oscillations")
 
 ### Advanced use of the `calculate_oscillations` function
 
-Note, that the `calculate_oscillations()` function calculates $\widehat{vip}_{CP}^j(x_*)$, as given in \@ref(eq:VIPCPest), as an average absolute difference between the CP profile and the model prediction for a selected instance over a grid of values.
+As mentioned in the previous section, `calculate_oscillations()` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$ using all unique values of the explanatory variable as the grid points. However, other approaches are also possible.
 
-The choice of grid of values may influence the result, as it defines the distribution over which the average \@ref(eq:VIPCPest), corresponding to \@ref(eq:VIPCPdef), will be computed.
-
-The default choice, implemented in the `calculate_oscillations()` function, is to use all unique values of the explanatory variable as the grid points which correspond to the estimator $vip_{CP}^{j,uni}(x_*)$ as introduced in \@ref(eq:VIPCPdef).
-[PBI: updated] However, other approaches are also possible.
-
-One is to calculate the expectation \@ref(eq:VIPCPdef) assuming a uniform distribution for all explanatory variables. Toward this aim, we have got to explicitly specify a dense uniform grid of values for each explanatory variable used in the model. The `variable_splits` argument can be used for this purpose.
+One is to use $\widehat{vip}_{CP}^{j,uni}(x_*)$, but assuming an equi-distant grid of values for a continuous explanatory variable. Toward this aim, we have got to explicitly specify a dense uniform grid of values for such a variable. The `variable_splits` argument can be used for this purpose.
 
 ```{r titanicCeterisProfile02F, warning=FALSE, message=FALSE}
 cp_titanic_rf_uniform <- ceteris_paribus(explain_rf_v6, henry, 
@@ -159,9 +154,7 @@ oscillations_uniform
 plot(oscillations_uniform) + ggtitle("Ceteris Paribus Oscillations", "Expectation over uniform distribution")
 ```
 
-Another approach is to calculate the expectation \@ref(eq:VIPCPdef) over the empirical distribution of each variable as defined in formula for $vip_{CP}^{j,emp}(x_*)$. 
-
-Toward this aim, we use the `variable_splits` argument to explicitly specify the validation-data sample to define the  grid of values. 
+Another approach is to calculate the expectation \@ref(eq:VIPCPdef) over the empirical distribution of a  variable, i..e, to use $\widehat{vip}_{CP}^{j,emp}(x_*)$, given in \@ref(eq:VIPCPemp). Toward this aim, we use the `variable_splits` argument to explicitly specify the validation-data sample to define the  grid of values. 
 
 ```{r titanicCeterisProfile02H, warning=FALSE, message=FALSE}
 titanic <- na.omit(titanic)
