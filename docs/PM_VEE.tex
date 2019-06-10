@@ -131,7 +131,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-06-07}
+    \date{2019-06-10}
 
 \usepackage{booktabs}
 
@@ -4605,12 +4605,11 @@ The generic \texttt{plot()} function creates a Break Down plots.
 \section{SHapley Additive exPlanations (SHAP) and Average Variable
 Attributions}\label{shapley}}
 
-In the Section \ref{variableAttributionMethods} we show a procedure that
-attributes parts of model prediction to input features. We also show
-that in the presence of interactions attributions depend on the feature
-ordering. One solution to this problem is introduced in section
-\ref{breakDown} - just find an ordering that put most important features
-to the front. Other solution is introduced in the Section
+In the Section \ref{breakDown} we show a procedure that attributes parts
+of model prediction to input features. We also show that in the presence
+of interactions attributions depend on the feature ordering. One
+solution to this problem is to find an ordering that put most important
+features to the front. Other solution is introduced in the Section
 \ref{iBreakDown} - identify interactions and show interactions in model
 explanations.
 
@@ -4632,9 +4631,10 @@ used techniques for model explanations.
 \subsection{Intuition}\label{intuition-2}}
 
 Figure \ref{fig:shap10orderings} shows Break Down attributions for 10
-random orderings for Titanic dataset. As we see there are differences,
-most striking are that depending on the order features like
-\texttt{fare} or \texttt{class} may have positive or negative effect.
+random orderings for Titanic dataset. As we see there are differences in
+feature attribution. The most striking ones are linked with features
+\texttt{fare} or \texttt{class}. They attribution may be positive or
+negative depending on the ordering
 
 \begin{figure}
 
@@ -4649,7 +4649,8 @@ SHAP attributions are averages across all (or at least large number) of
 different orderings. See for example Figure \ref{fig:shapOrdering}. In a
 single plot we summarize all orderings from Figure
 \ref{fig:shap10orderings}. Violet boxplots show distributions for
-attributions for a selected variable.
+attributions for a selected variable, while length of the bar stands for
+an average attribution.
 
 \begin{figure}
 
@@ -4880,8 +4881,8 @@ summarize key strengths and weaknesses of this approach.
 \end{itemize}
 
 Note that for an additive model other approaches like these presented in
-Sections \ref{modelAgnosticAttribution}, \ref{breakDown} and
-\ref{shapley} lead to same variable contributions.
+Sections \ref{breakDown}, \ref{iBreakDown} and \ref{shapley} lead to
+same variable contributions.
 
 \hypertarget{code-snippets-for-r-2}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r-2}}
@@ -4898,7 +4899,7 @@ wrapper over SHAP python library \citep{shapPackage} and \texttt{iml}
 \citep{imlRPackage}.
 
 In this section, we use the random forest \citep{R-randomForest} model
-\texttt{titanic\_rf\_v6} developed for the Titanic dataset (see Section
+\texttt{titanic\_rf\_v6} developed for the Titanic dataset (see Chapter
 \ref{TitanicDataset}).
 
 So let restore the \texttt{titanic\_rf\_v6} model and explainer created
@@ -4907,15 +4908,12 @@ with the \texttt{explain()} function from \texttt{DALEX} package
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
 \KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
+\NormalTok{explain_rf_v6 <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/9b971"}\NormalTok{)}
 
-\NormalTok{titanic <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/27e5c"}\NormalTok{)}
-\NormalTok{titanic_rf_v6 <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/31570"}\NormalTok{)}
-\NormalTok{explain_titanic_rf <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(}\DataTypeTok{model =}\NormalTok{ titanic_rf_v6, }
-                              \DataTypeTok{data =}\NormalTok{ titanic[,}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{4}\NormalTok{,}\DecValTok{6}\OperatorTok{:}\DecValTok{8}\NormalTok{)],}
-                              \DataTypeTok{y =}\NormalTok{ titanic}\OperatorTok{$}\NormalTok{survived }\OperatorTok{==}\StringTok{ "yes"}\NormalTok{, }
-                              \DataTypeTok{label =} \StringTok{"Random Forest v6"}\NormalTok{)}
+\KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\NormalTok{johny_d <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/e3596"}\NormalTok{)}
+\NormalTok{johny_d}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4926,18 +4924,7 @@ this instance with the help of the `predict()' function.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{johny_d <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(}
-  \DataTypeTok{class =} \KeywordTok{factor}\NormalTok{(}\StringTok{"1st"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"1st"}\NormalTok{, }\StringTok{"2nd"}\NormalTok{, }\StringTok{"3rd"}\NormalTok{, }\StringTok{"deck crew"}\NormalTok{, }\StringTok{"engineering crew"}\NormalTok{, }
-                                  \StringTok{"restaurant staff"}\NormalTok{, }\StringTok{"victualling crew"}\NormalTok{)),}
-  \DataTypeTok{gender =} \KeywordTok{factor}\NormalTok{(}\StringTok{"male"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"female"}\NormalTok{, }\StringTok{"male"}\NormalTok{)),}
-  \DataTypeTok{age =} \DecValTok{8}\NormalTok{,}
-  \DataTypeTok{sibsp =} \DecValTok{0}\NormalTok{,}
-  \DataTypeTok{parch =} \DecValTok{0}\NormalTok{,}
-  \DataTypeTok{fare =} \DecValTok{72}\NormalTok{,}
-  \DataTypeTok{embarked =} \KeywordTok{factor}\NormalTok{(}\StringTok{"Southampton"}\NormalTok{, }\DataTypeTok{levels =} \KeywordTok{c}\NormalTok{(}\StringTok{"Belfast"}\NormalTok{, }\StringTok{"Cherbourg"}\NormalTok{, }\StringTok{"Queenstown"}\NormalTok{, }\StringTok{"Southampton"}\NormalTok{))}
-\NormalTok{)}
-
-\KeywordTok{predict}\NormalTok{(explain_titanic_rf, johny_d)}
+\KeywordTok{predict}\NormalTok{(explain_rf_v6, johny_d)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -4959,12 +4946,12 @@ corresponding boxplots.
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"iBreakDown"}\NormalTok{)}
 
-\NormalTok{shap_johny <-}\StringTok{ }\KeywordTok{shap}\NormalTok{(explain_titanic_rf, johny_d, }\DataTypeTok{B =} \DecValTok{25}\NormalTok{)}
+\NormalTok{shap_johny <-}\StringTok{ }\KeywordTok{shap}\NormalTok{(explain_rf_v6, johny_d, }\DataTypeTok{B =} \DecValTok{25}\NormalTok{)}
 \KeywordTok{plot}\NormalTok{(shap_johny) }
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-48-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-49-1.pdf}
 
 Figure \ref{fig:shappJohny02} is generated in the same way. The only
 difference is that boxplots are not plotted. Use the
@@ -4973,11 +4960,11 @@ or not.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(shap_johny,  }\DataTypeTok{show_boxplots =} \OtherTok{FALSE}\NormalTok{) }
+\KeywordTok{plot}\NormalTok{(shap_johny, }\DataTypeTok{show_boxplots =} \OtherTok{FALSE}\NormalTok{) }
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-49-1.pdf}
+\includegraphics{PM_VEE_files/figure-latex/unnamed-chunk-50-1.pdf}
 
 Function \texttt{shap()} results a data frame with attributions for
 every ordering. Having all these values we can calculated not only
@@ -4991,36 +4978,22 @@ or range for feature attributions.
 \end{Shaded}
 
 \begin{verbatim}
-##                                        min           q1       median
-## Random Forest v6.no-age       -0.357347531 -0.269811509 -0.237055659
-## Random Forest v6.no-class     -0.185606706 -0.179299502 -0.059222474
-## Random Forest v6.no-embarked  -0.007968283  0.004115995  0.007224286
-## Random Forest v6.no-fare      -0.195174445  0.003210340  0.045135931
-## Random Forest v6.no-gender     0.042726778  0.077494336  0.105988219
-## Random Forest v6.no-parch      0.001842320  0.003043951  0.009595831
-## Random Forest v6.no-sibsp     -0.014658813 -0.003875850  0.001937472
-## Random Forest v6.yes-age       0.106317173  0.171056638  0.267388310
-## Random Forest v6.yes-class    -0.056152243 -0.002998641  0.059222474
-## Random Forest v6.yes-embarked -0.015808790 -0.010705936 -0.007719982
-## Random Forest v6.yes-fare     -0.087299502 -0.071392841 -0.045135931
-## Random Forest v6.yes-gender   -0.177782510 -0.124633439 -0.105988219
-## Random Forest v6.yes-parch    -0.030339828 -0.013175351 -0.009595831
-## Random Forest v6.yes-sibsp    -0.010595378 -0.005975532 -0.001872225
-##                                        mean           q3         max
-## Random Forest v6.no-age       -0.2194959808 -0.170654282 0.237055659
-## Random Forest v6.no-class     -0.0651330279  0.008076575 0.070343670
-## Random Forest v6.no-embarked   0.0058560473  0.010402356 0.015808790
-## Random Forest v6.no-fare       0.0014576167  0.071392841 0.087299502
-## Random Forest v6.no-gender     0.1004931944  0.125022202 0.177782510
-## Random Forest v6.no-parch      0.0116046398  0.013774354 0.030339828
-## Random Forest v6.no-sibsp      0.0008288174  0.005975532 0.010595378
-## Random Forest v6.yes-age       0.2370556593  0.269811509 0.357347531
-## Random Forest v6.yes-class     0.0703436701  0.179858632 0.185606706
-## Random Forest v6.yes-embarked -0.0063245310 -0.004355233 0.007968283
-## Random Forest v6.yes-fare     -0.0014576167 -0.003210340 0.195174445
-## Random Forest v6.yes-gender   -0.0930492541 -0.072002719 0.100493194
-## Random Forest v6.yes-parch    -0.0107450368 -0.003043951 0.011604640
-## Random Forest v6.yes-sibsp    -0.0007674235  0.002659719 0.014658813
+##                                   min            q1       median
+## Random Forest v6-age       0.10631717  0.1710566380  0.252221985
+## Random Forest v6-class    -0.05615224 -0.0008022202  0.060401903
+## Random Forest v6-embarked -0.01580879 -0.0105541459 -0.007472134
+## Random Forest v6-fare     -0.08729950 -0.0713928410 -0.045135931
+## Random Forest v6-gender   -0.17778251 -0.1248278206 -0.105988219
+## Random Forest v6-parch    -0.03033983 -0.0134748527 -0.009966017
+## Random Forest v6-sibsp    -0.01059538 -0.0059755324 -0.001904848
+##                                    mean           q3          max
+## Random Forest v6-age       0.2370556593  0.269811509  0.357347531
+## Random Forest v6-class     0.0703436701  0.179579067  0.185606706
+## Random Forest v6-embarked -0.0063245310 -0.004847558  0.007968283
+## Random Forest v6-fare     -0.0014576167 -0.003210340  0.195174445
+## Random Forest v6-gender   -0.1004931944 -0.078935433 -0.042726778
+## Random Forest v6-parch    -0.0116046398 -0.003649751 -0.001842320
+## Random Forest v6-sibsp    -0.0008288174  0.003267784  0.014658813
 \end{verbatim}
 
 \begin{Shaded}
@@ -5037,15 +5010,15 @@ or range for feature attributions.
 
 \begin{verbatim}
 ## # A tibble: 7 x 4
-##   variable       avg      q10     q90
-##   <fct>        <dbl>    <dbl>   <dbl>
-## 1 class    -1.15e-17 -0.184   0.184  
-## 2 sibsp    -8.05e-18 -0.00870 0.00870
-## 3 embarked -4.17e-18 -0.0107  0.0107 
-## 4 parch    -3.60e-18 -0.0170  0.0170 
-## 5 gender    2.94e-18 -0.125   0.125  
-## 6 fare     -2.78e-18 -0.138   0.138  
-## 7 age       1.07e-18 -0.283   0.283
+##   variable       avg      q10      q90
+##   <fct>        <dbl>    <dbl>    <dbl>
+## 1 age       0.237     0.158    0.313  
+## 2 gender   -0.100    -0.133   -0.0555 
+## 3 class     0.0703   -0.0293   0.185  
+## 4 parch    -0.0116   -0.0303  -0.00304
+## 5 embarked -0.00632  -0.0124   0.00348
+## 6 fare     -0.00146  -0.0714   0.146  
+## 7 sibsp    -0.000829 -0.00835  0.00824
 \end{verbatim}
 
 \hypertarget{LIME}{%

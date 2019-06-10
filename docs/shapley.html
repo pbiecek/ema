@@ -25,7 +25,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
 
 
-<meta name="date" content="2019-06-07">
+<meta name="date" content="2019-06-10">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -357,19 +357,19 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="shapley" class="section level1">
 <h1><span class="header-section-number">Chapter 11</span> SHapley Additive exPlanations (SHAP) and Average Variable Attributions</h1>
-<p>In the Section <a href="variableAttributionMethods.html#variableAttributionMethods">30</a> we show a procedure that attributes parts of model prediction to input features. We also show that in the presence of interactions attributions depend on the feature ordering. One solution to this problem is introduced in section <a href="breakDown.html#breakDown">9</a> - just find an ordering that put most important features to the front. Other solution is introduced in the Section <a href="iBreakDown.html#iBreakDown">10</a> - identify interactions and show interactions in model explanations.</p>
+<p>In the Section <a href="breakDown.html#breakDown">9</a> we show a procedure that attributes parts of model prediction to input features. We also show that in the presence of interactions attributions depend on the feature ordering. One solution to this problem is to find an ordering that put most important features to the front. Other solution is introduced in the Section <a href="iBreakDown.html#iBreakDown">10</a> - identify interactions and show interactions in model explanations.</p>
 <p>In this section we introduce another, very popular approach that deal with feature ordering. Basically, the problem of ordering is solved by averaging over all possible orderings. Or at least some large number of sampled orderings. Additionally, such average is closely linked with Shapley values developed originally for cooperative games.</p>
 <p>This approach was first introduced in <span class="citation">(Strumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span> and <span class="citation">(Štrumbelj and Kononenko <a href="#ref-Strumbelj2014">2014</a>)</span>. Wide adoption of this method comes with a NIPS 2017 paper <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span> and python library SHAP <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>. Authors of the SHAP (SHapley Additive exPlanations) method introduced an efficient algorithm for tree-based models <span class="citation">(Lundberg, Erion, and Lee <a href="#ref-TreeSHAP">2018</a>)</span> and show that Shapley values is an unification of a collection of different commonly used techniques for model explanations.</p>
 <div id="intuition-2" class="section level2">
 <h2><span class="header-section-number">11.1</span> Intuition</h2>
-<p>Figure <a href="shapley.html#fig:shap10orderings">11.1</a> shows Break Down attributions for 10 random orderings for Titanic dataset. As we see there are differences, most striking are that depending on the order features like <code>fare</code> or <code>class</code> may have positive or negative effect.</p>
+<p>Figure <a href="shapley.html#fig:shap10orderings">11.1</a> shows Break Down attributions for 10 random orderings for Titanic dataset. As we see there are differences in feature attribution. The most striking ones are linked with features <code>fare</code> or <code>class</code>. They attribution may be positive or negative depending on the ordering</p>
 <div class="figure" style="text-align: center"><span id="fig:shap10orderings"></span>
 <img src="figure/shap_10_replicates.png" alt="(fig:shap10orderings) Break Down plots for 10 random orderings. Each panel shows a single ordering" width="100%" />
 <p class="caption">
 Figure 11.1: (fig:shap10orderings) Break Down plots for 10 random orderings. Each panel shows a single ordering
 </p>
 </div>
-<p>SHAP attributions are averages across all (or at least large number) of different orderings. See for example Figure <a href="shapley.html#fig:shapOrdering">11.2</a>. In a single plot we summarize all orderings from Figure <a href="shapley.html#fig:shap10orderings">11.1</a>. Violet boxplots show distributions for attributions for a selected variable.</p>
+<p>SHAP attributions are averages across all (or at least large number) of different orderings. See for example Figure <a href="shapley.html#fig:shapOrdering">11.2</a>. In a single plot we summarize all orderings from Figure <a href="shapley.html#fig:shap10orderings">11.1</a>. Violet boxplots show distributions for attributions for a selected variable, while length of the bar stands for an average attribution.</p>
 <div class="figure" style="text-align: center"><span id="fig:shapOrdering"></span>
 <img src="figure/shap_ordering.png" alt="(fig:shapOrdering) Summary for 10 random orderings. Boxplots show distribution of feature attributions. Bars stand for average attributions." width="70%" />
 <p class="caption">
@@ -510,47 +510,33 @@ Figure 11.4: (fig:shappJohny01) Average attributions for Johny D.
 <li>If the model is not additive, then the Shapley scores may be misleading. And there is no way to determine if model is far from additiveness.</li>
 <li>In the cooperation games the goal was to distribute payoff among payers, but in machine learning we want to understand how players affect payoff. Thus we are not limited to independent payoffs for players.</li>
 </ul>
-<p>Note that for an additive model other approaches like these presented in Sections <a href="#modelAgnosticAttribution"><strong>??</strong></a>, <a href="breakDown.html#breakDown">9</a> and <a href="shapley.html#shapley">11</a> lead to same variable contributions.</p>
+<p>Note that for an additive model other approaches like these presented in Sections <a href="breakDown.html#breakDown">9</a>, <a href="iBreakDown.html#iBreakDown">10</a> and <a href="shapley.html#shapley">11</a> lead to same variable contributions.</p>
 </div>
 <div id="code-snippets-for-r-2" class="section level2">
 <h2><span class="header-section-number">11.5</span> Code snippets for R</h2>
 <p>In this section we present key features of the R package <code>iBreakDown</code> <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span> which is a part of <code>DrWhy.AI</code> universe and covers methods presented in this chapter. More details and examples can be found at <code>https://modeloriented.github.io/iBreakDown/</code>.</p>
 <p>Note that there are also other R packages that offer similar functionality, like <code>shapper</code> <span class="citation">(Gosiewska and Biecek <a href="#ref-shapperPackage">2019</a><a href="#ref-shapperPackage">b</a>)</span> which is a wrapper over SHAP python library <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span> and <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage">2018</a><a href="#ref-imlRPackage">a</a>)</span>.</p>
-<p>In this section, we use the random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Section <a href="DataSetsIntro.html#TitanicDataset">4.1</a>).</p>
+<p>In this section, we use the random forest <span class="citation">(Breiman et al. <a href="#ref-R-randomForest">2018</a>)</span> model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Chapter <a href="DataSetsIntro.html#TitanicDataset">4.1</a>).</p>
 <p>So let restore the <code>titanic_rf_v6</code> model and explainer created with the <code>explain()</code> function from <code>DALEX</code> package <span class="citation">(Biecek <a href="#ref-R-DALEX">2018</a>)</span>.</p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb120-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb120-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
 <a class="sourceLine" id="cb120-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb120-4" data-line-number="4">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
-<a class="sourceLine" id="cb120-5" data-line-number="5">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a>
-<a class="sourceLine" id="cb120-6" data-line-number="6">explain_titanic_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6, </a>
-<a class="sourceLine" id="cb120-7" data-line-number="7">                              <span class="dt">data =</span> titanic[,<span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">4</span>,<span class="dv">6</span><span class="op">:</span><span class="dv">8</span>)],</a>
-<a class="sourceLine" id="cb120-8" data-line-number="8">                              <span class="dt">y =</span> titanic<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </a>
-<a class="sourceLine" id="cb120-9" data-line-number="9">                              <span class="dt">label =</span> <span class="st">&quot;Random Forest v6&quot;</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb120-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb120-5" data-line-number="5">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a>
+<a class="sourceLine" id="cb120-6" data-line-number="6">johny_d</a></code></pre></div>
 <p>Here again we will use a data frame <code>johny_d</code> with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()’ function.</p>
-<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1">johny_d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
-<a class="sourceLine" id="cb121-2" data-line-number="2">  <span class="dt">class =</span> <span class="kw">factor</span>(<span class="st">&quot;1st&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;1st&quot;</span>, <span class="st">&quot;2nd&quot;</span>, <span class="st">&quot;3rd&quot;</span>, <span class="st">&quot;deck crew&quot;</span>, <span class="st">&quot;engineering crew&quot;</span>, </a>
-<a class="sourceLine" id="cb121-3" data-line-number="3">                                  <span class="st">&quot;restaurant staff&quot;</span>, <span class="st">&quot;victualling crew&quot;</span>)),</a>
-<a class="sourceLine" id="cb121-4" data-line-number="4">  <span class="dt">gender =</span> <span class="kw">factor</span>(<span class="st">&quot;male&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;female&quot;</span>, <span class="st">&quot;male&quot;</span>)),</a>
-<a class="sourceLine" id="cb121-5" data-line-number="5">  <span class="dt">age =</span> <span class="dv">8</span>,</a>
-<a class="sourceLine" id="cb121-6" data-line-number="6">  <span class="dt">sibsp =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb121-7" data-line-number="7">  <span class="dt">parch =</span> <span class="dv">0</span>,</a>
-<a class="sourceLine" id="cb121-8" data-line-number="8">  <span class="dt">fare =</span> <span class="dv">72</span>,</a>
-<a class="sourceLine" id="cb121-9" data-line-number="9">  <span class="dt">embarked =</span> <span class="kw">factor</span>(<span class="st">&quot;Southampton&quot;</span>, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Belfast&quot;</span>, <span class="st">&quot;Cherbourg&quot;</span>, <span class="st">&quot;Queenstown&quot;</span>, <span class="st">&quot;Southampton&quot;</span>))</a>
-<a class="sourceLine" id="cb121-10" data-line-number="10">)</a>
-<a class="sourceLine" id="cb121-11" data-line-number="11"></a>
-<a class="sourceLine" id="cb121-12" data-line-number="12"><span class="kw">predict</span>(explain_titanic_rf, johny_d)</a></code></pre></div>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1"><span class="kw">predict</span>(explain_rf_v6, johny_d)</a></code></pre></div>
 <pre><code>## [1] 0.422</code></pre>
 <p>First, we will recreate Figure <a href="shapley.html#fig:shappJohny01">11.4</a>. To do this we use function <code>iBreakDown::shap()</code> that calculates <code>B</code> random orderings and average Shapley contributions. This function takes an explainer created with <code>DALEX::explain()</code> function and an observation for which attributions shall be calculated. Additionally one can specify <code>B</code> number of orderings to sample.</p>
 <p>The generic function <code>plot()</code> shows Shapley values with corresponding boxplots.</p>
 <div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb123-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
 <a class="sourceLine" id="cb123-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb123-3" data-line-number="3">shap_johny &lt;-<span class="st"> </span><span class="kw">shap</span>(explain_titanic_rf, johny_d, <span class="dt">B =</span> <span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb123-3" data-line-number="3">shap_johny &lt;-<span class="st"> </span><span class="kw">shap</span>(explain_rf_v6, johny_d, <span class="dt">B =</span> <span class="dv">25</span>)</a>
 <a class="sourceLine" id="cb123-4" data-line-number="4"><span class="kw">plot</span>(shap_johny) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
-<p>Figure <a href="shapley.html#fig:shappJohny02">11.3</a> is generated in the same way. The only difference is that boxplots are not plotted. Use the <code>show_boxplots</code> argument to decide whatever they shall be added or not.</p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">plot</span>(shap_johny,  <span class="dt">show_boxplots =</span> <span class="ot">FALSE</span>) </a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-1.png" width="672" /></p>
+<p>Figure <a href="shapley.html#fig:shappJohny02">11.3</a> is generated in the same way. The only difference is that boxplots are not plotted. Use the <code>show_boxplots</code> argument to decide whatever they shall be added or not.</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">plot</span>(shap_johny, <span class="dt">show_boxplots =</span> <span class="ot">FALSE</span>) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-50-1.png" width="672" /></p>
 <p>Function <code>shap()</code> results a data frame with attributions for every ordering. Having all these values we can calculated not only Shapley values (averages) but also some other statistics, like quintiles or range for feature attributions.</p>
 <div class="sourceCode" id="cb125"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb125-1" data-line-number="1">shap_johny</a></code></pre></div>
 <pre><code>##                                   min            q1       median
