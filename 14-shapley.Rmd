@@ -1,6 +1,6 @@
 # SHapley Additive exPlanations (SHAP) and Average Variable Attributions {#shapley}
 
-In the Section \@ref(variableAttributionMethods) we show a procedure that attributes parts of model prediction to input features. We also show that in the presence of interactions attributions depend on the feature ordering. One solution to this problem is introduced in section \@ref(breakDown) - just find an ordering that put most important features to the front. Other solution is introduced in the Section \@ref(iBreakDown) - identify interactions and show interactions in model explanations.
+In the Section \@ref(breakDown) we show a procedure that attributes parts of model prediction to input features. We also show that in the presence of interactions attributions depend on the feature ordering. One solution to this problem is to find an ordering that put most important features to the front. Other solution is introduced in the Section \@ref(iBreakDown) - identify interactions and show interactions in model explanations.
 
 In this section we introduce another, very popular approach that deal with feature ordering. Basically, the problem of ordering is solved by averaging over all possible orderings. Or at least some large number of sampled orderings. Additionally, such average is closely linked with Shapley values developed originally for cooperative games.
 
@@ -8,14 +8,14 @@ This approach was first introduced in [@imeJLMR] and [@Strumbelj2014]. Wide adop
 
 ## Intuition
 
-Figure \@ref(fig:shap10orderings) shows Break Down attributions for 10 random orderings for Titanic dataset. As we see there are differences, most striking are that depending on the order features like `fare` or `class` may have positive or negative effect. 
+Figure \@ref(fig:shap10orderings) shows Break Down attributions for 10 random orderings for Titanic dataset. As we see there are differences in feature attribution. The most striking ones are linked with features `fare` or `class`. They attribution may be positive or negative depending on the ordering 
 
 ```{r shap10orderings, echo=FALSE, fig.cap="(fig:shap10orderings) Break Down plots for 10 random orderings. Each panel shows a single ordering", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/shap_10_replicates.png")
 ```
 
 
-SHAP attributions are averages across all (or at least large number) of different orderings. See for example Figure \@ref(fig:shapOrdering). In a single plot we summarize all orderings from Figure \@ref(fig:shap10orderings). Violet boxplots show distributions for attributions for a selected variable. 
+SHAP attributions are averages across all (or at least large number) of different orderings. See for example Figure \@ref(fig:shapOrdering). In a single plot we summarize all orderings from Figure \@ref(fig:shap10orderings). Violet boxplots show distributions for attributions for a selected variable, while length of the bar stands for an average attribution. 
 
 ```{r shapOrdering, echo=FALSE, fig.cap="(fig:shapOrdering) Summary for 10 random orderings. Boxplots show distribution of feature attributions. Bars stand for average attributions.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/shap_ordering.png")
@@ -232,7 +232,7 @@ Shapley Values give a uniform approach to decompose model prediction into parts 
 - If the model is not additive, then the Shapley scores may be misleading. And there is no way to determine if model is far from additiveness.
 - In the cooperation games the goal was to distribute payoff among payers, but in machine learning we want to understand how players affect payoff. Thus we are not limited to independent payoffs for players.
 
-Note that for an additive model other approaches like these presented in Sections \@ref(modelAgnosticAttribution), \@ref(breakDown) and \@ref(shapley) lead to same variable contributions.
+Note that for an additive model other approaches like these presented in Sections \@ref(breakDown), \@ref(iBreakDown) and \@ref(shapley) lead to same variable contributions.
 
 ## Code snippets for R
 
@@ -240,37 +240,30 @@ In this section we present key features of the R package `iBreakDown` [@iBreakDo
 
 Note that there are also other R packages that offer similar functionality, like `shapper` [@shapperPackage] which is a wrapper over SHAP python library [@shapPackage] and `iml` [@imlRPackage].
 
-In this section, we use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Section \@ref(TitanicDataset)). 
+In this section, we use the random forest [@R-randomForest] model `titanic_rf_v6` developed for the Titanic dataset (see Chapter \@ref(TitanicDataset)). 
 
 So let restore the `titanic_rf_v6` model and explainer created with the `explain()` function from `DALEX` package [@R-DALEX].
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("DALEX")
 library("randomForest")
+explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 
-titanic <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist::aread("pbiecek/models/31570")
-explain_titanic_rf <- explain(model = titanic_rf_v6, 
-                              data = titanic[,c(1:4,6:8)],
-                              y = titanic$survived == "yes", 
-                              label = "Random Forest v6")
+library("DALEX")
+johny_d <- archivist::aread("pbiecek/models/e3596")
+johny_d
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("randomForest")
+library("DALEX")
+load("models/explain_rf_v6.rda")
+load("models/johny_d.rda")
 ```
 
 Here again we will use a data frame `johny_d` with a single row, that describes an 8-years old boy that travels in the first class without parents and siblings. Then, we obtain the model prediction for this instance with the help of the `predict()' function. 
 
 ```{r, warning=FALSE, message=FALSE}
-johny_d <- data.frame(
-  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
-                                  "restaurant staff", "victualling crew")),
-  gender = factor("male", levels = c("female", "male")),
-  age = 8,
-  sibsp = 0,
-  parch = 0,
-  fare = 72,
-  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
-)
-
-predict(explain_titanic_rf, johny_d)
+predict(explain_rf_v6, johny_d)
 ```
 
 First, we will recreate Figure \@ref(fig:shappJohny01). To do this we use function `iBreakDown::shap()` that calculates `B` random orderings and average Shapley contributions. This function takes an explainer created with `DALEX::explain()` function and an observation for which attributions shall be calculated. Additionally one can specify `B` number of orderings to sample.
@@ -280,14 +273,14 @@ The generic function `plot()` shows Shapley values with corresponding boxplots.
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
 
-shap_johny <- shap(explain_titanic_rf, johny_d, B = 25)
+shap_johny <- shap(explain_rf_v6, johny_d, B = 25)
 plot(shap_johny) 
 ```
 
 Figure \@ref(fig:shappJohny02) is generated in the same way. The only difference is that boxplots are not plotted. Use the `show_boxplots` argument to decide whatever they shall be added or not.
 
 ```{r, warning=FALSE, message=FALSE}
-plot(shap_johny,  show_boxplots = FALSE) 
+plot(shap_johny, show_boxplots = FALSE) 
 ```
 
 Function `shap()` results a data frame with attributions for every ordering. Having all these values we can calculated not only Shapley values (averages) but also some other statistics, like quintiles or range for feature attributions.
@@ -302,62 +295,6 @@ shap_johny %>%
             q10 = quantile(contribution, 0.1),
             q90 = quantile(contribution, 0.9)) %>%
   arrange(-abs(avg))
-```
-
-
-
-
-
-
-
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
-
-library("shapper")
-shapper_johny <- shapper::individual_variable_effect(explain_titanic_rf, johny_d)
-shapper_johny <- shapper::individual_variable_effect(titanic_rf_v6, titanic[,c(1:4,6:8)], DALEX:::yhat.randomForest, johny_d)
-
-
-
-library("shapper")
-Y_train <- HR$status
-x_train <- HR[ , -6]
-x_train$gender <- as.numeric(x_train$gender)
-model_rfs <- randomForest(x = x_train, y = Y_train)
-
-p_fun <- function(x, data){
-  predict(x, newdata = data, type = "prob")
-}
-
-new_observation <- data.frame(gender = 1,
-                      age = 57.7,
-                      hours = 42.3,
-                      evaluation = 2,
-                      salary = 2)
-
-x <- individual_variable_effect(x = model_rfs, data = x_train, predict_function = p_fun,
-                               new_observation = new_observation)
-
-plot(x)
-library("ggplot2")
-
-x$`_vname_` <- reorder(x$`_vname_`, x$`_attribution_`, function(z) -sum(abs(z)))
-levels(x$`_vname_`) <- paste(sapply(1:6, substr, x="        ", start=1), levels(x$`_vname_`))
-
-ggplot(x, aes(x=`_vname_`, xend=`_vname_`, 
-              yend = `_yhat_mean_`, y = `_yhat_mean_` + `_attribution_`, 
-              color=`_sign_`)) +
-  geom_segment(arrow = arrow(length=unit(0.30,"cm"), ends="first", type = "closed")) + 
-  geom_text(aes(label = round(`_attribution_`, 2)), nudge_x = 0.45) +
-  geom_segment(aes(x = "_predicted_",xend = "_predicted_",
-                   y = `_yhat_`, yend = `_yhat_mean_`), size = 2, color="black",
-               arrow = arrow(length=unit(0.30,"cm"), ends="first", type = "closed")) + 
-  geom_text(aes(x = "_predicted_", 
-                y = `_yhat_`, label = round(`_yhat_`, 2)), nudge_x = 0.45, color="black") +
-  geom_hline(aes(yintercept = `_yhat_mean_`)) + 
-  facet_grid(`_label_`~`_ylevel_`) +
-  scale_color_manual(values =  c(`-` = "#d8b365", `0` = "#f5f5f5", `+` = "#5ab4ac", 
-                                X = "darkgrey")) +
-  coord_flip() + theme_minimal() + theme(legend.position="none") + xlab("") + ylab("")
 ```
 
 
