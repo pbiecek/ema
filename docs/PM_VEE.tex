@@ -131,7 +131,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-06-10}
+    \date{2019-06-17}
 
 \usepackage{booktabs}
 
@@ -360,9 +360,9 @@ values that cannot be given numeric values.
 In this book we focus on ,,black-box'' models. We discuss them in a bit
 more detail in the next section.
 
-\hypertarget{white-box-models-vs.black-box-models}{%
-\subsection{White-box models vs.~black-box
-models}\label{white-box-models-vs.black-box-models}}
+\hypertarget{glass-box-models-vs.black-box-models}{%
+\subsection{glass-box models vs.~black-box
+models}\label{glass-box-models-vs.black-box-models}}
 
 Black-box models are models with a complex structure that is hard to
 understand by humans. Usually this refers to a large number of model
@@ -371,13 +371,13 @@ complex models, there is no strict threshold for the number of
 coefficients that makes a model a black-box. In practice, for most
 humans this threshold is probably closer to 10 than to 100.
 
-A ,,white-box'' model, which is opposite to a ,,black-box'' one, is a
-model that is easy to understand by a human (though maybe not by every
-human). It has got a simple structure and a limited number of
-coefficients. The two most common classess of white-box models are
-decision or regression trees, as an example in Figure \ref{fig:BILLCD8},
-or models with an additive structure, like the following model for
-mortality risk in melanoma patients:
+A ,,glass-box'' (sometimes called white-box) model, which is opposite to
+a ,,black-box'' one, is a model that is easy to understand by a human
+(though maybe not by every human). It has got a simple structure and a
+limited number of coefficients. The two most common classess of
+glass-box models are decision or regression trees, as an example in
+Figure \ref{fig:BILLCD8}, or models with an additive structure, like the
+following model for mortality risk in melanoma patients:
 
 \[
 RelativeRisk = 1 + 3.6 * [Breslow > 2] - 2 * [TILs > 0] 
@@ -388,7 +388,7 @@ the thickness of the lesion according to the Breslow scale is larger
 than 2 mm and an indicator whether the percentage of tumor-infiltrating
 lymphocytes (TILs) was larger than 0.
 
-The structure of a white box-model is, in general, easy to understand.
+The structure of a glass box-model is, in general, easy to understand.
 It may be difficult to collect the necessary data, build the model, fit
 it to the data, and/or perform model validation, but once the model has
 been developed its interpretation and mode of working is
@@ -612,7 +612,7 @@ originally for cooperative games.
 
 Chapter \ref{LIME} presens a different approach to explanation of
 single-instance predictions. It is based on a local approximation of a
-black-box model by a simpler, white-box one. In paricular, in the
+black-box model by a simpler, glass-box one. In paricular, in the
 chapter, the Local Interpretable Model-Agnostic Explanations (LIME)
 method \citep{lime} is discussed.
 
@@ -829,6 +829,58 @@ Since the md5 hash \texttt{ceb40} uniquely defines the model, referring
 to the repository object results in using exactly the same model and the
 same explanations. Thus, in the subsequent chapters, pre-constructed
 model explainers will be accessed with \texttt{archivist} hooks.
+
+\hypertarget{Packages}{%
+\subsection{DrWhy Packages}\label{Packages}}
+
+Here we present list of arguments in explainers from \texttt{DrWhy}
+universe. All explainers use unified set of arguments. All of them are
+generic with two specific implementations \texttt{*.explainer} and
+\texttt{*.default}. The first one is working for objects created with
+\texttt{DALEX::explain()} function.
+
+Common core arguments
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{x} a model to be explained, or an explainer created with
+  function \texttt{DALEX::explain()}.
+\item
+  \texttt{data} validation dataset. Used to determine univariate
+  distributions, calculation of quantiles, correlations and so on. It
+  will be extracted from \texttt{x} if it's an explainer.
+\item
+  \texttt{predict\_function} predict function that operates on the model
+  \texttt{x}. Since the model is a black box, the
+  \texttt{predict\_function} is the only interface to access values from
+  the model. It should be a function that takes at least a model
+  \texttt{x} and \texttt{data} and returns vector of predictions. If
+  model response has more than a single number (like multiclass models)
+  then this function should return a marix/data.frame of the size
+  \texttt{m} x \texttt{d}, where \texttt{m} is the number of
+  observations while \texttt{d} is the dimensionality of model response.
+  It will be extracted from \texttt{x} if it's an explainer.
+\item
+  \texttt{new\_observation} an observation/observations to be explained.
+  Required for local/instance level explainers. Columns in should
+  correspond to columns in the \texttt{data} argument.
+\item
+  \texttt{...} other parameters.
+\item
+  \texttt{label} name of the model. By default it's extracted from the
+  \texttt{class} attribute of the model
+\end{itemize}
+
+Function specific arguments
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{keep\_distributions} if \texttt{TRUE}, then distributions of
+  partial predictions is stored and can be plotted with the generic
+  \texttt{plot()}.
+\end{itemize}
 
 \hypertarget{PythonCodeSnippets}{%
 \section{Do-it-yourself With Python}\label{PythonCodeSnippets}}
@@ -2354,9 +2406,8 @@ the explainer: TODO: add if needed\strut
 \bottomrule
 \end{longtable}
 
-\hypertarget{instance-level-explanation}{%
-\section*{Instance-level explanation}\label{instance-level-explanation}}
-\addcontentsline{toc}{section}{Instance-level explanation}
+\hypertarget{PredictionExplainers}{%
+\section{Instance-level exploration}\label{PredictionExplainers}}
 
 \begin{figure}
 
@@ -2366,9 +2417,6 @@ the explainer: TODO: add if needed\strut
 
 \caption{(fig:localDALEXsummary) Summary of three approaches to local model exploration and explanation.}\label{fig:localDALEXsummary}
 \end{figure}
-
-\hypertarget{PredictionExplainers}{%
-\section{Introduction}\label{PredictionExplainers}}
 
 Instance-level explainers help to understand how a model yields a
 prediction for a single observation. We can think about the following
@@ -2443,7 +2491,7 @@ divided into three classes.
   surface (see Figure \ref{fig:cutsSurfaceReady}) around the point of
   interest \(x^*\). Treating the model as a function, we are interested
   in the local behavior of this function around \(x^*\). In case of a
-  black-box model, we may approximate it with a simpler white-box model
+  black-box model, we may approximate it with a simpler glass-box model
   around \(x^*\). An example is provided in panel C of Figure
   \ref{fig:cutsTechnikiReady}. Chapter \ref{LIME} presents the Local
   Interpretable Model-agnostic Explanations (LIME) method that exploits
@@ -2460,7 +2508,7 @@ offers a comparison of the methods.
 
 }
 
-\caption{(fig:cutsTechnikiReady) Illustration of different approaches to instance-level explanation. Panel A presents a What-If analysis with Ceteris-paribus profiles. The profiles show the model response as a function of a value of a single variable, while keeping the values of all other explanatory variables fixed. Panel B illustrates the concept of variable attributions. Additive effects of each variable show how the model response differs from the average. Panel C illustrates the concept of local models. A simpler white-box model is fitted around the point of interest. It describes the local behaviour of the black-box model. }\label{fig:cutsTechnikiReady}
+\caption{(fig:cutsTechnikiReady) Illustration of different approaches to instance-level explanation. Panel A presents a What-If analysis with Ceteris-paribus profiles. The profiles show the model response as a function of a value of a single variable, while keeping the values of all other explanatory variables fixed. Panel B illustrates the concept of variable attributions. Additive effects of each variable show how the model response differs from the average. Panel C illustrates the concept of local models. A simpler glass-box model is fitted around the point of interest. It describes the local behaviour of the black-box model. }\label{fig:cutsTechnikiReady}
 \end{figure}
 
 \hypertarget{ceterisParibus}{%
@@ -2519,7 +2567,7 @@ CP technique is similar to the LIME method (see Chapter \ref{LIME}).
 LIME and CP profiles examine the curvature of response surface of a
 model. The difference between these two methods lies in the fact that
 LIME approximates the black-box model of interest locally with a simpler
-white-box model. Usually, the LIME model is sparse, i.e., contains fewer
+glass-box model. Usually, the LIME model is sparse, i.e., contains fewer
 explanatory variables. Thus, one needs to investigate a plot across a
 smaller number of dimensions. On the other hand, the CP profiles present
 conditional predictions for every variable and, in most cases, are
@@ -2661,20 +2709,26 @@ One-dimensional CP profiles, as presented in this chapter, offer a
 uniform, easy to communicate and extendable approach to model
 exploration. Their graphical representation is easy to understand and
 explain. It is possible to show profiles for many variables or models in
-a single plot.
+a single plot. CP profiles are easy to compare, thus we can juxtapose
+two or more models to better understand differences between models. We
+can also compare two or more instances to better understand model
+stability. CP profiles are also a useful tool for sensitivity analysis.
 
 There are several issues related to the use of the CP profiles. If
 explanatory variables are correlated, then changing one variable implies
 a change in the other. In such case, the application of the
 \emph{Ceteris paribus} principle may lead to unrealistic settings, as it
 is not possible to keep one variable fixed while varying the other one.
-Special cases are interactions, which require the use of two-dimensional
-CP profiles that are more complex than one-dimensional ones. Also, in
-case of a model with hundreds or thousands of variables, the number of
-plots to inspect may be daunting. Finally, while barplots allow
-visualization of CP profiles for factors (categorical explanatory
-variables), their use becomes less trivial in case of factors with many
-nominal (unordered) categories (like, for example, a ZIP-code).
+For example, apartment's price prediction features like surface and
+number of rooms are correlated thus it is unrealistic to consider very
+small apartments with extreme number of rooms. Special cases are
+interactions, which require the use of two-dimensional CP profiles that
+are more complex than one-dimensional ones. Also, in case of a model
+with hundreds or thousands of variables, the number of plots to inspect
+may be daunting. Finally, while barplots allow visualization of CP
+profiles for factors (categorical explanatory variables), their use
+becomes less trivial in case of factors with many nominal (unordered)
+categories (like, for example, a ZIP-code).
 
 \hypertarget{CPR}{%
 \subsection{Code snippets for R}\label{CPR}}
@@ -3648,9 +3702,10 @@ frame are retrieved via \texttt{archivist} hooks, as listed in Section
 We will show how to construct Figure \ref{fig:profileWith10NN}. Toward
 this aim we need some number of passengers most similar to
 \texttt{henry}. To select the `'neighbors'', we use the
-\texttt{select\_neighbours()} function from the
-\texttt{ingredients\textquotesingle{}\ package.\ It\ returns}n\texttt{observations\ (by\ default,\ 20)\ most\ similar\ to\ the\ observation\ of\ interest\ according\ to\ the}distance`
-measure (by default, the Gower distance is used).
+\texttt{select\_neighbours()} function from the \texttt{ingredients}
+package. It returns \texttt{n} observations (by default, 20) most
+similar to the observation of interest according to the
+\texttt{distance} measure (by default, the Gower distance is used).
 
 In the example below, we select 10 nearest neighbors to \texttt{henry}
 find from the \texttt{titanic} dataset. Note that the similarity is
@@ -5041,9 +5096,9 @@ analysis. But the limitation of ceteris Paribus plots is that they
 explore changes along single dimension or pairs of dimensions.
 
 In this section we describe another approach based on local
-approximations with white-box models. This approach will also
+approximations with glass-box models. This approach will also
 investigate local curvature of the model but indirectly, through
-surrogate white-box models.
+surrogate glass-box models.
 
 The most known method from this class if LIME (Local Interpretable
 Model-Agnostic Explanations), introduced in the paper \emph{Why Should I
@@ -5101,12 +5156,12 @@ The LIME method, and its clones, has following properties:
 
 Therefore the objective is to find a local model \(M^L\) that
 approximates the black box model \(f\) in the point \(x^*\). As a
-solution the penalized loss function is used. The white-box model that
+solution the penalized loss function is used. The glass-box model that
 is used for explanations satisfies following condition.
 
 \[
 M^*(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g) 
-\] where \(G\) is a family of white box models (e.g.~linear models),
+\] where \(G\) is a family of glass-box models (e.g.~linear models),
 \(\Pi_{x^*}\) is neighbourhood of \(x^*\) and \(\Omega\) stands for
 model complexity.
 
@@ -5119,7 +5174,7 @@ The algorithm is composed from three steps:
 \item
   Local sampling around the point of interest,
 \item
-  Fitting a white box model in this neighborhood
+  Fitting a glass-box model in this neighborhood
 \end{itemize}
 
 \textbf{Identification of interpretable data representations}
@@ -5134,7 +5189,7 @@ and represented as presence/absence of some part of an image.
 Once the interpretable data representation is identified, then the
 neighborhood around point of interest needs to be explored.
 
-\textbf{Fitting a white box model in this neighborhood}
+\textbf{Fitting a glass-box model in this neighborhood}
 
 Any model that is easy to interpret may be fitted to this data, like
 decision tree or rule based system. However in practice the most common
@@ -5169,9 +5224,9 @@ this approach.
   For continuous variables and tabular data it is not that easy to find
   interpretable representations. IMHO this problem is not solved yet.
 \item
-  The black-box model approximated the data and the white box model
+  The black-box model approximated the data and the glass-box model
   approximates the black box model. We do not have control over the
-  quality of local fit of the white box model, thus the surrogate model
+  quality of local fit of the glass-box model, thus the surrogate model
   may be misleading.
 \item
   Due to the \emph{curse of dimensionality}, for high dimensional space
@@ -5326,8 +5381,8 @@ feature.
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"iml"}\NormalTok{)}
 \NormalTok{iml_rf =}\StringTok{ }\NormalTok{Predictor}\OperatorTok{$}\KeywordTok{new}\NormalTok{(titanic_rf_v6, }\DataTypeTok{data =}\NormalTok{ titanic[,}\KeywordTok{colnames}\NormalTok{(johny_d)])}
-\NormalTok{iml_white_box =}\StringTok{ }\NormalTok{LocalModel}\OperatorTok{$}\KeywordTok{new}\NormalTok{(iml_rf, }\DataTypeTok{x.interest =}\NormalTok{ johny_d, }\DataTypeTok{k =} \DecValTok{6}\NormalTok{)}
-\NormalTok{iml_white_box}
+\NormalTok{iml_glass_box =}\StringTok{ }\NormalTok{LocalModel}\OperatorTok{$}\KeywordTok{new}\NormalTok{(iml_rf, }\DataTypeTok{x.interest =}\NormalTok{ johny_d, }\DataTypeTok{k =} \DecValTok{6}\NormalTok{)}
+\NormalTok{iml_glass_box}
 \CommentTok{#Interpretation method:  LocalModel }
 \CommentTok{#}
 \CommentTok{#Analysed predictor: }
@@ -5345,7 +5400,7 @@ feature.
 \CommentTok{#5  0.131819869         1  0.1318199 Southampton embarked=Southampton}
 \CommentTok{#6  0.158368701         1  0.1583687         1st            class=1st}
 
-\KeywordTok{plot}\NormalTok{(iml_white_box) }
+\KeywordTok{plot}\NormalTok{(iml_glass_box) }
 \end{Highlighting}
 \end{Shaded}
 
@@ -5405,10 +5460,7 @@ Enslaving the Algorithm: From a `Right to an Explanation' to a `Right to
 Better Decisions'? \citep{Edwards_Veale_2018}
 
 \hypertarget{ModelLevelExplanations}{%
-\section{Model level explanations}\label{ModelLevelExplanations}}
-
-\hypertarget{introduction-1}{%
-\section{Introduction}\label{introduction-1}}
+\section{Model-level exploration}\label{ModelLevelExplanations}}
 
 Model level explainers help to understand how the model works in
 general, for some population of interest. This is the main difference
@@ -6492,7 +6544,7 @@ g_{AL}^{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x
 \end{verbatim}
 
 \hypertarget{factorMerger}{%
-\section{Merging Path Plots and Others}\label{factorMerger}}
+\subsection{Merging Path Plots and Others}\label{factorMerger}}
 
 \citep{demsar2018}
 
@@ -6518,7 +6570,7 @@ March 26, 2018.
 \end{Shaded}
 
 \hypertarget{other-topics}{%
-\section{Other topics}\label{other-topics}}
+\subsection{Other topics}\label{other-topics}}
 
 \citep{R-randomForestExplainer} \citep{R-ICEbox} \citep{R-ALEPlot}
 
@@ -6620,8 +6672,8 @@ affect the model performance.
 In this chapter we define basic ideas behind concept drift and propose
 some solutions.
 
-\hypertarget{introduction-2}{%
-\subsection{Introduction}\label{introduction-2}}
+\hypertarget{introduction-1}{%
+\subsection{Introduction}\label{introduction-1}}
 
 In general, concept drift means that some statistical properties of
 variables used in the model change over time. This may result in
@@ -6886,67 +6938,6 @@ these two datasets are different.
 \section*{Appendixes}\label{appendixes}}
 \addcontentsline{toc}{section}{Appendixes}
 
-\hypertarget{DataSets}{%
-\section{Data Sets}\label{DataSets}}
-
-\hypertarget{HRdataset}{%
-\subsection{Hire or Fire? HR in Call Center}\label{HRdataset}}
-
-\hypertarget{Packages}{%
-\section{Packages}\label{Packages}}
-
-\hypertarget{arguments}{%
-\subsection{Arguments}\label{arguments}}
-
-Here we present list of arguments in explainers from \texttt{DrWhy}. All
-explainers use unified set of arguments. All of them are generic with
-two specific implementations \texttt{*.explainer} and
-\texttt{*.default}. The first one is working for objects created with
-\texttt{DALEX2::explain()} function.
-
-Common core of arguments
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{x} a model to be explained, or an explainer created with
-  function \texttt{DALEX2::explain()}.
-\item
-  \texttt{data} validation dataset. Used to determine univariate
-  distributions, calculation of quantiles, correlations and so on. It
-  will be extracted from \texttt{x} if it's an explainer.
-\item
-  \texttt{predict\_function} predict function that operates on the model
-  \texttt{x}. Since the model is a black box, the
-  \texttt{predict\_function} is the only interface to access values from
-  the model. It should be a function that takes at least a model
-  \texttt{x} and \texttt{data} and returns vector of predictions. If
-  model response has more than a single number (like multiclass models)
-  then this function should return a marix/data.frame of the size
-  \texttt{m} x \texttt{d}, where \texttt{m} is the number of
-  observations while \texttt{d} is the dimensionality of model response.
-  It will be extracted from \texttt{x} if it's an explainer.
-\item
-  \texttt{new\_observation} an observation/observations to be explained.
-  Required for local/instance level explainers. Columns in should
-  correspond to columns in the \texttt{data} argument.
-\item
-  \texttt{...} other parameters.
-\item
-  \texttt{label} name of the model. By default it's extracted from the
-  \texttt{class} attribute of the model
-\end{itemize}
-
-Function specific arguments
-
-\begin{itemize}
-\tightlist
-\item
-  \texttt{keep\_distributions} if \texttt{TRUE}, then distributions of
-  partial predictions is stored and can be plotted with the generic
-  \texttt{plot()}.
-\end{itemize}
-
 \hypertarget{ceterisParibus2d}{%
 \section{Ceteris-paribus Two-dimensional Profiles - a Tool for Pairwise
 Interactions}\label{ceterisParibus2d}}
@@ -7155,8 +7146,8 @@ SNIPPETS, WE SHOULD SIMPLY SHOW THE UNDERLYING CODE.{]}
 \section{Variable attribution for linear
 models}\label{variableAttributionMethods}}
 
-\hypertarget{introduction-3}{%
-\subsection{Introduction}\label{introduction-3}}
+\hypertarget{introduction-2}{%
+\subsection{Introduction}\label{introduction-2}}
 
 In this chapter we introduce the concept and the intuitions underlying
 `'variable attribution,'' i.e., the decomposition of the difference
