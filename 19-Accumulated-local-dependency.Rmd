@@ -1,0 +1,104 @@
+```{r load_models_ALE, warning=FALSE, message=FALSE, echo=FALSE}
+source("models/models_titanic.R")
+```
+
+# Accumulated Local Profiles {#accumulatedLocalProfiles}
+
+As we showed in the previous chapter, Conditional Dependency Profiles takes into account dependency between features, but it is both advantage and disadvantage. The advantage is that in some cases the dependency is real and should be taken into account when computing expected value of $f$. The disadvantage is that in the Conditional Dependency Profiles we see both effects of the feature  of interest $x^j$ and other features that are dependent on it. Accumulated Local Profiles disentangle effects of a feature of interest and features correlated with it.
+
+For example, for the *apartments* dataset one can expect that features like $surface$ and $number.or.rooms$ are correlated but we can also imagine that each of these variables affect the apartment price somehow. Partial Dependency Profiles show how the average price changes as a function of surface, keeping all other variables unchanged. Conditional Dependency Profiles show how the average price changes as a function of surface adjusting all other variables to the current value of the surface. Accumulated Local Profiles show how the average price changes as a function of surface adjusting all other variables to the current value of the surface but extracting changes caused by these other features. 
+
+Accumulated Local Dependency Profiles presented in the  [@R-ALEPlot] paper.
+
+The general idea is to accumulate local changes in model response affected by single feature $x^j$.
+
+## Definition
+
+Accumulated Local Profile for a model $f$ and a variable $x^j$ is defined as
+
+$$
+g_{AL}^{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
+$$
+where $z_0$ if the lower boundry of $x^j$. The profile $g_{AL}^{f, j}(z)$ is calculated up to some constant $c$. Usually the constant $c$ is selected to keep average $g_{AL}^{f, j}$ equal to 0 or average $f$.
+
+The equation may be a bit complex, but the intuition is not that complicated. Instead of aggregation of Ceteris Paribus we just look locally how quickly CP profiles are changing. And AL profile is reconstructed from such local partial changes. 
+
+So it's an cummulated expected change of the model response along where the expected values are calculated  over **conditional** distribution $(X^j,X^{-j})|X^j=v$.
+
+*Exercise*
+
+Let $f = x_1 + x_2$ and distribuion of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$.
+
+Calculate $g_{AD}^{f, 1}(z)$.
+
+*Answer* $g_{AD}^{f, 1}(z) = z$.
+
+
+
+
+
+```{r ale_part_1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Accumulated Local Effects for 100 observations"}
+library("ingredients")
+
+pdp_rf <- partial_dependency(explain_titanic_rf, variables = "age")
+pdp_rf$`_label_` = "Partial Dep"
+
+cdp_rf <- conditional_dependency(explain_titanic_rf, variables = "age")
+cdp_rf$`_label_` = "Conditional Dep"
+
+ale_rf <- conditional_dependency(explain_titanic_rf, variables = "age")
+ale_rf$`_label_` = "Accumulated Dep"
+
+plot(pdp_rf, cdp_rf, ale_rf, color = "_label_") +
+  ggtitle("Partial, Condition and Accumulated Dependency Profiles", "For a random forest model / Titanic data") 
+```
+
+
+
+# How PD, CD and AL Profiles are different and which to choose
+
+In previous chapters we introduced different was to calculate model level explainers for feature effects. 
+A natural question is how these approaches are different and which one should we choose.
+
+An example that illustrate differences between these approaches is presented in Figure \@ref{accumulatedLocalEffects}.
+Here we have a model $f(x_1, x_2) = x_1*x_2 + x_2$ and what is important features are correlated $x_1 \sim U[-1,1]$ and $x_2 = x_1$.
+
+We have 8 points for which we calculated instance level profiles.
+
+| $x_1$  | $x_2$ |
+|--------|-------|
+|    -1  |   -1  |
+| -0.71  | -0.71 |
+| -0.43  | -0.43 |
+| -0.14  | -0.14 |
+|  0.14  |  0.14 |
+|  0.43  |  0.43 |
+|  0.71  |  0.71 |
+|    1   |    1  |
+
+Panel A) shows Ceteris Paribus for 8 data points, the feature $x_1$ is on the OX axis while $f$ is on the OY. 
+Panel B) shows Partial Dependency Profiles calculated as an average from CP profiles.
+
+$$
+g_{PD}^{f,1}(z) = E[z*x^2 + x^2] = 0
+$$
+Panel C) shows Conditional Dependency Profiles calculated as an average from conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
+
+$$
+g_{CD}^{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
+$$
+
+Panel D) shows Accumulated Local Effects calculated as accumulated changes in conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
+
+$$
+g_{AL}^{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
+$$
+
+
+
+
+```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALL.png")
+```
+
+

@@ -1,0 +1,276 @@
+# Break Down for Additive Variable Attributions {#breakDown}
+
+In the Section \@ref(ceterisParibusOscillations) we introduced a method for assessment of local variable importance based on Ceteris Paribus Profiles. But the main disadvantage of this method is that importance scores do not sum up to final model predictions.
+
+In this chapter we introduce Break Down Plots which solve this problem. Note that the described method is also similar to the EXPLAIN algorithm introduced in  [@explainPaper] and implemented in [@explainPackage] package.
+
+## Intuition
+
+For any model we may repeat the intuition presented in the Section \@ref(variableAttributionMethods) to calculate variable contribution as shifts in expected model response after conditioning over consecutive variables.
+This intuition is presented in Figure \@ref(fig:BDPrice4). 
+
+Panel A shows distribution of model responses. The row `all data` shows the model response of the validation dataset. The red dot stands for average model response and it is an estimate of expected model response $E [f(x)]$.
+
+Since we want to calculate effects of particular values of selected variables we then condition over these variables in a sequential manner. 
+The next row in panel A corresponds to average model prediction for observations with variable `class` fixed to value `1st`. The next for corresponds to average model prediction with variables `class` set to `1st` and `age` set to `0`, and so on. The last row corresponds to model response for $x_*$.
+
+Black lines in the panel A show how prediction for a single point changes after coordinate $j$ is replaced by the $x_*^j$, so they span between $f(x)$ and $f(x^{j|=x_*^j})$. But finally we are not interested in particular changes, not even in distributions but only in averages - expected model responses.
+
+The most minimal form that shows important information is presented in the panel C.
+Positive values are presented with green bars while negative differences are marked with red bar. They sum up to final model prediction, which is denoted by a violet bar in this example.
+
+
+```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break Down Plots show how variables move the model prediction from population average to the model prognosis for a single observation. A) The first row shows distribution of model predictions. Next rows show conditional distributions, every row a new variable is added to conditioning. The last row shows model prediction for a single point. Red dots stand for averages. B) Red dots stands for average conditional model response. C) Only variable contributions are presented, i.e. differences between consecutive conditional expectations. ", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/break_down_distr.png")
+```
+
+
+## Method
+
+
+Again, as in previous chapter, let $v(j, x_*)$ stands for the contribution of variable $j$ to prediction of model $f$ in point $x_*$. 
+
+We expect that such contribution will sum up to the model prediction in a given point (property called *local accuracy*), so
+$$
+f(x_*) = v_0 + \sum_{j=1}^p v(j, x_*)
+$$
+where $v_0$ stands for average model response (it may be different for different models).
+
+Note that the equation above may be rewritten as
+
+$$
+E [f(X)|X^1 = x^1_*, \ldots, X^p = x^p_*] = E[f(X)] + \sum_{j=1}^p v(j, x_*)
+$$
+what leads to quite natural proposition for $v(j, x_*)$, such as
+
+$$
+v(j, x_*) = E [f(X) | X^1 = x^1_*, \ldots, X^j = x^j_*] - E [f(X) | X^1 = x^1_*, \ldots, X^{j-1} = x^{j-1}_*] 
+$$
+In other words the contribution of variable $j$ is the difference between expected model response conditioned on first $i$ variables minus the model response conditioned on first $j-1$ variables.
+
+To simplify notation, let's define a symbol $\Delta^{i|J}$ as
+$$
+\Delta^{i|J} = E [f(X) | X^{J \cup \{i\}} = x^{J \cup \{i\}}_*] - E [f(X) | X^{J} = x^{J}_*],
+$$
+So $\Delta^{i|J}$ is the change between expectation over variables from the set $J \cup \{i\}$ minus expectation over variables from the set $J$.
+
+Then 
+
+$$
+v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}.
+$$
+
+
+Such proposition fulfills the *local accuracy* condition.
+
+Unfortunately, for non-additive models, variable contributions depend on the ordering of variables. See for example Figure \@ref(fig:ordering). In the first ordering the contribution of variable `age` is calculated as 0.01, while in the second the contribution is calculated as 0.13. Such differences are related to the lack of additivness of the model $f()$. 
+ 
+```{r ordering, echo=FALSE, fig.cap="(fig:ordering) Two different paths between average model prediction and the model prediction for a selected observation. Black dots stand for conditional average, red arrows stands for changes between conditional averages.", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/ordering.png")
+```
+
+
+There are different attempts to solve the problem with the ordering. 
+
+A. choose an ordering in which variables with largest contributions are first. In this chapter we will describe a heuristic behind this approach.
+B. identify interactions that causes difference in attributions for different orderings and show these interactions. In the chapter \@ref(iBreakDown) we will describe a heuristic behind this idea.
+C. calculate average across all possible orderings. There is $p!$ possible orderings, be the may quite accurately approximate the average. This approach will be presented in the chapter \@ref(shapley).
+
+
+So, let's start with approach A. 
+The easiest way to solve this problem is to use two-step procedure. In the first step variables are ordered and in the second step the consecutive conditioning is applied to ordered variables.
+
+First step of this algorithm is to determine the order of variables for conditioning. 
+It seems to be reasonable to include first variables that are likely to be most important, leaving the noise variables at the end.
+This leads to order based on following scores
+
+$$
+\Delta^j = \left| E [f(X)] - E [f(X)|X^j = x_*^j] \right|
+$$
+Note, that the absolute value is needed as variable contributions can be both positive and negative. 
+
+Once the ordering is determined in the second step variable contributions are calculated as
+
+$$
+v(j, x_*) = E [f(X) | X^{J \cup \{i\}} = x^{J \cup \{i\}}_*] - E [f(X) | X^{J} = x^{J}_*]  = \Delta ^{i|J}
+$$
+where $J$ is the set of variables that have scores $\Delta^i$ smaller than score for variable $i$.
+
+$$
+J = \{j: \Delta^{j} < \Delta^{i}\}
+$$
+
+The time complexity of the first step is $O(p)$ where $p$ is the number of variables and the time complexity of the second step is also $O(p)$.
+
+
+## Example: Titanic data
+
+Let us consider a random forest model `titanic_rf_v6` and the passenger `johny_d` as defined in section \@ref(ListOfModelsTitanic).
+
+Average model response for all passengers for this model is $v_0 = 0.2356585$. For each coordinate of  `johny_d` we can calculate scores $\Delta^j$ and they are presented in the table \@ref(tab:titanicBreakDownDeltas). These scores determine the order in which we do the conditioning.
+
+
+Table: (\#tab:titanicBreakDownDeltas) For each variable we calculated scores $\Delta^j$. These scores are sorted in the decreasing order.
+
+|variable $j$ | $E[f(X : x^j = x^j_*)]$ | $\Delta^j$  |
+|:--------|---------:|---------:|
+|age      | 0.7407795| 0.5051210|
+|class    | 0.6561034| 0.4204449|
+|fare     | 0.6141968| 0.3785383|
+|sibsp    | 0.4786182| 0.2429597|
+|parch    | 0.4679240| 0.2322655|
+|embarked | 0.4602620| 0.2246035|
+|gender   | 0.3459458| 0.1102873|
+
+```{r, echo=FALSE, eval=FALSE}
+library("iBreakDown")
+avg = mean(predict(explain_rf_v6$model, type = "prob")[,2])
+
+deltas <- iBreakDown:::calculate_1d_changes(explain_rf_v6$model, 
+                                  johny_d, 
+                                  explain_rf_v6$data[,colnames(johny_d)], 
+                                  predict_function = explain_rf_v6$predict_function)
+dftmp <- data.frame(variable = names(deltas), E = unlist(deltas) + 0.2356585, delta = unlist(deltas))
+library("dplyr")
+dftmp %>% arrange(-delta) %>% knitr::kable()
+
+tmp <- break_down(explain_rf_v6, johny_d)
+plot(tmp)
+as.data.frame(tmp)[,c(1,5,2)] %>% knitr::kable()
+```
+
+
+Once the order is determined we can calculate sequential contributions $\Delta^{i|J}$. For `johny_d` and the model unde consideration, these coefficients are listed in Table \@ref(tab:titanicBreakDownDeltasConseq).
+
+Table: (\#tab:titanicBreakDownDeltasConseq) Following order defined by $\Delta^i$ we calculate sequential conditioning $E[f(X|x^I = x^I_*)]$ where $I$ is an increasing set of already considered coefficients.
+
+
+|variable $i$           |  $E[f(X : x^I = x^I_*)]$ |  $\Delta^{i|J}$ |
+|:----------------------|-----------:|------------:|
+|intercept              |   0.2353095|    0.2353095|
+|age = 8                |   0.5051210|    0.2698115|
+|class = 1st            |   0.5906969|    0.0855759|
+|fare = 72              |   0.5443561|   -0.0463407|
+|gender = male          |   0.4611518|   -0.0832043|
+|embarked = Southampton |   0.4584422|   -0.0027096|
+|sibsp = 0              |   0.4523398|   -0.0061024|
+|parch = 0              |   0.4220000|   -0.0303398|
+|prediction             |   0.4220000|    0.4220000|
+
+
+These results can be visually presented with waterfall plot as in the Figure \@ref(fig:BDjohnyExample).
+
+```{r BDjohnyExample, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="(fig:BDjohnyExample) Break Down explanations for the `titanic_rf_v6` model and `johny_d` passanger.", out.width = '99%', fig.align='center'}
+library("iBreakDown")
+library("randomForest")
+library("DALEX")
+load("models/explain_rf_v6.rda")
+load("models/johny_d.rda")
+bd_rf <- break_down(explain_rf_v6,
+                 johny_d)
+plot(bd_rf) + ggtitle("Break Down explanations for the `titanic_rf_v6` model")
+```
+
+
+## Pros and cons
+
+Break Down approach is model agnostic, can be applied to any predictive model that returns a single number. It leads to additive variable attribution. Below we summarize key strengths and weaknesses of this approach. 
+
+
+**Pros**
+
+- Break Down Plots are easy to understand and decipher.
+- Break Down Plots are compact; many variables may be presented in a small space.
+- Break Down Plots are model agnostic yet they reduce to intuitive interpretation for linear Gaussian and generalized models.
+- Complexity of Break Down Algorithm is linear in respect to the number of variables.
+
+**Cons**
+
+- If the model is non-additive then showing only additive contributions may be misleading.
+- Selection of the ordering based on scores is subjective. Different orderings may lead to different contributions.
+- For large number of variables the Break Down Plot may be messy with many variables having small contributions.
+
+
+
+## Code snippets for R
+
+In this section we present key features of the `iBreakDown` package for R [@iBreakDownRPackage] which is a part of `DrWhy.AI` universe. This package covers all features presented in this chapter. It is available on CRAN and GitHub. Find more examples at the website of this package `https://modeloriented.github.io/iBreakDown/`.
+
+In this section, we use a random forest classification model developed in the chapter \@ref(TitanicDataset), namely the `titanic_rf_v6` model. It is trained to predict probability of survival from sinking of Titanic. Instance level explanations are calculated for a single observation `johny_d` - 8 years old passenger that travels 1st class.
+
+`DALEX` explainers for both models and the Henry data are retrieved via `archivist` hooks as listed in Chapter \@ref(ListOfModelsTitanic). 
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library("randomForest")
+explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
+
+library("DALEX")
+johny_d <- archivist::aread("pbiecek/models/e3596")
+johny_d
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library("randomForest")
+library("DALEX")
+load("models/explain_rf_v6.rda")
+load("models/johny_d.rda")
+```
+
+### Basic usage for the `break_down` function
+
+The `iBreakDown::break_down()` function calculates Break Down contributions for a selected model around a selected observation. 
+
+The result from `break_down()` function is a data frame with additive attributions for selected observation.
+
+The simplest use case is to set only the arguments - model explainers and observation of interest.
+
+Note that the table below recreates values presented in Table \@ref(tab:titanicBreakDownDeltasConseq).
+
+```{r, warning=FALSE, message=FALSE}
+library("iBreakDown")
+bd_rf <- break_down(explain_rf_v6,
+                 johny_d)
+bd_rf
+```
+
+The generic `plot()` function creates Break Down plots. 
+
+Note that the plot below recreates Figure \@ref(fig:BDjohnyExample).
+
+```{r, warning=FALSE, message=FALSE}
+plot(bd_rf) 
+```
+
+### Advanced usage for the `break_down` function
+
+The function `break_down()` can take more arguments. The most commonly used are:
+
+* `x` a wrapper over a model created with function `DALEX::explain()`, 
+* `new_observation` an observation to be explained is should be a data frame with structure that matches the training data, 
+* `order` if specified then it can be a vector of characters (column names) or integers (column indexes) that specify order of variable conditioning. If not specified (default) then a one-step heuristic is used to determine the order, 
+* `keep_distributions` logical value. 	
+if `TRUE`, then additional diagnostic information is about conditional distributions is stored and can be plotted with the generic `plot()` function.
+
+Let's see these additional arguments in action.
+
+First we will specify order. You can use integer indexes or variable names. Note that the second option is in most cases better because of higher readability.  Additionally, to reduce clutter in the plot we set `max_features = 3` argument in the `plot()` function. 
+
+```{r, warning=FALSE, message=FALSE}
+library("iBreakDown")
+bd_rf_order <- break_down(explain_rf_v6,
+                 johny_d,
+                 order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"))
+plot(bd_rf_order, max_features = 3) 
+```
+
+The `plot_distributions = TRUE` argument of `break_down()` function enriches model response with additional information about conditional distribution.
+
+It can be presented after setting `plot_distributions = TRUE` in the `plot()` function. Conditional distributions are presented as vioplots. Red dots stand for conditional average model response. Thin black lines between vioplots correspond to predictions for individual observations. With them we can trace how model predictions change after consecutive conditioning.
+
+```{r, warning=FALSE, message=FALSE}
+bd_rf_distr <- break_down(explain_rf_v6,
+                 johny_d,
+                 order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),
+                 keep_distributions = TRUE)
+plot(bd_rf_distr, plot_distributions = TRUE) 
+```
