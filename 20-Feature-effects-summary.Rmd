@@ -1,3 +1,51 @@
+# Summary of Explainers for Feature Effects {#summaryFeatureEffects}
+
+In previous chapters we introduced different was to calculate model level explainers for feature effects. 
+A natural question is how these approaches are different and which one should we choose.
+
+An example that illustrate differences between these approaches is presented in Figure \@ref{accumulatedLocalEffects}.
+Here we have a model $f(x_1, x_2) = x_1*x_2 + x_2$ and what is important features are correlated $x_1 \sim U[-1,1]$ and $x_2 = x_1$.
+
+We have 8 points for which we calculated instance level profiles.
+
+| $x_1$  | $x_2$ |
+|--------|-------|
+|    -1  |   -1  |
+| -0.71  | -0.71 |
+| -0.43  | -0.43 |
+| -0.14  | -0.14 |
+|  0.14  |  0.14 |
+|  0.43  |  0.43 |
+|  0.71  |  0.71 |
+|    1   |    1  |
+
+Panel A) shows Ceteris Paribus for 8 data points, the feature $x_1$ is on the OX axis while $f$ is on the OY. 
+Panel B) shows Partial Dependency Profiles calculated as an average from CP profiles.
+
+$$
+g_{PD}^{f,1}(z) = E[z*x^2 + x^2] = 0
+$$
+Panel C) shows Conditional Dependency Profiles calculated as an average from conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
+
+$$
+g_{CD}^{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
+$$
+
+Panel D) shows Accumulated Local Effects calculated as accumulated changes in conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
+
+$$
+g_{AL}^{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
+$$
+
+
+
+
+```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALL.png")
+```
+
+
+
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 library(titanic)
 library(randomForest)
