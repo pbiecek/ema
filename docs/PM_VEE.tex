@@ -26,7 +26,7 @@
 \usepackage{hyperref}
 \PassOptionsToPackage{usenames,dvipsnames}{color} % color is loaded by hyperref
 \hypersetup{unicode=true,
-            pdftitle={Explore, Explain and Debug},
+            pdftitle={Predictive Models: Explore, Explain, and Debug},
             pdfauthor={Przemyslaw Biecek and Tomasz Burzykowski},
             colorlinks=true,
             linkcolor=Maroon,
@@ -122,7 +122,7 @@
 
 \setlength{\droptitle}{-2em}
 
-  \title{Explore, Explain and Debug}
+  \title{Predictive Models: Explore, Explain, and Debug}
     \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
   \subtitle{Human-Centered Interpretable Machine Learning}
@@ -131,7 +131,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-07-01}
+    \date{2019-07-06}
 
 \usepackage{booktabs}
 
@@ -5086,69 +5086,85 @@ or range for feature attributions.
 \section{Local Interpretable Model-Agnostic Explanations
 (LIME)}\label{LIME}}
 
-A different approach to explanations of a single instance is through
-surrogate models. Models that easy to understand and are similar to
-black box model around the instance of interest.
+\hypertarget{introduction-1}{%
+\subsection{Introduction}\label{introduction-1}}
 
-Variable attribution methods, that were presented in the Section
-\ref{breakDown} are not interested in the local curvature of the model.
-They rather compare model prediction against average model prediction
-and they use probability structure of the dataset.
+Ceteris Paribus profiles introduced in the chapter \ref{ceterisParibus}
+work best for models with small number of interpretable features. In
+this case it makes sense to plot feature by feature and analyse how the
+single feature affects the model output.
 
-The complementary approach would be to directly explore information
-about model curvature around point of interest. In the section
-\ref{ceterisParibus} we introduced Ceteris Paribus tool for such what-if
-analysis. But the limitation of ceteris Paribus plots is that they
-explore changes along single dimension or pairs of dimensions.
+Break Down and Shapley attributions introduced in the chapter
+\ref{breakDown} work best for moderate number of features. These
+attributions are not as detailed as Ceteris Paribus profiles, but can
+handle more variables that are reduced to single bars.
 
-In this section we describe another approach based on local
-approximations with glass-box models. This approach will also
-investigate local curvature of the model but indirectly, through
-surrogate glass-box models.
+Both these approaches are not well suited for high-dimensional data. For
+instance in bioinformatics when working with gene expression, mutations
+or methylation it is not uncommon to have thousands or even million
+features. If most of them are binary low/high, present/absent,
+wild/mutated features then Ceteris Paribus and Break Down plots become
+unreadable. In such cases an useful alternatives are LIME explainers.
 
-The most known method from this class if LIME (Local Interpretable
-Model-Agnostic Explanations), introduced in the paper \emph{Why Should I
-Trust You?: Explaining the Predictions of Any Classifier} \citep{lime}.
-This methods and it's clones are now implemented in various R and python
-packages, see for example \citep{R-lime}, \citep{R-live} or
-\citep{R-iml}.
+The method was originally proposed in the paper \emph{Why Should I Trust
+You?: Explaining the Predictions of Any Classifier} \citep{lime}. LIME,
+currently very popular acronym, stands for Local Interpretable
+Model-Agnostic Explanations. The key idea here is to explain the model
+prediction for a single instance through interpretable local surrogate
+model. In one sentence: the complex black-box model is locally
+approximated by glass-box model, which is easy to interpret.
 
 \hypertarget{intuition-3}{%
 \subsection{Intuition}\label{intuition-3}}
 
-The intuition is presented in Figure \ref{fig:LIME1}. We want to
-understand some complex model as the one presented in panel B in a point
-makes with a black cross. As the model may be complex and describe in
-high dimension, we need to perform two things: find a interpretable
-representation of these features, fit a simple - easier to interpret
-model that can be used to better understand the model.
+The intuition is presented in Figure \ref{fig:limeEx}. We want to
+understand a complex black-box model. Here the black box model is a
+binary classifier and coloured areas in the plot correspond to its
+decision regions. We are interested in instance explanation, and the
+instance of interest is marked with large black dot. Having some
+artificial dataset around this black dot we can train a glass-box model
+that will locally approximate the black-box model. The glass-box model
+may then serves as local explainer for the complex model.
 
-Interpretable representation is case specific, for image data one can
-use some super-pixels or other large chunks of the image, for tabular
-data it's still not clear how to construct interpretable features.
-
-Local model is usually a simple model like linear regression of decision
-tree that can be directly interpret.
+We may select different classes of glass-box models, the important part
+is to keep it sparse and low-dimensions, this way it is easier to
+explain. The most typical choices for glass-box models are regularized
+linear models like LASSO regression or decision trees.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.7\linewidth]{figure/circle_4panels} 
+{\centering \includegraphics[width=0.7\linewidth]{figure/limeEx} 
 
 }
 
-\caption{(fig:LIME1) A schematic idea behind local model approximations. Panel A shows training data, colors correspond to classes. Panel B shows results from the Random Forest model, here the LIME algorithm starts. Panel C shows new data sampled around the point of interest. The color corresponds to model response. Panel D shows fitted linear model that approximated the random forest model around point of interest}\label{fig:LIME1}
+\caption{(fig:limeEx) A schematic idea behind local model approximations. Colours stand for decision regions for black-box model. We want to explain model decision for the largest black point. To do this we create artificial points around point of interest and train a glass-box model. Here it's a logistic regression presented as a dashed line.}\label{fig:limeEx}
 \end{figure}
 
 \hypertarget{method-3}{%
 \subsection{Method}\label{method-3}}
 
-The LIME method, and its clones, has following properties:
+The objective is to find a local model \(M_{*}\) that approximates a
+black box model \(f\) around the point of interest \(x_*\). This
+intuition can be formalized in a following formula
+
+\[
+M(x_{*}) = \arg \min_{g \in G} L(f, g, \Pi_{x_*}) + \Omega (g) 
+\] For a selected instance \(x_*\) we are looking for a local model
+\(g\) from the class \(G\) of interpretable models. The model shall be
+simple so we add penalty for the model complexity measured as
+\(\Omega(g)\). And the white-box model \(g\) shall approximate well the
+black-box model \(f\) locally, where locality is defined by
+neighbourhood \(\Pi_{x_*}\) of \(x^*\). The \(L\) stands for some
+goodness of fit measure like for example likelihood.
+
+As it is presented in the paper \citep{lime}, the LIME method has
+following properties:
 
 \begin{itemize}
 \tightlist
 \item
   \emph{model-agnostic}, they do not imply any assumptions on model
-  structure,
+  structure, \(f\) can be any function,
 \item
   \emph{interpretable representation}, model input is transformed into a
   feature space that is easier to understand. One of applications comes
@@ -5160,46 +5176,87 @@ The LIME method, and its clones, has following properties:
   well fitted to the black-box model.
 \end{itemize}
 
-Therefore the objective is to find a local model \(M^L\) that
-approximates the black box model \(f\) in the point \(x^*\). As a
-solution the penalized loss function is used. The glass-box model that
-is used for explanations satisfies following condition.
+Where it comes to the implementation of this idea there are at least
+three important steps, which will be presented in consecutive
+subsections.
 
-\[
-M^*(x^*) = \arg \min_{g \in G} L(f, g, \Pi_{x^*}) + \Omega (g) 
-\] where \(G\) is a family of glass-box models (e.g.~linear models),
-\(\Pi_{x^*}\) is neighbourhood of \(x^*\) and \(\Omega\) stands for
-model complexity.
+\hypertarget{interpretable-data-representation}{%
+\subsubsection{Interpretable data
+representation}\label{interpretable-data-representation}}
 
-The algorithm is composed from three steps:
+It is important to remember that functions \(f\) and \(g\) may work on
+different data representations. The black-box
+\(f:\mathcal R^d \rightarrow \mathcal R\) works on d-dimensional feature
+space \(\mathcal R^d\) while the glass-box function
+\(g:\mathcal R^p \rightarrow \mathcal R\) works on interpretable feature
+space, which is in many applications smaller and in many implementations
+is discretized into binary vectors.
 
-\begin{itemize}
-\tightlist
-\item
-  Identification of interpretable data representations,
-\item
-  Local sampling around the point of interest,
-\item
-  Fitting a glass-box model in this neighborhood
-\end{itemize}
+For example, let's consider a VGG16 neural network trained for ImageNet
+data. Such network takes an image of the size 244x244 pixels as an input
+and returns best fitted image category out of 1000 classes. The original
+input space is 3x244x244 = 178608 dimensional as single dimensional is a
+single colour channel for a single pixel. Explanations in such input
+space would be hard to interpret. Instead, the input space is
+transformed into superpixels - binary features that can be turned on or
+off. Figure \ref{fig:duckHorse06} shows an example 100 superpixels
+created for some ambiguous picture.
 
-\textbf{Identification of interpretable data representations}
+Superpixels are frequent choices for image data. For text data words are
+frequently used as interpretable features. For tabular data sometimes
+continuous features are discretized.
 
-For image data, single pixel is not an interpretable feature. In this
-step the input space of the model is transformed to input space that is
-easier to understand for human. The image may be decomposed into parts
-and represented as presence/absence of some part of an image.
+\begin{figure}
 
-\textbf{Local sampling around the point of interest}
+{\centering \includegraphics[width=1\linewidth]{figure/duck_horse_06} 
 
-Once the interpretable data representation is identified, then the
-neighborhood around point of interest needs to be explored.
+}
 
-\textbf{Fitting a glass-box model in this neighborhood}
+\caption{(fig:duckHorse06) The left panel shows an ambiguous picture, half horse and hals duck. The right panel shows 100 superpixes identified for this figure.}\label{fig:duckHorse06}
+\end{figure}
 
-Any model that is easy to interpret may be fitted to this data, like
-decision tree or rule based system. However in practice the most common
-family of models are linear models.
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{figure/duck_horse_04} 
+
+}
+
+\caption{(fig:duckHorse04) LIME explanations for two classess identified by the VGG16 network with ImageNet weights.}\label{fig:duckHorse04}
+\end{figure}
+
+\hypertarget{sampling-around-point-of-interest}{%
+\subsubsection{Sampling around point of
+interest}\label{sampling-around-point-of-interest}}
+
+In order to fit surrogate local model we need new data points around
+point of interest. It is not enough to sample points from original
+dataset, because in very highdimensional space the input dataset is very
+sparse and points are ,,far'' from each other.
+
+This is why the training data for surrogate model is created through
+some perturbations of the point of interest.
+
+For binary interpretable input space the common choice is to sample
+subset of features (i.e.~new datapoints are the point of interest with
+some random number of features switched to 0).
+
+For nonbinary features various propositions are introduced in different
+papers.
+
+\hypertarget{fitting-a-glass-box-model}{%
+\subsubsection{Fitting a glass-box
+model}\label{fitting-a-glass-box-model}}
+
+Once the new data are sampled around point of interest we are ready to
+create an interpretable model \(g\) from class \(G\).
+
+The most common choices for \(G\) are linear models (for regression) or
+generalized linear models (for classification). In order to get sparse
+models the LASSO or similar regularisation/feature selection is used. An
+alternative choice is classification and regression trees.
+
+\hypertarget{example-titanic-data-1}{%
+\subsection{Example: Titanic data}\label{example-titanic-data-1}}
 
 \hypertarget{pros-and-cons-3}{%
 \subsection{Pros and cons}\label{pros-and-cons-3}}
@@ -5216,10 +5273,13 @@ this approach.
   This method is highly adopted in text analysis and image analysis, in
   part thanks to the interpretable data representations.
 \item
-  The intuition behind the model is straightforward.
+  The intuition behind the method is straightforward, fit simple model
+  to approximate a complex model.
 \item
-  Model explanations are sparse, thus only small number of features is
-  used what makes them easier to read.
+  Model explanations are sparse, thus only small number of features are
+  in the surrogate models used what makes it easier to explain.
+\item
+  The LIME method can be applied to high dimensional models.
 \end{itemize}
 
 \textbf{Cons}
@@ -5241,6 +5301,10 @@ this approach.
 
 \hypertarget{code-snippets-for-r-3}{%
 \subsection{Code snippets for R}\label{code-snippets-for-r-3}}
+
+This methods and it's clones are now implemented in various R and python
+packages, see for example \citep{R-lime}, \citep{R-live} or
+\citep{R-iml}.
 
 In this section we present key features of the R package
 \texttt{iBreakDown} \citep{iBreakDownRPackage} which is a part of
@@ -5272,9 +5336,9 @@ Johny D and \texttt{titanic\_rf\_v6} model.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{the-lime-pacakge}{%
+\hypertarget{the-lime-package}{%
 \subsubsection{\texorpdfstring{\textbf{The lime
-pacakge}}{The lime pacakge}}\label{the-lime-pacakge}}
+package}}{The lime package}}\label{the-lime-package}}
 
 An example code snippet for the \texttt{lime} package is presented
 below. Key parts are function \texttt{lime::lime} which creates an
@@ -5430,6 +5494,12 @@ TODO: Sparse model approximation / variable selection / feature ranking
 TODO comparison of difrerent approach for Johny D
 
 TODO Champion-Challenger explainers
+
+\begin{figure}
+\centering
+\includegraphics{figure/localExplainers.png}
+\caption{figure/localExplainers.png}
+\end{figure}
 
 \hypertarget{when-to-use}{%
 \subsection{When to use?}\label{when-to-use}}
@@ -6678,8 +6748,8 @@ affect the model performance.
 In this chapter we define basic ideas behind concept drift and propose
 some solutions.
 
-\hypertarget{introduction-1}{%
-\subsection{Introduction}\label{introduction-1}}
+\hypertarget{introduction-2}{%
+\subsection{Introduction}\label{introduction-2}}
 
 In general, concept drift means that some statistical properties of
 variables used in the model change over time. This may result in
@@ -7152,8 +7222,8 @@ SNIPPETS, WE SHOULD SIMPLY SHOW THE UNDERLYING CODE.{]}
 \section{Variable attribution for linear
 models}\label{variableAttributionMethods}}
 
-\hypertarget{introduction-2}{%
-\subsection{Introduction}\label{introduction-2}}
+\hypertarget{introduction-3}{%
+\subsection{Introduction}\label{introduction-3}}
 
 In this chapter we introduce the concept and the intuitions underlying
 `'variable attribution,'' i.e., the decomposition of the difference
