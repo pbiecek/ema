@@ -43,9 +43,9 @@ The example illustrates that interactions complicate the evaluation of the impor
 
 Identification of interactions in the model is performed in three steps [@iBreakDownRPackage]:
 
-1. Calculate the variable-importance measure separately for each explanatory variable. In particular, for each variable, compute $\Delta^{j|\emptyset}$ (see Section \@ref(BDMethod)).
-2. Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute $\Delta^{\{i,j\}|\emptyset}$ (see Section \@ref(BDMethod)) and then $\Delta^{\{i,j\}}_I \equiv \Delta^{\{i,j\}|\emptyset}-\Delta^{i|\emptyset}-\Delta^{j|\emptyset}$.
-3. Rank the so-obtained importance measures for the ``main'' and interaction effects to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures $v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}$ (see Section \@ref(BDMethod)).
+1. Calculate the variable-importance measure separately for each explanatory variable. In particular, for each variable, compute $\Delta^{j|\emptyset}(x_*)$ (see Section \@ref(BDMethod)).
+2. Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute $\Delta^{\{i,j\}|\emptyset}$ (see Section \@ref(BDMethod)) and then $\Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(x_*)-\Delta^{i|\emptyset}(x_*)-\Delta^{j|\emptyset}(x_*)$.
+3. Rank the so-obtained importance measures for the ``main'' and interaction effects to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures $v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}(x_*)$ (see Section \@ref(BDMethod)).
 
 The numerical complexity of the first step is $O(p)$, where $p$ is the number of explanatory variables. For the second step, the complexity is $O(p^2)$, while for the third step it is $O(p)$. Thus, the complexity of the entire procedure is $O(p^2)$.
 
@@ -53,13 +53,13 @@ The numerical complexity of the first step is $O(p)$, where $p$ is the number of
 
 Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. [TOMASZ; JOHNY_D FROM BELFAST IN SECTION \@ref(predictions-titanic).]
 
-Table \@ref(tab:titanicIBreakDownList) presents the expected model predictions $E[f(x)|x^i = x_*^i, x^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}$, and interaction effects $\Delta_{I}^{\{i,j\}}$ for each explanatory variable and each pair of variables. All the measures are calculated for `johny_d`, the instance of interest. The rows of the table are sorted according to the absolute value of the last column (if provided) [TOMASZ: UNCLEAR.].
+Table \@ref(tab:titanicIBreakDownList) presents the expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$, and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ for each explanatory variable and each pair of variables. All the measures are calculated for `johny_d`, the instance of interest. The rows of the table are sorted according to the absolute value of the last column (if provided) [TOMASZ: UNCLEAR.].
 
 Based on the ordering of the rows, the following sequence of variables is identified as informative: `age`, `fare:class`, `gender`, `embarked`, `sibsp`, and `parch`. [TOMASZ: WHY?]
 
-Table: (\#tab:titanicIBreakDownList) Expected model predictions $E[f(x)|x^i = x_*^i, x^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}$, and interaction effects $\Delta_{I}^{\{i,j\}}$ for the random-forest model `titanic_rf_v6` and passenger `johny_d` in the Titanic data. Rows are sorted according to the absolute value of the last column (if provided) [TOMASZ: UNCLEAR.].
+Table: (\#tab:titanicIBreakDownList) Expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$, and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ for the random-forest model `titanic_rf_v6` and passenger `johny_d` in the Titanic data. Rows are sorted according to the absolute value of the last column (if provided) [TOMASZ: UNCLEAR.].
 
-|Variable        |$E[f(x):x^{ij}= x_*^{ij}]$| $\Delta^{ij}$ | $\Delta_I^{ij}$|
+|Variable        |$E_X[f(X)|X^{i}= x_*^{i},X^{j}= x_*^{j}]$| $\Delta^{\{i,j\}}(x_*)$ | $\Delta_{I}^{\{i,j\}}(x_*)$|
 |:---------------|-----:|------:|---------:|
 |age             | 0.505|  0.270|          |
 |fare:class      | 0.333|  0.098|    -0.231|
@@ -93,9 +93,9 @@ Table: (\#tab:titanicIBreakDownList) Expected model predictions $E[f(x)|x^i = x_
 
 Table \@ref(tab:titanicIBreakDownList2) presents the variable-importance measures computed by using the sequence  of variables `age`, `fare:class`, `gender`, `embarked`, `sibsp`, and `parch`. 
 
-Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}$ computed by using the sequence  of variables `age`, `fare:class`, `gender`, `embarked`, `sibsp`, and `parch` for the random-forest model `titanic_rf_v6` for the Titanic data and `johny_d`.
+Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}(x_*)$ computed by using the sequence  of variables `age`, `fare:class`, `gender`, `embarked`, `sibsp`, and `parch` for the random-forest model `titanic_rf_v6` for the Titanic data and `johny_d`.
 
-|Variable               | $\Delta^{j|\{1,\ldots,j\}}$ | $E[f(X) | X^{\{1,\ldots,j\}} = x^{\{1,\ldots,j\}}_*)]$ |  
+|Variable               | $\Delta^{j|\{1,\ldots,j\}}(x_*)$ | $E_X[f(X) | X^{\{1,\ldots,j\}} = x^{\{1,\ldots,j\}}_*)]$|
 |:----------------------|------------:|-----------:|
 |intercept              |             |   0.235    |
 |age = 8                |    0.269    |   0.505    |
@@ -220,7 +220,7 @@ iBD plots share many features of BD plots for models without interactions. Howev
 
 Though the numerical complexity of the iBD procedure is quadratic, it may be time-consuming in case of models with a large number of explanaotry variables. For such models, the results may be sensitive to noise, because the  number of pairs grows faster than the number of variables. [TOMASZ: "NOISE" IN WHICH SENSE?]. The identification of interactions in the presented procedure is not based on a formal statistical significance test. Thus, for small sample sizes, the procedure may be prone to errors.
 
-## Code snippets for R
+## Code snippets for R {#iBDRcode}
 
 For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `johny_d` - an 8-year-old passenger that travelled in the 1st class.
 

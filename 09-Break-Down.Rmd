@@ -5,7 +5,7 @@ In Chapter \@ref(ceterisParibusOscillations), we introduced a method for assessm
 In this chapter we introduce Break-down (BD) plots, which offer a solution to this problem. Note that the method is similar to the `EXPLAIN` algorithm introduced in  [@explainPaper] and implemented in the `ExplainPrediction` package [@explainPackage]. [TOMASZ: DIFFERENCE IN THE NAME IN THE REFERENCES.]
 
 ## Intuition {#BDIntuition}
-The underlying idea is to calculate contribution of an explanatory variable to model's prediction as a shift in the expected model response after conditioning on other variables. [TOMASZ: PERHAOS BRING SOME PART OF THE LINEAR MODEL HERE?.]
+The underlying idea is to calculate contribution of an explanatory variable to model's prediction as a shift in the expected model response after conditioning on other variables. [TOMASZ: PERHAPS BRING SOME PART OF THE LINEAR MODEL HERE?.]
 
 The idea is illustrated in Figure \@ref(fig:BDPrice4). Consider the prediction for `johny_d` for the random-forest model (see Section \@ref{model-titanic-rf}) for the Titanic data. [TOMASZ: ISSUE - JOHNY_D EMABRKED IN BELFAST, NOT IN SOUTHAMPTON.] Panel A shows distribution of model predictions. The row `all data` shows the distribution of the predictions for the entire dataset. The red dot indicates the average and it is an estimate of the expected model prediction $E_X[f(X)]$ over the distribution of all explanatory variables.
 
@@ -29,7 +29,7 @@ We would like the sum of the variable-importance measures for all explanatory va
 $$
 f(x_*) = v_0 + \sum_{j=1}^p v(j, x_*),
 $$
-where $v_0$ denote the average model response. If we re-write that the equation above may be rewritten as follows:
+where $v_0$ denotes the average model response. If we re-write the equation above as follows:
 $$
 E_X[f(X)|X^1 = x^1_*, \ldots, X^p = x^p_*] = E_X[f(X)] + \sum_{j=1}^p v(j, x_*),
 $$
@@ -38,19 +38,32 @@ then a natural proposal for $v(j, x_*)$ is
 $$
 v(j, x_*) = E_X[f(X) | X^1 = x^1_*, \ldots, X^j = x^j_*] - E_X[f(X) | X^1 = x^1_*, \ldots, X^{j-1} = x^{j-1}_*]. 
 $$
-In other words, the contribution of the $j$-th variable is the difference between the expected value of the prediction conditional on setting the values of the first $j$ variables equal to their values in $x_*$ and the expected value conditional on setting the values of the first $j-1$ variables equal to their values in $x_*$.
+In other words, the contribution of the $j$-th variable is the difference between the expected value of the prediction conditional on setting the values of the first $j$ variables equal to their values in $x_*$ and the expected value conditional on setting the values of the first $j-1$ variables equal to their values in $x_*$. 
 
-To consider more general cases, let $J$ denote a set of $K$ indices from ${1,2,\ldots,p}$. Furthermore, let's define 
+Note that the definition does imply the dependence of $v(j, x_*)$  on the order of the explanatory variables that is reflected in their indices. 
+
+To consider more general cases, let $J$ denote a subset of $K$ ($K\leq p$) indices from $\{1,2,\ldots,p\}$, i.e., $J=\{j_1,j_2,\ldots,j_K\}$ where each $j_k \in \{1,2,\ldots,p\}$. Furthermore, let $L$ denote another subset of $M$ ($M \leq p-K$) indices from ${1,2,\ldots,p}$ distinct from $J$. That is, $L=\{l_1,l_2,\ldots,l_M\}$ where each $l_m \in \{1,2,\ldots,p\}$ and $J \cap L = \emptyset$. Let us define now    
+
+\begin{eqnarray}
+\Delta^{L|J}(x_*) &\equiv& E_X[f(X) | X^{l_1} = x_*^{l_1},\ldots,X^{l_M} = x_*^{l_M},X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K}]\\
+&-& E_X[f(X) | X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K}].
+\end{eqnarray}
+
+In other words, $\Delta^{L|J}(x_*)$ is the change between the expected prediction when setting the values of the explanatory variables with indices from the set $J \cup L$ equal to their values in $x_*$ and the expected prediction conditional on setting the values of the explanatory variables with indices from the set $J$ equal to their values in $x_*$. 
+
+In particular, for the $l$-th explanatory variable, let
+\begin{eqnarray}
+\Delta^{l|J}(x_*) \equiv \Delta^{\{l\}|J}(x_*) &=& E_X[f(X) | X^{l} = x_*^{l},X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K}]\\
+&-& E_X[f(X) | X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K}].
+\end{eqnarray}
+
+Thus, $\Delta^{l|J}$ is the change between the expected prediction when setting the values of the explanatory variables with indices from the set $J \cup \{l\}$ equal to their values in $x_*$ and the expected prediction conditional on setting the values of the explanatory variables with indices from the set $J$ equal to their values in $x_*$. Note that, if $J=\emptyset$, then 
 $$
-\Delta^{j|J} = E_X[f(X) | X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K},X^{j} = x_*^{j}] - E_X[f(X) | X^{j_1} = x_*^{j_1},\ldots,X^{j_K} = x_*^{j_K}].
-$$
-In other words, $\Delta^{j|J}$ is the change between conditional on the expected prediction when setting the values of the explanatory variables with indices from the set $J \cup \{j\}$ equal to their values in $x_*$ and the expected prediction conditional on setting the values of the explanatory variables with indices from the set $J$ equal to their values in $x_*$. In particular, if $J=\emptyset$, then 
-$$
-\Delta^{j|\emptyset} = E_X[f(X) | X^{j} = x_*^{j}] - E_X[f(X)].
+\Delta^{l|\emptyset}(x_*) = E_X[f(X) | X^{l} = x_*^{l}] - E_X[f(X)].
 $$
 It follows that
 $$
-v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}.
+v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}(x_*).
 $$
 Unfortunately, for non-additive models (that include interactions), the value of so-defined variable-importance measure depends on the order, in which one sets the values of the explanatory variables. Figure \@ref(fig:ordering) presents an example. [TOMASZ: LOOKS LIKE A MODEL FOR THE HR DATA. WHICH ONE?]. For the first ordering, the contribution of variable `age` is equal to  0.01, while for the second ordering  the contribution is equal to 0.13. This is due to the lack of additivity of the model. [TOMASZ: WHICH MODEL? IT HASE NEVER BEEN MENTIONED.] 
  
