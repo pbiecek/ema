@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Predictive Models: Explore, Explain, and Debug</title>
+  <meta name="description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models.">
+  <meta name="generator" content="bookdown 0.7 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Predictive Models: Explore, Explain, and Debug" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
+  <meta name="github-repo" content="pbiecek/PM_VEE" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Predictive Models: Explore, Explain, and Debug" />
+  
+  <meta name="twitter:description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
+  
+
+<meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski">
+
+
+<meta name="date" content="2019-07-17">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="shapley.html">
+<link rel="next" href="summaryInstanceLevel.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-5650686-15', 'https://pbiecek.github.io/PM_VEE/', {
+  'anonymizeIp': true
+  , 'storage': 'none'
+  , 'clientId': window.localStorage.getItem('ga_clientId')
+});
+ga(function(tracker) {
+  window.localStorage.setItem('ga_clientId', tracker.get('clientId'));
+});
+ga('send', 'pageview');
+</script>
+<style>
+.figure {
+   padding:40px 0px;
+}
+</style>
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Predictive Models:<br/> Visualisation, Exploration and Explanation</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="introduction.html"><a href="introduction.html#notes-to-readers"><i class="fa fa-check"></i><b>1.1</b> Notes to readers</a></li>
+<li class="chapter" data-level="1.2" data-path="introduction.html"><a href="introduction.html#the-aim-of-the-book"><i class="fa fa-check"></i><b>1.2</b> The aim of the book</a></li>
+<li class="chapter" data-level="1.3" data-path="introduction.html"><a href="introduction.html#three-single-laws"><i class="fa fa-check"></i><b>1.3</b> A bit of philosophy: three laws of model explanation</a></li>
+<li class="chapter" data-level="1.4" data-path="introduction.html"><a href="introduction.html#terminology"><i class="fa fa-check"></i><b>1.4</b> Terminology</a></li>
+<li class="chapter" data-level="1.5" data-path="introduction.html"><a href="introduction.html#glass-box-models-vs.black-box-models"><i class="fa fa-check"></i><b>1.5</b> Glass-box models vs. black-box models</a></li>
+<li class="chapter" data-level="1.6" data-path="introduction.html"><a href="introduction.html#model-visualization-exploration-and-explanation"><i class="fa fa-check"></i><b>1.6</b> Model visualization, exploration, and explanation</a></li>
+<li class="chapter" data-level="1.7" data-path="introduction.html"><a href="introduction.html#model-agnostic-vs.model-specific-approach"><i class="fa fa-check"></i><b>1.7</b> Model-agnostic vs. model-specific approach</a></li>
+<li class="chapter" data-level="1.8" data-path="introduction.html"><a href="introduction.html#notation"><i class="fa fa-check"></i><b>1.8</b> Notation</a></li>
+<li class="chapter" data-level="1.9" data-path="introduction.html"><a href="introduction.html#bookstructure"><i class="fa fa-check"></i><b>1.9</b> The structure of the book</a></li>
+<li class="chapter" data-level="1.10" data-path="introduction.html"><a href="introduction.html#thanksto"><i class="fa fa-check"></i><b>1.10</b> Acknowledgements</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html"><i class="fa fa-check"></i><b>2</b> Do-it-yourself With R</a><ul>
+<li class="chapter" data-level="2.1" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#what-to-install"><i class="fa fa-check"></i><b>2.1</b> What to install?</a></li>
+<li class="chapter" data-level="2.2" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#how-to-work-with-dalex"><i class="fa fa-check"></i><b>2.2</b> How to work with <code>DALEX</code>?</a></li>
+<li class="chapter" data-level="2.3" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#how-to-work-with-archivist"><i class="fa fa-check"></i><b>2.3</b> How to work with <code>archivist</code>?</a></li>
+<li class="chapter" data-level="2.4" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#Packages"><i class="fa fa-check"></i><b>2.4</b> DrWhy Packages</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="doItYourselfWithPython.html"><a href="doItYourselfWithPython.html"><i class="fa fa-check"></i><b>3</b> Do-it-yourself With Python</a></li>
+<li class="chapter" data-level="4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html"><i class="fa fa-check"></i><b>4</b> Data Sets</a><ul>
+<li class="chapter" data-level="4.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#TitanicDataset"><i class="fa fa-check"></i><b>4.1</b> Sinking of the RMS Titanic</a><ul>
+<li class="chapter" data-level="4.1.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-titanic"><i class="fa fa-check"></i><b>4.1.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.1.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-lmr"><i class="fa fa-check"></i><b>4.1.2</b> Logistic regression</a></li>
+<li class="chapter" data-level="4.1.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-rf"><i class="fa fa-check"></i><b>4.1.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.1.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-gbm"><i class="fa fa-check"></i><b>4.1.4</b> Gradient boosting</a></li>
+<li class="chapter" data-level="4.1.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictions-titanic"><i class="fa fa-check"></i><b>4.1.5</b> Model predictions</a></li>
+<li class="chapter" data-level="4.1.6" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ExplainersTitanicRCode"><i class="fa fa-check"></i><b>4.1.6</b> Explainers</a></li>
+<li class="chapter" data-level="4.1.7" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsTitanic"><i class="fa fa-check"></i><b>4.1.7</b> List of objects for the <code>titanic</code> example</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ApartmentDataset"><i class="fa fa-check"></i><b>4.2</b> Apartment prices</a><ul>
+<li class="chapter" data-level="4.2.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-apartments"><i class="fa fa-check"></i><b>4.2.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.2.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-lr"><i class="fa fa-check"></i><b>4.2.2</b> Linear regression</a></li>
+<li class="chapter" data-level="4.2.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-rf"><i class="fa fa-check"></i><b>4.2.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.2.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictionsApartments"><i class="fa fa-check"></i><b>4.2.4</b> Model predictions</a></li>
+<li class="chapter" data-level="4.2.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsApartments"><i class="fa fa-check"></i><b>4.2.5</b> List of objects for the <code>apartments</code> example</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#HFDataset"><i class="fa fa-check"></i><b>4.3</b> Hire or fire</a><ul>
+<li class="chapter" data-level="4.3.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-HR"><i class="fa fa-check"></i><b>4.3.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.3.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-HR-mr"><i class="fa fa-check"></i><b>4.3.2</b> Multinomial logistic regression</a></li>
+<li class="chapter" data-level="4.3.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-HR-rf"><i class="fa fa-check"></i><b>4.3.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.3.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictionsHR"><i class="fa fa-check"></i><b>4.3.4</b> Model predictions</a></li>
+<li class="chapter" data-level="4.3.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsHR"><i class="fa fa-check"></i><b>4.3.5</b> List of objects for the <code>HR</code> example</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="InstanceLevelExploration.html"><a href="InstanceLevelExploration.html"><i class="fa fa-check"></i><b>5</b> Instance-level exploration</a></li>
+<li class="chapter" data-level="6" data-path="ceterisParibus.html"><a href="ceterisParibus.html"><i class="fa fa-check"></i><b>6</b> Ceteris-paribus Profiles and What-If Analysis</a><ul>
+<li class="chapter" data-level="6.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPIntro"><i class="fa fa-check"></i><b>6.1</b> Introduction</a></li>
+<li class="chapter" data-level="6.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPIntuition"><i class="fa fa-check"></i><b>6.2</b> Intuition</a></li>
+<li class="chapter" data-level="6.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPMethod"><i class="fa fa-check"></i><b>6.3</b> Method</a></li>
+<li class="chapter" data-level="6.4" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPExample"><i class="fa fa-check"></i><b>6.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="6.5" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPProsCons"><i class="fa fa-check"></i><b>6.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="6.6" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPR"><i class="fa fa-check"></i><b>6.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="6.6.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#basic-use-of-the-ceteris_paribus-function"><i class="fa fa-check"></i><b>6.6.1</b> Basic use of the <code>ceteris_paribus</code> function</a></li>
+<li class="chapter" data-level="6.6.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#advanced-use-of-the-ceteris_paribus-function"><i class="fa fa-check"></i><b>6.6.2</b> Advanced use of the <code>ceteris_paribus</code> function</a></li>
+<li class="chapter" data-level="6.6.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#champion-challenger-analysis"><i class="fa fa-check"></i><b>6.6.3</b> Champion-challenger analysis</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html"><i class="fa fa-check"></i><b>7</b> Ceteris-paribus Oscillations and Local Variable-importance</a><ul>
+<li class="chapter" data-level="7.1" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscIntro"><i class="fa fa-check"></i><b>7.1</b> Introduction</a></li>
+<li class="chapter" data-level="7.2" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscIntuition"><i class="fa fa-check"></i><b>7.2</b> Intuition</a></li>
+<li class="chapter" data-level="7.3" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscMethod"><i class="fa fa-check"></i><b>7.3</b> Method</a></li>
+<li class="chapter" data-level="7.4" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscExample"><i class="fa fa-check"></i><b>7.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="7.5" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscProsCons"><i class="fa fa-check"></i><b>7.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="7.6" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscR"><i class="fa fa-check"></i><b>7.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="7.6.1" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#basic-use-of-the-calculate_oscillations-function"><i class="fa fa-check"></i><b>7.6.1</b> Basic use of the <code>calculate_oscillations</code> function</a></li>
+<li class="chapter" data-level="7.6.2" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#advanced-use-of-the-calculate_oscillations-function"><i class="fa fa-check"></i><b>7.6.2</b> Advanced use of the <code>calculate_oscillations</code> function</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="localDiagnostics.html"><a href="localDiagnostics.html"><i class="fa fa-check"></i><b>8</b> Local Diagnostics With Ceteris-paribus Profiles</a><ul>
+<li class="chapter" data-level="8.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntro"><i class="fa fa-check"></i><b>8.1</b> Introduction</a></li>
+<li class="chapter" data-level="8.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntuition"><i class="fa fa-check"></i><b>8.2</b> Intuition</a></li>
+<li class="chapter" data-level="8.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagMethod"><i class="fa fa-check"></i><b>8.3</b> Method</a><ul>
+<li class="chapter" data-level="8.3.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagNeighbors"><i class="fa fa-check"></i><b>8.3.1</b> Nearest neighbors</a></li>
+<li class="chapter" data-level="8.3.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProfiles"><i class="fa fa-check"></i><b>8.3.2</b> Profiles for neighbors</a></li>
+<li class="chapter" data-level="8.3.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagLFplot"><i class="fa fa-check"></i><b>8.3.3</b> Local-fidelity plot</a></li>
+</ul></li>
+<li class="chapter" data-level="8.4" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagExample"><i class="fa fa-check"></i><b>8.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="8.5" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProsCons"><i class="fa fa-check"></i><b>8.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="8.6" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagR"><i class="fa fa-check"></i><b>8.6</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="breakDown.html"><a href="breakDown.html"><i class="fa fa-check"></i><b>9</b> Break Down for Additive Variable Attributions</a><ul>
+<li class="chapter" data-level="9.1" data-path="breakDown.html"><a href="breakDown.html#intuition"><i class="fa fa-check"></i><b>9.1</b> Intuition</a></li>
+<li class="chapter" data-level="9.2" data-path="breakDown.html"><a href="breakDown.html#method"><i class="fa fa-check"></i><b>9.2</b> Method</a></li>
+<li class="chapter" data-level="9.3" data-path="breakDown.html"><a href="breakDown.html#example-titanic"><i class="fa fa-check"></i><b>9.3</b> Example: Titanic</a></li>
+<li class="chapter" data-level="9.4" data-path="breakDown.html"><a href="breakDown.html#pros-and-cons"><i class="fa fa-check"></i><b>9.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="9.5" data-path="breakDown.html"><a href="breakDown.html#code-snippets-for-r"><i class="fa fa-check"></i><b>9.5</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="9.5.1" data-path="breakDown.html"><a href="breakDown.html#basic-usage-for-the-break_down-function"><i class="fa fa-check"></i><b>9.5.1</b> Basic usage for the <code>break_down</code> function</a></li>
+<li class="chapter" data-level="9.5.2" data-path="breakDown.html"><a href="breakDown.html#advanced-usage-for-the-break_down-function"><i class="fa fa-check"></i><b>9.5.2</b> Advanced usage for the <code>break_down</code> function</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="10" data-path="iBreakDown.html"><a href="iBreakDown.html"><i class="fa fa-check"></i><b>10</b> iBreakDown for Variable Attributions with Interactions</a><ul>
+<li class="chapter" data-level="10.1" data-path="iBreakDown.html"><a href="iBreakDown.html#intuition-1"><i class="fa fa-check"></i><b>10.1</b> Intuition</a></li>
+<li class="chapter" data-level="10.2" data-path="iBreakDown.html"><a href="iBreakDown.html#method-1"><i class="fa fa-check"></i><b>10.2</b> Method</a><ul>
+<li class="chapter" data-level="10.2.1" data-path="iBreakDown.html"><a href="iBreakDown.html#single-step-contributions"><i class="fa fa-check"></i><b>10.2.1</b> Single step contributions</a></li>
+<li class="chapter" data-level="10.2.2" data-path="iBreakDown.html"><a href="iBreakDown.html#two-steps-contributions"><i class="fa fa-check"></i><b>10.2.2</b> Two steps contributions</a></li>
+<li class="chapter" data-level="10.2.3" data-path="iBreakDown.html"><a href="iBreakDown.html#sequential-contributions"><i class="fa fa-check"></i><b>10.2.3</b> Sequential contributions</a></li>
+</ul></li>
+<li class="chapter" data-level="10.3" data-path="iBreakDown.html"><a href="iBreakDown.html#example-titanic-1"><i class="fa fa-check"></i><b>10.3</b> Example: Titanic</a></li>
+<li class="chapter" data-level="10.4" data-path="iBreakDown.html"><a href="iBreakDown.html#pros-and-cons-1"><i class="fa fa-check"></i><b>10.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="10.5" data-path="iBreakDown.html"><a href="iBreakDown.html#code-snippets-for-r-1"><i class="fa fa-check"></i><b>10.5</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="11" data-path="shapley.html"><a href="shapley.html"><i class="fa fa-check"></i><b>11</b> SHapley Additive exPlanations (SHAP) and Average Variable Attributions</a><ul>
+<li class="chapter" data-level="11.1" data-path="shapley.html"><a href="shapley.html#intuition-2"><i class="fa fa-check"></i><b>11.1</b> Intuition</a></li>
+<li class="chapter" data-level="11.2" data-path="shapley.html"><a href="shapley.html#method-2"><i class="fa fa-check"></i><b>11.2</b> Method</a></li>
+<li class="chapter" data-level="11.3" data-path="shapley.html"><a href="shapley.html#example-titanic-2"><i class="fa fa-check"></i><b>11.3</b> Example: Titanic</a></li>
+<li class="chapter" data-level="11.4" data-path="shapley.html"><a href="shapley.html#pros-and-cons-2"><i class="fa fa-check"></i><b>11.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="11.5" data-path="shapley.html"><a href="shapley.html#code-snippets-for-r-2"><i class="fa fa-check"></i><b>11.5</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="12" data-path="LIME.html"><a href="LIME.html"><i class="fa fa-check"></i><b>12</b> Local Interpretable Model-Agnostic Explanations (LIME)</a><ul>
+<li class="chapter" data-level="12.1" data-path="LIME.html"><a href="LIME.html#introduction-1"><i class="fa fa-check"></i><b>12.1</b> Introduction</a></li>
+<li class="chapter" data-level="12.2" data-path="LIME.html"><a href="LIME.html#intuition-3"><i class="fa fa-check"></i><b>12.2</b> Intuition</a></li>
+<li class="chapter" data-level="12.3" data-path="LIME.html"><a href="LIME.html#method-3"><i class="fa fa-check"></i><b>12.3</b> Method</a><ul>
+<li class="chapter" data-level="12.3.1" data-path="LIME.html"><a href="LIME.html#interpretable-data-representation"><i class="fa fa-check"></i><b>12.3.1</b> Interpretable data representation</a></li>
+<li class="chapter" data-level="12.3.2" data-path="LIME.html"><a href="LIME.html#sampling-around-point-of-interest"><i class="fa fa-check"></i><b>12.3.2</b> Sampling around point of interest</a></li>
+<li class="chapter" data-level="12.3.3" data-path="LIME.html"><a href="LIME.html#fitting-a-glass-box-model"><i class="fa fa-check"></i><b>12.3.3</b> Fitting a glass-box model</a></li>
+</ul></li>
+<li class="chapter" data-level="12.4" data-path="LIME.html"><a href="LIME.html#example-titanic-3"><i class="fa fa-check"></i><b>12.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="12.5" data-path="LIME.html"><a href="LIME.html#pros-and-cons-3"><i class="fa fa-check"></i><b>12.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="12.6" data-path="LIME.html"><a href="LIME.html#code-snippets-for-r-3"><i class="fa fa-check"></i><b>12.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="12.6.1" data-path="LIME.html"><a href="LIME.html#the-lime-package"><i class="fa fa-check"></i><b>12.6.1</b> <strong>The lime package</strong></a></li>
+<li class="chapter" data-level="12.6.2" data-path="LIME.html"><a href="LIME.html#the-localmodel-package"><i class="fa fa-check"></i><b>12.6.2</b> <strong>The localModel package</strong></a></li>
+<li class="chapter" data-level="12.6.3" data-path="LIME.html"><a href="LIME.html#the-iml-package"><i class="fa fa-check"></i><b>12.6.3</b> <strong>The iml package</strong></a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="13" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html"><i class="fa fa-check"></i><b>13</b> Summary of Instance-level Explainers</a><ul>
+<li class="chapter" data-level="13.1" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#number-of-features-size-of-the-data"><i class="fa fa-check"></i><b>13.1</b> Number of features, size of the data</a></li>
+<li class="chapter" data-level="13.2" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#questions-in-mind"><i class="fa fa-check"></i><b>13.2</b> Questions in mind</a></li>
+<li class="chapter" data-level="13.3" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#when-to-use"><i class="fa fa-check"></i><b>13.3</b> When to use?</a></li>
+</ul></li>
+<li class="chapter" data-level="14" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html"><i class="fa fa-check"></i><b>14</b> Model-level exploration</a><ul>
+<li class="chapter" data-level="14.1" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html#approaches-to-model-explanations"><i class="fa fa-check"></i><b>14.1</b> Approaches to model explanations</a></li>
+<li class="chapter" data-level="14.2" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html#a-bit-of-philosophy-three-laws-for-model-level-explanations"><i class="fa fa-check"></i><b>14.2</b> A bit of philosophy: Three Laws for Model Level Explanations</a></li>
+</ul></li>
+<li class="chapter" data-level="15" data-path="featureImportance.html"><a href="featureImportance.html"><i class="fa fa-check"></i><b>15</b> Feature Importance</a><ul>
+<li class="chapter" data-level="15.1" data-path="featureImportance.html"><a href="featureImportance.html#permutation-based-feature-importance"><i class="fa fa-check"></i><b>15.1</b> Permutation Based Feature Importance</a></li>
+<li class="chapter" data-level="15.2" data-path="featureImportance.html"><a href="featureImportance.html#example-titanic-4"><i class="fa fa-check"></i><b>15.2</b> Example: Titanic</a></li>
+<li class="chapter" data-level="15.3" data-path="featureImportance.html"><a href="featureImportance.html#example-price-prediction"><i class="fa fa-check"></i><b>15.3</b> Example: Price prediction</a></li>
+<li class="chapter" data-level="15.4" data-path="featureImportance.html"><a href="featureImportance.html#more-models"><i class="fa fa-check"></i><b>15.4</b> More models</a></li>
+<li class="chapter" data-level="15.5" data-path="featureImportance.html"><a href="featureImportance.html#level-frequency"><i class="fa fa-check"></i><b>15.5</b> Level frequency</a></li>
+</ul></li>
+<li class="chapter" data-level="16" data-path="featureEffects.html"><a href="featureEffects.html"><i class="fa fa-check"></i><b>16</b> Feature effects</a><ul>
+<li class="chapter" data-level="16.1" data-path="featureEffects.html"><a href="featureEffects.html#global-level-vs-instance-level-explanations"><i class="fa fa-check"></i><b>16.1</b> Global level vs instance level explanations</a></li>
+</ul></li>
+<li class="chapter" data-level="17" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html"><i class="fa fa-check"></i><b>17</b> Partial Dependency Profiles</a><ul>
+<li class="chapter" data-level="17.1" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#definition"><i class="fa fa-check"></i><b>17.1</b> Definition</a></li>
+<li class="chapter" data-level="17.2" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#estimation"><i class="fa fa-check"></i><b>17.2</b> Estimation</a></li>
+<li class="chapter" data-level="17.3" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#clustered-partial-dependency-profiles"><i class="fa fa-check"></i><b>17.3</b> Clustered Partial Dependency Profiles</a></li>
+<li class="chapter" data-level="17.4" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#grouped-partial-dependency-profiles"><i class="fa fa-check"></i><b>17.4</b> Grouped Partial Dependency Profiles</a></li>
+<li class="chapter" data-level="17.5" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#contrastive-model-comparisons"><i class="fa fa-check"></i><b>17.5</b> Contrastive Model Comparisons</a></li>
+</ul></li>
+<li class="chapter" data-level="18" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html"><i class="fa fa-check"></i><b>18</b> Conditional Dependency Profiles</a><ul>
+<li class="chapter" data-level="18.1" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#definition-1"><i class="fa fa-check"></i><b>18.1</b> Definition</a></li>
+<li class="chapter" data-level="18.2" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#estimation-1"><i class="fa fa-check"></i><b>18.2</b> Estimation</a></li>
+<li class="chapter" data-level="18.3" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#example"><i class="fa fa-check"></i><b>18.3</b> Example</a></li>
+</ul></li>
+<li class="chapter" data-level="19" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html"><i class="fa fa-check"></i><b>19</b> Accumulated Local Profiles</a><ul>
+<li class="chapter" data-level="19.1" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#definition-2"><i class="fa fa-check"></i><b>19.1</b> Definition</a></li>
+</ul></li>
+<li class="chapter" data-level="20" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html"><i class="fa fa-check"></i><b>20</b> Summary of Explainers for Feature Effects</a><ul>
+<li class="chapter" data-level="20.1" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html#factorMerger"><i class="fa fa-check"></i><b>20.1</b> Merging Path Plots and Others</a></li>
+<li class="chapter" data-level="20.2" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html#other-topics"><i class="fa fa-check"></i><b>20.2</b> Other topics</a></li>
+</ul></li>
+<li class="chapter" data-level="21" data-path="performanceDiagnostic.html"><a href="performanceDiagnostic.html"><i class="fa fa-check"></i><b>21</b> Performance Diagnostic</a></li>
+<li class="chapter" data-level="22" data-path="residualDiagnostic.html"><a href="residualDiagnostic.html"><i class="fa fa-check"></i><b>22</b> Residual Diagnostic</a></li>
+<li class="chapter" data-level="23" data-path="conceptDrift.html"><a href="conceptDrift.html"><i class="fa fa-check"></i><b>23</b> Concept Drift</a><ul>
+<li class="chapter" data-level="23.1" data-path="conceptDrift.html"><a href="conceptDrift.html#introduction-2"><i class="fa fa-check"></i><b>23.1</b> Introduction</a></li>
+<li class="chapter" data-level="23.2" data-path="conceptDrift.html"><a href="conceptDrift.html#covariate-drift"><i class="fa fa-check"></i><b>23.2</b> Covariate Drift</a></li>
+<li class="chapter" data-level="23.3" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets"><i class="fa fa-check"></i><b>23.3</b> Code snippets</a></li>
+<li class="chapter" data-level="23.4" data-path="conceptDrift.html"><a href="conceptDrift.html#residual-drift"><i class="fa fa-check"></i><b>23.4</b> Residual Drift</a></li>
+<li class="chapter" data-level="23.5" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets-1"><i class="fa fa-check"></i><b>23.5</b> Code snippets</a></li>
+<li class="chapter" data-level="23.6" data-path="conceptDrift.html"><a href="conceptDrift.html#model-drift"><i class="fa fa-check"></i><b>23.6</b> Model Drift</a></li>
+<li class="chapter" data-level="23.7" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets-2"><i class="fa fa-check"></i><b>23.7</b> Code snippets</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendixes.html"><a href="appendixes.html"><i class="fa fa-check"></i>Appendixes</a></li>
+<li class="chapter" data-level="24" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html"><i class="fa fa-check"></i><b>24</b> Ceteris-paribus Two-dimensional Profiles - a Tool for Pairwise Interactions</a><ul>
+<li class="chapter" data-level="24.1" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dIntro"><i class="fa fa-check"></i><b>24.1</b> Introduction</a></li>
+<li class="chapter" data-level="24.2" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dIntuition"><i class="fa fa-check"></i><b>24.2</b> Intuition</a></li>
+<li class="chapter" data-level="24.3" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dMethod"><i class="fa fa-check"></i><b>24.3</b> Method</a></li>
+<li class="chapter" data-level="24.4" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dExample"><i class="fa fa-check"></i><b>24.4</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="24.5" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dProsCons"><i class="fa fa-check"></i><b>24.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="24.6" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2R"><i class="fa fa-check"></i><b>24.6</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="25" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html"><i class="fa fa-check"></i><b>25</b> Variable attribution for linear models</a><ul>
+<li class="chapter" data-level="25.1" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#introduction-3"><i class="fa fa-check"></i><b>25.1</b> Introduction</a></li>
+<li class="chapter" data-level="25.2" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#intuition-4"><i class="fa fa-check"></i><b>25.2</b> Intuition</a></li>
+<li class="chapter" data-level="25.3" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#method-4"><i class="fa fa-check"></i><b>25.3</b> Method</a></li>
+<li class="chapter" data-level="25.4" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#example-wine-quality"><i class="fa fa-check"></i><b>25.4</b> Example: Wine quality</a></li>
+<li class="chapter" data-level="25.5" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#pros-and-cons-4"><i class="fa fa-check"></i><b>25.5</b> Pros and Cons</a></li>
+<li class="chapter" data-level="25.6" data-path="variableAttributionMethods.html"><a href="variableAttributionMethods.html#code-snippets-3"><i class="fa fa-check"></i><b>25.6</b> Code snippets</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/pbiecek/DALEX" target="blank">DALEX website</a></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Predictive Models: Explore, Explain, and Debug</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="LIME" class="section level1">
+<h1><span class="header-section-number">Chapter 12</span> Local Interpretable Model-Agnostic Explanations (LIME)</h1>
+<div id="introduction-1" class="section level2">
+<h2><span class="header-section-number">12.1</span> Introduction</h2>
+<p>Ceteris Paribus profiles introduced in the Chapter <a href="ceterisParibus.html#ceterisParibus">6</a> work best for models with small number of interpretable features. In this case it makes sense to explore feature by feature and analyze how a single feature affects model predictions</p>
+<p>Break Down and Shapley attributions introduced in the Chapter <a href="breakDown.html#breakDown">9</a> work best for small and moderate number of features. These attributions are not as detailed as Ceteris Paribus profiles, but can handle more variables that are presented by narrow bars.</p>
+<p>Both these approaches are not well suited for high-dimensional data. For instance in bioinformatics when working with gene expression, mutations or methylation it is not uncommon to have thousands or even million of features. If most of them are binary low/high, present/absent, wild/mutated then Ceteris Paribus and Break Down plots become unreadable. In such cases an useful alternatives are sparse explainers. The most popular example of such explainers is LIME and its modifications.</p>
+<p>The LIME method was originally proposed in the paper <em>Why Should I Trust You?: Explaining the Predictions of Any Classifier</em> <span class="citation">(Ribeiro, Singh, and Guestrin <a href="#ref-lime">2016</a>)</span>. The acronym stands for Local Interpretable Model-Agnostic Explanations. The key idea behind this method is to locally approximate a black-box model by a sparse local glass-box surrogate model, which is easier to interpret.</p>
+</div>
+<div id="intuition-3" class="section level2">
+<h2><span class="header-section-number">12.2</span> Intuition</h2>
+<p>The intuition behind LIME is presented in Figure <a href="LIME.html#fig:limeEx">12.1</a>. We want to understand a complex black-box model around a single instance. Here the black box model is a binary classifier and colored areas in the plot correspond to its decision regions. We are interested in instance explanation, and the instance of interest is marked with large black dot. Having some artificial dataset around this black dot we can train a glass-box model that will locally approximate the black-box model. The glass-box model may then serves as local explainer for the complex model.</p>
+<p>We may select different classes of glass-box models, e.g. linear models. The important part is to keep it sparse and low-dimensions, this way the surrogate model is easier to explain. The most typical choices for glass-box models are regularized linear models like LASSO regression or decision trees.</p>
+<div class="figure" style="text-align: center"><span id="fig:limeEx"></span>
+<img src="figure/limeEx.png" alt="(fig:limeEx) A schematic idea behind local model approximations. Colors stand for decision regions for black-box model. We want to explain model decision for the largest black point. To do this we create artificial points around point of interest and train a glass-box model. Here it's a logistic regression presented as a dashed line." width="70%" />
+<p class="caption">
+Figure 12.1: (fig:limeEx) A schematic idea behind local model approximations. Colors stand for decision regions for black-box model. We want to explain model decision for the largest black point. To do this we create artificial points around point of interest and train a glass-box model. Here it’s a logistic regression presented as a dashed line.
+</p>
+</div>
+</div>
+<div id="method-3" class="section level2">
+<h2><span class="header-section-number">12.3</span> Method</h2>
+<p>The objective is to find a local model <span class="math inline">\(M_{*}\)</span> that approximates a black box model <span class="math inline">\(f\)</span> around the point of interest <span class="math inline">\(x_*\)</span>.
+This intuition can be formalized in a following formula</p>
+<p><span class="math display">\[
+M(x_{*}) = \arg \min_{g \in G} L(f, g, \Pi_{x_*}) + \Omega (g). 
+\]</span>
+For a selected instance <span class="math inline">\(x_*\)</span> we are looking for a local model <span class="math inline">\(g\)</span> from the class <span class="math inline">\(G\)</span> of interpretable models. The model shall be simple so we add penalty for the model complexity measured as <span class="math inline">\(\Omega(g)\)</span>. And the white-box model <span class="math inline">\(g\)</span> shall approximate well the black-box model <span class="math inline">\(f\)</span> locally, where locality is defined by neighborhood <span class="math inline">\(\Pi_{x_*}\)</span> of <span class="math inline">\(x^*\)</span>. The <span class="math inline">\(L\)</span> stands for some goodness of fit measure like for example likelihood.</p>
+<p>Note that functions <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> may work on different data representations. The black-box <span class="math inline">\(f(x):\mathcal X \rightarrow \mathcal R\)</span> works on original feature space <span class="math inline">\(\mathcal X\)</span> while the glass-box function <span class="math inline">\(g:\mathcal X&#39; \rightarrow \mathcal R\)</span> usually works on an interpretable feature space <span class="math inline">\(\mathcal X&#39;\)</span>, which is in many applications smaller. We will present some examples for <span class="math inline">\(\mathcal X&#39;\)</span> in the next section, but for now let’s just assume that function <span class="math inline">\(h\)</span> transforms <span class="math inline">\(\mathcal X\)</span> on <span class="math inline">\(\mathcal X&#39;\)</span>.</p>
+<p>Let’s limit the class <span class="math inline">\(G\)</span> of interpretable models to sparse linear models. Following algorithm may be used to find an interpretable surrogate model that selects <span class="math inline">\(K\)</span> most important interpretable features.</p>
+<pre><code>Input: N - length of sample for surrogate model
+Input: K - length of explanation
+1. Let x&#39; = h(x) be an interpretable version of x
+2. for i in 1...N {
+3.   z&#39;[i] &lt;- sample_around(x&#39;)
+4.   y&#39;[i] &lt;- f(z[i]) # prediction for a new observation
+5.   w&#39;[i] &lt;- similarity(x, z[i])
+6. }
+7. return K-LASSO(y&#39;, x&#39;, w&#39;)</code></pre>
+<p>Where <span class="math inline">\(K-LASSO(y&#39;, x&#39;, w&#39;)\)</span> stands for weighted LASSO linear regression that selects <span class="math inline">\(K\)</span> most important features based on new dataset <span class="math inline">\((y&#39;, x&#39;)\)</span> weighted with <span class="math inline">\(w&#39;\)</span>. This algorithm selects <span class="math inline">\(K\)</span> most important interpretable features.</p>
+<p>As it is presented in the paper <span class="citation">(Ribeiro, Singh, and Guestrin <a href="#ref-lime">2016</a>)</span>, the LIME method has following properties:</p>
+<ul>
+<li><em>model-agnostic</em>, they do not imply any assumptions on model structure, <span class="math inline">\(f\)</span> can be any function,</li>
+<li><em>interpretable representation</em>, model input is transformed into a feature space that is easier to understand. One of applications comes from image data, single pixels are not easy to interpret, thus the LIME method decompose image into a series of super pixels, that are easier to interpret to humans,</li>
+<li><em>local fidelity</em> means that the explanations shall be locally well fitted to the black-box model.</li>
+</ul>
+<p>Where it comes to the implementation of this idea there are at least three important steps, which will be presented in consecutive subsections.</p>
+<div id="interpretable-data-representation" class="section level3">
+<h3><span class="header-section-number">12.3.1</span> Interpretable data representation</h3>
+<p>It is important to remember that functions <span class="math inline">\(f\)</span> and <span class="math inline">\(g\)</span> may work on different data representations.</p>
+<p>For example, let’s consider a VGG16 neural network trained for ImageNet data. Such network takes an image of the size 244x244 pixels as an input and predicts an image category out of 1000 classes. The original input space is 3x244x244 = 178608 dimensional as single dimensional is a single color channel for a single pixel. Explanations in such input space would be hard to interpret. Instead, the input space is transformed into superpixels - binary features that can be turned on or off. Figure <a href="LIME.html#fig:duckHorse06">12.2</a> shows an example 100 superpixels created for some ambiguous picture.</p>
+<p>In this case the black box model <span class="math inline">\(f\)</span> works on <span class="math inline">\(\mathcal X\)</span> which is <span class="math inline">\(\mathcal R^{178608}\)</span> while <span class="math inline">\(g\)</span> works on interpretable binary space of 100 superpixels <span class="math inline">\(\mathcal X&#39; = [0,1]^{100}\)</span>.</p>
+<p>Superpixels are frequent choices for image data. For text data words are frequently used as interpretable features. For tabular data sometimes continuous features are discretized.</p>
+<div class="figure" style="text-align: center"><span id="fig:duckHorse06"></span>
+<img src="figure/duck_horse_06.png" alt="(fig:duckHorse06) The left panel shows an ambiguous picture, half horse and hals duck. The right panel shows 100 superpixes identified for this figure." width="100%" />
+<p class="caption">
+Figure 12.2: (fig:duckHorse06) The left panel shows an ambiguous picture, half horse and hals duck. The right panel shows 100 superpixes identified for this figure.
+</p>
+</div>
+</div>
+<div id="sampling-around-point-of-interest" class="section level3">
+<h3><span class="header-section-number">12.3.2</span> Sampling around point of interest</h3>
+<p>In order to fit surrogate local model <span class="math inline">\(g\)</span> we need new data points around point of interest. It is not enough to sample points from original dataset, because in very highdimensional space the input dataset is very sparse and points are ,,far’’ from each other.</p>
+<p>This is why the training data for surrogate model is created through some perturbations of the point of interest.</p>
+<p>For binary interpretable input space the common choice is to sample subset of features (i.e. new datapoints are the point of interest with some random number of features switched to 0).</p>
+<p>For nonbinary features various propositions are introduced in different papers.</p>
+<p>In our example with the duck-horse samples around the image are subsets of superpixels.</p>
+</div>
+<div id="fitting-a-glass-box-model" class="section level3">
+<h3><span class="header-section-number">12.3.3</span> Fitting a glass-box model</h3>
+<p>Once the new data are sampled around the point of interest we are ready to create an interpretable model <span class="math inline">\(g\)</span> from class <span class="math inline">\(G\)</span>.</p>
+<p>The most common choices for <span class="math inline">\(G\)</span> are linear models (for regression) or generalized linear models (for classification). In order to get sparse models the LASSO or similar regularisation/feature selection is used. An alternative choice is classification and regression trees.</p>
+<p>In our example we are using <span class="math inline">\(K-LASSO\)</span> method which selects <span class="math inline">\(K\)</span> super pixels that are the most influential when it comes to model prediction. In the Figure <a href="LIME.html#fig:duckHorse04">12.3</a> we present explanations for the top 2 classes selected by the model VGG16. For each class the top <span class="math inline">\(K\)</span> superpixels / interpretabble features are highlighted</p>
+<p>Interesting to see that the superpixel that shows the nib is influential when it comes to prediction <em>‘goose’</em> and superpixels linked with white fur are linked with prediction <em>‘standard poodle’</em>.</p>
+<div class="figure" style="text-align: center"><span id="fig:duckHorse04"></span>
+<img src="figure/duck_horse_04.png" alt="(fig:duckHorse04) LIME explanations for two classess identified by the VGG16 network with ImageNet weights." width="100%" />
+<p class="caption">
+Figure 12.3: (fig:duckHorse04) LIME explanations for two classess identified by the VGG16 network with ImageNet weights.
+</p>
+</div>
+</div>
+</div>
+<div id="example-titanic-3" class="section level2">
+<h2><span class="header-section-number">12.4</span> Example: Titanic</h2>
+<p>Let us again consider explanation for prediction of the <code>titanic_rf_v6</code> model for <em>Johny D</em>, an 8-years old boy from 1st class.</p>
+<p>In Figure <a href="LIME.html#fig:LIMEexample01">12.4</a> we have presented explanations generated with the LIME method. Three variables were identified as the most influential, age, gender and class.</p>
+<div class="figure" style="text-align: center"><span id="fig:LIMEexample01"></span>
+<img src="figure/LIMEexample01.png" alt="(fig:LIMEexample01) LIME explanations for single instance Johny D and generated for Random Forest v6 model." width="60%" />
+<p class="caption">
+Figure 12.4: (fig:LIMEexample01) LIME explanations for single instance Johny D and generated for Random Forest v6 model.
+</p>
+</div>
+<p>It is important here to mention how interpretable features are created. For tabular data the most common approach is to discretized continuous variables and combine levels in categorical variables.</p>
+<p>Figure <a href="LIME.html#fig:LIMEexample02">12.5</a> shows how interpretable feature can be extracted from Ceteris Paribus Profile for the variable <code>age</code>.</p>
+<div class="figure" style="text-align: center"><span id="fig:LIMEexample02"></span>
+<img src="figure/LIMEexample02.png" alt="(fig:LIMEexample02) Interpretable local feature generated for age variable. LIME explanations for single instance Johny D and generated for Random Forest v6 model " width="60%" />
+<p class="caption">
+Figure 12.5: (fig:LIMEexample02) Interpretable local feature generated for age variable. LIME explanations for single instance Johny D and generated for Random Forest v6 model
+</p>
+</div>
+<p>Different implementations of the LIME method have different algorithms for extraction of interpretable features, different methods for sampling and different methods for weighting.</p>
+<p>In the section <em>Code snippets for R</em> we present different available implementations.</p>
+</div>
+<div id="pros-and-cons-3" class="section level2">
+<h2><span class="header-section-number">12.5</span> Pros and cons</h2>
+<p>Local approximations are model agnostic, can be applied to any predictive model. Below we summarize key strengths and weaknesses of this approach.</p>
+<p><strong>Pros</strong></p>
+<ul>
+<li>This method is highly adopted in text analysis and image analysis, in part thanks to the interpretable data representations.</li>
+<li>The intuition behind the method is straightforward, fit simple model to approximate a complex model.</li>
+<li>Model explanations are sparse, thus only small number of features are in the surrogate models used what makes it easier to explain.</li>
+<li>The LIME method can be applied to high dimensional models.</li>
+</ul>
+<p><strong>Cons</strong></p>
+<ul>
+<li>For continuous variables and tabular data it is not that easy to find interpretable representations. IMHO this problem is not solved yet.</li>
+<li>The black-box model approximated the data and the glass-box model approximates the black box model. We do not have control over the quality of local fit of the glass-box model, thus the surrogate model may be misleading.</li>
+<li>Due to the <em>curse of dimensionality</em>, for high dimensional space points are sparse. Measuring of being local is tricky.</li>
+</ul>
+</div>
+<div id="code-snippets-for-r-3" class="section level2">
+<h2><span class="header-section-number">12.6</span> Code snippets for R</h2>
+<p>The LIME methods and it’s clones are now implemented in various R and python packages, see for example <code>lime</code> <span class="citation">(Pedersen and Benesty <a href="#ref-R-lime">2018</a>)</span> which is a port of LIME python library <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>, <code>live</code> <span class="citation">(Staniak and Biecek <a href="#ref-R-live">2018</a>)</span> and <code>localModel</code> <span class="citation">(Staniak and Biecek <a href="#ref-localModelPackage">2019</a>)</span> and <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage">2018</a><a href="#ref-imlRPackage">a</a>)</span>.</p>
+<p>These packages are different in a way how they turn continuous variables into interpretable features. For example, package <code>lime</code> performs global discretization using quartiles, <code>localModel</code> performs local discretization using Ceteris Paribus profiles, while <code>live</code> and <code>iml</code> works directly on continuous variables.
+Also they differ in terms of which surrogate models they use and how new instances are being sampled. For these reasons these packages results different explanations.</p>
+<p>Below we present explanations returned for these four methods for the Johny D and <code>titanic_rf_v6</code> model.</p>
+<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb130-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb130-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb130-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb130-4" data-line-number="4">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
+<a class="sourceLine" id="cb130-5" data-line-number="5">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a>
+<a class="sourceLine" id="cb130-6" data-line-number="6">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a></code></pre></div>
+<div id="the-lime-package" class="section level3">
+<h3><span class="header-section-number">12.6.1</span> <strong>The lime package</strong></h3>
+<p>An example code snippet for the <code>lime</code> package is presented below. Key parts are function <code>lime::lime</code> which creates an explainer and <code>lime::explain</code> which evaluates explanations.</p>
+<p>Resulting explanations are presented in Figure <a href="LIME.html#fig:limeExplLIMETitanic">12.6</a>.</p>
+<p>For continuous variables <code>lime</code> package discretizes features by using quartiles. This is why in the explanation we have <code>age &lt; 22</code>.</p>
+<div class="sourceCode" id="cb131"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb131-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
+<a class="sourceLine" id="cb131-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a>
+<a class="sourceLine" id="cb131-3" data-line-number="3">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(titanic[,<span class="kw">colnames</span>(johny_d)], titanic_rf_v6)</a>
+<a class="sourceLine" id="cb131-4" data-line-number="4">lime_expl &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(johny_d, lime_rf, <span class="dt">labels =</span> <span class="st">&quot;yes&quot;</span>, <span class="dt">n_features =</span> <span class="dv">4</span>, <span class="dt">n_permutations =</span> <span class="dv">1000</span>)</a>
+<a class="sourceLine" id="cb131-5" data-line-number="5">lime_expl</a>
+<a class="sourceLine" id="cb131-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb131-7" data-line-number="7"><span class="co">#      model_type case label label_prob  model_r2 model_intercept model_prediction</span></a>
+<a class="sourceLine" id="cb131-8" data-line-number="8"><span class="co">#1 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb131-9" data-line-number="9"><span class="co">#2 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb131-10" data-line-number="10"><span class="co">#3 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb131-11" data-line-number="11"><span class="co">#4 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb131-12" data-line-number="12"><span class="co">#  feature feature_value feature_weight  feature_desc                 data   prediction</span></a>
+<a class="sourceLine" id="cb131-13" data-line-number="13"><span class="co">#1    fare            72     0.00640936  21.00 &lt; fare 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb131-14" data-line-number="14"><span class="co">#2  gender             2     0.30481181 gender = male 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb131-15" data-line-number="15"><span class="co">#3   class             1    -0.16690730   class = 1st 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb131-16" data-line-number="16"><span class="co">#4     age             8    -0.10026475     age &lt;= 22 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb131-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb131-18" data-line-number="18"><span class="kw">plot_features</span>(lime_expl)</a></code></pre></div>
+<div class="figure" style="text-align: center"><span id="fig:limeExplLIMETitanic"></span>
+<img src="figure/lime_expl_lime_titanic.png" alt="(fig:limeExplLIMETitanic) Explanations for Johny D generated by the lime package. " width="60%" />
+<p class="caption">
+Figure 12.6: (fig:limeExplLIMETitanic) Explanations for Johny D generated by the lime package.
+</p>
+</div>
+</div>
+<div id="the-localmodel-package" class="section level3">
+<h3><span class="header-section-number">12.6.2</span> <strong>The localModel package</strong></h3>
+<p>An example code snippet for the <code>localModel</code> package is presented below. Key parts are function <code>DALEX::explain</code> which creates an explainer and <code>individual_surrogate_model</code> which fits a local model.</p>
+<p>Resulting explanations are presented in Figure <a href="LIME.html#fig:limeExplLocalModelTitanic">12.7</a>.</p>
+<p>For continuous variables <code>localModel</code> package discretizes features by using local Ceteris Paribus Profiles. This is why in the explanation we have <code>age &lt; 15</code>. As we show in the Ceteris Paribus Chapter <a href="ceterisParibus.html#ceterisParibus">6</a> the largest drop in survival is observed around 15 years old boys.</p>
+<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb132-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;localModel&quot;</span>)</a>
+<a class="sourceLine" id="cb132-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb132-3" data-line-number="3">localModel_rf &lt;-<span class="st"> </span>DALEX<span class="op">::</span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6,</a>
+<a class="sourceLine" id="cb132-4" data-line-number="4">                     <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
+<a class="sourceLine" id="cb132-5" data-line-number="5">localModel_lok &lt;-<span class="st"> </span><span class="kw">individual_surrogate_model</span>(localModel_rf, johny_d,</a>
+<a class="sourceLine" id="cb132-6" data-line-number="6">                                        <span class="dt">size =</span> <span class="dv">1000</span>, <span class="dt">seed =</span> <span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb132-7" data-line-number="7">localModel_lok</a>
+<a class="sourceLine" id="cb132-8" data-line-number="8"><span class="co">#   estimated                    variable dev_ratio response</span></a>
+<a class="sourceLine" id="cb132-9" data-line-number="9"><span class="co">#1 0.23479837                (Model mean) 0.6521442         </span></a>
+<a class="sourceLine" id="cb132-10" data-line-number="10"><span class="co">#2 0.14483341                 (Intercept) 0.6521442         </span></a>
+<a class="sourceLine" id="cb132-11" data-line-number="11"><span class="co">#3 0.08081853 class = 1st, 2nd, deck crew 0.6521442         </span></a>
+<a class="sourceLine" id="cb132-12" data-line-number="12"><span class="co">#4 0.00000000     gender = female, NA, NA 0.6521442         </span></a>
+<a class="sourceLine" id="cb132-13" data-line-number="13"><span class="co">#5 0.23282293                age &lt;= 15.36 0.6521442         </span></a>
+<a class="sourceLine" id="cb132-14" data-line-number="14"><span class="co">#6 0.02338929                fare &gt; 31.05 0.6521442    </span></a>
+<a class="sourceLine" id="cb132-15" data-line-number="15"><span class="kw">plot</span>(localModel_lok)</a></code></pre></div>
+<div class="figure" style="text-align: center"><span id="fig:limeExplLocalModelTitanic"></span>
+<img src="figure/lime_expl_localModel_titanic.png" alt="(fig:limeExplLocalModelTitanic) Explanations for Johny D generated by the localModel package. " width="60%" />
+<p class="caption">
+Figure 12.7: (fig:limeExplLocalModelTitanic) Explanations for Johny D generated by the localModel package.
+</p>
+</div>
+</div>
+<div id="the-iml-package" class="section level3">
+<h3><span class="header-section-number">12.6.3</span> <strong>The iml package</strong></h3>
+<p>An example code snippet for the <code>iml</code> package is presented below. Key parts are function <code>Predictor$new</code> which creates an explainer and <code>LocalModel$new</code> which fits local model.</p>
+<p>Resulting explanations are presented in Figure <a href="LIME.html#fig:limeExplIMLTitanic">12.8</a>.</p>
+<p>For continuous variables like <code>age</code> the <code>iml</code> package approximates this feature without any discretization. As we showed in the Ceteris Paribus Chapter <a href="ceterisParibus.html#ceterisParibus">6</a>, the profile for age is constant in the interval 0-15, this is why here age is not an important feature.</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb133-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
+<a class="sourceLine" id="cb133-2" data-line-number="2">iml_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(titanic_rf_v6, <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
+<a class="sourceLine" id="cb133-3" data-line-number="3">iml_glass_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(iml_rf, <span class="dt">x.interest =</span> johny_d, <span class="dt">k =</span> <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb133-4" data-line-number="4">iml_glass_box</a>
+<a class="sourceLine" id="cb133-5" data-line-number="5"><span class="co">#Interpretation method:  LocalModel </span></a>
+<a class="sourceLine" id="cb133-6" data-line-number="6"><span class="co">#</span></a>
+<a class="sourceLine" id="cb133-7" data-line-number="7"><span class="co">#Analysed predictor: </span></a>
+<a class="sourceLine" id="cb133-8" data-line-number="8"><span class="co">#Prediction task: unknown </span></a>
+<a class="sourceLine" id="cb133-9" data-line-number="9"><span class="co">#</span></a>
+<a class="sourceLine" id="cb133-10" data-line-number="10"><span class="co">#Analysed data:</span></a>
+<a class="sourceLine" id="cb133-11" data-line-number="11"><span class="co">#Sampling from data.frame with 2207 rows and 7 columns.</span></a>
+<a class="sourceLine" id="cb133-12" data-line-number="12"><span class="co">#</span></a>
+<a class="sourceLine" id="cb133-13" data-line-number="13"><span class="co">#Head of results:</span></a>
+<a class="sourceLine" id="cb133-14" data-line-number="14"><span class="co">#          beta x.recoded     effect  x.original              feature</span></a>
+<a class="sourceLine" id="cb133-15" data-line-number="15"><span class="co">#1 -0.158368701         1 -0.1583687         1st            class=1st</span></a>
+<a class="sourceLine" id="cb133-16" data-line-number="16"><span class="co">#2  1.739826204         1  1.7398262        male          gender=male</span></a>
+<a class="sourceLine" id="cb133-17" data-line-number="17"><span class="co">#3  0.018515945         0  0.0000000           0                sibsp</span></a>
+<a class="sourceLine" id="cb133-18" data-line-number="18"><span class="co">#4 -0.001484918        72 -0.1069141          72                 fare</span></a>
+<a class="sourceLine" id="cb133-19" data-line-number="19"><span class="co">#5  0.131819869         1  0.1318199 Southampton embarked=Southampton</span></a>
+<a class="sourceLine" id="cb133-20" data-line-number="20"><span class="co">#6  0.158368701         1  0.1583687         1st            class=1st</span></a>
+<a class="sourceLine" id="cb133-21" data-line-number="21"></a>
+<a class="sourceLine" id="cb133-22" data-line-number="22"><span class="kw">plot</span>(iml_glass_box) </a></code></pre></div>
+<div class="figure" style="text-align: center"><span id="fig:limeExplIMLTitanic"></span>
+<img src="figure/lime_expl_iml_titanic.png" alt="(fig:limeExplIMLTitanic) Explanations for Johny D generated by the iml package. " width="60%" />
+<p class="caption">
+Figure 12.8: (fig:limeExplIMLTitanic) Explanations for Johny D generated by the iml package.
+</p>
+</div>
+
+</div>
+</div>
+</div>
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-lime">
+<p>Ribeiro, Marco Tulio, Sameer Singh, and Carlos Guestrin. 2016. “Why Should I Trust You?: Explaining the Predictions of Any Classifier.” In, 1135–44. ACM Press. <a href="https://doi.org/10.1145/2939672.2939778">https://doi.org/10.1145/2939672.2939778</a>.</p>
+</div>
+<div id="ref-R-lime">
+<p>Pedersen, Thomas Lin, and Michaël Benesty. 2018. <em>Lime: Local Interpretable Model-Agnostic Explanations</em>. <a href="https://CRAN.R-project.org/package=lime">https://CRAN.R-project.org/package=lime</a>.</p>
+</div>
+<div id="ref-shapPackage">
+<p>Lundberg, Scott. 2019. <em>SHAP (SHapley Additive exPlanations)</em>. <a href="https://github.com/slundberg/shap">https://github.com/slundberg/shap</a>.</p>
+</div>
+<div id="ref-R-live">
+<p>Staniak, Mateusz, and Przemysław Biecek. 2018. <em>Live: Local Interpretable (Model-Agnostic) Visual Explanations</em>. <a href="https://CRAN.R-project.org/package=live">https://CRAN.R-project.org/package=live</a>.</p>
+</div>
+<div id="ref-localModelPackage">
+<p>Staniak, Mateusz, and Przemysław Biecek. 2019. <em>LocalModel: LIME-Based Explanations with Interpretable Inputs Based on Ceteris Paribus Profiles</em>. <a href="https://github.com/ModelOriented/localModel">https://github.com/ModelOriented/localModel</a>.</p>
+</div>
+<div id="ref-imlRPackage">
+<p>Molnar, Christoph, Bernd Bischl, and Giuseppe Casalicchio. 2018a. “Iml: An R Package for Interpretable Machine Learning.” <em>JOSS</em> 3 (26). Journal of Open Source Software: 786. <a href="https://doi.org/10.21105/joss.00786">https://doi.org/10.21105/joss.00786</a>.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="shapley.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="summaryInstanceLevel.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"download": ["PM_VEE.pdf", "PM_VEE.epub"],
+"toc": {
+"collapse": "section"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:" && /^https?:/.test(src))
+      src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
