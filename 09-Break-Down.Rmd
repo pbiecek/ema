@@ -2,12 +2,14 @@
 
 In Chapter \@ref(ceterisParibusOscillations), we introduced a method for assessment of local variable-importance based on Ceteris-paribus (CP) profiles. The main disadvantage of this method is that the sum of the developed importance scores does not equal the final model prediction.
 
-In this chapter we introduce Break-down (BD) plots, which offer a solution to this problem. Note that the method is similar to the `EXPLAIN` algorithm introduced in  [@explainPaper] and implemented in the `ExplainPrediction` package [@explainPackage]. [TOMASZ: DIFFERENCE IN THE NAME IN THE REFERENCES.]
+In this chapter we introduce Break-down (BD) plots, which offer a solution to this problem. 
+BD plots show "variables attributions" i.e., the decomposition of the difference between the single-instance and the average model predictions among the different explanatory variables. 
+Note that the method is similar to the `EXPLAIN` algorithm introduced in  [@explainPaper] and implemented in the `ExplainPrediction` package [@explainPackage].
 
 ## Intuition {#BDIntuition}
-The underlying idea is to calculate contribution of an explanatory variable to model's prediction as a shift in the expected model response after conditioning on other variables. [TOMASZ: PERHAPS BRING SOME PART OF THE LINEAR MODEL HERE?.]
+The underlying idea is to calculate contribution of an explanatory variable to model's prediction as a shift in the expected model response after conditioning on other variables. 
 
-The idea is illustrated in Figure \@ref(fig:BDPrice4). Consider the prediction for `johny_d` for the random-forest model (see Section \@ref{model-titanic-rf}) for the Titanic data. [TOMASZ: ISSUE - JOHNY_D EMABRKED IN BELFAST, NOT IN SOUTHAMPTON.] Panel A shows distribution of model predictions. The row `all data` shows the distribution of the predictions for the entire dataset. The red dot indicates the average and it is an estimate of the expected model prediction $E_X[f(X)]$ over the distribution of all explanatory variables.
+The idea is illustrated in Figure \@ref(fig:BDPrice4). Consider the prediction for `johny_d` for the random-forest model (see Section \@ref(model-titanic-rf)) for the Titanic data. [TOMASZ: ISSUE - JOHNY_D EMABRKED IN BELFAST, NOT IN SOUTHAMPTON.] Panel A shows distribution of model predictions. The row `all data` shows the distribution of the predictions for the entire dataset. The red dot indicates the average and it is an estimate of the expected model prediction $E_X[f(X)]$ over the distribution of all explanatory variables.
 
 To evaluate the contribution of the explanatory variables to the particular instance prediction, we consider the predictions when fixing the values of the variables. For instance, the row `class=1st` in Panel A of Figure \@ref(fig:BDPrice4) presents the distribution of the predictions obtained when the value of the `class` variable has been fixed to the `1st` class. Again, the red dot indicates the average of the predictions. The next row (`age=8`) shows the distribution and the average predictions with the value of variable `class` set to `1st` and `age` set to `8`, and so on. The last row corresponds to the prediction for `model response for `johny_d`.
 
@@ -15,6 +17,7 @@ The black lines in Panel A show how the inidividual predictions change after the
 
 Eventually, however, we may be interested in the average predictions, as indicated in Panel B of Figure \@ref(fig:BDPrice4), or even only in the changes of the averages, as shown in Panel C. In Panel C, positive changes are presented with green bars, while negative differences are marked with red bar. The changes sum up to the final  prediction, which is illustrated by the violet bar at the bottom of Panel C.
 
+What can be learned from Break-down plots? In this case we have concise summary of effects of particular variables on expected model response. 
 [TOMASZ: I LACK SOME SUBSTANTIVE COMMENTS ABOUT THE CONTENTS/INTERPRETATION OF THE PLOTS.]
 
 ```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break-down plots show how the contribution of individual explanatory variables change the average model prediction to the prediction for a single instance (observation). Panel A) The first row shows the distribution and the average (red dot) of model predictions for all data. The next rows show the dirstribution and the average of the predictions when fixing values of subseqeunt explanatory variables. The last row shows the prediction for a particular instance of interest. B) Red dots indicate the average predictions from Panel B. C) The green and red bars indicate, resspectively, positive and negative changes in the average predictions (variable contributions). ", out.width = '80%', fig.align='center'}
@@ -22,8 +25,48 @@ knitr::include_graphics("figure/break_down_distr.png")
 ```
 
 ## Method {#BDMethod}
+First, let's see how variable attribution works for linear models.
 
-Let $v(j, x_*)$ denote the variable-importance measure of the $j$-th variable and instance $x_*$, i.e., the contribution of the $j$-th variable to prediction at $x_*$. 
+### Break-down for linear models
+
+Assume a classical linear model for response $Y$ with $p$ explanatory variables collected in the vector $X = (X_1, X_2, \ldots, X_p)$ and coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$, where $\beta_0$ is the intercept. The prediction for $Y$ at point $X=x=(x_1, x_2, \ldots, x_p)$ is given by the expected value of $Y$ conditional on $X=x$. For a linear model, the expected value is given by the following linear combination:  
+
+$$
+E_Y(Y | x) = f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
+$$  
+We are interested in the contribution of the $i$-th explanatory variable to model prediction $f(x^*)$ for a single observation described by $x^*$. In this case, the contribution is equal to $x^*_i\beta_i$, because the $i$-th variable occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x_i$ is is centered by subtracting a constant $\hat x_i$ (usually, the mean of $x_i$). This leads the following, intuitive formula for the variable attribution:
+$$
+v(i, x^*) = \beta_i (x_i^* - \hat x_i).
+$$
+
+We want to calculate $v(f, x^*, i)$, which is the contribution of the $i$-th explanatory variable to the prediction of model $f()$ at point $x^*$. Assume that $E_Y(Y | x^*) \approx f(x^*)$, where $f(x^*)$ is the value of the model at $x^*$. A possible approach to define $v(f, x^*, i)$ is to measure how much the expected model response changes after conditioning on $x_i^*$:
+$$
+v(i, x^*) = E_Y(Y | x^*) - E_{X_i}\{E_Y[Y | (x_1^*,\ldots,x_{i-1}^*,X_i,x_{i+1}^*,x_p^*)]\}\approx f(x^*) - E_{X_i}[f(x_{-i}^*)],
+$$
+where $x_{-i}^*$ indicates that variable $X_i$ in vector $x_{-i}^*$ is treated as random. For the classical linear model, if the explanatory variables are independent, $v(f, x^*, i)$ can be expressed as follows:
+$$
+v(i, x^*) = f(x^*) - E_{X_i}[f(x_{-i}^*)] = \beta_0 + x_1^* \beta_1 + \ldots + x_p^* \beta_p - E_{X_i}[\beta_0 + x_1^* \beta_1 + \ldots +\beta_i X_i \ldots + x_p^* \beta_p] = \beta_i[x^*_i - E_{X_i}(X_i)].
+$$
+In practice, given a dataset, the expected value of $X_i$ can be estimated by the sample mean $\bar x_i$. This leads to  
+$$
+v(i, x^*) = \beta_i (x^*_i - \bar x_i).
+$$
+Note that the linear-model-based prediction may be re-expressed in the following way:
+$$
+f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] 
+$$
+$$
+ \equiv [average \ prediction] + \sum_{j=1}^p v(i, x^*).
+$$
+Thus, the contributions of the explanatory variables are the differences between the model prediction for $x^*$ and  the average prediction.
+
+** NOTE for careful readers **
+
+Obviously, sample mean $\bar x_i$ is an estimator of the expected value $E_{X_i}(X_i)$, calculated using a dataset. For the sake of simplicity we do not emphasize these differences in the notation. Also, we ignore the fact that, in practice, we never know the model coefficients and we work with an estimated model. 
+
+
+### Break-down for general case
+Again, let $v(j, x_*)$ denote the variable-importance measure of the $j$-th variable and instance $x_*$, i.e., the contribution of the $j$-th variable to prediction at $x_*$. 
 
 We would like the sum of the variable-importance measures for all explanatory variables to be equal to the instance prediction (property called *local accuracy*), so that
 $$

@@ -43,13 +43,13 @@ $$
 
 1. Calculate Ceteris Paribus Profiles for observations from the dataset
 
-As it was introduced in \@ref{ceterisParibus} Ceteris Paribus profiles are calculated for observations. They show how model response change is a selected variable in this observation is modified.
+As it was introduced in \@ref(ceterisParibus) Ceteris Paribus profiles are calculated for observations. They show how model response change is a selected variable in this observation is modified.
 
 $$
 CP^{f, j, x}(z) := f(x|^j = z).
 $$
 
-Such profiles can be calculated for example with the `ceteris_paribus{ingredients}` function.
+Such profiles can be calculated for example with the `ingredients::ceteris_paribus` function.
 
 ```{r pdp_part_1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Ceteris Paribus profiles for 100 observations, the age variable and the random forest model"}
 library("ingredients")
@@ -59,7 +59,7 @@ plot(cp_rf)+
   ggtitle("Ceteris Paribus profiles", "For a random forest model / Titanic data") 
 ```
 
-So for a single model and a single variable we get a bunch of *what-if* profiles. In the figure \@ref{pdp_part_1} we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.
+So for a single model and a single variable we get a bunch of *what-if* profiles. In the figure \@ref(fig:pdp_part_1) we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.
 
 2. Aggregate Ceteris Paribus into a single Partial Dependency Profile
 
@@ -67,7 +67,7 @@ Simple pointwise average across CP profiles. If number of CPprofiles is large, i
 
 Here we show profiles calculated with `ingredients` package, but find siilar implementation in the `pdp` package [@pdp], `ALEPlots` package [@R-ALEPlot] or `iml` [@iml] package.
 
-Such average can be calculated with the `aggregate_profiles{ingredients}` function.
+Such average can be calculated with the function `ingredients::aggregate_profiles`.
 
 ```{r}
 pdp_rf <- aggregate_profiles(cp_rf)
@@ -75,7 +75,7 @@ plot(pdp_rf) +
   ggtitle("Partial Dependency profile", "For a random forest model / Titanic data") 
 ```
 
-So for a single model and a single variable we get a profile. See an example in figure \@ref{pdp_part_2}. It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them. 
+So for a single model and a single variable we get a profile. See an example in figure \@ref(fig:pdp_part_2). It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them. 
 
 The average response is of course more stable (as it's an average) and in this case is more or less a decreasing curve. It's much easier to notice that the older the passenger is the lower the survival probability. 
 Moreover it is easier to notice that the largest drop in survival changes happen for teenagers. On average the survival for adults is 30 percent points smaller than for kids.
@@ -97,12 +97,12 @@ To deal with this problem we propose to cluster Ceteris Paribus profiles and che
 
 The most straightforward approach would be to use a method for clustering, like k-means algorithm or hierarchical clustering, and see how these cluster of profiles behave. Once clusters are established we can aggregate within clusters in the same way as in case of Partial Dependency Plots.
 
-Such clusters can be calculated with the `cluster_profiles{ingredients}` function. We choose the hierarchical clustering with Ward linkage as it gives most stable results.
+Such clusters can be calculated with the `ingredients::cluster_profiles` function. We choose the hierarchical clustering with Ward linkage as it gives most stable results.
 
 
 So for a single model and a single variable we get $k$ profiles. The common problem in clustering is the selection of $k$. However in our case, as it's an exploration, the problem is simpler, as we are interesting if $k=1$ (Partial Dependency is a good summary) or not (there are some interactions). 
 
-See an example in Figure \@ref{pdp_part_4}. It is easier to notice that Ceteris Paribus profiles can be groups in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.
+See an example in Figure \@ref(fig:pdp_part_4). It is easier to notice that Ceteris Paribus profiles can be groups in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.
 
 ```{r pdp_part_4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles"}
 library("ingredients")
@@ -119,7 +119,7 @@ plot(cp_rf, color = "grey") +
 
 Once we see that variable of interest may be in interaction with some other variable, it is tempting to look for the factor that distinguish clusters.
 
-The most straightforward approach is to use some other variable as a grouping variable. This can be done by setting the `groups` argument in the `aggregate_profiles{ingredients}` function. 
+The most straightforward approach is to use some other variable as a grouping variable. This can be done by setting the `groups` argument in the `ingredients::aggregate_profiles` function. 
 
 ```{r, eval=FALSE}
 library("ingredients")
@@ -129,7 +129,7 @@ pdp_Sex_rf <- aggregate_profiles(cp_rf, variables = "age",
 				groups = "gender")
 ```
 
-See an example in Figure \@ref{pdp_part_5}. Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
+See an example in Figure \@ref(fig:pdp_part_5). Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
 Check how the interaction for `Pclass` (passenger class) looks like.
 
 ```{r pdp_part_5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Grouped profiles with respect to the gender variable"}
@@ -153,11 +153,11 @@ Why one would like to compare models? There are at least three reasons for it.
 * *Disagreement of models helps to improve.* If simpler interpretable model disagree with an elastic model, this may suggest a feature transformation that can be used to improve the interpretable model. For example if random forest learned non linear relation then it can be captures by a linear model after suitable transformation.
 * *Validation of boundary conditions.* Some models are know to have different behavior on the boundary, for largest or lowest values. Random forest is known to shrink predictions towards the average, while support vector machines are known to have larger variance at edges. Contrastive comparisons may help to understand differences in boundary behavior.
 
-Generic `plot{ingredients}` function handles multiple models as consecutive arguments. 
+Generic `ingredients::plot` function handles multiple models as consecutive arguments. 
 
-See an example in Figure \@ref{pdp_part_7}. Random forest is compared with gradient boosting model and generalized linear model (logistic regression). All three models agree when it comes to a general relation between Age and Survival. Logistic regression is of course the most smooth. Gradient boosting has on average higher predictions than random forest.
+See an example in Figure \@ref(fig:pdp_part_7). Support vector model is compared with generalized linear model (logistic regression) with splines. Both models agree when it comes to a general relation between Age and Survival but the curve for SVM is more flat. Difference between both models is largest for lowest values of the variable age. 
 
-```{r pdp_part_7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Comparison on three predictive models with different structures."}
+```{r pdp_part_7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Comparison on two predictive models with different structures."}
 
 #cp_gbm <- partial_dependency(explain_titanic_gbm, selected_passangers)
 #pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")

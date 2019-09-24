@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 11 Shapley Additive Explanations (SHAP) and Average Variable Attributions | Predictive Models: Explore, Explain, and Debug</title>
+  <meta name="description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
+  <meta name="generator" content="bookdown 0.13 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 11 Shapley Additive Explanations (SHAP) and Average Variable Attributions | Predictive Models: Explore, Explain, and Debug" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
+  <meta name="github-repo" content="pbiecek/PM_VEE" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 11 Shapley Additive Explanations (SHAP) and Average Variable Attributions | Predictive Models: Explore, Explain, and Debug" />
+  
+  <meta name="twitter:description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
+  
+
+<meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
+
+
+<meta name="date" content="2019-09-24" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="iBreakDown.html"/>
+<link rel="next" href="LIME.html"/>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-5650686-15', 'https://pbiecek.github.io/PM_VEE/', {
+  'anonymizeIp': true
+  , 'storage': 'none'
+  , 'clientId': window.localStorage.getItem('ga_clientId')
+});
+ga(function(tracker) {
+  window.localStorage.setItem('ga_clientId', tracker.get('clientId'));
+});
+ga('send', 'pageview');
+</script>
+<style>
+.figure {
+   padding:40px 0px;
+}
+</style>
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Predictive Models:<br/> Visualisation, Exploration and Explanation</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="introduction.html"><a href="introduction.html#notes-to-readers"><i class="fa fa-check"></i><b>1.1</b> Notes to readers</a></li>
+<li class="chapter" data-level="1.2" data-path="introduction.html"><a href="introduction.html#the-aim-of-the-book"><i class="fa fa-check"></i><b>1.2</b> The aim of the book</a></li>
+<li class="chapter" data-level="1.3" data-path="introduction.html"><a href="introduction.html#three-single-laws"><i class="fa fa-check"></i><b>1.3</b> A bit of philosophy: three laws of model explanation</a></li>
+<li class="chapter" data-level="1.4" data-path="introduction.html"><a href="introduction.html#terminology"><i class="fa fa-check"></i><b>1.4</b> Terminology</a></li>
+<li class="chapter" data-level="1.5" data-path="introduction.html"><a href="introduction.html#glass-box-models-vs.black-box-models"><i class="fa fa-check"></i><b>1.5</b> Glass-box models vs. black-box models</a></li>
+<li class="chapter" data-level="1.6" data-path="introduction.html"><a href="introduction.html#model-visualization-exploration-and-explanation"><i class="fa fa-check"></i><b>1.6</b> Model visualization, exploration, and explanation</a></li>
+<li class="chapter" data-level="1.7" data-path="introduction.html"><a href="introduction.html#model-agnostic-vs.model-specific-approach"><i class="fa fa-check"></i><b>1.7</b> Model-agnostic vs. model-specific approach</a></li>
+<li class="chapter" data-level="1.8" data-path="introduction.html"><a href="introduction.html#notation"><i class="fa fa-check"></i><b>1.8</b> Notation</a></li>
+<li class="chapter" data-level="1.9" data-path="introduction.html"><a href="introduction.html#bookstructure"><i class="fa fa-check"></i><b>1.9</b> The structure of the book</a></li>
+<li class="chapter" data-level="1.10" data-path="introduction.html"><a href="introduction.html#thanksto"><i class="fa fa-check"></i><b>1.10</b> Acknowledgements</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html"><i class="fa fa-check"></i><b>2</b> Do-it-yourself With R</a><ul>
+<li class="chapter" data-level="2.1" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#what-to-install"><i class="fa fa-check"></i><b>2.1</b> What to install?</a></li>
+<li class="chapter" data-level="2.2" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#how-to-work-with-dalex"><i class="fa fa-check"></i><b>2.2</b> How to work with <code>DALEX</code>?</a></li>
+<li class="chapter" data-level="2.3" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#how-to-work-with-archivist"><i class="fa fa-check"></i><b>2.3</b> How to work with <code>archivist</code>?</a></li>
+<li class="chapter" data-level="2.4" data-path="doItYourselfWithR.html"><a href="doItYourselfWithR.html#Packages"><i class="fa fa-check"></i><b>2.4</b> DrWhy Packages</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="doItYourselfWithPython.html"><a href="doItYourselfWithPython.html"><i class="fa fa-check"></i><b>3</b> Do-it-yourself With Python</a></li>
+<li class="chapter" data-level="4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html"><i class="fa fa-check"></i><b>4</b> Data Sets</a><ul>
+<li class="chapter" data-level="4.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#TitanicDataset"><i class="fa fa-check"></i><b>4.1</b> Sinking of the RMS Titanic</a><ul>
+<li class="chapter" data-level="4.1.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-titanic"><i class="fa fa-check"></i><b>4.1.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.1.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-lmr"><i class="fa fa-check"></i><b>4.1.2</b> Logistic regression</a></li>
+<li class="chapter" data-level="4.1.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-rf"><i class="fa fa-check"></i><b>4.1.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.1.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-titanic-gbm"><i class="fa fa-check"></i><b>4.1.4</b> Gradient boosting</a></li>
+<li class="chapter" data-level="4.1.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictions-titanic"><i class="fa fa-check"></i><b>4.1.5</b> Model predictions</a></li>
+<li class="chapter" data-level="4.1.6" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ExplainersTitanicRCode"><i class="fa fa-check"></i><b>4.1.6</b> Explainers</a></li>
+<li class="chapter" data-level="4.1.7" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsTitanic"><i class="fa fa-check"></i><b>4.1.7</b> List of objects for the <code>titanic</code> example</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ApartmentDataset"><i class="fa fa-check"></i><b>4.2</b> Apartment prices</a><ul>
+<li class="chapter" data-level="4.2.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-apartments"><i class="fa fa-check"></i><b>4.2.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.2.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-lr"><i class="fa fa-check"></i><b>4.2.2</b> Linear regression</a></li>
+<li class="chapter" data-level="4.2.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-rf"><i class="fa fa-check"></i><b>4.2.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.2.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictionsApartments"><i class="fa fa-check"></i><b>4.2.4</b> Model predictions</a></li>
+<li class="chapter" data-level="4.2.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsApartments"><i class="fa fa-check"></i><b>4.2.5</b> List of objects for the <code>apartments</code> example</a></li>
+</ul></li>
+<li class="chapter" data-level="4.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#HFDataset"><i class="fa fa-check"></i><b>4.3</b> Hire or fire</a><ul>
+<li class="chapter" data-level="4.3.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-HR"><i class="fa fa-check"></i><b>4.3.1</b> Data exploration</a></li>
+<li class="chapter" data-level="4.3.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-HR-mr"><i class="fa fa-check"></i><b>4.3.2</b> Multinomial logistic regression</a></li>
+<li class="chapter" data-level="4.3.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-HR-rf"><i class="fa fa-check"></i><b>4.3.3</b> Random forest</a></li>
+<li class="chapter" data-level="4.3.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictionsHR"><i class="fa fa-check"></i><b>4.3.4</b> Model predictions</a></li>
+<li class="chapter" data-level="4.3.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsHR"><i class="fa fa-check"></i><b>4.3.5</b> List of objects for the <code>HR</code> example</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="InstanceLevelExploration.html"><a href="InstanceLevelExploration.html"><i class="fa fa-check"></i><b>5</b> Instance-level exploration</a></li>
+<li class="chapter" data-level="6" data-path="ceterisParibus.html"><a href="ceterisParibus.html"><i class="fa fa-check"></i><b>6</b> Ceteris-paribus Profiles and What-If Analysis</a><ul>
+<li class="chapter" data-level="6.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPIntro"><i class="fa fa-check"></i><b>6.1</b> Introduction</a></li>
+<li class="chapter" data-level="6.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPIntuition"><i class="fa fa-check"></i><b>6.2</b> Intuition</a></li>
+<li class="chapter" data-level="6.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPMethod"><i class="fa fa-check"></i><b>6.3</b> Method</a></li>
+<li class="chapter" data-level="6.4" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPExample"><i class="fa fa-check"></i><b>6.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="6.5" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPProsCons"><i class="fa fa-check"></i><b>6.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="6.6" data-path="ceterisParibus.html"><a href="ceterisParibus.html#CPR"><i class="fa fa-check"></i><b>6.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="6.6.1" data-path="ceterisParibus.html"><a href="ceterisParibus.html#basic-use-of-the-ceteris_paribus-function"><i class="fa fa-check"></i><b>6.6.1</b> Basic use of the <code>ceteris_paribus</code> function</a></li>
+<li class="chapter" data-level="6.6.2" data-path="ceterisParibus.html"><a href="ceterisParibus.html#advanced-use-of-the-ceteris_paribus-function"><i class="fa fa-check"></i><b>6.6.2</b> Advanced use of the <code>ceteris_paribus</code> function</a></li>
+<li class="chapter" data-level="6.6.3" data-path="ceterisParibus.html"><a href="ceterisParibus.html#champion-challenger-analysis"><i class="fa fa-check"></i><b>6.6.3</b> Champion-challenger analysis</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html"><i class="fa fa-check"></i><b>7</b> Ceteris-paribus Oscillations and Local Variable-importance</a><ul>
+<li class="chapter" data-level="7.1" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscIntro"><i class="fa fa-check"></i><b>7.1</b> Introduction</a></li>
+<li class="chapter" data-level="7.2" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscIntuition"><i class="fa fa-check"></i><b>7.2</b> Intuition</a></li>
+<li class="chapter" data-level="7.3" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscMethod"><i class="fa fa-check"></i><b>7.3</b> Method</a></li>
+<li class="chapter" data-level="7.4" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscExample"><i class="fa fa-check"></i><b>7.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="7.5" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscProsCons"><i class="fa fa-check"></i><b>7.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="7.6" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#CPOscR"><i class="fa fa-check"></i><b>7.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="7.6.1" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#basic-use-of-the-calculate_oscillations-function"><i class="fa fa-check"></i><b>7.6.1</b> Basic use of the <code>calculate_oscillations</code> function</a></li>
+<li class="chapter" data-level="7.6.2" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#advanced-use-of-the-calculate_oscillations-function"><i class="fa fa-check"></i><b>7.6.2</b> Advanced use of the <code>calculate_oscillations</code> function</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="localDiagnostics.html"><a href="localDiagnostics.html"><i class="fa fa-check"></i><b>8</b> Local Diagnostics With Ceteris-paribus Profiles</a><ul>
+<li class="chapter" data-level="8.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntro"><i class="fa fa-check"></i><b>8.1</b> Introduction</a></li>
+<li class="chapter" data-level="8.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntuition"><i class="fa fa-check"></i><b>8.2</b> Intuition</a></li>
+<li class="chapter" data-level="8.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagMethod"><i class="fa fa-check"></i><b>8.3</b> Method</a><ul>
+<li class="chapter" data-level="8.3.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagNeighbors"><i class="fa fa-check"></i><b>8.3.1</b> Nearest neighbors</a></li>
+<li class="chapter" data-level="8.3.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProfiles"><i class="fa fa-check"></i><b>8.3.2</b> Profiles for neighbors</a></li>
+<li class="chapter" data-level="8.3.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagLFplot"><i class="fa fa-check"></i><b>8.3.3</b> Local-fidelity plot</a></li>
+</ul></li>
+<li class="chapter" data-level="8.4" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagExample"><i class="fa fa-check"></i><b>8.4</b> Example: Titanic</a></li>
+<li class="chapter" data-level="8.5" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProsCons"><i class="fa fa-check"></i><b>8.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="8.6" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagR"><i class="fa fa-check"></i><b>8.6</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="breakDown.html"><a href="breakDown.html"><i class="fa fa-check"></i><b>9</b> Break-down Plots for Additive Variable Attributions</a><ul>
+<li class="chapter" data-level="9.1" data-path="breakDown.html"><a href="breakDown.html#BDIntuition"><i class="fa fa-check"></i><b>9.1</b> Intuition</a></li>
+<li class="chapter" data-level="9.2" data-path="breakDown.html"><a href="breakDown.html#BDMethod"><i class="fa fa-check"></i><b>9.2</b> Method</a><ul>
+<li class="chapter" data-level="9.2.1" data-path="breakDown.html"><a href="breakDown.html#break-down-for-linear-models"><i class="fa fa-check"></i><b>9.2.1</b> Break-down for linear models</a></li>
+<li class="chapter" data-level="9.2.2" data-path="breakDown.html"><a href="breakDown.html#break-down-for-general-case"><i class="fa fa-check"></i><b>9.2.2</b> Break-down for general case</a></li>
+</ul></li>
+<li class="chapter" data-level="9.3" data-path="breakDown.html"><a href="breakDown.html#BDExample"><i class="fa fa-check"></i><b>9.3</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="9.4" data-path="breakDown.html"><a href="breakDown.html#BDProsCons"><i class="fa fa-check"></i><b>9.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="9.5" data-path="breakDown.html"><a href="breakDown.html#BDR"><i class="fa fa-check"></i><b>9.5</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="9.5.1" data-path="breakDown.html"><a href="breakDown.html#basic-use-of-the-break_down-function"><i class="fa fa-check"></i><b>9.5.1</b> Basic use of the <code>break_down()</code> function</a></li>
+<li class="chapter" data-level="9.5.2" data-path="breakDown.html"><a href="breakDown.html#advanced-use-of-the-break_down-function"><i class="fa fa-check"></i><b>9.5.2</b> Advanced use of the <code>break_down()</code> function</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="10" data-path="iBreakDown.html"><a href="iBreakDown.html"><i class="fa fa-check"></i><b>10</b> Break-down Plots for Models with Interactions (iBreak-down Plots)</a><ul>
+<li class="chapter" data-level="10.1" data-path="iBreakDown.html"><a href="iBreakDown.html#iBDIntuition"><i class="fa fa-check"></i><b>10.1</b> Intuition</a></li>
+<li class="chapter" data-level="10.2" data-path="iBreakDown.html"><a href="iBreakDown.html#iBDMethod"><i class="fa fa-check"></i><b>10.2</b> Method</a></li>
+<li class="chapter" data-level="10.3" data-path="iBreakDown.html"><a href="iBreakDown.html#iBDExample"><i class="fa fa-check"></i><b>10.3</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="10.4" data-path="iBreakDown.html"><a href="iBreakDown.html#iBDProsCons"><i class="fa fa-check"></i><b>10.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="10.5" data-path="iBreakDown.html"><a href="iBreakDown.html#iBDRcode"><i class="fa fa-check"></i><b>10.5</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="11" data-path="shapley.html"><a href="shapley.html"><i class="fa fa-check"></i><b>11</b> Shapley Additive Explanations (SHAP) and Average Variable Attributions</a><ul>
+<li class="chapter" data-level="11.1" data-path="shapley.html"><a href="shapley.html#SHAPIntuition"><i class="fa fa-check"></i><b>11.1</b> Intuition</a></li>
+<li class="chapter" data-level="11.2" data-path="shapley.html"><a href="shapley.html#SHAPMethod"><i class="fa fa-check"></i><b>11.2</b> Method</a></li>
+<li class="chapter" data-level="11.3" data-path="shapley.html"><a href="shapley.html#SHAPExample"><i class="fa fa-check"></i><b>11.3</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="11.4" data-path="shapley.html"><a href="shapley.html#SHAProsCons"><i class="fa fa-check"></i><b>11.4</b> Pros and cons</a></li>
+<li class="chapter" data-level="11.5" data-path="shapley.html"><a href="shapley.html#SHAPRcode"><i class="fa fa-check"></i><b>11.5</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="12" data-path="LIME.html"><a href="LIME.html"><i class="fa fa-check"></i><b>12</b> Local Interpretable Model-agnostic Explanations (LIME)</a><ul>
+<li class="chapter" data-level="12.1" data-path="LIME.html"><a href="LIME.html#LIMEIntroduction"><i class="fa fa-check"></i><b>12.1</b> Introduction</a></li>
+<li class="chapter" data-level="12.2" data-path="LIME.html"><a href="LIME.html#LIMEIntuition"><i class="fa fa-check"></i><b>12.2</b> Intuition</a></li>
+<li class="chapter" data-level="12.3" data-path="LIME.html"><a href="LIME.html#LIMEMethod"><i class="fa fa-check"></i><b>12.3</b> Method</a><ul>
+<li class="chapter" data-level="12.3.1" data-path="LIME.html"><a href="LIME.html#interpretable-data-representation"><i class="fa fa-check"></i><b>12.3.1</b> Interpretable data representation</a></li>
+<li class="chapter" data-level="12.3.2" data-path="LIME.html"><a href="LIME.html#sampling-around-the-instance-of-interest"><i class="fa fa-check"></i><b>12.3.2</b> Sampling around the instance of interest</a></li>
+<li class="chapter" data-level="12.3.3" data-path="LIME.html"><a href="LIME.html#developing-the-white-box-model"><i class="fa fa-check"></i><b>12.3.3</b> Developing the white-box model</a></li>
+</ul></li>
+<li class="chapter" data-level="12.4" data-path="LIME.html"><a href="LIME.html#LIMEExample"><i class="fa fa-check"></i><b>12.4</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="12.5" data-path="LIME.html"><a href="LIME.html#LIMEProsCons"><i class="fa fa-check"></i><b>12.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="12.6" data-path="LIME.html"><a href="LIME.html#LIMERcode"><i class="fa fa-check"></i><b>12.6</b> Code snippets for R</a><ul>
+<li class="chapter" data-level="12.6.1" data-path="LIME.html"><a href="LIME.html#the-lime-package"><i class="fa fa-check"></i><b>12.6.1</b> The lime package</a></li>
+<li class="chapter" data-level="12.6.2" data-path="LIME.html"><a href="LIME.html#the-localmodel-package"><i class="fa fa-check"></i><b>12.6.2</b> The localModel package</a></li>
+<li class="chapter" data-level="12.6.3" data-path="LIME.html"><a href="LIME.html#the-iml-package"><i class="fa fa-check"></i><b>12.6.3</b> The iml package</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="13" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html"><i class="fa fa-check"></i><b>13</b> Summary of Instance-level Explainers</a><ul>
+<li class="chapter" data-level="13.1" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#number-of-explanatory-variables-in-the-model"><i class="fa fa-check"></i><b>13.1</b> Number of explanatory variables in the model</a><ul>
+<li class="chapter" data-level="13.1.1" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#low-to-medium-number-of-explanatory-variables"><i class="fa fa-check"></i><b>13.1.1</b> Low to medium number of explanatory variables</a></li>
+<li class="chapter" data-level="13.1.2" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#medium-to-large-number-of-explanatory-variables"><i class="fa fa-check"></i><b>13.1.2</b> Medium to large number of explanatory variables</a></li>
+<li class="chapter" data-level="13.1.3" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#very-large-number-of-explanatory-variables"><i class="fa fa-check"></i><b>13.1.3</b> Very large number of explanatory variables</a></li>
+</ul></li>
+<li class="chapter" data-level="13.2" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#correlated-explanatory-variables"><i class="fa fa-check"></i><b>13.2</b> Correlated explanatory variables</a></li>
+<li class="chapter" data-level="13.3" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#models-with-interactions"><i class="fa fa-check"></i><b>13.3</b> Models with interactions</a></li>
+<li class="chapter" data-level="13.4" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#sparse-explanations"><i class="fa fa-check"></i><b>13.4</b> Sparse explanations</a></li>
+<li class="chapter" data-level="13.5" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#additional-uses-of-model-exploration-and-explanation"><i class="fa fa-check"></i><b>13.5</b> Additional uses of model exploration and explanation</a></li>
+</ul></li>
+<li class="chapter" data-level="14" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html"><i class="fa fa-check"></i><b>14</b> Model-level exploration</a><ul>
+<li class="chapter" data-level="14.1" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html#approaches-to-model-explanations"><i class="fa fa-check"></i><b>14.1</b> Approaches to model explanations</a></li>
+<li class="chapter" data-level="14.2" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html#a-bit-of-philosophy-three-laws-for-model-level-explanations"><i class="fa fa-check"></i><b>14.2</b> A bit of philosophy: Three Laws for Model Level Explanations</a></li>
+</ul></li>
+<li class="chapter" data-level="15" data-path="featureImportance.html"><a href="featureImportance.html"><i class="fa fa-check"></i><b>15</b> Feature Importance</a><ul>
+<li class="chapter" data-level="15.1" data-path="featureImportance.html"><a href="featureImportance.html#permutation-based-feature-importance"><i class="fa fa-check"></i><b>15.1</b> Permutation Based Feature Importance</a></li>
+<li class="chapter" data-level="15.2" data-path="featureImportance.html"><a href="featureImportance.html#example-titanic"><i class="fa fa-check"></i><b>15.2</b> Example: Titanic</a></li>
+<li class="chapter" data-level="15.3" data-path="featureImportance.html"><a href="featureImportance.html#example-price-prediction"><i class="fa fa-check"></i><b>15.3</b> Example: Price prediction</a></li>
+<li class="chapter" data-level="15.4" data-path="featureImportance.html"><a href="featureImportance.html#more-models"><i class="fa fa-check"></i><b>15.4</b> More models</a></li>
+<li class="chapter" data-level="15.5" data-path="featureImportance.html"><a href="featureImportance.html#level-frequency"><i class="fa fa-check"></i><b>15.5</b> Level frequency</a></li>
+</ul></li>
+<li class="chapter" data-level="16" data-path="featureEffects.html"><a href="featureEffects.html"><i class="fa fa-check"></i><b>16</b> Feature effects</a><ul>
+<li class="chapter" data-level="16.1" data-path="featureEffects.html"><a href="featureEffects.html#global-level-vs-instance-level-explanations"><i class="fa fa-check"></i><b>16.1</b> Global level vs instance level explanations</a></li>
+</ul></li>
+<li class="chapter" data-level="17" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html"><i class="fa fa-check"></i><b>17</b> Partial Dependency Profiles</a><ul>
+<li class="chapter" data-level="17.1" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#definition"><i class="fa fa-check"></i><b>17.1</b> Definition</a></li>
+<li class="chapter" data-level="17.2" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#estimation"><i class="fa fa-check"></i><b>17.2</b> Estimation</a></li>
+<li class="chapter" data-level="17.3" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#clustered-partial-dependency-profiles"><i class="fa fa-check"></i><b>17.3</b> Clustered Partial Dependency Profiles</a></li>
+<li class="chapter" data-level="17.4" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#grouped-partial-dependency-profiles"><i class="fa fa-check"></i><b>17.4</b> Grouped Partial Dependency Profiles</a></li>
+<li class="chapter" data-level="17.5" data-path="partialDependenceProfiles.html"><a href="partialDependenceProfiles.html#contrastive-model-comparisons"><i class="fa fa-check"></i><b>17.5</b> Contrastive Model Comparisons</a></li>
+</ul></li>
+<li class="chapter" data-level="18" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html"><i class="fa fa-check"></i><b>18</b> Conditional Dependency Profiles</a><ul>
+<li class="chapter" data-level="18.1" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#definition-1"><i class="fa fa-check"></i><b>18.1</b> Definition</a></li>
+<li class="chapter" data-level="18.2" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#estimation-1"><i class="fa fa-check"></i><b>18.2</b> Estimation</a></li>
+<li class="chapter" data-level="18.3" data-path="conditionalProfiles.html"><a href="conditionalProfiles.html#example"><i class="fa fa-check"></i><b>18.3</b> Example</a></li>
+</ul></li>
+<li class="chapter" data-level="19" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html"><i class="fa fa-check"></i><b>19</b> Accumulated Local Profiles</a><ul>
+<li class="chapter" data-level="19.1" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#definition-2"><i class="fa fa-check"></i><b>19.1</b> Definition</a></li>
+</ul></li>
+<li class="chapter" data-level="20" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html"><i class="fa fa-check"></i><b>20</b> Summary of Explainers for Feature Effects</a><ul>
+<li class="chapter" data-level="20.1" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html#factorMerger"><i class="fa fa-check"></i><b>20.1</b> Merging Path Plots and Others</a></li>
+<li class="chapter" data-level="20.2" data-path="summaryFeatureEffects.html"><a href="summaryFeatureEffects.html#other-topics"><i class="fa fa-check"></i><b>20.2</b> Other topics</a></li>
+</ul></li>
+<li class="chapter" data-level="21" data-path="performanceDiagnostic.html"><a href="performanceDiagnostic.html"><i class="fa fa-check"></i><b>21</b> Performance Diagnostic</a></li>
+<li class="chapter" data-level="22" data-path="residualDiagnostic.html"><a href="residualDiagnostic.html"><i class="fa fa-check"></i><b>22</b> Residual Diagnostic</a></li>
+<li class="chapter" data-level="23" data-path="conceptDrift.html"><a href="conceptDrift.html"><i class="fa fa-check"></i><b>23</b> Concept Drift</a><ul>
+<li class="chapter" data-level="23.1" data-path="conceptDrift.html"><a href="conceptDrift.html#introduction-1"><i class="fa fa-check"></i><b>23.1</b> Introduction</a></li>
+<li class="chapter" data-level="23.2" data-path="conceptDrift.html"><a href="conceptDrift.html#covariate-drift"><i class="fa fa-check"></i><b>23.2</b> Covariate Drift</a></li>
+<li class="chapter" data-level="23.3" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets"><i class="fa fa-check"></i><b>23.3</b> Code snippets</a></li>
+<li class="chapter" data-level="23.4" data-path="conceptDrift.html"><a href="conceptDrift.html#residual-drift"><i class="fa fa-check"></i><b>23.4</b> Residual Drift</a></li>
+<li class="chapter" data-level="23.5" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets-1"><i class="fa fa-check"></i><b>23.5</b> Code snippets</a></li>
+<li class="chapter" data-level="23.6" data-path="conceptDrift.html"><a href="conceptDrift.html#model-drift"><i class="fa fa-check"></i><b>23.6</b> Model Drift</a></li>
+<li class="chapter" data-level="23.7" data-path="conceptDrift.html"><a href="conceptDrift.html#code-snippets-2"><i class="fa fa-check"></i><b>23.7</b> Code snippets</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendixes.html"><a href="appendixes.html"><i class="fa fa-check"></i>Appendixes</a></li>
+<li class="chapter" data-level="24" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html"><i class="fa fa-check"></i><b>24</b> Ceteris-paribus Two-dimensional Profiles - a Tool for Pairwise Interactions</a><ul>
+<li class="chapter" data-level="24.1" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dIntro"><i class="fa fa-check"></i><b>24.1</b> Introduction</a></li>
+<li class="chapter" data-level="24.2" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dIntuition"><i class="fa fa-check"></i><b>24.2</b> Intuition</a></li>
+<li class="chapter" data-level="24.3" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dMethod"><i class="fa fa-check"></i><b>24.3</b> Method</a></li>
+<li class="chapter" data-level="24.4" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dExample"><i class="fa fa-check"></i><b>24.4</b> Example: Titanic data</a></li>
+<li class="chapter" data-level="24.5" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2dProsCons"><i class="fa fa-check"></i><b>24.5</b> Pros and cons</a></li>
+<li class="chapter" data-level="24.6" data-path="ceterisParibus2d.html"><a href="ceterisParibus2d.html#ceterisParibus2R"><i class="fa fa-check"></i><b>24.6</b> Code snippets for R</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://github.com/pbiecek/DALEX" target="blank">DALEX website</a></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Predictive Models: Explore, Explain, and Debug</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="shapley" class="section level1">
+<h1><span class="header-section-number">Chapter 11</span> Shapley Additive Explanations (SHAP) and Average Variable Attributions</h1>
+<p>In Chapter <a href="breakDown.html#breakDown">9</a>, we introduced Break-down (BD) plots, a method of assessment of local variable-importance based on the contribution of an explanatory variable to model’s prediction. We also indicated that, in the presence of interactions, the computed value of the contribution depends on the order of explanatory covariates that is used in calculations. One solution to the problem is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter <a href="iBreakDown.html#iBreakDown">10</a>, is to identify interactions and explicitly present their contributions to the predictions.</p>
+<p>In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable’s contribution over all, or a large number of, possible orderings. The idea is closely linked to ‘’Shapley values’’ <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>, developed originally for cooperative games.</p>
+<p>The approach was first introduced in <span class="citation">(Strumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span> and <span class="citation">(Štrumbelj and Kononenko <a href="#ref-Strumbelj2014">2014</a>)</span>. It was widely adopted after the publication of the 2017 paper <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span> and Python’s library SHAP <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>. The authors of SHAP (SHapley Additive exPlanations) introduced an efficient algorithm for tree-based models <span class="citation">(Lundberg, Erion, and Lee <a href="#ref-TreeSHAP">2018</a>)</span>. They also showed that SHAP values were an unification of a collection of different commonly used techniques for model explanations.</p>
+<div id="SHAPIntuition" class="section level2">
+<h2><span class="header-section-number">11.1</span> Intuition</h2>
+<p>Figure <a href="shapley.html#fig:shap10orderings">11.1</a> presents BD plots for ten random orderings (indicated by the order of the rows in each plot) of explanatory variables for the prediction for <code>johny_d</code> (see Section <a href="dataSetsIntro.html#predictions-titanic">4.1.5</a>) for the random-forest model (see Section <a href="dataSetsIntro.html#model-titanic-rf">4.1.3</a> for the Titanic dataset. The plots show clear differences in the contributions of various variables for different orderings. The most remarkable differences can be observed for variables <code>fare</code> and <code>class</code>, with contributions changing the sign depending on the ordering.</p>
+<div class="figure" style="text-align: center"><span id="fig:shap10orderings"></span>
+<img src="figure/shap_10_replicates.png" alt="(fig:shap10orderings) Break-down plots for ten random orderings of explanatory variables for the prediction for `johny_d` for the random-forest model for the Titanic dataset. Each panel presents a single ordering, indicated by the order of the rows in the plot" width="100%" />
+<p class="caption">
+Figure 11.1: (fig:shap10orderings) Break-down plots for ten random orderings of explanatory variables for the prediction for <code>johny_d</code> for the random-forest model for the Titanic dataset. Each panel presents a single ordering, indicated by the order of the rows in the plot
+</p>
+</div>
+<p>To remove the influence of the ordring of the variables, we can compute an average value of the contributions.
+Figure <a href="shapley.html#fig:shapOrdering">11.2</a> presents the average contributions, calculated over the ten orderings presented in Figure <a href="shapley.html#fig:shap10orderings">11.1</a>. Red and green bars present, respectively, the negative and positive averages. Violet box-plots summarize the distribution of the contributions for each explanatory variable. [TOMASZ: WHAT IS THE CHOICE FOR ORDERING THE ROWS? DOES NOT SEEM TO BE THE AVERAGE.]The plot indicates that the most important variables, from the point of view of the prediction for <code>johny_d</code>, are <code>age</code> and <code>gender</code>.</p>
+<div class="figure" style="text-align: center"><span id="fig:shapOrdering"></span>
+<img src="figure/shap_ordering.png" alt="(fig:shapOrdering) Average contributions for ten random orderings. Red and green bars present the averages. Box-plots summarize the distribution of contributions for each explanatory variable across the orderings." width="70%" />
+<p class="caption">
+Figure 11.2: (fig:shapOrdering) Average contributions for ten random orderings. Red and green bars present the averages. Box-plots summarize the distribution of contributions for each explanatory variable across the orderings.
+</p>
+</div>
+</div>
+<div id="SHAPMethod" class="section level2">
+<h2><span class="header-section-number">11.2</span> Method</h2>
+<p>SHapley Additive exPlanations (SHAP) are based on ‘’Shapley values,’’ a concept in cooperative game theory developed by Lloyd Shapley <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name SHAP values when referring to values calculated with the SHAP method.</p>
+<p>Consider the following problem. A coalition of players cooperates, and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>.</p>
+<p>Now let’s translate this problem to the context of model predictions. Explanatory variables are the players, while model <span class="math inline">\(f()\)</span> plays the role of the coalition. The payoff from the coalition is the model prediction. The problem to solve is how to distribute the model prediction across particular variables?</p>
+<p>The idea of using Shapley values for evaluation of local variable-importance was introduced in <span class="citation">(Strumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span>. We define them here in the notation introduced in Section <a href="breakDown.html#BDMethod">9.2</a>.</p>
+<p>Let us consider a permutation <span class="math inline">\(J\)</span> of the set of indices <span class="math inline">\(\{1,2,\ldots,p\}\)</span> corresponding to an ordering of <span class="math inline">\(p\)</span> explanatory variables included in model <span class="math inline">\(f()\)</span>. Denote by <span class="math inline">\(\pi(J,j)\)</span> the set of the indices of the variables that are positioned in <span class="math inline">\(J\)</span> before the <span class="math inline">\(j\)</span>-th variable. Note that, if the <span class="math inline">\(j\)</span>-th variable is placed as the first, then <span class="math inline">\(\pi(J,j) = \emptyset\)</span>. Consider the model prediction <span class="math inline">\(f(x_*)\)</span> for a particular instance of interest <span class="math inline">\(x_*\)</span>. The SHAP value is defined as follows:
+<span class="math display" id="eq:SHAP">\[\begin{equation}
+\varphi(x_*,j) = \frac{1}{p!} \sum_{J} \Delta^{j|\pi(J,j)}(x_*),  
+\tag{11.1}
+\end{equation}\]</span>
+where the sum is taken over all <span class="math inline">\(p!\)</span> possible permutations (orderings of explanatory variables) and the variable-importance measure <span class="math inline">\(\Delta^{j|J}(x_*)\)</span> was defined in Section <a href="breakDown.html#BDMethod">9.2</a>. Essentially, <span class="math inline">\(\varphi(x_*,j)\)</span> is the average of the variable-importance measures across all possible orderings of explanatory variables.</p>
+<p>It is worth noting that the value of <span class="math inline">\(\Delta^{j|\pi(J,j)}(x_*)\)</span> is constant for all ordering <span class="math inline">\(J\)</span> that share with the same subset <span class="math inline">\(\pi(J,j)\)</span>. It follows that equation <a href="shapley.html#eq:SHAP">(11.1)</a> can be expressed in an alternative form:</p>
+<p><span class="math display" id="eq:SHAP1">\[\begin{eqnarray}
+\varphi(x_*,j) &amp;=&amp; \frac 1{p!}\sum_{s=0}^{p-1} \sum_{
+\substack{
+S \subseteq \{1,\dots,p\}\setminus \{j\} \\ |S|=s
+}}  \left[s!(p-1-s)! \Delta^{j|S}(x_*)\right]\nonumber\\
+&amp;=&amp;
+\frac 1{p}\sum_{s=0}^{p-1} \sum_{
+\substack{
+S \subseteq \{1,\dots,p\}\setminus \{j\} \\ |S|=s
+}}  \left[{{p-1}\choose{s}}^{-1} \Delta^{j|S}(x_*)\right],
+\tag{11.2}
+\end{eqnarray}\]</span>
+where <span class="math inline">\(|S|\)</span> denotes the cardinal number (size) of set <span class="math inline">\(S\)</span> and the second sum is taken over all subsets <span class="math inline">\(S\)</span> of explanatory variables, excluding the <span class="math inline">\(j\)</span>-th one, of size <span class="math inline">\(s\)</span>.</p>
+<p>Note that the number of all subsets of sizes from 0 to <span class="math inline">\(p-1\)</span> is <span class="math inline">\(2^{p-1}\)</span>, i.e., it is much smaller than number of all permutations <span class="math inline">\(p!\)</span>. Nevertheless, for a large <span class="math inline">\(p\)</span>, it may not be feasible to compute the SHAP value from <a href="shapley.html#eq:SHAP">(11.1)</a> nor <a href="shapley.html#eq:SHAP1">(11.2)</a>. In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced in <span class="citation">(Štrumbelj and Kononenko <a href="#ref-Strumbelj2014">2014</a>)</span>. An efficient implementation of computations of SHAP values was introduced in <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span>.</p>
+<p>From the properties of Shapley values for cooperative games it follows that, in the context of predictive models, they enjoy the following properties:</p>
+<ul>
+<li>Symmetry: if two explanatory variables <span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span> are interchangeable, i.e., for any set of explanatory variables <span class="math inline">\(S \subseteq \{1,\dots,p\}\setminus \{j,k\}\)</span> we have got</li>
+</ul>
+<p><span class="math display">\[
+\Delta^{j|S}(x_*) = \Delta^{k|S}(x_*),
+\]</span>
+then their Shapley values are equal:</p>
+<p><span class="math display">\[
+\varphi(x_*,j) = \varphi(x_*,k).
+\]</span></p>
+<ul>
+<li>Dummy feature: if an explanatory variable <span class="math inline">\(j\)</span> does not contribute to any prediction for any set of explanatory variables <span class="math inline">\(S \subseteq \{1,\dots,p\}\setminus \{j\}\)</span>, that is,</li>
+</ul>
+<p><span class="math display">\[
+\Delta^{j|S}(x_*) = 0,
+\]</span></p>
+<p>then its Shapley value is equal to 0:</p>
+<p><span class="math display">\[
+\varphi(x_*,j) = 0.
+\]</span></p>
+<ul>
+<li><p>Additivity: if model <span class="math inline">\(f()\)</span> is a sum of two other models <span class="math inline">\(g()\)</span> and <span class="math inline">\(h()\)</span>, then the Shapley value calculated for model <span class="math inline">\(f()\)</span> is a sum of Shapley values for models <span class="math inline">\(g()\)</span> and <span class="math inline">\(h()\)</span>.</p></li>
+<li><p>Local accuracy: the sum of Shapley values is equal to the model predicition, that is,</p></li>
+</ul>
+<p><span class="math display">\[
+f(x_*) - E_X[f(X)] = \sum_{j=1}^p   \varphi(x_*,j). 
+\]</span></p>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  Random Forest v6 
+##   -&gt; data              :  2207  rows  7  cols 
+##   -&gt; target variable   :  2207  values 
+##   -&gt; predict function  :  yhat.randomForest  will be used ([33mdefault[39m)
+##   -&gt; predicted values  :  numerical, min =  0 , mean =  0.2353095 , max =  1  
+##   -&gt; residual function :  difference between y and yhat ([33mdefault[39m)
+##   -&gt; residuals         :  numerical, min =  -0.892 , mean =  0.0868473 , max =  1  
+## [32mA new explainer has been created![39m</code></pre>
+</div>
+<div id="SHAPExample" class="section level2">
+<h2><span class="header-section-number">11.3</span> Example: Titanic data</h2>
+<p>Let us consider the random-forest model <code>titanic_rf_v6</code> (see Section <a href="dataSetsIntro.html#model-titanic-rf">4.1.3</a> and passenger <code>johny_d</code> (see Section <a href="dataSetsIntro.html#predictions-titanic">4.1.5</a>) as the instance of interest in the Titanic data.</p>
+<p>Box-plots in Figure <a href="shapley.html#fig:shappJohny02">11.3</a> present the distribution of the contributions <span class="math inline">\(\Delta^{j|\pi(J,j)}(x_*)\)</span> for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive SHAP values across the orderings. It is clear that the young age of Johny D results in a positive contribution for all orderings. The SHAP value is equal to <span class="math inline">\(0.2525\)</span>. On the other hand, the effect of gender is in all cases negative, with the SHAP value equal to <span class="math inline">\(-0.0908\)</span>.</p>
+<p>The picture for <code>fare</code> and <code>class</code> is more complex, as their contributions can even change the sign, depending on the ordering. While Figure <a href="shapley.html#fig:shappJohny02">11.3</a> presents the SHAP values separately for each of the variables, it is worth noting that, by using the iBD plot in Section <a href="iBreakDown.html#iBDExample">10.3</a> the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. [TOMASZ: SO? WHAT TO DO IN THIS CASE? FORGET ABOUT THE AVERAGES?]</p>
+<div class="figure" style="text-align: center"><span id="fig:shappJohny02"></span>
+<img src="PM_VEE_files/figure-html/shappJohny02-1.png" alt="(fig:shappJohny02) Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values. " width="80%" />
+<p class="caption">
+Figure 11.3: (fig:shappJohny02) Variable contributions for the prediction for <code>johny_d</code> for the random-forest model <code>titanic_rf_v6</code> and the Titanic data for 25 random orderings. Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values.
+</p>
+</div>
+<p>In most applications the detailed information about the distribution of variable contributions across the considered orderings of explanatory variabled will not be necessary. Thus, one could simplify the plot by presenting only the SHAP values, as in Figure <a href="shapley.html#fig:shappJohny01">11.4</a>.</p>
+<div class="figure" style="text-align: center"><span id="fig:shappJohny01"></span>
+<img src="PM_VEE_files/figure-html/shappJohny01-1.png" alt="(fig:shappJohny01) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings." width="80%" />
+<p class="caption">
+Figure 11.4: (fig:shappJohny01) SHAP values for the prediction for <code>johny_d</code> for the random-forest model <code>titanic_rf_v6</code> and the Titanic data for 25 random orderings.
+</p>
+</div>
+<p>Table <a href="#tab:shapOrderingTable">11.1</a> presents the SHAP values underlying the plot in Figure <a href="shapley.html#fig:shappJohny01">11.4</a>.
+Table: (#tab:shapOrderingTable) SHAP values for the prediction for <code>johny_d</code> for the random-forest model <code>titanic_rf_v6</code> and the Titanic data for 25 random orderings. [TOMASZ: JOHNY_d FROM BELFAST IN CHAP. 4?]</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Variable</th>
+<th align="right">SHAP value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">age = 8</td>
+<td align="right">0.2525</td>
+</tr>
+<tr class="even">
+<td align="left">class = 1st</td>
+<td align="right">0.0246</td>
+</tr>
+<tr class="odd">
+<td align="left">embarked = Southampton</td>
+<td align="right">-0.0032</td>
+</tr>
+<tr class="even">
+<td align="left">fare = 72</td>
+<td align="right">0.0140</td>
+</tr>
+<tr class="odd">
+<td align="left">gender = male</td>
+<td align="right">-0.0943</td>
+</tr>
+<tr class="even">
+<td align="left">parch = 0</td>
+<td align="right">-0.0097</td>
+</tr>
+<tr class="odd">
+<td align="left">sibsp = 0</td>
+<td align="right">0.0027</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="SHAProsCons" class="section level2">
+<h2><span class="header-section-number">11.4</span> Pros and cons</h2>
+<p>SHAP values provide a uniform approach to decompose model predictions into parts that can be attributed additively to different explanatory variables. In <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span> it is shown that the method unifies different approaches to additive features attribution, like DeepLIFT <span class="citation">(Shrikumar, Greenside, and Kundaje <a href="#ref-DeepLIFT">2017</a>)</span>, Layer-Wise Relevance Propagation <span class="citation">(Binder et al. <a href="#ref-LWRP">2016</a>)</span>, or LIME <span class="citation">(Ribeiro, Singh, and Guestrin <a href="#ref-lime">2016</a>)</span>. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.</p>
+<p>An important drawback of the SHAP values is that they are based on the assumption of additivity of variable effects. If the model is not additive, then the SHAP values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modelling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.</p>
+<p>It is worth noting that, for an additive model, the approaches presented in Chapters <a href="breakDown.html#breakDown">9</a>, <a href="iBreakDown.html#iBreakDown">10</a>, and in the current one lead to same variable contributions. It is because for additive models different orderings lead to same attributions. And since SHAP values can bee seen as an average across all ordering it’s an average from identical values.</p>
+<p>An important practical limitation of the method is that, for large models, the calculation of the SHAP values is time consuming. However, sub-sampling can be used to address the issue.</p>
+</div>
+<div id="SHAPRcode" class="section level2">
+<h2><span class="header-section-number">11.5</span> Code snippets for R</h2>
+<p>In this section, we present the key features of the <code>iBreakDown</code> R package <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span> which is a part of the <code>DrWhy.AI</code> universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at <a href="https://modeloriented.github.io/iBreakDown/" class="uri">https://modeloriented.github.io/iBreakDown/</a>.</p>
+<p>Note that there are also other R packages that offer similar functionality, like <code>shapper</code> <span class="citation">(Gosiewska and Biecek <a href="#ref-shapperPackage">2019</a><a href="#ref-shapperPackage">b</a>)</span>, which is a wrapper for the Python library <code>SHAP</code> <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>, and <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage">2018</a><a href="#ref-imlRPackage">a</a>)</span>.</p>
+<p>For illustration purposes, we use the <code>titanic_rf_v6</code> random-forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">4.1.3</a>. Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: <code>johny_d</code> - an 8-year-old passenger that travelled in the 1st class.</p>
+<p><code>DALEX</code> explainers for the model and the <code>jonhy_d</code> data are retrieved via <code>archivist</code> hooks as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">4.1.7</a>.</p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb121-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
+<a class="sourceLine" id="cb121-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb121-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb121-5" data-line-number="5">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a>
+<a class="sourceLine" id="cb121-6" data-line-number="6">johny_d</a></code></pre></div>
+<p>We obtain the model prediction for this instance with the help of the `predict()’ function.</p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" data-line-number="1"><span class="kw">predict</span>(explain_rf_v6, johny_d)</a></code></pre></div>
+<pre><code>## [1] 0.422</code></pre>
+<p>With the help of function <code>shap()</code> from the <code>iBreakDown</code> we can re-create Figure <a href="shapley.html#fig:shappJohny01">11.4</a>. The function is applied to the explainer, created with the <code>explain()</code> function from the <code>DALEX</code> package, and a data frame for the instance of interest. Additionally, in the <code>B=25</code> argument we indicate that we want to select 25 random orderings of explanatory variables for whcih the SHAP values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function <code>plot()</code> to the object conctructs the plot that includes the SHAP values and the corresponding box-plots.</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb124-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb124-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb124-3" data-line-number="3">shap_johny &lt;-<span class="st"> </span><span class="kw">shap</span>(explain_rf_v6, johny_d, <span class="dt">B =</span> <span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb124-4" data-line-number="4"><span class="kw">plot</span>(shap_johny) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-49-1.png" width="672" /></p>
+<p>To obtain a plot with only SHAP values, as in Figure <a href="shapley.html#fig:shappJohny02">11.3</a>, we can use the <code>show_boxplots=FALSE</code> argument in the <code>plot()</code> function call.</p>
+<div class="sourceCode" id="cb125"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb125-1" data-line-number="1"><span class="kw">plot</span>(shap_johny, <span class="dt">show_boxplots =</span> <span class="ot">FALSE</span>) </a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-50-1.png" width="672" /></p>
+<p>The object obtained as a result of the application of function <code>shap()</code> allows to compute other summary statistics beyond the average.</p>
+<div class="sourceCode" id="cb126"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb126-1" data-line-number="1">shap_johny</a></code></pre></div>
+<pre><code>##                                                  min            q1
+## Random Forest v6: age = 8                 0.10631717  0.1710566380
+## Random Forest v6: class = 1st            -0.05615224 -0.0008022202
+## Random Forest v6: embarked = Southampton -0.01580879 -0.0105541459
+## Random Forest v6: fare = 72              -0.08729950 -0.0713928410
+## Random Forest v6: gender = male          -0.17778251 -0.1248278206
+## Random Forest v6: parch = 0              -0.03033983 -0.0134748527
+## Random Forest v6: sibsp = 0              -0.01059538 -0.0059755324
+##                                                median          mean
+## Random Forest v6: age = 8                 0.252221985  0.2370556593
+## Random Forest v6: class = 1st             0.060401903  0.0703436701
+## Random Forest v6: embarked = Southampton -0.007472134 -0.0063245310
+## Random Forest v6: fare = 72              -0.045135931 -0.0014576167
+## Random Forest v6: gender = male          -0.105988219 -0.1004931944
+## Random Forest v6: parch = 0              -0.009966017 -0.0116046398
+## Random Forest v6: sibsp = 0              -0.001904848 -0.0008288174
+##                                                    q3          max
+## Random Forest v6: age = 8                 0.269811509  0.357347531
+## Random Forest v6: class = 1st             0.179579067  0.185606706
+## Random Forest v6: embarked = Southampton -0.004847558  0.007968283
+## Random Forest v6: fare = 72              -0.003210340  0.195174445
+## Random Forest v6: gender = male          -0.078935433 -0.042726778
+## Random Forest v6: parch = 0              -0.003649751 -0.001842320
+## Random Forest v6: sibsp = 0               0.003267784  0.014658813</code></pre>
+
+</div>
+</div>
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-LWRP">
+<p>Binder, Alexander, Grégoire Montavon, Sebastian Bach, Klaus-Robert Müller, and Wojciech Samek. 2016. “Layer-Wise Relevance Propagation for Neural Networks with Local Renormalization Layers.” <em>CoRR</em> abs/1604.00825. <a href="http://arxiv.org/abs/1604.00825">http://arxiv.org/abs/1604.00825</a>.</p>
+</div>
+<div id="ref-iBreakDownRPackage">
+<p>Gosiewska, Alicja, and Przemyslaw Biecek. 2019a. “iBreakDown: Uncertainty of Model Explanations for Non-additive Predictive Models.” <a href="https://arxiv.org/abs/1903.11420v1">https://arxiv.org/abs/1903.11420v1</a>.</p>
+</div>
+<div id="ref-shapperPackage">
+<p>Gosiewska, Alicja, and Przemyslaw Biecek. 2019b. <em>shapper: Wrapper of Python Library ’shap’</em>. <a href="https://github.com/ModelOriented/shapper">https://github.com/ModelOriented/shapper</a>.</p>
+</div>
+<div id="ref-shapPackage">
+<p>Lundberg, Scott. 2019. <em>SHAP (SHapley Additive exPlanations)</em>. <a href="https://github.com/slundberg/shap">https://github.com/slundberg/shap</a>.</p>
+</div>
+<div id="ref-TreeSHAP">
+<p>Lundberg, Scott M., Gabriel G. Erion, and Su-In Lee. 2018. “Consistent Individualized Feature Attribution for Tree Ensembles.” <em>CoRR</em> abs/1802.03888. <a href="http://arxiv.org/abs/1802.03888">http://arxiv.org/abs/1802.03888</a>.</p>
+</div>
+<div id="ref-SHAP">
+<p>Lundberg, Scott M, and Su-In Lee. 2017. “A Unified Approach to Interpreting Model Predictions.” In <em>Advances in Neural Information Processing Systems 30</em>, edited by I. Guyon, U. V. Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett, 4765–74. Curran Associates, Inc. <a href="http://papers.nips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions.pdf">http://papers.nips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions.pdf</a>.</p>
+</div>
+<div id="ref-imlRPackage">
+<p>Molnar, Christoph, Bernd Bischl, and Giuseppe Casalicchio. 2018a. “Iml: An R Package for Interpretable Machine Learning.” <em>JOSS</em> 3 (26). Journal of Open Source Software: 786. <a href="https://doi.org/10.21105/joss.00786">https://doi.org/10.21105/joss.00786</a>.</p>
+</div>
+<div id="ref-lime">
+<p>Ribeiro, Marco Tulio, Sameer Singh, and Carlos Guestrin. 2016. “Why Should I Trust You?: Explaining the Predictions of Any Classifier.” In, 1135–44. ACM Press. <a href="https://doi.org/10.1145/2939672.2939778">https://doi.org/10.1145/2939672.2939778</a>.</p>
+</div>
+<div id="ref-shapleybook1952">
+<p>Shapley, Lloyd S. 1953. “A Value for N-Person Games.” In <em>Contributions to the Theory of Games Ii</em>, edited by Harold W. Kuhn and Albert W. Tucker, 307–17. Princeton: Princeton University Press.</p>
+</div>
+<div id="ref-DeepLIFT">
+<p>Shrikumar, Avanti, Peyton Greenside, and Anshul Kundaje. 2017. “Learning Important Features Through Propagating Activation Differences.” <em>CoRR</em> abs/1704.02685. <a href="http://arxiv.org/abs/1704.02685">http://arxiv.org/abs/1704.02685</a>.</p>
+</div>
+<div id="ref-imeJLMR">
+<p>Strumbelj, Erik, and Igor Kononenko. 2010. “An Efficient Explanation of Individual Classifications Using Game Theory.” <em>Journal of Machine Learning Research</em> 11 (March). JMLR.org: 1–18. <a href="http://dl.acm.org/citation.cfm?id=1756006.1756007">http://dl.acm.org/citation.cfm?id=1756006.1756007</a>.</p>
+</div>
+<div id="ref-Strumbelj2014">
+<p>Štrumbelj, Erik, and Igor Kononenko. 2014. “Explaining Prediction Models and Individual Predictions with Feature Contributions.” <em>Knowledge and Information Systems</em> 41 (3): 647–65. <a href="https://doi.org/10.1007/s10115-013-0679-x">https://doi.org/10.1007/s10115-013-0679-x</a>.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="iBreakDown.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="LIME.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"download": ["PM_VEE.pdf", "PM_VEE.epub"],
+"toc": {
+"collapse": "section"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
