@@ -19,12 +19,17 @@ lm_model <- lm(life_length ~ ., data = dragons)
 svm_model <- svm(life_length ~ ., data = dragons)
 
 predict_function <- function(m,x,...) predict(m, x, ...)$predictions
-rf_au <- audit(rf_model, data = dragons, y = dragons$life_length,
-           predict.function = predict_function)
-lm_au <- audit(lm_model, data = dragons, y = dragons$life_length)
-svm_au <- audit(svm_model, data = dragons, y = dragons$life_length)
 
-plotResidualBoxplot(rf_au, lm_au, svm_au)
-plotRROC(rf_au, lm_au, svm_au)
+rf_explainer <- explain(rf_model, data = dragons, y = dragons$life_length,
+           predict.function = predict_function)
+lm_explainer <- explain(lm_model, data = dragons, y = dragons$life_length)
+svm_explainer <- explain(svm_model, data = dragons, y = dragons$life_length)
+
+rf_mr <- model_residual(rf_explainer)
+lm_mr <- model_residual(lm_explainer)
+sv_mr <- model_residual(svm_explainer)
+
+plot_residual_boxplot(rf_mr, lm_mr, sv_mr)
+plot_rroc(rf_mr, lm_mr, sv_mr)
 ```
 
