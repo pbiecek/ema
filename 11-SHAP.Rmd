@@ -15,7 +15,7 @@ knitr::include_graphics("figure/shap_10_replicates.png")
 ```
 
 To remove the influence of the ordring of the variables, we can compute an average value of the contributions. 
-Figure \@ref(fig:shapOrdering) presents the average contributions, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive averages. Violet box-plots summarize the distribution of the contributions for each explanatory variable. [TOMASZ: WHAT IS THE CHOICE FOR ORDERING THE ROWS? DOES NOT SEEM TO BE THE AVERAGE.]The plot indicates that the most important variables, from the point of view of the prediction for `johny_d`, are `age` and `gender`.
+Figure \@ref(fig:shapOrdering) presents the average contributions, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive averages. Violet box-plots summarize the distribution of the contributions for each explanatory variable. The plot indicates that the most important variables, from the point of view of the prediction for `johny_d`, are `age` and `gender`.
 
 ```{r shapOrdering, echo=FALSE, fig.cap="(fig:shapOrdering) Average contributions for ten random orderings. Red and green bars present the averages. Box-plots summarize the distribution of contributions for each explanatory variable across the orderings.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/shap_ordering.png")
@@ -45,6 +45,7 @@ johny_d <- data.frame(
 )
 
 library(patchwork)
+library(ggplot2)
 set.seed(13)
 
 rsample <- lapply(1:10, function(i){
@@ -69,7 +70,7 @@ rsample[[10]] + plot_layout(ncol = 2)
 
 plot(break_down(explain_titanic_rf, johny_d, order = 1:7))
 
-res <- iBreakDown::local_attributions_uncertainty(explain_titanic_rf, johny_d)
+res <- iBreakDown::break_down_uncertainty(explain_titanic_rf, johny_d)
 plot(res)
 
 library(ggplot2)
@@ -182,7 +183,7 @@ Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model
 
 Box-plots in Figure \@ref(fig:shappJohny02) present the distribution of the contributions $\Delta^{j|\pi(J,j)}(x_*)$ for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive SHAP values across the orderings. It is clear that the young age of Johny D results in a positive contribution for all orderings. The SHAP value is equal to $0.2525$. On the other hand, the effect of gender is in all cases negative, with the SHAP value equal to $-0.0908$.
 
-The picture for `fare` and `class` is more complex, as their contributions can even change the sign, depending on the ordering. While Figure \@ref(fig:shappJohny02) presents the SHAP values separately for each of the variables, it is worth noting that, by using the iBD plot in Section \@ref(iBDExample) the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. [TOMASZ: SO? WHAT TO DO IN THIS CASE? FORGET ABOUT THE AVERAGES?]
+The picture for `fare` and `class` is more complex, as their contributions can even change the sign, depending on the ordering. While Figure \@ref(fig:shappJohny02) presents the SHAP values separately for each of the variables, it is worth noting that, by using the iBD plot in Section \@ref(iBDExample) the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. 
 
 ```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:shappJohny02) Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values. ", out.width = '80%', fig.align='center'}
 plot(shap_johny) + ggtitle("Average attributions for Johny D")
@@ -195,7 +196,7 @@ plot(shap_johny, show_boxplots = FALSE) + ggtitle("Average attributions for John
 ```
 
 Table \@ref(tab:shapOrderingTable) presents the SHAP values underlying the plot in Figure \@ref(fig:shappJohny01). 
-Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. [TOMASZ: JOHNY_d FROM BELFAST IN CHAP. 4?]
+Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings.
 
 |Variable      |   SHAP value|
 |:-------------|------------:|
