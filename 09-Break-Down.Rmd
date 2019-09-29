@@ -9,7 +9,7 @@ Note that the method is similar to the `EXPLAIN` algorithm introduced in  [@expl
 ## Intuition {#BDIntuition}
 The underlying idea is to calculate contribution of an explanatory variable to model's prediction as a shift in the expected model response after conditioning on other variables. 
 
-The idea is illustrated in Figure \@ref(fig:BDPrice4). Consider the prediction for `johny_d` for the random-forest model (see Section \@ref(model-titanic-rf)) for the Titanic data. [TOMASZ: ISSUE - JOHNY_D EMABRKED IN BELFAST, NOT IN SOUTHAMPTON.] Panel A shows distribution of model predictions. The row `all data` shows the distribution of the predictions for the entire dataset. The red dot indicates the average and it is an estimate of the expected model prediction $E_X[f(X)]$ over the distribution of all explanatory variables.
+The idea is illustrated in Figure \@ref(fig:BDPrice4). Consider the prediction for `johny_d` for the random-forest model (see Section \@ref(model-titanic-rf)) for the Titanic data. Panel A shows distribution of model predictions. The row `all data` shows the distribution of the predictions for the entire dataset. The red dot indicates the average and it is an estimate of the expected model prediction $E_X[f(X)]$ over the distribution of all explanatory variables.
 
 To evaluate the contribution of the explanatory variables to the particular instance prediction, we consider the predictions when fixing the values of the variables. For instance, the row `class=1st` in Panel A of Figure \@ref(fig:BDPrice4) presents the distribution of the predictions obtained when the value of the `class` variable has been fixed to the `1st` class. Again, the red dot indicates the average of the predictions. The next row (`age=8`) shows the distribution and the average predictions with the value of variable `class` set to `1st` and `age` set to `8`, and so on. The last row corresponds to the prediction for `model response for `johny_d`.
 
@@ -18,7 +18,10 @@ The black lines in Panel A show how the inidividual predictions change after the
 Eventually, however, we may be interested in the average predictions, as indicated in Panel B of Figure \@ref(fig:BDPrice4), or even only in the changes of the averages, as shown in Panel C. In Panel C, positive changes are presented with green bars, while negative differences are marked with red bar. The changes sum up to the final  prediction, which is illustrated by the violet bar at the bottom of Panel C.
 
 What can be learned from Break-down plots? In this case we have concise summary of effects of particular variables on expected model response. 
-[TOMASZ: I LACK SOME SUBSTANTIVE COMMENTS ABOUT THE CONTENTS/INTERPRETATION OF THE PLOTS.]
+First, we see that average model response is 23.5 percent. These are odds of survival averaged over all people on Titanic. Note that it is not the fraction of people that survived, but the average model response, so for different models one can get different averages.
+The model prediction for Johny D is 42.2 percent. It is much higher than an average prediction. Two variables that influence this prediction the most are class (=1st) and age (=8). Setting these two variables increase average model prediction by 33.5 percent points. Values in all other variables have rather negative effect. Low fare and being a male diminish odds of survival predicted by the model. Other variables do not change model predictions that much.
+Note that value of variable attribution depends on the value not only a variable itself. In this example the `embarked = Southampton` has small effect on average model prediction. It may be because the variable `embarked` is not important or it is possible that variable `embarked` is important but `Southampton` has an average effect out of all other possible values of the `embarked` variable.
+
 
 ```{r BDPrice4, echo=FALSE, fig.cap="(fig:BDPrice4) Break-down plots show how the contribution of individual explanatory variables change the average model prediction to the prediction for a single instance (observation). Panel A) The first row shows the distribution and the average (red dot) of model predictions for all data. The next rows show the dirstribution and the average of the predictions when fixing values of subseqeunt explanatory variables. The last row shows the prediction for a particular instance of interest. B) Red dots indicate the average predictions from Panel B. C) The green and red bars indicate, resspectively, positive and negative changes in the average predictions (variable contributions). ", out.width = '80%', fig.align='center'}
 knitr::include_graphics("figure/break_down_distr.png")
@@ -108,11 +111,23 @@ It follows that
 $$
 v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}(x_*).
 $$
-Unfortunately, for non-additive models (that include interactions), the value of so-defined variable-importance measure depends on the order, in which one sets the values of the explanatory variables. Figure \@ref(fig:ordering) presents an example. [TOMASZ: LOOKS LIKE A MODEL FOR THE HR DATA. WHICH ONE?]. For the first ordering, the contribution of variable `age` is equal to  0.01, while for the second ordering  the contribution is equal to 0.13. This is due to the lack of additivity of the model. [TOMASZ: WHICH MODEL? IT HASE NEVER BEEN MENTIONED.] 
- 
-```{r ordering, echo=FALSE, fig.cap="(fig:ordering) An illustration of the dependence of the variable-contribution values Black dots stand for conditional average, red arrows stands for changes between conditional averages.", out.width = '100%', fig.align='center'}
+Unfortunately, for non-additive models (that include interactions), the value of so-defined variable-importance measure depends on the order, in which one sets the values of the explanatory variables. Figure \@ref(fig:ordering) presents an example.
+We fit the random forest model to predict whether a passenger survived or not, then, we explain the model's prediction for a 2-year old boy that travels in the second class. The model predicts survival with a probability of $0.964$. We would like to explain this probability and understand which factors drive this prediction. Consider two explanations.
+
+**Explanation 1:**
+The passenger is a boy, and this feature alone decreases the chances of survival. He traveled in the second class which also lower survival probability.
+Yet, he is very young, which makes odds higher. The reasoning behind such an explanation on this level is that most passengers in the second class are adults, therefore a kid from the second class has high chances of survival.
+
+**Explanation 2:**
+The passenger is a boy, and this feature alone decreases survival probability.
+However, he is very young, therefore odds are higher than adult men. Explanation in the last step says that he traveled in the second class, which make odds of survival even more higher. The interpretation of this explanation is that most kids are from the third class and being a child in the second class should increase chances of survival.
+
+Note that the effect of *the second class* is negative in explanations for scenario 1 but positive in explanations for scenario 2.
+
+```{r ordering, echo=FALSE, fig.cap="(fig:ordering) An illustration of the order-dependence of the variable-contribution values. Two *Break-down* explanations for the same observation from Titanic data set. The underlying model is a random forest. Scenarios differ due to the order of variables in *Break-down* algorithm. Blue bar indicates the difference between the model's prediction for a particular observation and an average model prediction. Other bars show contributions of variables. Red color means a negative effect on the survival probability, while green color means a positive effect. Order of variables on the y-axis corresponds to their sequence used in *Break-down*~algorithm.", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/ordering.png")
 ```
+
 
 There are three approaches that can be used to address the issue of the dependence of $v(j, x_*)$ on the order, in which one sets the values of the explanatory variables.
 
@@ -138,9 +153,9 @@ The time complexity of theeach of the two steps of the procedure is $O(p)$, wher
 
 ## Example: Titanic data {#BDExample} 
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. [TOMASZ; JOHNY_D FROM BELFAST IN SECTION \@ref(predictions-titanic).]
+Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
 
-The average of model predictions for all passengers is equal to $v_0 = 0.2356585$. Table \@ref(tab:titanicBreakDownDeltas) presents the scores $|\Delta^{j|\emptyset}|$ and the expected values $E[f(X | X^j = x^j_*)]$. Note that $\Delta^{j|\emptyset}=E[f(X) | X^j = x^j_*]-v_0$ and, since for all variables $E[f(X) | X^j = x^j_*]>v_0$, we have got $E[f(X | X^j = x^j_*)]=|\Delta^{j|\emptyset}|+v_0$. 
+The average of model predictions for all passengers is equal to $v_0 = 0.2353095$. Table \@ref(tab:titanicBreakDownDeltas) presents the scores $|\Delta^{j|\emptyset}|$ and the expected values $E[f(X | X^j = x^j_*)]$. Note that $\Delta^{j|\emptyset}=E[f(X) | X^j = x^j_*]-v_0$ and, since for all variables $E[f(X) | X^j = x^j_*]>v_0$, we have got $E[f(X | X^j = x^j_*)]=|\Delta^{j|\emptyset}|+v_0$. 
 
 Table: (\#tab:titanicBreakDownDeltas) Expected values $E[f(X) | X^j = x^j_*]$ and scores $|\Delta^{j|\emptyset}|$ for the random-forest model `titanic_rf_v6` for the Titanic data and `johny_d`. The scores are sorted in the decreasing order.
 
@@ -173,7 +188,7 @@ as.data.frame(tmp)[,c(1,5,2)] %>% knitr::kable()
 
 Based on the ordering defined by the scores $|\Delta^{j|\emptyset}|$ from Table \@ref(tab:titanicBreakDownDeltas), we can compute the variable-importance measures based on the sequential contributions $\Delta^{j|J}$. The computed values are presented in Table \@ref(tab:titanicBreakDownDeltasConseq).
 
-Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}$ for the random-forest model `titanic_rf_v6` for the Titanic data and `johny_d` computed by using the ordering of variables defined in Table \@ref(tab:titanicBreakDownDeltas). [TOMASZ: I THOUGHT THAT $v_0 = 0.2356585$. WHY INTERCEPT=0.2353095?]
+Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}$ for the random-forest model `titanic_rf_v6` for the Titanic data and `johny_d` computed by using the ordering of variables defined in Table \@ref(tab:titanicBreakDownDeltas).
 
 
 |variable $j$           |  $E[f(X) | X^{\{1,\ldots,j\}} = x^{\{1,\ldots,j\}}_*)]$ |  $\Delta^{j|\{1,\ldots,j\}}$ |
@@ -191,7 +206,7 @@ Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta
 
 Results from Table \@ref(tab:titanicBreakDownDeltasConseq) are presented as a waterfall plot in Figure \@ref(fig:BDjohnyExample).
 
-```{r BDjohnyExample, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="(fig:BDjohnyExample) Break-down plot for the `titanic_rf_v6` model and `johny_d` for the Titanic data.", out.width = '99%', fig.align='center'}
+```{r BDjohnyExample, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="(fig:BDjohnyExample) Break-down plot for the `titanic_rf_v6` model and `johny_d` for the Titanic data.", out.width = '70%', fig.align='center'}
 library("iBreakDown")
 library("randomForest")
 library("DALEX")
@@ -206,9 +221,9 @@ plot(bd_rf) + ggtitle("Break-down plot for `titanic_rf_v6`")
 
 ## Pros and cons {#BDProsCons}
 
-BD plots offer a model-agnostic approach that can be applied to any predictive model that returns a single number. The approach offers several advantages. The plots are easy to understand. They are compact; results for many variables may be presented in a small space. The approach reduces to an intuitive interpretation for the generalized-linear models. Numerical complexity of the BD algorithm is linear in the number of explanatory variables.
+Break-down plots offer a model-agnostic approach that can be applied to any predictive model that returns a single number. The approach offers several advantages. The plots are easy to understand. They are compact; results for many variables may be presented in a small space. The approach reduces to an intuitive interpretation for the generalized-linear models. Numerical complexity of the Break-down algorithm is linear in the number of explanatory variables.
 
-BD plots for non-additive models may be misleading, as they show only the additive contributions. An important issue is the choice of the ordering of the explanatory variables that is used in the calculation of the variable-importance measures. Also, for models with a large number of variables, the BD plot may be complex and include many variables with small contributions to the instance prediction.
+Break-down plots for non-additive models may be misleading, as they show only the additive contributions. An important issue is the choice of the ordering of the explanatory variables that is used in the calculation of the variable-importance measures. Also, for models with a large number of variables, the Break-down plot may be complex and include many variables with small contributions to the instance prediction.
 
 ## Code snippets for R {#BDR}
 
