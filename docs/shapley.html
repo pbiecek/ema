@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2019-09-29" />
+<meta name="date" content="2019-10-02" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -363,7 +363,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h1><span class="header-section-number">Chapter 11</span> Shapley Additive Explanations (SHAP) and Average Variable Attributions</h1>
 <p>In Chapter <a href="breakDown.html#breakDown">9</a>, we introduced Break-down (BD) plots, a method of assessment of local variable-importance based on the contribution of an explanatory variable to model’s prediction. We also indicated that, in the presence of interactions, the computed value of the contribution depends on the order of explanatory covariates that is used in calculations. One solution to the problem is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter <a href="iBreakDown.html#iBreakDown">10</a>, is to identify interactions and explicitly present their contributions to the predictions.</p>
 <p>In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable’s contribution over all, or a large number of, possible orderings. The idea is closely linked to ‘’Shapley values’’ <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>, developed originally for cooperative games.</p>
-<p>The approach was first introduced in <span class="citation">(Strumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span> and <span class="citation">(Štrumbelj and Kononenko <a href="#ref-Strumbelj2014">2014</a>)</span>. It was widely adopted after the publication of the 2017 paper <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span> and Python’s library SHAP <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>. The authors of SHAP (SHapley Additive exPlanations) introduced an efficient algorithm for tree-based models <span class="citation">(Lundberg, Erion, and Lee <a href="#ref-TreeSHAP">2018</a>)</span>. They also showed that SHAP values were an unification of a collection of different commonly used techniques for model explanations.</p>
+<p>The approach was first introduced in <span class="citation">(Štrumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span> and <span class="citation">(Štrumbelj and Kononenko <a href="#ref-Strumbelj2014">2014</a>)</span>. It was widely adopted after the publication of the 2017 paper <span class="citation">(Lundberg and Lee <a href="#ref-SHAP">2017</a>)</span> and Python’s library SHAP <span class="citation">(Lundberg <a href="#ref-shapPackage">2019</a>)</span>. The authors of SHAP (SHapley Additive exPlanations) introduced an efficient algorithm for tree-based models <span class="citation">(Lundberg, Erion, and Lee <a href="#ref-TreeSHAP">2018</a>)</span>. They also showed that SHAP values were an unification of a collection of different commonly used techniques for model explanations.</p>
 <div id="SHAPIntuition" class="section level2">
 <h2><span class="header-section-number">11.1</span> Intuition</h2>
 <p>Figure <a href="shapley.html#fig:shap10orderings">11.1</a> presents BD plots for ten random orderings (indicated by the order of the rows in each plot) of explanatory variables for the prediction for <code>johny_d</code> (see Section <a href="dataSetsIntro.html#predictions-titanic">4.1.5</a>) for the random-forest model (see Section <a href="dataSetsIntro.html#model-titanic-rf">4.1.3</a> for the Titanic dataset. The plots show clear differences in the contributions of various variables for different orderings. The most remarkable differences can be observed for variables <code>fare</code> and <code>class</code>, with contributions changing the sign depending on the ordering.</p>
@@ -387,7 +387,7 @@ Figure 11.2: (fig:shapOrdering) Average contributions for ten random orderings. 
 <p>SHapley Additive exPlanations (SHAP) are based on ‘’Shapley values,’’ a concept in cooperative game theory developed by Lloyd Shapley <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name SHAP values when referring to values calculated with the SHAP method.</p>
 <p>Consider the following problem. A coalition of players cooperates, and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question <span class="citation">(Shapley <a href="#ref-shapleybook1952">1953</a>)</span>.</p>
 <p>Now let’s translate this problem to the context of model predictions. Explanatory variables are the players, while model <span class="math inline">\(f()\)</span> plays the role of the coalition. The payoff from the coalition is the model prediction. The problem to solve is how to distribute the model prediction across particular variables?</p>
-<p>The idea of using Shapley values for evaluation of local variable-importance was introduced in <span class="citation">(Strumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span>. We define them here in the notation introduced in Section <a href="breakDown.html#BDMethod">9.2</a>.</p>
+<p>The idea of using Shapley values for evaluation of local variable-importance was introduced in <span class="citation">(Štrumbelj and Kononenko <a href="#ref-imeJLMR">2010</a>)</span>. We define them here in the notation introduced in Section <a href="breakDown.html#BDMethod">9.2</a>.</p>
 <p>Let us consider a permutation <span class="math inline">\(J\)</span> of the set of indices <span class="math inline">\(\{1,2,\ldots,p\}\)</span> corresponding to an ordering of <span class="math inline">\(p\)</span> explanatory variables included in model <span class="math inline">\(f()\)</span>. Denote by <span class="math inline">\(\pi(J,j)\)</span> the set of the indices of the variables that are positioned in <span class="math inline">\(J\)</span> before the <span class="math inline">\(j\)</span>-th variable. Note that, if the <span class="math inline">\(j\)</span>-th variable is placed as the first, then <span class="math inline">\(\pi(J,j) = \emptyset\)</span>. Consider the model prediction <span class="math inline">\(f(x_*)\)</span> for a particular instance of interest <span class="math inline">\(x_*\)</span>. The SHAP value is defined as follows:
 <span class="math display" id="eq:SHAP">\[\begin{equation}
 \varphi(x_*,j) = \frac{1}{p!} \sum_{J} \Delta^{j|\pi(J,j)}(x_*),  
@@ -441,11 +441,11 @@ f(x_*) - E_X[f(X)] = \sum_{j=1}^p   \varphi(x_*,j).
 ##   -&gt; model label       :  Random Forest v6 
 ##   -&gt; data              :  2207  rows  7  cols 
 ##   -&gt; target variable   :  2207  values 
-##   -&gt; predict function  :  yhat.randomForest  will be used ([33mdefault[39m)
+##   -&gt; predict function  :  yhat.randomForest  will be used (  default  )
 ##   -&gt; predicted values  :  numerical, min =  0 , mean =  0.2353095 , max =  1  
-##   -&gt; residual function :  difference between y and yhat ([33mdefault[39m)
+##   -&gt; residual function :  difference between y and yhat (  default  )
 ##   -&gt; residuals         :  numerical, min =  -0.892 , mean =  0.0868473 , max =  1  
-## [32mA new explainer has been created![39m</code></pre>
+##   A new explainer has been created!</code></pre>
 </div>
 <div id="SHAPExample" class="section level2">
 <h2><span class="header-section-number">11.3</span> Example: Titanic data</h2>
@@ -599,7 +599,7 @@ Table: (#tab:shapOrderingTable) SHAP values for the prediction for <code>johny_d
 <p>Shrikumar, Avanti, Peyton Greenside, and Anshul Kundaje. 2017. “Learning Important Features Through Propagating Activation Differences.” <em>CoRR</em> abs/1704.02685. <a href="http://arxiv.org/abs/1704.02685">http://arxiv.org/abs/1704.02685</a>.</p>
 </div>
 <div id="ref-imeJLMR">
-<p>Strumbelj, Erik, and Igor Kononenko. 2010. “An Efficient Explanation of Individual Classifications Using Game Theory.” <em>Journal of Machine Learning Research</em> 11 (March). JMLR.org: 1–18. <a href="http://dl.acm.org/citation.cfm?id=1756006.1756007">http://dl.acm.org/citation.cfm?id=1756006.1756007</a>.</p>
+<p>Štrumbelj, Erik, and Igor Kononenko. 2010. “An Efficient Explanation of Individual Classifications Using Game Theory.” <em>Journal of Machine Learning Research</em> 11 (March). JMLR.org: 1–18. <a href="http://dl.acm.org/citation.cfm?id=1756006.1756007">http://dl.acm.org/citation.cfm?id=1756006.1756007</a>.</p>
 </div>
 <div id="ref-Strumbelj2014">
 <p>Štrumbelj, Erik, and Igor Kononenko. 2014. “Explaining Prediction Models and Individual Predictions with Feature Contributions.” <em>Knowledge and Information Systems</em> 41 (3): 647–65. <a href="https://doi.org/10.1007/s10115-013-0679-x">https://doi.org/10.1007/s10115-013-0679-x</a>.</p>
