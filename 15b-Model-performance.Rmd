@@ -1,0 +1,143 @@
+# Model performance {#modelPerformance}
+
+## Introduction {#modelPerformanceIntro}
+
+In this chapter, we present methods that are useful for the evaluation of a model performance. The methods may be applied for several purposes.
+ 
+* Model assessment: we want to know how good is the model and how reliable are model predictions. How frequent and how large mispredictions we shall expect.
+* Model comparison: we want to compare two or more different models in order to choose a better one.
+* Out-of-sample and out-of-time comparisons: we want to monitor model performance on a new data to check if the model performance is stable.
+
+Depending of the model objective (classification, regression, survival) different model performance metrics are proposed and the list of metrics is growing. In this chapter we will focus on few most common measures. But the approach is more general and will work for most measures.
+
+
+## Intuition {#modelPerformanceIntuition}
+
+Most model performance measures are based on comparison of model predictions versus known values of a target variable. An ideal model will have predictions equal to true values of a target variable, but in practice it is never the case.
+
+Since in this book we consider only models that output a single numeric value, the prediction may be equal, lower of higher than the true value. In applications one can penalize model differently for large or small differences, or differently for under/over predictions. This is why we need different performance measures.
+In the best possible scenario we can specify a single model performance measure before the model is created and then we optimize model for this measure. But in practice the more common scenario is to have few performance measures that are often selected after the model is created.
+
+
+## Method {#modelPerformanceMethod}
+
+Here we assume that we have data split into a train and test sets. Model is created on the train set and the independent test set is used to assess model performance. For more sophisticated validation strategies (cross validation, repeated cross validation, two level cross validation) see ... (what would be a good reference).
+
+Let the test data $X^T$ have $n^T$ observations for a set of $p$ explanatory variables. Denote by  $\widetilde{y}=(f(x_1),\ldots,f(x_n))$ the vector of predictions for model $f()$ for all the observations. Let $y$ denote the vector of observed values of the dependent variable $Y$.
+
+### Regression
+
+The most popular model performance measure for regression problems is the mean square error defined as
+
+$$
+MSE(f, X^T) = \frac{1}{n^T} \sum_{i}^{n^T} (f(X^T_i) - y_i)^2.
+$$
+
+MSE is a convex differentiable function so it has good properties from the optimization perspective.
+Large differences between $f(X^T_i) - y_i$ have high impact of the MSE so it is sensitive to outliers.
+
+MSE is not on the same scale as the original target variable, so more interpretable variant of this measure is Root Mean Square Error (RMSE)
+
+$$
+RMSE(f, X^T) = \sqrt{MSE(f, X^T)}.
+$$
+
+RMSE has the same unit as the target variable. A popular variation of the RMSE is it's normalized version called $R^2$ defined as
+
+$$
+R^2(f, X^T) = 1 - \frac{MSE(f, X^T)}{MSE(baseline, X^T)}
+$$
+
+Here the $baseline$ model is some naive solution, like an average value of a target variable. $R^2$ is normalized in a sense that best possible model will have $R^2 = 1$ while $R^2 = 0$ means that we are not better than a baseline (still we can do worse).
+
+
+### Classification
+
+Classification problems are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let's assume that we are dealing with binary classification (two classes, let's call them 'has'/'has not') and we have some given threshold $t$. If model prediction for a class $C$ is higher than $t$ then we will say that model predicts $C$.
+
+After such discretisation the model results on a test data $X^T$ can be summarised by a following table:
+
+|                       | True value: 'has'                 | True value: 'has not'             | Total                      |
+|-----------------------|-----------------------------------|-----------------------------------|----------------------------|
+|  Predicted: 'has'     | True Positive: TP                 | False Positive: FP (type I error) | #predicted as 'has': P     |
+|  Predicted: 'has not' | False Negative FN (type II error) | True Negative TN                  | #predicted as 'has not': N |
+| Total                 | #truly 'has'                      | #truly 'has has not'              | $n^T$                      |
+
+
+Simplest measure of performance is an accuracy
+$$
+ACC = \frac{TP+TN}{n^T}
+$$
+but it is not working well if class are imbalanced.
+
+In machine learning popular measures are:
+$$
+Precision = \frac{TP}{TP + FP}
+$$
+which measure how frequent are true positive predictions among all predictions,
+$$
+Recall = \frac{TP}{TP + FN}
+$$
+which measure how frequent are true positive predictions among truly positive cases, and their harmonic mean F1 score
+$$
+F1 score = \frac{precision * recall}{precision + recall}.
+$$
+
+In statistics, especially in applications to medicine, popular measures are
+$$
+Sensitivity = \frac{TP}{TP + FN}
+$$
+which measure how frequent are true positive predictions among truly positive cases (it's recall in the ML world),
+$$
+Specificity = \frac{TN}{FP + TN}
+$$
+which measure how frequent are true negative predictions among truly negative cases.
+
+
+Of course all these measures depend on the choice of $t$. To get rid of this additional free parameter a common approach to summarise results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarise Sensitivity and 1-Specificity for all possible values of $t$ in a single plot.
+
+
+
+-- HERE PUT THE PLOT -
+
+
+ROC curve is very informative, but for model comparison it is better to have one of jsr few numbers that summarise model performance. So a very popular coefficient that summarises the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.
+
+ 
+
+
+
+
+## Example
+
+### Titanic data {#modelPerformanceTitanic}
+
+
+```
+rf_titanic <- archivist::aread("pbiecek/models/92754")
+
+library(auditor)
+score_auc(rf_titanic)
+```
+
+
+### Appartments data {#modelPerformanceTitanic}
+
+```
+rf_apartments <- archivist::aread("pbiecek/models/fe7a5")
+
+library(auditor)
+score_rmse(rf_apartments)
+```
+
+
+## Pros and cons {#featureImportanceProsCons}
+
+
+## Code snippets for R {#featureImportanceR}
+
+
+
+
+
+
