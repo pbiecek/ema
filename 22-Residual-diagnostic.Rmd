@@ -11,9 +11,7 @@ library("DALEX")
 library("ranger")
 
 rf_model <- ranger(life_length ~ ., data = dragons)
-predict_function <- function(m,x,...) predict(m, x, ...)$predictions
-rf_au <- audit(rf_model, data = dragons, y = dragons$life_length,
-           predict.function = predict_function)
+rf_au <- explain(rf_model, data = dragons, y = dragons$life_length)
 #check_residuals(rf_au)
 
 #plotResidualBoxplot(rf_au)
@@ -21,5 +19,25 @@ rf_au <- audit(rf_model, data = dragons, y = dragons$life_length,
 plotScaleLocation(rf_au)
 plotRROC(rf_au)
 plotAutocorrelation(rf_au)
+
+
+
+lm_mr <- model_residual(rf_au)
+plot(lm_mr, type = "prediction", abline = TRUE)
+
+plot(lm_mr,  variable = "height", type = "prediction", abline = TRUE)
+
+plot_residual(lm_mr, variable = "_y_hat_", nlabel = 10)
+
+plot(lm_mr, type = "residual_density")
+
+plot(lm_mr, type = "residual_boxplot")
+
+# alternatives:
+# plot_prediction(rf_mr, lm_mr, abline = TRUE)
+# plot_prediction(rf_mr, lm_mr, variable = "life_length")
+
+plot(rf_mr, lm_mr, variable = "scars", type = "prediction")
+
 ```
 
