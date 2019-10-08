@@ -27,150 +27,195 @@ In the best possible scenario we can specify a single model performance measure 
 
 Here we assume that we have data split into a train and test sets. Model is created on the train set and the independent test set is used to assess the model performance. For more sophisticated validation strategies (cross validation, repeated cross validation, two level cross validation) see [@AppliedPredictiveModeling2013].
 
-Let the test data $X^*$ have $n^*$ observations for a set of $p$ explanatory variables. Denote by  $\widetilde{y}=(f(x_1),\ldots,f(x_n))$ the vector of predictions for model $f()$ for all the observations. Let $y$ denote the vector of observed values of the dependent variable $Y$.
+In this chapter, let $X$ stands for the test data with $n$ observations and $p$ explanatory variables. Denote by  $\widetilde{y}=(f(x_1),\ldots,f(x_n))$ the vector of predictions for model $f()$ for all the observations. Let $y$ denote the vector of observed values of the dependent variable $Y$.
 
 ### Regression
 
 The most popular model performance measure for regression problems is the mean square error defined as
 
 $$
-MSE(f, X^*) = \frac{1}{n^*} \sum_{i}^{n^*} (f(X^*_i) - y_i)^2.
+MSE(f, X) = \frac{1}{n} \sum_{i}^{n} (f(X_i) - y_i)^2.
 $$
 
 MSE is a convex differentiable function so it has good properties from the optimization perspective.
-Large differences between $f(X^*_i) - y_i$ have high impact of the MSE so it is sensitive to outliers.
+Large differences between $f(X_i) - y_i$ have high impact of the MSE so it is sensitive to outliers.
 
 MSE is not on the same scale as the original target variable, so more interpretable variant of this measure is the Root Mean Square Error (RMSE)
 
 $$
-RMSE(f, X^*) = \sqrt{MSE(f, X^*)}.
+RMSE(f, X) = \sqrt{MSE(f, X)}.
 $$
 
 RMSE has the same unit as the target variable. A popular variation of the RMSE is it's normalized version called $R^2$ defined as
 
 $$
-R^2(f, X^*) = 1 - \frac{MSE(f, X^*)}{MSE(baseline, X^*)}.
+R^2(f, X) = 1 - \frac{MSE(f, X)}{MSE(baseline, X)}.
 $$
 
 Here the $baseline$ model is some naive solution, like an average value of a target variable. $R^2$ is normalized in a sense that best possible model will have $R^2 = 1$ while $R^2 = 0$ means that we are not better than a baseline (still we can do worse). Another interpretation of $R^2$ is that it's a ratio of variance explained by a model over total variance.
 
 
+Mean absolute error (MAE) is a model performance measure more robust with respect to outliers. MAE is defined as
+
+$$
+MAE(f, X) = \frac{1}{n} \sum_{i}^{n} |f(X_i) - y_i|.
+$$
+
+
 ### Classification
 
-Classification models are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let's assume that we are dealing with binary classification, i.e. two classes, let's call them `has` / `has not`. Model predictions are discretized with some given threshold $t$. If model prediction for a class $C$ is higher than $t$ then we will say that model predicts $C$.
+Classification models are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let's assume that we are dealing with binary classification, i.e. two classes, let's call them `has` / `has not`. Model predictions are discretized with some given threshold $cutoff$. If model prediction for a class $C$ is higher than $cutoff$ then we will say that model predicts $C$.
 
-After such discretisation the model results on a test data $X^*$ can be summarised by a following table:
+After such discretization the model results on a test data $X$ can be summarized by a following table:
 
 |                       | True value: `has`                 | True value: `has not`             | Total                      |
 |-----------------------|-----------------------------------|-----------------------------------|----------------------------|
 |  Predicted: `has`     | True Positive: TP                 | False Positive: FP (type I error) | #predicted as `has`: P     |
 |  Predicted: `has not` | False Negative FN (type II error) | True Negative TN                  | #predicted as `has not`: N |
-| Total                 | #truly `has`                      | #truly `has has not`              | $n^*$                      |
+| Total                 | #truly `has`                      | #truly `has has not`              | $n$                      |
 
 
-The simplest measure of performance is the model accuracy
+The simplest measure of performance is **the accuracy**
 $$
-ACC = \frac{TP+TN}{n^*}.
+ACC = \frac{TP+TN}{n}.
 $$
 The measure has clear interpretation, but it is not working well if classes are imbalanced.
 
-In machine learning there popular measures are:
+In machine learning there popular measures are **precision** and **recall**. Precision is defined as  
 $$
-Precision = \frac{TP}{TP + FP},
+Precision = \frac{TP}{TP + FP}.
 $$
-which measure how frequent are true positive predictions among all predictions,
+It measures how frequent are true positive predictions among all predictions. Recall is defined as
 $$
-Recall = \frac{TP}{TP + FN},
+Recall = \frac{TP}{TP + FN}.
 $$
-which measure how frequent are true positive predictions among truly positive cases, and their harmonic mean F1 score
+It measures how frequent are true positive predictions among truly positive cases. Harmonic mean of these two indexes is the F1 score defined as
 $$
 F1\  score = \frac{Precision * Recall}{Precision + Recall}.
 $$
 
-In statistics, especially in applications to medicine, popular measures are
+In statistics, especially in applications to medicine, popular measures are sensitivity and specificity. Sensitivity is another name for recall, defined as 
 $$
-Sensitivity = \frac{TP}{TP + FN},
+Sensitivity = \frac{TP}{TP + FN}.
 $$
-which measure how frequent are true positive predictions among truly positive cases (it's the Recall in the ML world),
+Specificity is defined as 
 $$
-Specificity = \frac{TN}{FP + TN},
+Specificity = \frac{TN}{FP + TN}.
 $$
-which measure how frequent are true negative predictions among truly negative cases.
+It measures how frequent are true negative predictions among truly negative cases.
 
 
-Of course all these measures depend on the choice of $t$. To get rid of this additional free parameter a common approach to summarise results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarise Sensitivity and 1-Specificity for all possible values of $t$ in a single plot.
+Of course all these measures depend on the choice of the $cutoff$. To get rid of this additional free parameter a common approach to summarize results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarize Sensitivity and 1-Specificity for all possible values of $cutoff$ in a single plot.
 
-
-```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicROC) Blue curve: ROC for random forest model and for the Titanic dataset. Black line: diagonal."}
-library("ingredients")
-library("auditor")
-library("randomForest")
-set.seed(1313)
-titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
-                           data = titanic_imputed)
-
-explain_titanic_rf_v6 <- explain(model = titanic_rf_v6, 
-                                 data = titanic[, -9],
-                                 y = titanic$survived == "yes", 
-                                 label = "Random Forest v6")
-
-eva_rf <- model_evaluation(explain_titanic_rf_v6)
-
-# plot results
-plot_roc(eva_rf) + coord_fixed() + geom_abline(slope = 1, intercept = 0)
+```{r exampleROC, fig.width=5, fig.height=5, echo=FALSE, fig.cap="(fig:exampleROC) Blue curve shows ROC for random forest model and for the Titanic dataset. Black line shows the diagonal. Area under ROC is called AUC. Gini index can be calculated as 2 x area between ROC and the diagonal (this area is highlighted).", out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/ROCcurve.png")
 ```
 
 
-ROC curve is very informative, but for model comparison it is better to have one of jsr few numbers that summarise model performance. So a very popular coefficient that summarises the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.
+ROC curve is very informative, but for model comparison it is better to have one of just a few numbers that summaries model performance. So a very popular coefficient that summarizes the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.
 
- 
+Note that for a dummy classifier that just predict classes at random, the corresponding ROC curve will have diagonal line. On the other hand for perfect classifier the ROC curve reduce to a two intervals that connect point (0,0), (0,1) and (1,1). AUC for a random dummy classifier will be equal to 0.5, while for the perfect classifier AUC will be equal 1.
+
+Yet another measure that is commonly used is the Gini coefficient. It is closely related to AUC, in fact it can be calculated a $G = 2*AUC - 1$. Therefore random dummy classifier has $G=0$ while perfect classifier has $G=1$.
 
 
 ## Example
 
 ### Titanic data {#modelPerformanceTitanic}
 
-Let us consider again the random-forest model `titanic_rf_v6` (see Section 4.1.3) for the Titanic data.
+Let us consider two models for the Titanic data,  the random-forest model `titanic_rf_v6` (see Section \@ref{model-titanic-rf}) and the logistic regression model `titanic_lmr_v6` (see Section \@ref{model-titanic-lmr}).
 
-Once the explainer is created we can now use `score_*` functions from the `auditor` package to calculate variouse scores. E.g. `score_auc` calculates AUC while `score_f1` calculates `F1` measure (you need to specify a threshold that will turn numeric predictions into a binary responses).
+Once the explainer is created we can now use `model_performance` function from the `auditor` package to calculate various model performance measures.
+
+First, let's compare Accuracy, F1 and AUC for these two models.
 
 ```
-library("ingredients")
+## Model label:  Logistic Regression v6 
+##         score name
+## auc 0.8196991  auc
+## f1  0.6589018   f1
+## acc 0.8046689  acc
+
+## Model label:  Random Forest v6 
+##         score name
+## auc 0.8566304  auc
+## f1  0.7289880   f1
+## acc 0.8494521  acc
+```
+
+For every measure the Random Forest model is doing better. It has higher AUC, Accuracy and F1 score.
+
+```{r message=FALSE, echo=FALSE}
 library("auditor")
 library("randomForest")
-set.seed(1313)
-titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
-                           data = titanic_imputed)
 
-explain_titanic_rf_v6 <- explain(model = titanic_rf_v6, 
-                                 data = titanic[, -9],
-                                 y = titanic$survived == "yes", 
-                                 label = "Random Forest v6")
+explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
+explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
 
-score_auc(explain_titanic_rf_v6)
-score_f1(explain_titanic_rf_v6, cutoff = 0.5)
-model_performance(explain_titanic_rf_v6, cutoff = 0.5)
+# model_performance(explainer_titanic_rf, score = c("auc", "f1", "acc"))
+# model_performance(explainer_titanic_lr, score = c("auc", "f1", "acc"))
+```
 
+Figure \@ref{fig:titanicROC} compares ROC curves for `titanic_rf_v6` and `titanic_lmr_v6`. Random Forest model dominates over Logistic Regression almost in every point, except for very high $cutoff$s.
 
+```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicROC) ROC curve for two models for Titanic dataset."}
 # plot results
-eva_rf <- model_evaluation(explain_titanic_rf_v6)
-plot_roc(eva_rf)
-plot_lift(eva_rf)
+eva_rf <- model_evaluation(explainer_titanic_rf)
+eva_lr <- model_evaluation(explainer_titanic_lr)
+plot_roc(eva_rf, eva_lr)
+```
 
+Figure \@ref{fig:titanicLift} compares LIFT curves for `titanic_rf_v6` and `titanic_lmr_v6`. Also in this case Random Forest model dominates over Logistic Regression.
+
+
+```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicLift) LIFT curve for two models for Titanic dataset."}
+plot_lift(eva_rf, eva_lr)
 ```
 
 
 ### Appartments data {#modelPerformanceApartments}
 
-Let us consider the random-forest model `apartments_rf_v6` (see Section 4.2.3) for the apartments data.
+In this section we will compare two models for the apartments data (see Section \@ref{ApartmentDataset}), the random-forest model `apartments_lm_v5` (see Section \@ref{model-Apartments-lr}) and the logistic regression model `apartments_rf_v5` (see Section \@ref{model-Apartments-rf}).
 
+For regression model also the `model_performance` function from the `auditor` package can be used. MSE and MAE are presented below. Also in this case the Random Forest model is better.
 
+```
+## Model label:  Linear Regression v5 
+##          score name
+## mse 78023.1235  mse
+## mae   260.0254  mae
+
+## Model label:  Random Forest v5 
+##          score name
+## mse 36669.1954  mse
+## mae   144.0888  mae
+```
+
+```{r message=FALSE, echo=FALSE, eval=FALSE}
+library("auditor")
+library("randomForest")
+
+explainer_apartments_lr <- archivist:: aread("pbiecek/models/b0734")
+explainer_apartments_rf <- archivist:: aread("pbiecek/models/b935a")
+
+model_performance(explainer_apartments_lr, score = c("mse", "mae"))
+## Model label:  Linear Regression v5 
+##          score name
+## mse 78023.1235  mse
+## mae   260.0254  mae
+
+model_performance(explainer_apartments_rf, score = c("mse", "mae"))
+## Model label:  Random Forest v5 
+##          score name
+## mse 36669.1954  mse
+## mae   144.0888  mae
+```
 
 
 ## Pros and cons {#modelPerformanceProsCons}
 
 
-In this chapter we described a number of measures for model performance. Below you will find brief pros vs cons discussion for each measure separately.
+In this chapter we described a number of measures for model performance. Below you will find brief pros versus cons discussion for each measure separately.
 
 Root Mean Square Error (RMSE) is frequently used and reported for regression models. A disadvantage is that single outliers may affect this measure a lot.
 
@@ -183,48 +228,46 @@ For classification the AUC is a very popular measure of model performance. But i
 
 On the other hand measures like Accuracy, F1, Precision and Recall are easy to interpret, but they depend on a single specific cutoff.
 
-Fr this reason it is common to report and comare few measures of model performance, each reflects different aspect of the model.
-
-
-
+For this reason it is common to report and compare few measures of model performance, each reflects different aspect of the model.
 
 
 ## Code snippets for R {#modelPerformanceR}
 
 
-In this section, we present the key features of the `auditor` R package [@auditor] which is a part of the DrWhy.AI universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/auditor/.
+In this section, we present the key features of the `auditor` R package [@auditor] which is a part of the [DrWhy.AI](http://DrWhy.AI) universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/auditor/.
 
 Note that there are also other R packages that offer similar functionality, like `mlr` [@mlr], `caret` [@caret], `tidymodels` [@tidymodels], `ROCR` [@ROCR].
 
+Below we will present functions for classification, but note that same function can be used for regression problems.
 
-```
-library(auditor)
-score_rmse(rf_apartments)
+First we load explainers for both models.
 
-apartments_lm_v5 <- lm(m2.price ~ ., data = apartments)
-apartments_lm_v5
+```{r modelPerformanceArchivistRead, message=FALSE, eval=FALSE}
+library("auditor")
 library("randomForest")
-set.seed(72)
-apartments_rf_v5 <- randomForest(m2.price ~ ., data = apartments)
-apartments_rf_v5
 
-explain_apartment_lm_v5 <- explain(model = apartments_lm_v5, 
-                                 data = apartments,
-                                 y = apartments$m2.price, 
-                                 label = "Linear model v5")
+explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
+explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
+```
 
-explain_apartment_rf_v5 <- explain(model = apartments_rf_v5, 
-                                 data = apartments,
-                                 y = apartments$m2.price, 
-                                 label = "Random Forest v5")
+Function `auditor::model_performance()` calculated selected metrics for model performance. Use the `score` argument to select desired metrics. Use `data` argument to specify test data (by default it will be extracted from an explainer). And use `cutoff` argument to specify cutoff for measures like F1 score of Accuracy.
 
+```{r modelPerformanceMeasure, message=FALSE}
+model_performance(explainer_titanic_rf, score = c("auc", "f1", "acc"))
+model_performance(explainer_titanic_lr, score = c("auc", "f1", "acc"))
+```
 
-score_rmse(explain_apartment_lm_v5)
-score_rmse(explain_apartment_rf_v5)
+For ROC or LIFT plots one needs to first use the `model_evaluation()` function and then either `plot_roc()` or `plot_lift()`.
+Both plot functions returns `ggplot2` objects and both can take one or more explanations as arguments. In the latter case profiles for each explanation will be superimposed in a plot. 
 
-# plot results
-eva_rf <- model_evaluation(explain_titanic_rf_v6)
-plot_roc(eva_rf)
+```{r titanicROCexamples, warning=FALSE, message=FALSE, fig.width=5, fig.height=5}
 
+eva_rf <- model_evaluation(explainer_titanic_rf)
+eva_rf
+eva_lr <- model_evaluation(explainer_titanic_lr)
+eva_lr
+
+plot_roc(eva_rf, eva_lr)
+plot_lift(eva_rf, eva_lr)
 ```
 
