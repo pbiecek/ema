@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-10-06}
+    \date{2019-10-07}
 
 \usepackage{booktabs}
 
@@ -4232,7 +4232,7 @@ We can think about the following situations as examples:
 \begin{itemize}
 \tightlist
 \item
-  We may want to learn which variables are ``important'' in the model. For instance, we may be interested in predicting the risk of heart attack. Explanatory variables are obtained based on results of some medical examinations. If some of the examinations do not influence model's predictions, we could simplify the model by removing the corresponding variables.
+  We may want to learn which variables are `'important'' in the model. For instance, we may be interested in predicting the risk of heart attack. Explanatory variables are obtained based on results of some medical examinations. If some of the examinations do not influence model's predictions, we could simplify the model by removing the corresponding variables.
 \item
   We may want to understand how a selected variable influences model's predictions? For instance, we may be interested in predicting prices of apratments. Apartment's location is an important factor, but we may want to know which locations lead to higher prices?
 \item
@@ -4244,11 +4244,11 @@ Model-level explainers focus on four main aspects of a model.
 \begin{itemize}
 \tightlist
 \item
-  Variable's importance: which explantory variables are ``important'', and which are not?
+  Variable's importance: which explantory variables are `'important'', and which are not?
 \item
   Variable's effect: how does a variable influence average model's predictions?
 \item
-  Model's performance: how \texttt{good\textquotesingle{}\textquotesingle{}\ is\ the\ model?\ Is\ one\ model}better'' than another?
+  Model's performance: how `'good'' is the model? Is one model `'better'' than another?
 \item
   Model's fit: which observations are misfitted by the model, where residual are the largest?
 \end{itemize}
@@ -4295,13 +4295,13 @@ In this book we focus on model-agnostic methods. These methods do not assume any
 \hypertarget{featureImportanceIntuition}{%
 \subsection{Intuition}\label{featureImportanceIntuition}}
 
-We focus on the method described in more detail in \citep{variableImportancePermutations}. The main idea is to measure how much the model fit decreases if the effect of a selected explanatory variable or of a group of variables is removed. The effect is removed by means of perturbations like resampling from an empirical distribution of just permutation of the values of the variable. {[}TOMASZ: CORRECT?{]}
+We focus on the method described in more detail in \citep{variableImportancePermutations}. The main idea is to measure how much the model fit decreases if the effect of a selected explanatory variable or of a group of variables is removed. The effect is removed by means of perturbations like resampling from an empirical distribution of just permutation of the values of the variable.
 
-The idea is in some sense borrowed from random forest: if a variable is important, then, after permutation, model's performance should become worse. The larger change in the performance, the more important is the variable.
+The idea is in some sense borrowed from variable important measure proposed by \ref@{randomForestBreiman} for random forest. If a variable is important, then, after permutation, model's performance should become worse. The larger drop in the performance, the more important is the variable.
 
-The method can be used to measure importance of a single explanatory variable or of a group of variables.
+The method can be used to measure importance of a single explanatory variable or of a group of variables. The latter is useful for aspects - groups of variables that are complementary. Consider for example a behavioral model in credit scoring in which some aggregate, let say number of loans, is calculated for different intervals. In one column there is an aggregate for 1 month, in the next one is for 6 months and in another in one year. If we are interested in a question, how important is the aspect `number of loans' then we can measure the drop in performance if all variables in a given aspect are perturbated.
 
-{[}TOMASZ: THIS SECTION IS TOO THIN.{]}
+Despite the simplicity of definition, the model agnostic feature importance is a very powerful tool for model exploration. Values of feature importance may be compared between different models. So one can compare how different models use correlated variables. Models like random forest are expected to spread importance across every variable while in regression models coefficients for one correlated feature may dominate over coefficients for other variables.
 
 \hypertarget{featureImportanceMethod}{%
 \subsection{Method}\label{featureImportanceMethod}}
@@ -4336,8 +4336,6 @@ The calculations in Step 5 ``normalize'' the value of the variable's importance 
 \subsection{Example: Titanic data}\label{featureImportanceTitanic}}
 
 In this section, we illustrate the use of the permutation-based variable-importance method by applying it to the random forest model for the Titanic data (see Section \ref{model-titanic-rf}).
-
-{[}TOMASZ: ALL THE R CODE FROM THE EXAMPLE SHOULD GO TO THE R-CODE SECTION{]}
 
 Consider the random forest model for the Titanic data (see Section \ref{model-titanic-rf}). Recall that the goal is to predict survival probability of passengers based on their sex, age, cityplace of embarkment, class in which they travelled, fare, and the number of persons they travelled with.
 
@@ -4633,6 +4631,181 @@ In the next chapter we will see how this is possible.
 
 What does the feature importance mean? How it is linked with a data distribution.
 
+\hypertarget{modelPerformance}{%
+\section{Model performance}\label{modelPerformance}}
+
+\hypertarget{modelPerformanceIntro}{%
+\subsection{Introduction}\label{modelPerformanceIntro}}
+
+In this chapter, we present methods that are useful for the evaluation of a model performance. The methods may be applied for several purposes.
+
+\begin{itemize}
+\tightlist
+\item
+  Model assessment: we want to know how good is the model and how reliable are model predictions. How frequent and how large mispredictions we shall expect.
+\item
+  Model comparison: we want to compare two or more different models in order to choose a better one.
+\item
+  Out-of-sample and out-of-time comparisons: we want to monitor model performance on a new data to check if the model performance is stable.
+\end{itemize}
+
+Depending of the model objective (classification, regression, survival) different model performance metrics are proposed and the list of metrics is growing. In this chapter we will focus on few most common measures. But the approach is more general and will work for most measures.
+
+\hypertarget{modelPerformanceIntuition}{%
+\subsection{Intuition}\label{modelPerformanceIntuition}}
+
+Most model performance measures are based on comparison of model predictions versus known values of a target variable. An ideal model will have predictions equal to true values of a target variable, but in practice it is never the case.
+
+Since in this book we consider only models that output a single numeric value, the prediction may be equal, lower of higher than the true value. In applications one can penalize model differently for large or small differences, or differently for under/over predictions. This is why we need different performance measures.
+In the best possible scenario we can specify a single model performance measure before the model is created and then we optimize model for this measure. But in practice the more common scenario is to have few performance measures that are often selected after the model is created.
+
+\hypertarget{modelPerformanceMethod}{%
+\subsection{Method}\label{modelPerformanceMethod}}
+
+Here we assume that we have data split into a train and test sets. Model is created on the train set and the independent test set is used to assess model performance. For more sophisticated validation strategies (cross validation, repeated cross validation, two level cross validation) see \ldots{} (what would be a good reference).
+
+Let the test data \(X^T\) have \(n^T\) observations for a set of \(p\) explanatory variables. Denote by \(\widetilde{y}=(f(x_1),\ldots,f(x_n))\) the vector of predictions for model \(f()\) for all the observations. Let \(y\) denote the vector of observed values of the dependent variable \(Y\).
+
+\hypertarget{regression}{%
+\subsubsection{Regression}\label{regression}}
+
+The most popular model performance measure for regression problems is the mean square error defined as
+
+\[
+MSE(f, X^T) = \frac{1}{n^T} \sum_{i}^{n^T} (f(X^T_i) - y_i)^2.
+\]
+
+MSE is a convex differentiable function so it has good properties from the optimization perspective.
+Large differences between \(f(X^T_i) - y_i\) have high impact of the MSE so it is sensitive to outliers.
+
+MSE is not on the same scale as the original target variable, so more interpretable variant of this measure is Root Mean Square Error (RMSE)
+
+\[
+RMSE(f, X^T) = \sqrt{MSE(f, X^T)}.
+\]
+
+RMSE has the same unit as the target variable. A popular variation of the RMSE is it's normalized version called \(R^2\) defined as
+
+\[
+R^2(f, X^T) = 1 - \frac{MSE(f, X^T)}{MSE(baseline, X^T)}
+\]
+
+Here the \(baseline\) model is some naive solution, like an average value of a target variable. \(R^2\) is normalized in a sense that best possible model will have \(R^2 = 1\) while \(R^2 = 0\) means that we are not better than a baseline (still we can do worse).
+
+\hypertarget{classification}{%
+\subsubsection{Classification}\label{classification}}
+
+Classification problems are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let's assume that we are dealing with binary classification (two classes, let's call them `has'/`has not') and we have some given threshold \(t\). If model prediction for a class \(C\) is higher than \(t\) then we will say that model predicts \(C\).
+
+After such discretisation the model results on a test data \(X^T\) can be summarised by a following table:
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule
+\begin{minipage}[b]{0.17\columnwidth}\raggedright
+\strut
+\end{minipage} & \begin{minipage}[b]{0.26\columnwidth}\raggedright
+True value: `has'\strut
+\end{minipage} & \begin{minipage}[b]{0.26\columnwidth}\raggedright
+True value: `has not'\strut
+\end{minipage} & \begin{minipage}[b]{0.20\columnwidth}\raggedright
+Total\strut
+\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.17\columnwidth}\raggedright
+Predicted: `has'\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+True Positive: TP\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+False Positive: FP (type I error)\strut
+\end{minipage} & \begin{minipage}[t]{0.20\columnwidth}\raggedright
+\#predicted as `has': P\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.17\columnwidth}\raggedright
+Predicted: `has not'\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+False Negative FN (type II error)\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+True Negative TN\strut
+\end{minipage} & \begin{minipage}[t]{0.20\columnwidth}\raggedright
+\#predicted as `has not': N\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.17\columnwidth}\raggedright
+Total\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+\#truly `has'\strut
+\end{minipage} & \begin{minipage}[t]{0.26\columnwidth}\raggedright
+\#truly `has has not'\strut
+\end{minipage} & \begin{minipage}[t]{0.20\columnwidth}\raggedright
+\(n^T\)\strut
+\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+Simplest measure of performance is an accuracy
+\[
+ACC = \frac{TP+TN}{n^T}
+\]
+but it is not working well if class are imbalanced.
+
+In machine learning popular measures are:
+\[
+Precision = \frac{TP}{TP + FP}
+\]
+which measure how frequent are true positive predictions among all predictions,
+\[
+Recall = \frac{TP}{TP + FN}
+\]
+which measure how frequent are true positive predictions among truly positive cases, and their harmonic mean F1 score
+\[
+F1 score = \frac{precision * recall}{precision + recall}.
+\]
+
+In statistics, especially in applications to medicine, popular measures are
+\[
+Sensitivity = \frac{TP}{TP + FN}
+\]
+which measure how frequent are true positive predictions among truly positive cases (it's recall in the ML world),
+\[
+Specificity = \frac{TN}{FP + TN}
+\]
+which measure how frequent are true negative predictions among truly negative cases.
+
+Of course all these measures depend on the choice of \(t\). To get rid of this additional free parameter a common approach to summarise results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarise Sensitivity and 1-Specificity for all possible values of \(t\) in a single plot.
+
+-- HERE PUT THE PLOT -
+
+ROC curve is very informative, but for model comparison it is better to have one of jsr few numbers that summarise model performance. So a very popular coefficient that summarises the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.
+
+\hypertarget{example}{%
+\subsection{Example}\label{example}}
+
+\hypertarget{modelPerformanceTitanic}{%
+\subsubsection{Titanic data}\label{modelPerformanceTitanic}}
+
+\begin{verbatim}
+rf_titanic <- archivist::aread("pbiecek/models/92754")
+
+library(auditor)
+score_auc(rf_titanic)
+\end{verbatim}
+
+\hypertarget{modelPerformanceApartments}{%
+\subsubsection{Appartments data}\label{modelPerformanceApartments}}
+
+\begin{verbatim}
+rf_apartments <- archivist::aread("pbiecek/models/fe7a5")
+
+library(auditor)
+score_rmse(rf_apartments)
+\end{verbatim}
+
+\hypertarget{modelPerformanceProsCons}{%
+\subsection{Pros and cons}\label{modelPerformanceProsCons}}
+
+\hypertarget{modelPerformanceR}{%
+\subsection{Code snippets for R}\label{modelPerformanceR}}
+
 \hypertarget{featureEffects}{%
 \section{Feature effects}\label{featureEffects}}
 
@@ -4886,8 +5059,8 @@ As it was said, if \(X_i\) and \(X_{-i}\) are related it may have no sense to av
 g^{M}_i(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
 \]
 
-\hypertarget{example}{%
-\subsection{Example}\label{example}}
+\hypertarget{example-1}{%
+\subsection{Example}\label{example-1}}
 
 See Figure \ref{fig:accumulatedCor} for illustration of difference between marginal and conditional distribution. Such profiles are called Conditional Dependency Profiles and are estimated as
 
@@ -5231,9 +5404,7 @@ Goal: verify if model is ok
 \KeywordTok{library}\NormalTok{(}\StringTok{"ranger"}\NormalTok{)}
 
 \NormalTok{rf_model <-}\StringTok{ }\KeywordTok{ranger}\NormalTok{(life_length }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{data =}\NormalTok{ dragons)}
-\NormalTok{predict_function <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(m,x,...) }\KeywordTok{predict}\NormalTok{(m, x, ...)}\OperatorTok{$}\NormalTok{predictions}
-\NormalTok{rf_au <-}\StringTok{ }\KeywordTok{audit}\NormalTok{(rf_model, }\DataTypeTok{data =}\NormalTok{ dragons, }\DataTypeTok{y =}\NormalTok{ dragons}\OperatorTok{$}\NormalTok{life_length,}
-           \DataTypeTok{predict.function =}\NormalTok{ predict_function)}
+\NormalTok{rf_au <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(rf_model, }\DataTypeTok{data =}\NormalTok{ dragons, }\DataTypeTok{y =}\NormalTok{ dragons}\OperatorTok{$}\NormalTok{life_length)}
 \CommentTok{#check_residuals(rf_au)}
 
 \CommentTok{#plotResidualBoxplot(rf_au)}
@@ -5241,6 +5412,25 @@ Goal: verify if model is ok
 \KeywordTok{plotScaleLocation}\NormalTok{(rf_au)}
 \KeywordTok{plotRROC}\NormalTok{(rf_au)}
 \KeywordTok{plotAutocorrelation}\NormalTok{(rf_au)}
+
+
+
+\NormalTok{lm_mr <-}\StringTok{ }\KeywordTok{model_residual}\NormalTok{(rf_au)}
+\KeywordTok{plot}\NormalTok{(lm_mr, }\DataTypeTok{type =} \StringTok{"prediction"}\NormalTok{, }\DataTypeTok{abline =} \OtherTok{TRUE}\NormalTok{)}
+
+\KeywordTok{plot}\NormalTok{(lm_mr,  }\DataTypeTok{variable =} \StringTok{"height"}\NormalTok{, }\DataTypeTok{type =} \StringTok{"prediction"}\NormalTok{, }\DataTypeTok{abline =} \OtherTok{TRUE}\NormalTok{)}
+
+\KeywordTok{plot_residual}\NormalTok{(lm_mr, }\DataTypeTok{variable =} \StringTok{"_y_hat_"}\NormalTok{, }\DataTypeTok{nlabel =} \DecValTok{10}\NormalTok{)}
+
+\KeywordTok{plot}\NormalTok{(lm_mr, }\DataTypeTok{type =} \StringTok{"residual_density"}\NormalTok{)}
+
+\KeywordTok{plot}\NormalTok{(lm_mr, }\DataTypeTok{type =} \StringTok{"residual_boxplot"}\NormalTok{)}
+
+\CommentTok{# alternatives:}
+\CommentTok{# plot_prediction(rf_mr, lm_mr, abline = TRUE)}
+\CommentTok{# plot_prediction(rf_mr, lm_mr, variable = "life_length")}
+
+\KeywordTok{plot}\NormalTok{(rf_mr, lm_mr, }\DataTypeTok{variable =} \StringTok{"scars"}\NormalTok{, }\DataTypeTok{type =} \StringTok{"prediction"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
