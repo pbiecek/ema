@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2019-10-08" />
+<meta name="date" content="2019-10-09" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -184,7 +184,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="4.2.2" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-lr"><i class="fa fa-check"></i><b>4.2.2</b> Linear regression</a></li>
 <li class="chapter" data-level="4.2.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#model-Apartments-rf"><i class="fa fa-check"></i><b>4.2.3</b> Random forest</a></li>
 <li class="chapter" data-level="4.2.4" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#predictionsApartments"><i class="fa fa-check"></i><b>4.2.4</b> Model predictions</a></li>
-<li class="chapter" data-level="4.2.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsApartments"><i class="fa fa-check"></i><b>4.2.5</b> List of objects for the <code>apartments</code> example</a></li>
+<li class="chapter" data-level="4.2.5" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ExplainersApartmentsRCode"><i class="fa fa-check"></i><b>4.2.5</b> Explainers</a></li>
+<li class="chapter" data-level="4.2.6" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#ListOfModelsApartments"><i class="fa fa-check"></i><b>4.2.6</b> List of objects for the <code>apartments</code> example</a></li>
 </ul></li>
 <li class="chapter" data-level="4.3" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#HFDataset"><i class="fa fa-check"></i><b>4.3</b> Hire or fire</a><ul>
 <li class="chapter" data-level="4.3.1" data-path="dataSetsIntro.html"><a href="dataSetsIntro.html#exploration-HR"><i class="fa fa-check"></i><b>4.3.1</b> Data exploration</a></li>
@@ -394,29 +395,33 @@ In the best possible scenario we can specify a single model performance measure 
 <div id="modelPerformanceMethod" class="section level2">
 <h2><span class="header-section-number">16.3</span> Method</h2>
 <p>Here we assume that we have data split into a train and test sets. Model is created on the train set and the independent test set is used to assess the model performance. For more sophisticated validation strategies (cross validation, repeated cross validation, two level cross validation) see <span class="citation">(Kuhn and Johnson <a href="#ref-AppliedPredictiveModeling2013">2013</a>)</span>.</p>
-<p>Let the test data <span class="math inline">\(X^*\)</span> have <span class="math inline">\(n^*\)</span> observations for a set of <span class="math inline">\(p\)</span> explanatory variables. Denote by <span class="math inline">\(\widetilde{y}=(f(x_1),\ldots,f(x_n))\)</span> the vector of predictions for model <span class="math inline">\(f()\)</span> for all the observations. Let <span class="math inline">\(y\)</span> denote the vector of observed values of the dependent variable <span class="math inline">\(Y\)</span>.</p>
+<p>In this chapter, let <span class="math inline">\(X\)</span> stands for the test data with <span class="math inline">\(n\)</span> observations and <span class="math inline">\(p\)</span> explanatory variables. Denote by <span class="math inline">\(\widetilde{y}=(f(x_1),\ldots,f(x_n))\)</span> the vector of predictions for model <span class="math inline">\(f()\)</span> for all the observations. Let <span class="math inline">\(y\)</span> denote the vector of observed values of the dependent variable <span class="math inline">\(Y\)</span>.</p>
 <div id="regression" class="section level3">
 <h3><span class="header-section-number">16.3.1</span> Regression</h3>
 <p>The most popular model performance measure for regression problems is the mean square error defined as</p>
 <p><span class="math display">\[
-MSE(f, X^*) = \frac{1}{n^*} \sum_{i}^{n^*} (f(X^*_i) - y_i)^2.
+MSE(f, X) = \frac{1}{n} \sum_{i}^{n} (f(X_i) - y_i)^2.
 \]</span></p>
 <p>MSE is a convex differentiable function so it has good properties from the optimization perspective.
-Large differences between <span class="math inline">\(f(X^*_i) - y_i\)</span> have high impact of the MSE so it is sensitive to outliers.</p>
+Large differences between <span class="math inline">\(f(X_i) - y_i\)</span> have high impact of the MSE so it is sensitive to outliers.</p>
 <p>MSE is not on the same scale as the original target variable, so more interpretable variant of this measure is the Root Mean Square Error (RMSE)</p>
 <p><span class="math display">\[
-RMSE(f, X^*) = \sqrt{MSE(f, X^*)}.
+RMSE(f, X) = \sqrt{MSE(f, X)}.
 \]</span></p>
 <p>RMSE has the same unit as the target variable. A popular variation of the RMSE is it’s normalized version called <span class="math inline">\(R^2\)</span> defined as</p>
 <p><span class="math display">\[
-R^2(f, X^*) = 1 - \frac{MSE(f, X^*)}{MSE(baseline, X^*)}.
+R^2(f, X) = 1 - \frac{MSE(f, X)}{MSE(baseline, X)}.
 \]</span></p>
 <p>Here the <span class="math inline">\(baseline\)</span> model is some naive solution, like an average value of a target variable. <span class="math inline">\(R^2\)</span> is normalized in a sense that best possible model will have <span class="math inline">\(R^2 = 1\)</span> while <span class="math inline">\(R^2 = 0\)</span> means that we are not better than a baseline (still we can do worse). Another interpretation of <span class="math inline">\(R^2\)</span> is that it’s a ratio of variance explained by a model over total variance.</p>
+<p>Mean absolute error (MAE) is a model performance measure more robust with respect to outliers. MAE is defined as</p>
+<p><span class="math display">\[
+MAE(f, X) = \frac{1}{n} \sum_{i}^{n} |f(X_i) - y_i|.
+\]</span></p>
 </div>
 <div id="classification" class="section level3">
 <h3><span class="header-section-number">16.3.2</span> Classification</h3>
-<p>Classification models are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let’s assume that we are dealing with binary classification, i.e. two classes, let’s call them <code>has</code> / <code>has not</code>. Model predictions are discretized with some given threshold <span class="math inline">\(t\)</span>. If model prediction for a class <span class="math inline">\(C\)</span> is higher than <span class="math inline">\(t\)</span> then we will say that model predicts <span class="math inline">\(C\)</span>.</p>
-<p>After such discretisation the model results on a test data <span class="math inline">\(X^*\)</span> can be summarised by a following table:</p>
+<p>Classification models are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let’s assume that we are dealing with binary classification, i.e. two classes, let’s call them <code>has</code> / <code>has not</code>. Model predictions are discretized with some given threshold <span class="math inline">\(cutoff\)</span>. If model prediction for a class <span class="math inline">\(C\)</span> is higher than <span class="math inline">\(cutoff\)</span> then we will say that model predicts <span class="math inline">\(C\)</span>.</p>
+<p>After such discretization the model results on a test data <span class="math inline">\(X\)</span> can be summarized by a following table:</p>
 <table style="width:100%;">
 <colgroup>
 <col width="19%" />
@@ -449,84 +454,170 @@ R^2(f, X^*) = 1 - \frac{MSE(f, X^*)}{MSE(baseline, X^*)}.
 <td>Total</td>
 <td>#truly <code>has</code></td>
 <td>#truly <code>has has not</code></td>
-<td><span class="math inline">\(n^*\)</span></td>
+<td><span class="math inline">\(n\)</span></td>
 </tr>
 </tbody>
 </table>
-<p>The simplest measure of performance is the model accuracy
+<p>The simplest measure of performance is <strong>the accuracy</strong>
 <span class="math display">\[
-ACC = \frac{TP+TN}{n^*}.
+ACC = \frac{TP+TN}{n}.
 \]</span>
 The measure has clear interpretation, but it is not working well if classes are imbalanced.</p>
-<p>In machine learning there popular measures are:
+<p>In machine learning there popular measures are <strong>precision</strong> and <strong>recall</strong>. Precision is defined as<br />
 <span class="math display">\[
-Precision = \frac{TP}{TP + FP},
+Precision = \frac{TP}{TP + FP}.
 \]</span>
-which measure how frequent are true positive predictions among all predictions,
+It measures how frequent are true positive predictions among all predictions. Recall is defined as
 <span class="math display">\[
-Recall = \frac{TP}{TP + FN},
+Recall = \frac{TP}{TP + FN}.
 \]</span>
-which measure how frequent are true positive predictions among truly positive cases, and their harmonic mean F1 score
+It measures how frequent are true positive predictions among truly positive cases. Harmonic mean of these two indexes is the F1 score defined as
 <span class="math display">\[
 F1\  score = \frac{Precision * Recall}{Precision + Recall}.
 \]</span></p>
-<p>In statistics, especially in applications to medicine, popular measures are
+<p>In statistics, especially in applications to medicine, popular measures are sensitivity and specificity. Sensitivity is another name for recall, defined as
 <span class="math display">\[
-Sensitivity = \frac{TP}{TP + FN},
+Sensitivity = \frac{TP}{TP + FN}.
 \]</span>
-which measure how frequent are true positive predictions among truly positive cases (it’s the Recall in the ML world),
+Specificity is defined as
 <span class="math display">\[
-Specificity = \frac{TN}{FP + TN},
+Specificity = \frac{TN}{FP + TN}.
 \]</span>
-which measure how frequent are true negative predictions among truly negative cases.</p>
-<p>Of course all these measures depend on the choice of <span class="math inline">\(t\)</span>. To get rid of this additional free parameter a common approach to summarise results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarise Sensitivity and 1-Specificity for all possible values of <span class="math inline">\(t\)</span> in a single plot.</p>
-<pre><code>## Preparation of a new explainer is initiated
-##   -&gt; model label       :  Random Forest v6 
-##   -&gt; data              :  2207  rows  10  cols 
-##   -&gt; target variable   :  2207  values 
-##   -&gt; predict function  :  yhat.randomForest  will be used ( [33m default [39m )
-##   -&gt; predicted values  :  numerical, min =  0 , mean =  0.2353095 , max =  1  
-##   -&gt; residual function :  difference between y and yhat ( [33m default [39m )
-##   -&gt; residuals         :  numerical, min =  -0.892 , mean =  0.0868473 , max =  1  
-##  [32m A new explainer has been created! [39m</code></pre>
-<div class="figure"><span id="fig:titanicROC"></span>
-<img src="PM_VEE_files/figure-html/titanicROC-1.png" alt="(fig:titanicROC) ROC for random forest model and for the Titanic dataset." width="480" />
+It measures how frequent are true negative predictions among truly negative cases.</p>
+<p>Of course all these measures depend on the choice of the <span class="math inline">\(cutoff\)</span>. To get rid of this additional free parameter a common approach to summarize results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarize Sensitivity and 1-Specificity for all possible values of <span class="math inline">\(cutoff\)</span> in a single plot.</p>
+<div class="figure" style="text-align: center"><span id="fig:exampleROC"></span>
+<img src="figure/ROCcurve.png" alt="(fig:exampleROC) Blue curve shows ROC for random forest model and for the Titanic dataset. Black line shows the diagonal. Area under ROC is called AUC. Gini index can be calculated as 2 x area between ROC and the diagonal (this area is highlighted)." width="80%" />
 <p class="caption">
-Figure 16.1: (fig:titanicROC) ROC for random forest model and for the Titanic dataset.
+Figure 16.1: (fig:exampleROC) Blue curve shows ROC for random forest model and for the Titanic dataset. Black line shows the diagonal. Area under ROC is called AUC. Gini index can be calculated as 2 x area between ROC and the diagonal (this area is highlighted).
 </p>
 </div>
-<p>ROC curve is very informative, but for model comparison it is better to have one of jsr few numbers that summarise model performance. So a very popular coefficient that summarises the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.</p>
+<p>ROC curve is very informative, but for model comparison it is better to have one of just a few numbers that summaries model performance. So a very popular coefficient that summarizes the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.</p>
+<p>Note that for a dummy classifier that just predict classes at random, the corresponding ROC curve will have diagonal line. On the other hand for perfect classifier the ROC curve reduce to a two intervals that connect point (0,0), (0,1) and (1,1). AUC for a random dummy classifier will be equal to 0.5, while for the perfect classifier AUC will be equal 1.</p>
+<p>Yet another measure that is commonly used is the Gini coefficient. It is closely related to AUC, in fact it can be calculated a <span class="math inline">\(G = 2*AUC - 1\)</span>. Therefore random dummy classifier has <span class="math inline">\(G=0\)</span> while perfect classifier has <span class="math inline">\(G=1\)</span>.</p>
 </div>
 </div>
 <div id="example" class="section level2">
 <h2><span class="header-section-number">16.4</span> Example</h2>
 <div id="modelPerformanceTitanic" class="section level3">
 <h3><span class="header-section-number">16.4.1</span> Titanic data</h3>
-<pre><code>rf_titanic &lt;- archivist::aread(&quot;pbiecek/models/92754&quot;)
+<p>Let us consider two models for the Titanic data, the random-forest model <code>titanic_rf_v6</code> (see Section @ref{model-titanic-rf}) and the logistic regression model <code>titanic_lmr_v6</code> (see Section @ref{model-titanic-lmr}).</p>
+<p>Once the explainer is created we can now use <code>model_performance</code> function from the <code>auditor</code> package to calculate various model performance measures.</p>
+<p>First, let’s compare Accuracy, F1 and AUC for these two models.</p>
+<pre><code>## Model label:  Logistic Regression v6 
+##         score name
+## auc 0.8196991  auc
+## f1  0.6589018   f1
+## acc 0.8046689  acc
 
-library(auditor)
-score_auc(rf_titanic)</code></pre>
+## Model label:  Random Forest v6 
+##         score name
+## auc 0.8566304  auc
+## f1  0.7289880   f1
+## acc 0.8494521  acc</code></pre>
+<p>For every measure the Random Forest model is doing better. It has higher AUC, Accuracy and F1 score.</p>
+<p>Figure @ref{fig:titanicROC} compares ROC curves for <code>titanic_rf_v6</code> and <code>titanic_lmr_v6</code>. Random Forest model dominates over Logistic Regression almost in every point, except for very high <span class="math inline">\(cutoff\)</span>s.</p>
+<div class="figure"><span id="fig:titanicROC"></span>
+<img src="PM_VEE_files/figure-html/titanicROC-1.png" alt="(fig:titanicROC) ROC curve for two models for Titanic dataset." width="480" />
+<p class="caption">
+Figure 16.2: (fig:titanicROC) ROC curve for two models for Titanic dataset.
+</p>
+</div>
+<p>Figure @ref{fig:titanicLift} compares LIFT curves for <code>titanic_rf_v6</code> and <code>titanic_lmr_v6</code>. Also in this case Random Forest model dominates over Logistic Regression.</p>
+<div class="figure"><span id="fig:titanicLift"></span>
+<img src="PM_VEE_files/figure-html/titanicLift-1.png" alt="(fig:titanicLift) LIFT curve for two models for Titanic dataset." width="480" />
+<p class="caption">
+Figure 16.3: (fig:titanicLift) LIFT curve for two models for Titanic dataset.
+</p>
+</div>
 </div>
 <div id="modelPerformanceApartments" class="section level3">
 <h3><span class="header-section-number">16.4.2</span> Appartments data</h3>
-<pre><code>rf_apartments &lt;- archivist::aread(&quot;pbiecek/models/fe7a5&quot;)
+<p>In this section we will compare two models for the apartments data (see Section @ref{ApartmentDataset}), the random-forest model <code>apartments_lm_v5</code> (see Section @ref{model-Apartments-lr}) and the logistic regression model <code>apartments_rf_v5</code> (see Section @ref{model-Apartments-rf}).</p>
+<p>For regression model also the <code>model_performance</code> function from the <code>auditor</code> package can be used. MSE and MAE are presented below. Also in this case the Random Forest model is better.</p>
+<pre><code>## Model label:  Linear Regression v5 
+##          score name
+## mse 78023.1235  mse
+## mae   260.0254  mae
 
-library(auditor)
-score_rmse(rf_apartments)</code></pre>
+## Model label:  Random Forest v5 
+##          score name
+## mse 36669.1954  mse
+## mae   144.0888  mae</code></pre>
 </div>
 </div>
 <div id="modelPerformanceProsCons" class="section level2">
 <h2><span class="header-section-number">16.5</span> Pros and cons</h2>
+<p>In this chapter we described a number of measures for model performance. Below you will find brief pros versus cons discussion for each measure separately.</p>
+<p>Root Mean Square Error (RMSE) is frequently used and reported for regression models. A disadvantage is that single outliers may affect this measure a lot.</p>
+<p>R-square <span class="math inline">\(R^2\)</span> measure is commonly used for linear models. It shares same disadvantages as the RMSE.</p>
+<p>Descriptive statistics like box-plot or histogram for residuals are informative. But they are hard to summarize with a single number therefore they are hard to compare between models.</p>
+<p>For classification the AUC is a very popular measure of model performance. But it is related with an unrealistic scenario that we consider all possible cutoffs while in applications in most cases we work with a single specified cutoff.</p>
+<p>On the other hand measures like Accuracy, F1, Precision and Recall are easy to interpret, but they depend on a single specific cutoff.</p>
+<p>For this reason it is common to report and compare few measures of model performance, each reflects different aspect of the model.</p>
 </div>
 <div id="modelPerformanceR" class="section level2">
 <h2><span class="header-section-number">16.6</span> Code snippets for R</h2>
+<p>In this section, we present the key features of the <code>auditor</code> R package <span class="citation">(<span class="citeproc-not-found" data-reference-id="auditor"><strong>???</strong></span>)</span> which is a part of the <a href="http://DrWhy.AI">DrWhy.AI</a> universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at <a href="https://modeloriented.github.io/auditor/" class="uri">https://modeloriented.github.io/auditor/</a>.</p>
+<p>Note that there are also other R packages that offer similar functionality, like <code>mlr</code> <span class="citation">(Bischl et al. <a href="#ref-mlr">2016</a>)</span>, <code>caret</code> <span class="citation">(Jed Wing et al. <a href="#ref-caret">2016</a>)</span>, <code>tidymodels</code> <span class="citation">(Max and Wickham <a href="#ref-tidymodels">2018</a>)</span>, <code>ROCR</code> <span class="citation">(Sing et al. <a href="#ref-ROCR">2005</a>)</span>.</p>
+<p>Below we will present functions for classification, but note that same function can be used for regression problems.</p>
+<p>First we load explainers for both models.</p>
+<div class="sourceCode" id="cb163"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb163-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
+<a class="sourceLine" id="cb163-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb163-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb163-4" data-line-number="4">explainer_titanic_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/51c50&quot;</span>)</a>
+<a class="sourceLine" id="cb163-5" data-line-number="5">explainer_titanic_lr &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/42d51&quot;</span>)</a></code></pre></div>
+<p>Function <code>auditor::model_performance()</code> calculated selected metrics for model performance. Use the <code>score</code> argument to select desired metrics. Use <code>data</code> argument to specify test data (by default it will be extracted from an explainer). And use <code>cutoff</code> argument to specify cutoff for measures like F1 score of Accuracy.</p>
+<div class="sourceCode" id="cb164"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb164-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_rf, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
+<pre><code>## Model label:  Logistic Regression v6 
+##         score name
+## auc 0.8196991  auc
+## f1  0.6589018   f1
+## acc 0.8046689  acc</code></pre>
+<div class="sourceCode" id="cb166"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb166-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_lr, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
+<pre><code>## Model label:  Random Forest v6 
+##         score name
+## auc 0.8566304  auc
+## f1  0.7289880   f1
+## acc 0.8494521  acc</code></pre>
+<p>For ROC or LIFT plots one needs to first use the <code>model_evaluation()</code> function and then either <code>plot_roc()</code> or <code>plot_lift()</code>.
+Both plot functions returns <code>ggplot2</code> objects and both can take one or more explanations as arguments. In the latter case profiles for each explanation will be superimposed in a plot.</p>
+<div class="sourceCode" id="cb168"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb168-1" data-line-number="1">eva_rf &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_rf)</a>
+<a class="sourceLine" id="cb168-2" data-line-number="2">eva_rf</a></code></pre></div>
+<pre><code>## Model label:  Logistic Regression v6 
+## 
+##  True Positive Rate for cutoff 0.5: 0.583 
+## 
+##  False Positive Rate for cutoff 0.5: 0.088</code></pre>
+<div class="sourceCode" id="cb170"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb170-1" data-line-number="1">eva_lr &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_lr)</a>
+<a class="sourceLine" id="cb170-2" data-line-number="2">eva_lr</a></code></pre></div>
+<pre><code>## Model label:  Random Forest v6 
+## 
+##  True Positive Rate for cutoff 0.5: 0.626 
+## 
+##  False Positive Rate for cutoff 0.5: 0.042</code></pre>
+<div class="sourceCode" id="cb172"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb172-1" data-line-number="1"><span class="kw">plot_roc</span>(eva_rf, eva_lr)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/titanicROCexamples-1.png" width="480" /></p>
+<div class="sourceCode" id="cb173"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb173-1" data-line-number="1"><span class="kw">plot_lift</span>(eva_rf, eva_lr)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/titanicROCexamples-2.png" width="480" /></p>
 
 </div>
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
+<div id="ref-mlr">
+<p>Bischl, Bernd, Michel Lang, Lars Kotthoff, Julia Schiffner, Jakob Richter, Erich Studerus, Giuseppe Casalicchio, and Zachary M. Jones. 2016. “mlr: Machine Learning in R.” <em>Journal of Machine Learning Research</em> 17 (170): 1–5. <a href="http://jmlr.org/papers/v17/15-066.html">http://jmlr.org/papers/v17/15-066.html</a>.</p>
+</div>
+<div id="ref-caret">
+<p>Jed Wing, Max Kuhn. Contributions from, Steve Weston, Andre Williams, Chris Keefer, Allan Engelhardt, Tony Cooper, Zachary Mayer, et al. 2016. <em>Caret: Classification and Regression Training</em>. <a href="https://CRAN.R-project.org/package=caret">https://CRAN.R-project.org/package=caret</a>.</p>
+</div>
 <div id="ref-AppliedPredictiveModeling2013">
 <p>Kuhn, Max, and Kjell Johnson. 2013. <em>Applied Predictive Modeling</em>. Springer. <a href="http://appliedpredictivemodeling.com/">http://appliedpredictivemodeling.com/</a>.</p>
+</div>
+<div id="ref-tidymodels">
+<p>Max, Kuhn, and Hadley Wickham. 2018. <em>Tidymodels: Easily Install and Load the ’Tidymodels’ Packages</em>. <a href="https://CRAN.R-project.org/package=tidymodels">https://CRAN.R-project.org/package=tidymodels</a>.</p>
+</div>
+<div id="ref-ROCR">
+<p>Sing, T., O. Sander, N. Beerenwinkel, and T. Lengauer. 2005. “ROCR: Visualizing Classifier Performance in R.” <em>Bioinformatics</em> 21 (20): 7881. <a href="http://rocr.bioinf.mpi-sb.mpg.de">http://rocr.bioinf.mpi-sb.mpg.de</a>.</p>
 </div>
 </div>
             </section>
