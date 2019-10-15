@@ -1,43 +1,115 @@
 # Residual Diagnostic {#residualDiagnostic}
 
-Goal: verify if model is ok
+## Introduction
+
+In this chapter, we present methods that are useful for the  detailed examination of model residuals. These methods may be used for several purposes.
+
+* Identification of hard cases; in the Section \@ref(modelPerformance) we discussed measures to globally summarize the model performance, but sometimes we are more interested in cases with the largest mispredictions;
+* Identification of structural problems in a model; for most models we assume that residuals are random. If we find any structure then maybe there is some problem with a model. 
+* Identification of cases for details local-level examination. In the first part of this book we discussed tools for examination of single predictions. For debugging purposes it make sense to first identify largest errors and then use local-methods to understand which factors contributes most to these errors.
+
+## Intuition
+
+As it was defined in Section \@ref(modelPerformance), the residual $r_i$ is the difference between model prediction and the true value of target variable
+
+$$
+r_i = y_i - f(x_i).
+$$
+
+For the perfect model we will expect that all residuals are equal to zero, but perfect models do not exists. 
+For good models we assume that residuals are small, random and symmetric. In fact residuals may violate these assumptions in many different ways. So we need tools for exploration of residuals.
 
 
-[@R-auditor]
+## Code snippets for R
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-library("auditor")
+In this section, we present the key features of the `auditor` R package [@auditor] which is a part of the [DrWhy.AI](http://DrWhy.AI) universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/auditor/ or in [@auditorarxiv].
+
+
+First we load explainers for two models created in Section \@ref(ExplainersApartmentsRCode) for the `apartments` data.
+
+```{r modelResidualsArchivistRead, message=FALSE}
 library("DALEX")
-library("ranger")
+library("auditor")
+library("randomForest")
 
-rf_model <- ranger(life_length ~ ., data = dragons)
-rf_au <- explain(rf_model, data = dragons, y = dragons$life_length)
-#check_residuals(rf_au)
-
-#plotResidualBoxplot(rf_au)
-#plotResidual(rf_au, variable = "Observed response")
-plotScaleLocation(rf_au)
-plotRROC(rf_au)
-plotAutocorrelation(rf_au)
-
-
-
-lm_mr <- model_residual(rf_au)
-plot(lm_mr, type = "prediction", abline = TRUE)
-
-plot(lm_mr,  variable = "height", type = "prediction", abline = TRUE)
-
-plot_residual(lm_mr, variable = "_y_hat_", nlabel = 10)
-
-plot(lm_mr, type = "residual_density")
-
-plot(lm_mr, type = "residual_boxplot")
-
-# alternatives:
-# plot_prediction(rf_mr, lm_mr, abline = TRUE)
-# plot_prediction(rf_mr, lm_mr, variable = "life_length")
-
-plot(rf_mr, lm_mr, variable = "scars", type = "prediction")
-
+explainer_apartments_lr <- archivist:: aread("pbiecek/models/f49ea")
+explainer_apartments_rf <- archivist:: aread("pbiecek/models/569b0")
 ```
+
+For residual diagnostic we need to calculate residuals for both explainers. This can be done with the `model_residual()` function. Now we are ready to explore residuals for both models for apartments dataset.
+
+```{r modelResiduals, message=FALSE}
+mr_lr <- model_residual(explainer_apartments_lr)
+mr_rf <- model_residual(explainer_apartments_rf)
+```
+
+Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) shows distribution of residuals for both models. As we know from the Section \@ref(modelPerformanceApartments) the RMSE for both model is very similar. But when we compare distributions of residuals we see that these models are very different. The linear regression model tends to have residuals around +- 400 while for random forest model the residuals are on average equal to 0 but have large variation.
+
+We know from previous chapters that the reason for the behavior of the linear model is that it does not capture the nonlinear relation between the price of apartment and the year of construction. 
+
+From these plots alone we see that random forest model has more frequently smaller residuals than the linear regression model. But for small fraction of observations residuals for random forest are very large and these extremes balance the RMSE.
+
+```{r plotResidualDensity1, fig.cap="(fig:plotResidualDensity1) Density plot for residuals for two models created for apartments dataset. RMSE for both models is very similar, but we see that residuals for linear regression are concentrated around +- 400. For the random forest model residuals are concentrated at 0 but have large variance.",  warning=FALSE, message=FALSE, fig.width=7, fig.height=4,  fig.align='center'}
+plot_residual_density(mr_rf, mr_lr)
+```
+
+```{r plotResidualBoxplot1, fig.cap="(fig:plotResidualBoxplot1) Boxplot for absolute values of residuals for two models created for apartments dataset. The cross shows the average value which corresponds to RMSE (similar for both models).",  warning=FALSE, message=FALSE, fig.width=7, fig.height=2.5,  fig.align='center'}
+plot_residual_boxplot(mr_rf, mr_lr)
+```
+
+
+Figures \@ref(fig:plotPrediction1) and \@ref(fig:plotPrediction2) show diagnostic plots that link model predictions with other variables. In the first case it's a relation between the true (X axis) and predicted (Y axis) values. For perfect model we would expect a strait line. Here the model is biased towards the average, so we see that for large values of target variables the predictions are shifted towards the average. Same for very low values of target variable.
+
+The second plot shows predictions as a function of the ordering of observations. If observations are randomly collected then we shall not see any relation.
+
+
+```{r plotPrediction1, fig.cap="(fig:plotPrediction1) Predicted versus true values for the random forest model for apartments data. Red line stands for the baseline. One can read that model predictions are biased towards the mean.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_prediction(mr_rf, abline = TRUE)
+```
+
+
+```{r plotPrediction2, fig.cap="(fig:plotPrediction2) Predicted values versus ordering of observations. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_prediction(mr_rf, variable = NULL, abline = TRUE)
+```
+
+
+Figures \@ref(fig:plotResidual1) and \@ref(fig:plotResidual2) and \@ref(fig:plotResidual3) are devoted to diagnostics that link residuals with other variables.
+
+Figure \@ref(fig:plotResidual1) shows that for the random forest model residuals are linked with true values of the target variable. We already know that the model is biased it just confirms that predictions are shifted towards the average. Same can be read from the Figure \@ref(fig:plotResidual3). 
+
+Figure \@ref(fig:plotResidual2) investigates the relation between residuals and ordering of observations. In this case there is no relation as shall be expected.
+
+
+```{r plotResidual1, fig.cap="(fig:plotResidual1) Residuals versus true values for the random forest model for apartments data. Random forest model is biased towards the mean so for low values of the target variable we see negative residuals while for large values we see large positive residuals.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf)
+```
+
+
+```{r plotResidual2, fig.cap="(fig:plotResidual2) Residuals versus order of observations. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf, variable = NULL)
+```
+
+
+```{r plotResidual3, fig.cap="(fig:plotResidual3) Residuals versus predicted values for the random forest model for apartments data. Random forest model is biased towards the mean so for low predictions we see negative residuals while for large predictions we see large positive residuals.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf, variable = "_y_hat_")
+```
+
+Figures presented so far were focused on shifts or biases in model predictions. 
+Figure \@ref(fig:plotScaleLocation1) helps to find problems in the variance of residuals. In many cases we expect that residuals will have constant variance. This can be verified on the scale-location plot. On the X axis there are model predictions while on the Y axis there are square roots from absolute values of residuals. 
+
+Smoothed average correspond to the standard deviation of residuals. Flat constant trend confirms homogeneity of the variance. In this example we see that variance of residuals is larger for extreme model predictions.
+
+
+```{r plotScaleLocation1, fig.cap="(fig:plotScaleLocation1) The scale-location plot for the random forest model for apartments data. On the X axis there are predicted values while on the Y axis there are square roots from absolute values of residuals. Any pattern in the data suggests that variance of residuals is related with predicted variables. It's the case here, since model is biased towards the average and variance of residuals is larger at extremes of the target variable.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_scalelocation(mr_rf, variable = "_y_hat_", smooth = TRUE)
+```
+
+Another way of checking if there are problems in model structure related to the ordering of observation is the autocorrelation plot. Example of the autocorrelation is presented in Figure \@ref(fig:plotAutocorrelation1). Here we do not see a strong autocorrelation.
+
+
+```{r plotAutocorrelation1, fig.cap="(fig:plotAutocorrelation1) The autocorrelation plot for the random forest model for apartments data. On the X axis there are residuals for observation i, while on the Y axis there are residuals for observation i+1. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5, fig.align='center'}
+plot_autocorrelation(mr_rf)
+```
+
+
 
