@@ -1,4 +1,41 @@
-# Summary of Explainers for Feature Effects {#summaryFeatureEffects}
+```{r load_models_intro_FE, warning=FALSE, message=FALSE, echo=FALSE}
+source("models/models_titanic.R")
+```
+
+# Feature effects {#featureEffects}
+
+In previouse chapters we introduced tools for extraction of the information between model response and individual model inputs. These tools are useful to summarize how ,,in general'' model responds to the input of interest. All presented approaches are based on Ceteris Ceteris Paribus Profiles introduced in Chapter \@ref{ceterisParibus} but they differ in a way how individual profiles are merged into a global model response.
+
+We use the term ,,feature effect'' to refer to global model response as a function of single or small number of model features. 
+Methods presented in this chapter are useful for extraction information of feature effect, i.e. how a feature is linked with model response. There are many possible applications of such methods, for example:
+
+* Feature effect may be used for feature engineering. The crude approach to modeling is to fit some elastic model on raw data and then use feature effects to understand the relation between a raw feature and model output and then to transform model input to better fit the model output. Such procedure is called surrogate training. In this procedure an elastic model is trained to learn about link between a feature and the target. Then a new feature is created in a way to better utilized the feature in a simpler model [@SAFE-arxiv]. In the next chapters we will show how feature effects can be used to transform a continuous variable in to a categorical one in order to improve the model behavior.
+* Feature effect may be used for model validation.  Understanding how a model utilizes a feature  may be used as a validation of a model against domain knowledge. For example if we expect monotonic relation or linear relation then such expectations can be verified. Also if we expect smooth relation between model and its inputs then the smoothness can be visually examined. In the next chapters we will show how feature effects can be used to warn a model developer that model is unstable and should be regularized.
+*  In new domains an understanding of a link between model output and the feature of interest may increase our domain knowledge. It may give quick insights related to the strength or character of the relation between a feature of interest and the model output. 
+* The comparison of feature effects between different models may help to understand how different models handle particular features. In the next chapters we will show how feature effects can be used learn limitations of particular classes of models.
+
+
+## Global level vs instance level explanations
+
+The plot below shows Ceteris Paribus Profiles for the random forest `rf_5` for 10 selected passengers. 
+Different profiles behave differently. In following chapter we discuss different approaches to aggregation of such profiles into model level feature effects.
+
+TODO PBI: more explanations
+
+```{r pdp_part_1A, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Ceteris Paribus profiles for 10 passangers and the random forest model"}
+library("ingredients")
+set.seed(1313)
+
+selected_passangers <- select_sample(titanic, n = 10)
+cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
+
+plot(cp_rf) +
+  show_observations(cp_rf, variables = "age") +
+  ggtitle("Predicted survival probability", "For a random forest model 'rf_5' / the 'titanic' dataset") +
+  scale_y_continuous(label=scales::percent, limits = c(0,1)) 
+```
+
+## Copmarison of Explainers for Feature Effects {#summaryFeatureEffects}
 
 In previous chapters we introduced different was to calculate model level explainers for feature effects. 
 A natural question is how these approaches are different and which one should we choose.
@@ -43,115 +80,3 @@ $$
 ```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
 knitr::include_graphics("figure/CP_ALL.png")
 ```
-
-
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE}
-library(randomForest)
-library(DALEX)
-library(dplyr)
-
-titanic_small <- titanic_imputed[,c("survived", "class", "gender", "age", "sibsp", "parch", "fare", "embarked")]
-rf_model <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
-                         data = titanic_small)
-predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
-rf_explain <- explain(rf_model, data = titanic_small, 
-                      y = titanic_small$survived == "yes", label = "RF",
-                      predict_function = predict_fuction,
-                              colorize = FALSE)
-
-
-#
-# TWORZYMY MODELE
-
-## random forest
-rf_model <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked,
-                         data = titanic_small)
-predict_rf_fuction <- function(m,x) predict(m, x, type="prob")[,2]
-explainer_rf <- explain(rf_model, data = titanic_small,
-                      y = titanic_small$survived == "yes", label = "RF",
-                      predict_function = predict_rf_fuction,
-                              colorize = FALSE)
-
-## GLM
-glm_model <- glm(survived ~ class + gender + age + sibsp + parch + fare + embarked,
-                         data = titanic_small, family = "binomial")
-explainer_glm <- explain(glm_model, data = titanic_small,
-                      y = titanic_small$survived == "yes", label = "GLM",
-                              colorize = FALSE)
-
-
-## splines
-library("rms")
-rms_model <- lrm(survived == "yes" ~ class + gender + rcs(age) + sibsp +
-                   parch + fare + embarked, titanic_small)
-predict_rms_fuction <- function(m,x) predict(m, x, type="fitted")
-explainer_rms <- explain(rms_model, data = titanic_small,
-                         y = titanic_small$survived == "yes", label = "RMS",
-                         predict_function = predict_rms_fuction,
-                              colorize = FALSE)
-
-## GBM
-library("gbm")
-#titanic_gbm <- gbm(Survived == "1" ~ Age + Pclass + Sex, data = titanic_small, n.trees = 1000)
-titanic_gbm <- gbm(survived == "yes" ~ class + gender + age + sibsp +
-                     parch + fare + embarked, data = titanic_small, n.trees = 15000)
-predict_gbm_fuction <- function(m,x) predict(m, x,
-                                             n.trees = 15000, type = "response")
-explainer_gbm <- explain(titanic_gbm,
-                         data = titanic_small, y = titanic_small$survived == "yes",
-                         label = "GBM",
-                         predict_function = predict_gbm_fuction,
-                              colorize = FALSE)
-
-```
-
-
-
-## Merging Path Plots and Others  {#factorMerger}
-
-[@demsar2018]
-
-[@RJ2017016]
-[@MAGIX]
-
-
-
-
-
-
-[@R-factorMerger]
-
-
-[@Strobl2007] 
-[@Strobl2008] 
-- variable importance
-
-[@2018arXiv180101489F]
-
-Beware Default Random Forest Importances
-
-Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
-March 26, 2018.
-
-http://explained.ai/rf-importance/index.html
-
-
-
-```{r, warning=FALSE, message=FALSE}
-library(factorMerger)
-```
-
-## Other topics
-
-Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to Better Decisions’?
-[@Edwards_Veale_2018]
-
-
-
-[@R-randomForestExplainer]
-[@R-ICEbox]
-[@R-ALEPlot]
-
-[@R-modelDown]
-

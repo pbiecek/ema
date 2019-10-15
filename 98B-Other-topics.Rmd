@@ -1,0 +1,125 @@
+```{r, eval=FALSE}
+# install everything that is needed
+
+install.packages("rms")
+install.packages("ranger")
+
+install.packages("DALEX")
+install.packages("auditor")
+install.packages("drifter")
+
+install.packages("gower")
+install.packages("ggplot2")
+install.packages("ggmosaic")
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+library(randomForest)
+library(DALEX)
+library(dplyr)
+
+titanic_small <- titanic_imputed[,c("survived", "class", "gender", "age", "sibsp", "parch", "fare", "embarked")]
+rf_model <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
+                         data = titanic_small)
+predict_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+rf_explain <- explain(rf_model, data = titanic_small, 
+                      y = titanic_small$survived == "yes", label = "RF",
+                      predict_function = predict_fuction,
+                              colorize = FALSE)
+
+
+#
+# Here models are created
+
+## random forest
+rf_model <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked,
+                         data = titanic_small)
+predict_rf_fuction <- function(m,x) predict(m, x, type="prob")[,2]
+explainer_rf <- explain(rf_model, data = titanic_small,
+                      y = titanic_small$survived == "yes", label = "RF",
+                      predict_function = predict_rf_fuction,
+                              colorize = FALSE)
+
+## GLM
+glm_model <- glm(survived ~ class + gender + age + sibsp + parch + fare + embarked,
+                         data = titanic_small, family = "binomial")
+explainer_glm <- explain(glm_model, data = titanic_small,
+                      y = titanic_small$survived == "yes", label = "GLM",
+                              colorize = FALSE)
+
+
+## splines
+library("rms")
+rms_model <- lrm(survived == "yes" ~ class + gender + rcs(age) + sibsp +
+                   parch + fare + embarked, titanic_small)
+predict_rms_fuction <- function(m,x) predict(m, x, type="fitted")
+explainer_rms <- explain(rms_model, data = titanic_small,
+                         y = titanic_small$survived == "yes", label = "RMS",
+                         predict_function = predict_rms_fuction,
+                              colorize = FALSE)
+
+## GBM
+library("gbm")
+#titanic_gbm <- gbm(Survived == "1" ~ Age + Pclass + Sex, data = titanic_small, n.trees = 1000)
+titanic_gbm <- gbm(survived == "yes" ~ class + gender + age + sibsp +
+                     parch + fare + embarked, data = titanic_small, n.trees = 15000)
+predict_gbm_fuction <- function(m,x) predict(m, x,
+                                             n.trees = 15000, type = "response")
+explainer_gbm <- explain(titanic_gbm,
+                         data = titanic_small, y = titanic_small$survived == "yes",
+                         label = "GBM",
+                         predict_function = predict_gbm_fuction,
+                              colorize = FALSE)
+
+```
+
+
+## Merging Path Plots and Others  {#factorMerger}
+
+[@demsar2018]
+
+[@RJ2017016]
+[@MAGIX]
+
+
+
+
+
+
+[@R-factorMerger]
+
+
+[@Strobl2007] 
+[@Strobl2008] 
+- variable importance
+
+[@2018arXiv180101489F]
+
+Beware Default Random Forest Importances
+
+Terence Parr, Kerem Turgutlu, Christopher Csiszar, and Jeremy Howard
+March 26, 2018.
+
+http://explained.ai/rf-importance/index.html
+
+
+
+```{r, warning=FALSE, message=FALSE}
+library(factorMerger)
+```
+
+## Other topics
+
+Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to Better Decisions’?
+[@Edwards_Veale_2018]
+
+
+
+[@R-randomForestExplainer]
+[@R-ICEbox]
+[@R-ALEPlot]
+
+[@R-modelDown]
+
