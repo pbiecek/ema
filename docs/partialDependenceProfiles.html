@@ -409,11 +409,11 @@ Here we will use a random forest <code>rf_5</code> model for the <em>titanic</em
 </ol>
 <p>As it was introduced in <a href="ceterisParibus.html#ceterisParibus">6</a> Ceteris Paribus profiles are calculated for observations. They show how model response change is a selected variable in this observation is modified.</p>
 <p><span class="math display">\[
-CP^{f, j, x}(z) := f(x|^j = z).
+CP^{f, j}_x(z) := f(x|^j = z).
 \]</span></p>
 <p>Such profiles can be calculated for example with the <code>ingredients::ceteris_paribus</code> function.</p>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/pdp_part_1-1.png" alt="Ceteris Paribus profiles for 100 observations, the age variable and the random forest model" width="480" />
+<div class="figure" style="text-align: center">
+<img src="PM_VEE_files/figure-html/pdp_part_1-1.png" alt="Ceteris Paribus profiles for 100 observations, the age variable and the random forest model" width="768" />
 <p class="caption">
 (#fig:pdp_part_1)Ceteris Paribus profiles for 100 observations, the age variable and the random forest model
 </p>
@@ -423,17 +423,19 @@ CP^{f, j, x}(z) := f(x|^j = z).
 <li>Aggregate Ceteris Paribus into a single Partial Dependency Profile</li>
 </ol>
 <p>Simple pointwise average across CP profiles. If number of CPprofiles is large, it is enoug to sample some number of them to get resonably accurate PD profiles.</p>
-<p>Here we show profiles calculated with <code>ingredients</code> package, but find siilar implementation in the <code>pdp</code> package <span class="citation">(Greenwell <a href="#ref-pdp">2017</a><a href="#ref-pdp">b</a>)</span>, <code>ALEPlots</code> package <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a><a href="#ref-R-ALEPlot">b</a>)</span> or <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-iml">2018</a><a href="#ref-iml">c</a>)</span> package.</p>
+<p>Here we show profiles calculated with <code>ingredients</code> package, but find siilar implementation in the <code>pdp</code> package <span class="citation">(Greenwell <a href="#ref-pdp">2017</a>)</span>, <code>ALEPlots</code> package <span class="citation">(Apley <a href="#ref-R-ALEPlot">2018</a>)</span> or <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-iml">2018</a>)</span> package.</p>
 <p>Such average can be calculated with the function <code>ingredients::aggregate_profiles</code>.</p>
-<div class="sourceCode" id="cb172"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb172-1" data-line-number="1">pdp_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf)</a>
-<a class="sourceLine" id="cb172-2" data-line-number="2"><span class="kw">plot</span>(pdp_rf) <span class="op">+</span></a>
-<a class="sourceLine" id="cb172-3" data-line-number="3"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Partial Dependency profile&quot;</span>, <span class="st">&quot;For a random forest model / Titanic data&quot;</span>) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-73-1.png" width="672" /></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">pdp_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf)</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw">plot</span>(pdp_rf) <span class="op">+</span></a>
+<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Partial Dependency profile&quot;</span>, <span class="st">&quot;For a random forest model / Titanic data&quot;</span>) </a></code></pre></div>
+<pre><code>## Warning: Please note that &#39;theme_drwhy_colors()&#39; is now deprecated, it is
+## better to use &#39;colors_discrete_drwhy()&#39; instead.</code></pre>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <p>So for a single model and a single variable we get a profile. See an example in figure @ref(fig:pdp_part_2). It is much easier than following 100 separate curves, and in cases in which Ceteris Paribus are more or less parallel, the Partial Dependency is a good summary of them.</p>
 <p>The average response is of course more stable (as it’s an average) and in this case is more or less a decreasing curve. It’s much easier to notice that the older the passenger is the lower the survival probability.
 Moreover it is easier to notice that the largest drop in survival changes happen for teenagers. On average the survival for adults is 30 percent points smaller than for kids.</p>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/pdp_part_2-1.png" alt="Partial Dependency profile as an average for 100 observations" width="480" />
+<div class="figure" style="text-align: center">
+<img src="PM_VEE_files/figure-html/pdp_part_2-1.png" alt="Partial Dependency profile as an average for 100 observations" width="768" />
 <p class="caption">
 (#fig:pdp_part_2)Partial Dependency profile as an average for 100 observations
 </p>
@@ -448,10 +450,10 @@ To deal with this problem we propose to cluster Ceteris Paribus profiles and che
 <p>Such clusters can be calculated with the <code>ingredients::cluster_profiles</code> function. We choose the hierarchical clustering with Ward linkage as it gives most stable results.</p>
 <p>So for a single model and a single variable we get <span class="math inline">\(k\)</span> profiles. The common problem in clustering is the selection of <span class="math inline">\(k\)</span>. However in our case, as it’s an exploration, the problem is simpler, as we are interesting if <span class="math inline">\(k=1\)</span> (Partial Dependency is a good summary) or not (there are some interactions).</p>
 <p>See an example in Figure @ref(fig:pdp_part_4). It is easier to notice that Ceteris Paribus profiles can be groups in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.</p>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/pdp_part_4-1.png" alt="Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles" width="480" />
+<div class="figure" style="text-align: center">
+<img src="PM_VEE_files/figure-html/pdp_part_4-1.png" alt="Three cluster of 100 CP profiles" width="768" />
 <p class="caption">
-(#fig:pdp_part_4)Cluster profiles for 3 clusters over 100 Ceteris Paribus profiles
+(#fig:pdp_part_4)Three cluster of 100 CP profiles
 </p>
 </div>
 </div>
@@ -459,15 +461,15 @@ To deal with this problem we propose to cluster Ceteris Paribus profiles and che
 <h2><span class="header-section-number">17.4</span> Grouped Partial Dependency Profiles</h2>
 <p>Once we see that variable of interest may be in interaction with some other variable, it is tempting to look for the factor that distinguish clusters.</p>
 <p>The most straightforward approach is to use some other variable as a grouping variable. This can be done by setting the <code>groups</code> argument in the <code>ingredients::aggregate_profiles</code> function.</p>
-<div class="sourceCode" id="cb173"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb173-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb173-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic, <span class="dt">n =</span> <span class="dv">100</span>)</a>
-<a class="sourceLine" id="cb173-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_titanic_rf, selected_passangers)</a>
-<a class="sourceLine" id="cb173-4" data-line-number="4">pdp_Sex_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf, <span class="dt">variables =</span> <span class="st">&quot;age&quot;</span>,</a>
-<a class="sourceLine" id="cb173-5" data-line-number="5">                <span class="dt">groups =</span> <span class="st">&quot;gender&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">selected_passangers &lt;-<span class="st"> </span><span class="kw">select_sample</span>(titanic, <span class="dt">n =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">cp_rf &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_titanic_rf, selected_passangers)</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">pdp_Sex_rf &lt;-<span class="st"> </span><span class="kw">aggregate_profiles</span>(cp_rf, <span class="dt">variables =</span> <span class="st">&quot;age&quot;</span>,</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">                <span class="dt">groups =</span> <span class="st">&quot;gender&quot;</span>)</a></code></pre></div>
 <p>See an example in Figure @ref(fig:pdp_part_5). Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
 Check how the interaction for <code>Pclass</code> (passenger class) looks like.</p>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/pdp_part_5-1.png" alt="Grouped profiles with respect to the gender variable" width="480" />
+<div class="figure" style="text-align: center">
+<img src="PM_VEE_files/figure-html/pdp_part_5-1.png" alt="Grouped profiles with respect to the gender variable" width="768" />
 <p class="caption">
 (#fig:pdp_part_5)Grouped profiles with respect to the gender variable
 </p>
@@ -484,8 +486,8 @@ Check how the interaction for <code>Pclass</code> (passenger class) looks like.<
 </ul>
 <p>Generic <code>ingredients::plot</code> function handles multiple models as consecutive arguments.</p>
 <p>See an example in Figure @ref(fig:pdp_part_7). Support vector model is compared with generalized linear model (logistic regression) with splines. Both models agree when it comes to a general relation between Age and Survival but the curve for SVM is more flat. Difference between both models is largest for lowest values of the variable age.</p>
-<div class="figure">
-<img src="PM_VEE_files/figure-html/pdp_part_7-1.png" alt="Comparison on two predictive models with different structures." width="480" />
+<div class="figure" style="text-align: center">
+<img src="PM_VEE_files/figure-html/pdp_part_7-1.png" alt="Comparison on two predictive models with different structures." width="768" />
 <p class="caption">
 (#fig:pdp_part_7)Comparison on two predictive models with different structures.
 </p>
@@ -496,16 +498,16 @@ Check how the interaction for <code>Pclass</code> (passenger class) looks like.<
 <h3>References</h3>
 <div id="refs" class="references">
 <div id="ref-R-ALEPlot">
-<p>Apley, Dan. 2018b. <em>ALEPlot: Accumulated Local Effects (Ale) Plots and Partial Dependence (Pd) Plots</em>. <a href="https://CRAN.R-project.org/package=ALEPlot">https://CRAN.R-project.org/package=ALEPlot</a>.</p>
+<p>Apley, Dan. 2018. <em>ALEPlot: Accumulated Local Effects (Ale) Plots and Partial Dependence (Pd) Plots</em>. <a href="https://CRAN.R-project.org/package=ALEPlot">https://CRAN.R-project.org/package=ALEPlot</a>.</p>
 </div>
 <div id="ref-Friedman00greedyfunction">
 <p>Friedman, Jerome H. 2000. “Greedy Function Approximation: A Gradient Boosting Machine.” <em>Annals of Statistics</em> 29: 1189–1232.</p>
 </div>
 <div id="ref-pdp">
-<p>Greenwell, Brandon M. 2017b. “Pdp: An R Package for Constructing Partial Dependence Plots.” <em>The R Journal</em> 9 (1): 421–36. <a href="https://journal.r-project.org/archive/2017/RJ-2017-016/index.html">https://journal.r-project.org/archive/2017/RJ-2017-016/index.html</a>.</p>
+<p>Greenwell, Brandon M. 2017. “Pdp: An R Package for Constructing Partial Dependence Plots.” <em>The R Journal</em> 9 (1): 421–36. <a href="https://journal.r-project.org/archive/2017/RJ-2017-016/index.html">https://journal.r-project.org/archive/2017/RJ-2017-016/index.html</a>.</p>
 </div>
 <div id="ref-iml">
-<p>Molnar, Christoph, Bernd Bischl, and Giuseppe Casalicchio. 2018c. “Iml: An R Package for Interpretable Machine Learning.” <em>JOSS</em> 3 (26). Journal of Open Source Software: 786. <a href="https://doi.org/10.21105/joss.00786">https://doi.org/10.21105/joss.00786</a>.</p>
+<p>Molnar, Christoph, Bernd Bischl, and Giuseppe Casalicchio. 2018. “Iml: An R Package for Interpretable Machine Learning.” <em>JOSS</em> 3 (26). Journal of Open Source Software: 786. <a href="https://doi.org/10.21105/joss.00786">https://doi.org/10.21105/joss.00786</a>.</p>
 </div>
 </div>
             </section>
