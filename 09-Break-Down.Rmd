@@ -32,40 +32,40 @@ First, let's see how variable attribution works for linear models.
 
 ### Break-down for linear models
 
-Assume a classical linear model for response $Y$ with $p$ explanatory variables collected in the vector $X = (X_1, X_2, \ldots, X_p)$ and coefficients $\beta = (\beta_0, \beta_1, .., \beta_p)$, where $\beta_0$ is the intercept. The prediction for $Y$ at point $X=x=(x_1, x_2, \ldots, x_p)$ is given by the expected value of $Y$ conditional on $X=x$. For a linear model, the expected value is given by the following linear combination:  
+Assume a classical linear model for response $Y$ with $p$ explanatory variables collected in the vector $X = (X^1, X^2, \ldots, X^p)$ and coefficients $\beta = (\beta^0, \beta^1, .., \beta^p)$, where $\beta^0$ is the intercept. The prediction for $Y$ at point $X=x=(x^1, x^2, \ldots, x^p)$ is given by the expected value of $Y$ conditional on $X=x$. For a linear model, the expected value is given by the following linear combination:  
 
 $$
-E_Y(Y | x) = f(x) = \beta_0 + x_1 \beta_1 + \ldots + x_p \beta_p.
+E_Y(Y | x) = f(x) = \beta^0 + x^1 \beta^1 + \ldots + x^p \beta^p.
 $$  
-We are interested in the contribution of the $i$-th explanatory variable to model prediction $f(x^*)$ for a single observation described by $x^*$. In this case, the contribution is equal to $x^*_i\beta_i$, because the $i$-th variable occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x_i$ is is centered by subtracting a constant $\hat x_i$ (usually, the mean of $x_i$). This leads the following, intuitive formula for the variable attribution:
+We are interested in the contribution of the $i$-th explanatory variable to model prediction $f(x_*)$ for a single observation described by $x_*$. In this case, the contribution is equal to $x_*^i\beta^i$, because the $i$-th variable occurs only in this term. As it will become clear in the sequel, it is easier to interpret the variable's contribution if $x^i$ is is centered by subtracting a constant $\hat x^i$ (usually, the mean of $x^i$). This leads the following, intuitive formula for the variable attribution:
 $$
-v(i, x^*) = \beta_i (x_i^* - \hat x_i).
+v(i, x_*) = \beta_i (x^i_* - \hat x^i).
 $$
 
-We want to calculate $v(f, x^*, i)$, which is the contribution of the $i$-th explanatory variable to the prediction of model $f()$ at point $x^*$. Assume that $E_Y(Y | x^*) \approx f(x^*)$, where $f(x^*)$ is the value of the model at $x^*$. A possible approach to define $v(f, x^*, i)$ is to measure how much the expected model response changes after conditioning on $x_i^*$:
+We want to calculate $v(f, x_*, i)$, which is the contribution of the $i$-th explanatory variable to the prediction of model $f()$ at point $x_*$. Assume that $E_Y(Y | x_*) \approx f(x_*)$, where $f(x_*)$ is the value of the model at $x_*$. A possible approach to define $v(f, x_*, i)$ is to measure how much the expected model response changes after conditioning on $x^i_*$:
 $$
-v(i, x^*) = E_Y(Y | x^*) - E_{X_i}\{E_Y[Y | (x_1^*,\ldots,x_{i-1}^*,X_i,x_{i+1}^*,x_p^*)]\}\approx f(x^*) - E_{X_i}[f(x_{-i}^*)],
+v(i, x_*) = E_Y(Y | x_*) - E_{X^i}\{E_Y[Y | (x^1_*,\ldots,x^{i-1}_*,X^i,x^{i+1}_*,x^p_*)]\}\approx f(x_*) - E_{X^i}[f(x^{-i}_*)],
 $$
-where $x_{-i}^*$ indicates that variable $X_i$ in vector $x_{-i}^*$ is treated as random. For the classical linear model, if the explanatory variables are independent, $v(f, x^*, i)$ can be expressed as follows:
+where $x^{-i}_*$ indicates that variable $X^i$ in vector $x_*$ is treated as random. For the classical linear model, if the explanatory variables are independent, $v(f, x_*, i)$ can be expressed as follows:
 $$
-v(i, x^*) = f(x^*) - E_{X_i}[f(x_{-i}^*)] = \beta_0 + x_1^* \beta_1 + \ldots + x_p^* \beta_p - E_{X_i}[\beta_0 + x_1^* \beta_1 + \ldots +\beta_i X_i \ldots + x_p^* \beta_p] = \beta_i[x^*_i - E_{X_i}(X_i)].
+v(i, x_*) = f(x_*) - E_{X^i}[f(x^{-i}_*)] = \beta^0 + x^1_* \beta^1 + \ldots + x^p_* \beta^p - E_{X^i}[\beta^0 + x^1_* \beta^1 + \ldots +\beta^i X^i \ldots + x^p_* \beta^p] = \beta^i[x_*^i - E_{X^i}(X^i)].
 $$
 In practice, given a dataset, the expected value of $X_i$ can be estimated by the sample mean $\bar x_i$. This leads to  
 $$
-v(i, x^*) = \beta_i (x^*_i - \bar x_i).
+v(i, x_*) = \beta_i (x_*^i - \bar x^i).
 $$
 Note that the linear-model-based prediction may be re-expressed in the following way:
 $$
-f(x^*) = [\beta_0 + \bar x_1 \beta_1 + ... + \bar x_p \beta_p] + [(x_1^* - \bar x_1) \beta_1 + ... + (x_p^* - \bar x_p) \beta_p] 
+f(x_*) = [\beta^0 + \bar x^1 \beta^1 + ... + \bar x^p \beta^p] + [(x^1_* - \bar x^1) \beta^1 + ... + (x^p_* - \bar x^p) \beta^p] 
 $$
 $$
- \equiv [average \ prediction] + \sum_{j=1}^p v(i, x^*).
+ \equiv [average \ prediction] + \sum_{j=1}^p v(i, x_*).
 $$
-Thus, the contributions of the explanatory variables are the differences between the model prediction for $x^*$ and  the average prediction.
+Thus, the contributions of the explanatory variables are the differences between the model prediction for $x_*$ and  the average prediction.
 
 ** NOTE for careful readers **
 
-Obviously, sample mean $\bar x_i$ is an estimator of the expected value $E_{X_i}(X_i)$, calculated using a dataset. For the sake of simplicity we do not emphasize these differences in the notation. Also, we ignore the fact that, in practice, we never know the model coefficients and we work with an estimated model. 
+Obviously, sample mean $\bar x^i$ is an estimator of the expected value $E_{X^i}(X^i)$, calculated using a dataset. For the sake of simplicity we do not emphasize these differences in the notation. Also, we ignore the fact that, in practice, we never know the model coefficients and we work with an estimated model. 
 
 
 ### Break-down for general case
