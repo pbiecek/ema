@@ -123,3 +123,129 @@ Enslaving the Algorithm: From a ‘Right to an Explanation’ to a ‘Right to B
 
 [@R-modelDown]
 
+
+# Data Set HR
+
+
+## Hire or fire {#HFDataset}
+
+Predictive models can be used to support decisions. For instance, they can be used in a human-resources department to decide whether, for instance, to promote an employee. An advantage of using a model for this purpose would be the objectivity of the decision, which would not be subject to personal preferences of a manager. However, in such a situation, one would most likely want to understand what influences the model's prediction. 
+
+To illustrate such a situation, we will use the `HR` dataset that is available in the `DALEX` package [@R-DALEX]. It is an artificial set of data from a human-resources department of a call center. It contains 7847 observations (employees of the call center) and six variables:
+
+* *gender*, person's gender, a factor with two levels;
+* *age*, person's age in years, a numerical variable;
+* *hours*, average number of working hours per week, a numerical variable;
+* *evaluation*, the last evaluation score, a numerical variable with values 2 (fail), 3 (satisfactory), 4 (good), and 5 (very good); 
+* *salary*, the salary level, a numerical variable with values from 0 (lowest) to 5 (highest);
+* *status*, a factor with three indicating whether the employee was fired, retained, or promoted.
+
+
+The R code below provides more info about the contents of the dataset, values of the variables, etc.
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+head(HR, 4)
+str(HR)
+table(HR$evaluation)
+table(HR$salary)
+```
+
+
+Models considered for this dataset will use *status* as the (categorical) dependent variable.
+
+### Data exploration {#exploration-HR}
+
+As it was the case for the `apartments` dataset (see Section \@ref(ApartmentDataset)), the `HR` data were simulated. Despite the fact that characteristics of the data are known, we conduct some data exploration to illustrate the important aspects of the data.
+
+Figure \@ref(fig:HRExplorationAge) indicates that young females and older males were fired more frequently than older females and younger males.
+
+```{r HRExplorationAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Employment status for age-groups and gender.", out.width = '70%', fig.align='center'}
+HR$age_cat <- cut(HR$age, c(20,40,60))
+HR$age_gender <- paste(HR$gender, HR$age_cat)
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, age_gender), fill=status)) +
+   labs(x="Gender and age", y="Employment status", title='Employment status vs. gender and age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(3))
+```
+
+Figure \@ref(fig:HRExplorationSalary) indicates that the proportion of promoted employees was the lowest for the lowest and highest salary level. At the same time, the proportion of fired employees was the highest for the two salary levels.
+
+```{r HRExplorationSalary, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Employment status for different salary levels.", out.width = '70%', fig.align='center'}
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, salary), fill=status)) +
+   labs(x="Salary level", y="Employment status", title='Employment status vs. salary level') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(3))
+```
+
+Figure \@ref(fig:HRExplorationEvaluation) indicates that the chance of being fired was larger for evaluation scores equal to 2 or 3. On the other hand, the chance of being promoted  substantially increased for scores equal to 4 or 5.  
+```{r HRExplorationEvaluation, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Employment status for different evaluation scores.", out.width = '70%', fig.align='center'}
+ggplot(data = HR) +
+   geom_mosaic(aes(x = product(status, evaluation), fill=status)) +
+   labs(x="Evaluation score", y="Employment status", title='Employment status vs. evaluation score') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(3))
+```
+
+### Multinomial logistic regression {#model-HR-mr}
+
+The dependent variable of interest, *status*, is categorical with three categories. Thus, a simple choice is to consider a multinomial logistic regression model [@Venables2010]. We fit the model with the help of function `multinom` from package `nnet`. The function fits multinomial log-linear models by using the neural-networks approach. As a result, we obtain a complex model that is smoother as compared to a random forest model that relies on binary splits for continuous variables. We treat all variables other than `status` in the `HR` data frame as explanatory and include them in the model. The results of the model are stored in model-object `HR_glm_v5`.
+
+```{r, warning=FALSE, message=FALSE }
+library("nnet")
+set.seed(1313)
+HR_glm_v5 <- multinom(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_glm_v5
+```
+
+### Random forest {#model-HR-rf}
+
+As an alternative to multinomial logistic regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews]. 
+The results of the model are stored in model-object `HR_rf_v5`. 
+
+```{r, warning=FALSE, message=FALSE }
+library("randomForest")
+set.seed(1313)
+HR_rf_v5 <- randomForest(status ~ gender + age + hours + evaluation + salary, data = HR)
+HR_rf_v5
+```
+
+### Model predictions {#predictionsHR}
+
+Let us now compare predictions that are obtained from the multinomial regression and random forest models. In particular, we  compute the predicted probabilities of being fired, retained in service, or promoted for Dilbert, a 58-year old male working around 42 hours per week for a salary at level 2, who got evaluation score equal to 2. Data frame `dilbert` contains the data describing the employee. 
+
+```{r, warning=FALSE, message=FALSE }
+dilbert <- data.frame(gender = factor("male", levels = c("male", "female")),
+                age = 57.7,
+                hours = 42.3,
+                evaluation = 2,
+                salary = 2)
+```
+
+By aplying the `predict()` function to model-objects `HR_rf_v5` and `HR_glm_v5`, with `dilbert` as the data frame for which predictions are to be computed, and argument `type="prob"`, we obtain the predicted probabilities of being fired, retained in service, or promoted for Dilbert. 
+
+```{r, warning=FALSE, message=FALSE }
+pred_HR_rf <- predict(HR_rf_v5, dilbert, type = "prob")
+pred_HR_rf
+pred_HR_glm <- predict(HR_glm_v5, dilbert, type = "prob")
+pred_HR_glm
+```
+
+For both models, the predicted probability of promotion is low; it is more likely that Dilbert will be fired. It is of interest to understand why such prediction is made? Moreover, random forest yields a higher probability of firing (`r round(pred_HR_rf[1], 2)`) than the multinomial regression model (`r round(pred_HR_glm[1], 2)`). We may want to learn where does this difference come from? We will try to answer these questions in subsequent chapters.
+
+### List of objects for the `HR` example  {#ListOfModelsHR}
+
+In Sections \@ref(model-HR-mr) and \@ref(model-HR-rf) we have built two predictive models for the `HR` data set. The models will be used in the remainder of the book to illustrate model-explanation methods and tools. 
+
+For the ease of reference, we summarize the models in Table \@ref(tab:archivistHooksOfModelsHR). The binary model-objects can be downloaded by using the indicated `archivist` hooks [@archivist]. By calling a function specified in the last column of the table, one can recreate a selected model in a local R environment.
+
+Table: (\#tab:archivistHooksOfModelsHR) Predictive models created for the `HR` dataset. 
+
+| Model name   | Model generator | Variables  | Archivist hooks |
+|--------------|-----------------|------------|-----------------|
+|  `HR_rf_v5` | `randomForest:: randomForest`   v.4.6.14  | gender, age, hours, evaluation, salary  | Get the model:  `archivist:: aread("pbiecek/models/1ecfd")`. Get the explainer: TODO: add if needed |
+|  `HR_glm_v5` | `stats:: glm`  v.3.5.3  | gender, age, hours, evaluation, salary  | Get the model:  `archivist:: aread("pbiecek/models/f0244")`. Get the explainer: TODO: add if needed |
+
+
+
+```
+##  save(HR_rf_v5, file = "models/HR_rf_v5.rda")
+##  save(HR_glm_v5, file = "models/HR_glm_v5.rda")
+```
+
