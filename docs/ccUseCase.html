@@ -4,11 +4,11 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Chapter 22 Residual Diagnostic | Predictive Models: Explore, Explain, and Debug</title>
+  <title>Chapter 24 Use Case: Call Center | Predictive Models: Explore, Explain, and Debug</title>
   <meta name="description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
   <meta name="generator" content="bookdown 0.14 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Chapter 22 Residual Diagnostic | Predictive Models: Explore, Explain, and Debug" />
+  <meta property="og:title" content="Chapter 24 Use Case: Call Center | Predictive Models: Explore, Explain, and Debug" />
   <meta property="og:type" content="book" />
   
   
@@ -16,7 +16,7 @@
   <meta name="github-repo" content="pbiecek/PM_VEE" />
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Chapter 22 Residual Diagnostic | Predictive Models: Explore, Explain, and Debug" />
+  <meta name="twitter:title" content="Chapter 24 Use Case: Call Center | Predictive Models: Explore, Explain, and Debug" />
   
   <meta name="twitter:description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
   
@@ -31,8 +31,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="featureEffects.html"/>
-<link rel="next" href="conceptDrift.html"/>
+<link rel="prev" href="conceptDrift.html"/>
+<link rel="next" href="appendixes.html"/>
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -397,121 +397,164 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="residualDiagnostic" class="section level1">
-<h1><span class="header-section-number">Chapter 22</span> Residual Diagnostic</h1>
-<div id="introduction-1" class="section level2">
-<h2><span class="header-section-number">22.1</span> Introduction</h2>
-<p>In this chapter, we present methods that are useful for the detailed examination of model residuals. These methods may be used for several purposes.</p>
-<ul>
-<li>Identification of hard cases; in the Section <a href="modelPerformance.html#modelPerformance">16</a> we discussed measures to globally summarize the model performance, but sometimes we are more interested in cases with the largest mispredictions;</li>
-<li>Identification of structural problems in a model; for most models we assume that residuals are random. If we find any structure then maybe there is some problem with a model.</li>
-<li>Identification of cases for details local-level examination. In the first part of this book we discussed tools for examination of single predictions. For debugging purposes it make sense to first identify largest errors and then use local-methods to understand which factors contributes most to these errors.</li>
-</ul>
+<div id="ccUseCase" class="section level1">
+<h1><span class="header-section-number">Chapter 24</span> Use Case: Call Center</h1>
+<p>In previous chapters we introduced a number of methods for exploration of predictive models. In each chapter we show how one can use a particular method for models created on <code>titanic</code> or <code>apartments</code> datasets. These examples we separated as each of them was focused on a single method introduced in a given chapter.</p>
+<p>In this chapter we present end-to-end analysis for a single dataset that shows how to combine results from different methods of exploration.
+Data used in this example are simulated, but relations and problems are based on a real applications.</p>
+<p>The main goal of this chapter is to show how differnt techniques complement each other.</p>
+<div id="introduction-3" class="section level2">
+<h2><span class="header-section-number">24.1</span> Introduction</h2>
+<p>The story is following. We have a company that is selling online car-insurance policies. The company has also a small call center, which is used in order to call selected customers and sell them the insurance through phone.
+Capabilities of the call center are limited thus company wants to know whom to call in order to increase chances for selling insurance policies.</p>
+<p>This is exaclty our task. To build a model that will predict which customers have highest odds for buing policies. They will be called first.</p>
 </div>
-<div id="intuition" class="section level2">
-<h2><span class="header-section-number">22.2</span> Intuition</h2>
-<p>As it was defined in Section <a href="modelPerformance.html#modelPerformance">16</a>, the residual <span class="math inline">\(r_i\)</span> is the difference between model prediction and the true value of target variable</p>
-<p><span class="math display">\[
-r_i = y_i - f(x_i).
-\]</span></p>
-<p>For the perfect model we will expect that all residuals are equal to zero, but perfect models do not exists.
-For good models we assume that residuals are small, random and symmetric. In fact residuals may violate these assumptions in many different ways. So we need tools for exploration of residuals.</p>
+<div id="data" class="section level2">
+<h2><span class="header-section-number">24.2</span> Data</h2>
+<div class="sourceCode" id="cb177"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb177-1" data-line-number="1"><span class="kw">head</span>(call_center)</a></code></pre></div>
+<pre><code>##         day hour production_year   segment mileage days_to_insurance sell
+## 1    Monday   13            2015      Mini   45146                 2    1
+## 2    Monday    8            2016 Executive   31240                10    0
+## 3 Wednesday   16            2016     Small   29199                19    0
+## 4    Sunday   14            2013     Small   84409                15    0
+## 5   Tuesday   15            2014     Large   61232                17    0
+## 6    Monday   12            2013     Large   70572                30    0</code></pre>
 </div>
-<div id="code-snippets-for-r" class="section level2">
-<h2><span class="header-section-number">22.3</span> Code snippets for R</h2>
-<p>In this section, we present the key features of the <code>auditor</code> R package <span class="citation">(<span class="citeproc-not-found" data-reference-id="auditor"><strong>???</strong></span>)</span> which is a part of the <a href="http://DrWhy.AI">DrWhy.AI</a> universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at <a href="https://modeloriented.github.io/auditor/" class="uri">https://modeloriented.github.io/auditor/</a> or in <span class="citation">(Gosiewska and Biecek <a href="#ref-auditorarxiv">2018</a>)</span>.</p>
-<p>First we load explainers for two models created in Section <a href="dataSetsIntro.html#ExplainersApartmentsRCode">5.2.5</a> for the <code>apartments</code> data.</p>
-<div class="sourceCode" id="cb155"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb155-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb155-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
-<a class="sourceLine" id="cb155-3" data-line-number="3"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb155-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb155-5" data-line-number="5">explainer_apartments_lr &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/f49ea&quot;</span>)</a>
-<a class="sourceLine" id="cb155-6" data-line-number="6">explainer_apartments_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/569b0&quot;</span>)</a></code></pre></div>
-<p>For residual diagnostic we need to calculate residuals for both explainers. This can be done with the <code>model_residual()</code> function. Now we are ready to explore residuals for both models for apartments dataset.</p>
-<div class="sourceCode" id="cb156"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb156-1" data-line-number="1">mr_lr &lt;-<span class="st"> </span><span class="kw">model_residual</span>(explainer_apartments_lr)</a>
-<a class="sourceLine" id="cb156-2" data-line-number="2">mr_rf &lt;-<span class="st"> </span><span class="kw">model_residual</span>(explainer_apartments_rf)</a></code></pre></div>
-<p>Figures <a href="residualDiagnostic.html#fig:plotResidualDensity1">22.1</a> and <a href="residualDiagnostic.html#fig:plotResidualBoxplot1">22.2</a> shows distribution of residuals for both models. As we know from the Section <a href="modelPerformance.html#modelPerformanceApartments">16.4.2</a> the RMSE for both model is very similar. But when we compare distributions of residuals we see that these models are very different. The linear regression model tends to have residuals around +- 400 while for random forest model the residuals are on average equal to 0 but have large variation.</p>
-<p>We know from previous chapters that the reason for the behavior of the linear model is that it does not capture the nonlinear relation between the price of apartment and the year of construction.</p>
-<p>From these plots alone we see that random forest model has more frequently smaller residuals than the linear regression model. But for small fraction of observations residuals for random forest are very large and these extremes balance the RMSE.</p>
-<div class="sourceCode" id="cb157"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb157-1" data-line-number="1"><span class="kw">plot_residual_density</span>(mr_rf, mr_lr)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotResidualDensity1"></span>
-<img src="PM_VEE_files/figure-html/plotResidualDensity1-1.png" alt="(fig:plotResidualDensity1) Density plot for residuals for two models created for apartments dataset. RMSE for both models is very similar, but we see that residuals for linear regression are concentrated around +- 400. For the random forest model residuals are concentrated at 0 but have large variance." width="672" />
+<div id="exploration" class="section level2">
+<h2><span class="header-section-number">24.3</span> Exploration</h2>
+<div class="figure" style="text-align: center"><span id="fig:callcenterSegment"></span>
+<img src="PM_VEE_files/figure-html/callcenterSegment-1.png" alt="(fig:callcenterSegment) Survival accroding to age group in the Titanic data." width="70%" />
 <p class="caption">
-Figure 22.1: (fig:plotResidualDensity1) Density plot for residuals for two models created for apartments dataset. RMSE for both models is very similar, but we see that residuals for linear regression are concentrated around +- 400. For the random forest model residuals are concentrated at 0 but have large variance.
+Figure 24.1: (fig:callcenterSegment) Survival accroding to age group in the Titanic data.
 </p>
 </div>
-<div class="sourceCode" id="cb158"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb158-1" data-line-number="1"><span class="kw">plot_residual_boxplot</span>(mr_rf, mr_lr)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotResidualBoxplot1"></span>
-<img src="PM_VEE_files/figure-html/plotResidualBoxplot1-1.png" alt="(fig:plotResidualBoxplot1) Boxplot for absolute values of residuals for two models created for apartments dataset. The cross shows the average value which corresponds to RMSE (similar for both models)." width="672" />
-<p class="caption">
-Figure 22.2: (fig:plotResidualBoxplot1) Boxplot for absolute values of residuals for two models created for apartments dataset. The cross shows the average value which corresponds to RMSE (similar for both models).
-</p>
 </div>
-<p>Figures <a href="residualDiagnostic.html#fig:plotPrediction1">22.3</a> and <a href="residualDiagnostic.html#fig:plotPrediction2">22.4</a> show diagnostic plots that link model predictions with other variables. In the first case it’s a relation between the true (X axis) and predicted (Y axis) values. For perfect model we would expect a strait line. Here the model is biased towards the average, so we see that for large values of target variables the predictions are shifted towards the average. Same for very low values of target variable.</p>
-<p>The second plot shows predictions as a function of the ordering of observations. If observations are randomly collected then we shall not see any relation.</p>
-<div class="sourceCode" id="cb159"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb159-1" data-line-number="1"><span class="kw">plot_prediction</span>(mr_rf, <span class="dt">abline =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotPrediction1"></span>
-<img src="PM_VEE_files/figure-html/plotPrediction1-1.png" alt="(fig:plotPrediction1) Predicted versus true values for the random forest model for apartments data. Red line stands for the baseline. One can read that model predictions are biased towards the mean." width="480" />
-<p class="caption">
-Figure 22.3: (fig:plotPrediction1) Predicted versus true values for the random forest model for apartments data. Red line stands for the baseline. One can read that model predictions are biased towards the mean.
-</p>
+<div id="modeling" class="section level2">
+<h2><span class="header-section-number">24.4</span> Modeling</h2>
+<div class="sourceCode" id="cb179"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb179-1" data-line-number="1">cc_glm &lt;-<span class="st"> </span><span class="kw">glm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
+<a class="sourceLine" id="cb179-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb179-3" data-line-number="3"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
+<a class="sourceLine" id="cb179-4" data-line-number="4">cc_gbm &lt;-<span class="st"> </span><span class="kw">gbm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">distribution =</span> <span class="st">&quot;bernoulli&quot;</span>,</a>
+<a class="sourceLine" id="cb179-5" data-line-number="5">              <span class="dt">interaction.depth =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb179-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb179-7" data-line-number="7"><span class="kw">library</span>(<span class="st">&quot;ranger&quot;</span>)</a>
+<a class="sourceLine" id="cb179-8" data-line-number="8">cc_ranger &lt;-<span class="st"> </span><span class="kw">ranger</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">classification =</span> <span class="ot">TRUE</span>, <span class="dt">probability =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb179-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb179-10" data-line-number="10"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb179-11" data-line-number="11">cc_glm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_glm, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb179-12" data-line-number="12">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb179-13" data-line-number="13">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  lm  (  default  )
+##   -&gt; data              :  10000  rows  7  cols 
+##   -&gt; target variable   :  10000  values 
+##   -&gt; data              :  A column identical to the target variable `y` has been found in the `data`.  (  WARNING  )
+##   -&gt; data              :  It is highly recommended to pass `data` without the target variable column
+##   -&gt; predict function  :  yhat.glm  will be used (  default  )
+##   -&gt; predicted values  :  numerical, min =  0.01722246 , mean =  0.5267 , max =  0.9272989  
+##   -&gt; residual function :  difference between y and yhat (  default  )
+##   -&gt; residuals         :  numerical, min =  -0.8953525 , mean =  -4.660569e-13 , max =  0.973472  
+##   -&gt; model_info        :  package stats , ver. 3.6.1 , task regression (  default  ) 
+##   A new explainer has been created!</code></pre>
+<div class="sourceCode" id="cb181"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb181-1" data-line-number="1">cc_gbm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_gbm, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb181-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb181-3" data-line-number="3">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  gbm  (  default  )
+##   -&gt; data              :  10000  rows  7  cols 
+##   -&gt; target variable   :  10000  values 
+##   -&gt; data              :  A column identical to the target variable `y` has been found in the `data`.  (  WARNING  )
+##   -&gt; data              :  It is highly recommended to pass `data` without the target variable column
+##   -&gt; predict function  :  yhat.gbm  will be used (  default  )
+##   -&gt; predicted values  :  numerical, min =  0.03962532 , mean =  0.5275206 , max =  0.993412  
+##   -&gt; residual function :  difference between y and yhat (  default  )
+##   -&gt; residuals         :  numerical, min =  -0.9676928 , mean =  -0.0008205654 , max =  0.9468283  
+##   -&gt; model_info        :  package gbm , ver. 2.1.5 , task classification (  default  ) 
+##   A new explainer has been created!</code></pre>
+<div class="sourceCode" id="cb183"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb183-1" data-line-number="1">cc_ranger_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_ranger, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb183-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb183-3" data-line-number="3">                      <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) </a>
+<a class="sourceLine" id="cb183-4" data-line-number="4">                        <span class="kw">predict</span>(m, x)<span class="op">$</span>predictions[,<span class="dv">1</span>], </a>
+<a class="sourceLine" id="cb183-5" data-line-number="5">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## Preparation of a new explainer is initiated
+##   -&gt; model label       :  ranger  (  default  )
+##   -&gt; data              :  10000  rows  7  cols 
+##   -&gt; target variable   :  10000  values 
+##   -&gt; data              :  A column identical to the target variable `y` has been found in the `data`.  (  WARNING  )
+##   -&gt; data              :  It is highly recommended to pass `data` without the target variable column
+##   -&gt; predict function  :  function(m, x) predict(m, x)$predictions[, 1] 
+##   -&gt; predicted values  :  numerical, min =  0.001559128 , mean =  0.5267558 , max =  1  
+##   -&gt; residual function :  difference between y and yhat (  default  )
+##   -&gt; residuals         :  numerical, min =  -0.7511486 , mean =  -5.579177e-05 , max =  0.719142  
+##   -&gt; model_info        :  package ranger , ver. 0.11.2 , task classification (  default  ) 
+##   A new explainer has been created!</code></pre>
 </div>
-<div class="sourceCode" id="cb160"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb160-1" data-line-number="1"><span class="kw">plot_prediction</span>(mr_rf, <span class="dt">variable =</span> <span class="ot">NULL</span>, <span class="dt">abline =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotPrediction2"></span>
-<img src="PM_VEE_files/figure-html/plotPrediction2-1.png" alt="(fig:plotPrediction2) Predicted values versus ordering of observations. " width="480" />
-<p class="caption">
-Figure 22.4: (fig:plotPrediction2) Predicted values versus ordering of observations.
-</p>
+<div id="model-selection" class="section level2">
+<h2><span class="header-section-number">24.5</span> Model selection</h2>
+<div class="sourceCode" id="cb185"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb185-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
+<a class="sourceLine" id="cb185-2" data-line-number="2">mr_glm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_glm_exp)</a>
+<a class="sourceLine" id="cb185-3" data-line-number="3">mr_gbm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_gbm_exp)</a>
+<a class="sourceLine" id="cb185-4" data-line-number="4">mr_ranger &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_ranger_exp)</a>
+<a class="sourceLine" id="cb185-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb185-6" data-line-number="6"><span class="kw">model_performance</span>(cc_glm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<pre><code>## Model label:  lm 
+##         score name
+## auc 0.7747852  auc
+## f1  0.7257414   f1</code></pre>
+<div class="sourceCode" id="cb187"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb187-1" data-line-number="1"><span class="kw">model_performance</span>(cc_gbm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<pre><code>## Model label:  gbm 
+##         score name
+## auc 0.9123657  auc
+## f1  0.8314711   f1</code></pre>
+<div class="sourceCode" id="cb189"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb189-1" data-line-number="1"><span class="kw">model_performance</span>(cc_ranger_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<pre><code>## Model label:  ranger 
+##         score name
+## auc 0.9885462  auc
+## f1  0.9409985   f1</code></pre>
+<div class="sourceCode" id="cb191"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb191-1" data-line-number="1"><span class="kw">plot_roc</span>(mr_gbm, mr_ranger, mr_glm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-76-1.png" width="672" /></p>
 </div>
-<p>Figures <a href="residualDiagnostic.html#fig:plotResidual1">22.5</a> and <a href="residualDiagnostic.html#fig:plotResidual2">22.6</a> and <a href="residualDiagnostic.html#fig:plotResidual3">22.7</a> are devoted to diagnostics that link residuals with other variables.</p>
-<p>Figure <a href="residualDiagnostic.html#fig:plotResidual1">22.5</a> shows that for the random forest model residuals are linked with true values of the target variable. We already know that the model is biased it just confirms that predictions are shifted towards the average. Same can be read from the Figure <a href="residualDiagnostic.html#fig:plotResidual3">22.7</a>.</p>
-<p>Figure <a href="residualDiagnostic.html#fig:plotResidual2">22.6</a> investigates the relation between residuals and ordering of observations. In this case there is no relation as shall be expected.</p>
-<div class="sourceCode" id="cb161"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb161-1" data-line-number="1"><span class="kw">plot_residual</span>(mr_rf)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotResidual1"></span>
-<img src="PM_VEE_files/figure-html/plotResidual1-1.png" alt="(fig:plotResidual1) Residuals versus true values for the random forest model for apartments data. Random forest model is biased towards the mean so for low values of the target variable we see negative residuals while for large values we see large positive residuals." width="480" />
-<p class="caption">
-Figure 22.5: (fig:plotResidual1) Residuals versus true values for the random forest model for apartments data. Random forest model is biased towards the mean so for low values of the target variable we see negative residuals while for large values we see large positive residuals.
-</p>
+<div id="feature-importance" class="section level2">
+<h2><span class="header-section-number">24.6</span> Feature Importance</h2>
+<div class="sourceCode" id="cb192"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb192-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb192-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb192-3" data-line-number="3">fi_gbm &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_gbm_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
+<a class="sourceLine" id="cb192-4" data-line-number="4">fi_ranger &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_ranger_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
+<a class="sourceLine" id="cb192-5" data-line-number="5"><span class="kw">plot</span>(fi_gbm, fi_ranger) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;1 - AUC&quot;</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-77-1.png" width="672" /></p>
 </div>
-<div class="sourceCode" id="cb162"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb162-1" data-line-number="1"><span class="kw">plot_residual</span>(mr_rf, <span class="dt">variable =</span> <span class="ot">NULL</span>)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotResidual2"></span>
-<img src="PM_VEE_files/figure-html/plotResidual2-1.png" alt="(fig:plotResidual2) Residuals versus order of observations. " width="480" />
-<p class="caption">
-Figure 22.6: (fig:plotResidual2) Residuals versus order of observations.
-</p>
+<div id="feature-effects" class="section level2">
+<h2><span class="header-section-number">24.7</span> Feature effects</h2>
+<div class="sourceCode" id="cb193"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb193-1" data-line-number="1">pd_gbm &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_gbm_exp)</a>
+<a class="sourceLine" id="cb193-2" data-line-number="2">pd_ranger &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_ranger_exp)</a>
+<a class="sourceLine" id="cb193-3" data-line-number="3"><span class="kw">plot</span>(pd_gbm, pd_ranger)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-78-1.png" width="672" /></p>
+<div class="sourceCode" id="cb194"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb194-1" data-line-number="1">pd_gbm &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_gbm_exp, <span class="dt">variable_type =</span> <span class="st">&quot;categorical&quot;</span>)</a>
+<a class="sourceLine" id="cb194-2" data-line-number="2">pd_ranger &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_ranger_exp, <span class="dt">variable_type =</span> <span class="st">&quot;categorical&quot;</span>)</a>
+<a class="sourceLine" id="cb194-3" data-line-number="3"><span class="kw">plot</span>(pd_gbm, pd_ranger)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-78-2.png" width="672" /></p>
 </div>
-<div class="sourceCode" id="cb163"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb163-1" data-line-number="1"><span class="kw">plot_residual</span>(mr_rf, <span class="dt">variable =</span> <span class="st">&quot;_y_hat_&quot;</span>)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotResidual3"></span>
-<img src="PM_VEE_files/figure-html/plotResidual3-1.png" alt="(fig:plotResidual3) Residuals versus predicted values for the random forest model for apartments data. Random forest model is biased towards the mean so for low predictions we see negative residuals while for large predictions we see large positive residuals." width="480" />
-<p class="caption">
-Figure 22.7: (fig:plotResidual3) Residuals versus predicted values for the random forest model for apartments data. Random forest model is biased towards the mean so for low predictions we see negative residuals while for large predictions we see large positive residuals.
-</p>
+<div id="instance-level-exploration" class="section level2">
+<h2><span class="header-section-number">24.8</span> Instance level exploration</h2>
+<div id="ceteris-paribus" class="section level3">
+<h3><span class="header-section-number">24.8.1</span> Ceteris Paribus</h3>
+<div class="sourceCode" id="cb195"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb195-1" data-line-number="1">call_center_<span class="dv">25</span> &lt;-<span class="st"> </span><span class="kw">select_sample</span>(call_center, <span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb195-2" data-line-number="2">cp_cc_gbm &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(cc_gbm_exp,<span class="dt">new_observation =</span> call_center_<span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb195-3" data-line-number="3"><span class="kw">plot</span>(cp_cc_gbm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-79-1.png" width="672" /></p>
+<div class="sourceCode" id="cb196"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb196-1" data-line-number="1">cp_cp &lt;-<span class="st"> </span><span class="kw">cluster_profiles</span>(cp_cc_gbm, <span class="dt">center =</span> <span class="ot">TRUE</span>, <span class="dt">variables =</span> <span class="st">&quot;hour&quot;</span>)</a>
+<a class="sourceLine" id="cb196-2" data-line-number="2"><span class="kw">plot</span>(cp_cp)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-79-2.png" width="672" /></p>
 </div>
-<p>Figures presented so far were focused on shifts or biases in model predictions.
-Figure <a href="residualDiagnostic.html#fig:plotScaleLocation1">22.8</a> helps to find problems in the variance of residuals. In many cases we expect that residuals will have constant variance. This can be verified on the scale-location plot. On the X axis there are model predictions while on the Y axis there are square roots from absolute values of residuals.</p>
-<p>Smoothed average correspond to the standard deviation of residuals. Flat constant trend confirms homogeneity of the variance. In this example we see that variance of residuals is larger for extreme model predictions.</p>
-<div class="sourceCode" id="cb164"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb164-1" data-line-number="1"><span class="kw">plot_scalelocation</span>(mr_rf, <span class="dt">variable =</span> <span class="st">&quot;_y_hat_&quot;</span>, <span class="dt">smooth =</span> <span class="ot">TRUE</span>)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotScaleLocation1"></span>
-<img src="PM_VEE_files/figure-html/plotScaleLocation1-1.png" alt="(fig:plotScaleLocation1) The scale-location plot for the random forest model for apartments data. On the X axis there are predicted values while on the Y axis there are square roots from absolute values of residuals. Any pattern in the data suggests that variance of residuals is related with predicted variables. It's the case here, since model is biased towards the average and variance of residuals is larger at extremes of the target variable." width="480" />
-<p class="caption">
-Figure 22.8: (fig:plotScaleLocation1) The scale-location plot for the random forest model for apartments data. On the X axis there are predicted values while on the Y axis there are square roots from absolute values of residuals. Any pattern in the data suggests that variance of residuals is related with predicted variables. It’s the case here, since model is biased towards the average and variance of residuals is larger at extremes of the target variable.
-</p>
-</div>
-<p>Another way of checking if there are problems in model structure related to the ordering of observation is the autocorrelation plot. Example of the autocorrelation is presented in Figure <a href="residualDiagnostic.html#fig:plotAutocorrelation1">22.9</a>. Here we do not see a strong autocorrelation.</p>
-<div class="sourceCode" id="cb165"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb165-1" data-line-number="1"><span class="kw">plot_autocorrelation</span>(mr_rf)</a></code></pre></div>
-<div class="figure" style="text-align: center"><span id="fig:plotAutocorrelation1"></span>
-<img src="PM_VEE_files/figure-html/plotAutocorrelation1-1.png" alt="(fig:plotAutocorrelation1) The autocorrelation plot for the random forest model for apartments data. On the X axis there are residuals for observation i, while on the Y axis there are residuals for observation i+1. " width="480" />
-<p class="caption">
-Figure 22.9: (fig:plotAutocorrelation1) The autocorrelation plot for the random forest model for apartments data. On the X axis there are residuals for observation i, while on the Y axis there are residuals for observation i+1.
-</p>
-</div>
+<div id="break-down" class="section level3">
+<h3><span class="header-section-number">24.8.2</span> Break Down</h3>
+<div class="sourceCode" id="cb197"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb197-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb197-2" data-line-number="2">mark &lt;-<span class="st"> </span>call_center[<span class="dv">1</span>,]</a>
+<a class="sourceLine" id="cb197-3" data-line-number="3">bd_cc_gbm &lt;-<span class="st"> </span><span class="kw">break_down</span>(cc_gbm_exp, <span class="dt">new_observation =</span> mark)</a>
+<a class="sourceLine" id="cb197-4" data-line-number="4"><span class="kw">plot</span>(bd_cc_gbm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-80-1.png" width="672" /></p>
 
 </div>
-</div>
-<h3>References</h3>
-<div id="refs" class="references">
-<div id="ref-auditorarxiv">
-<p>Gosiewska, Alicja, and Przemysław Biecek. 2018. “auditor: An R Package for Model-Agnostic Visual Validation and Diagnostic.” <em>ArXiv E-Prints</em>.</p>
 </div>
 </div>
             </section>
@@ -519,8 +562,8 @@ Figure 22.9: (fig:plotAutocorrelation1) The autocorrelation plot for the random 
           </div>
         </div>
       </div>
-<a href="featureEffects.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="conceptDrift.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="conceptDrift.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="appendixes.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
