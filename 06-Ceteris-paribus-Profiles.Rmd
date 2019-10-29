@@ -11,10 +11,48 @@ Explanation tools (explainers) presented in this chapter are linked to the secon
 
 Panel A of Figure \@ref(fig:modelResponseCurveLine) presents response (prediction) surface for the `titanic_lmr_v6` model for two explanatory variables, *age* and *class*, from the *titanic* dataset (see Section \@ref(TitanicDataset)). We are interested in the change of the model prediction induced by each of the variables. Toward this end, we may want to explore the curvature of the response surface around a single point with *age* equal to 47 and *class* equal to "1st," indicated in the plot. Ceteris-paribus (CP) profiles are one-dimensional profiles that examine the curvature across each dimension, i.e., for each variable. Panel B of Figure \@ref(fig:modelResponseCurveLine) presents the profiles corresponding to *age* and *class*. Note that, in the CP profile for *age*, the point of interest is indicated by the black dot. In essence, a CP profile shows a conditional expectation of the dependent variable (response) for the particular explanatory variable.  
 
-
 ```{r modelResponseCurveLine, echo=FALSE, fig.cap="(fig:modelResponseCurveLine) A) Model response (prediction) surface. Ceteris-paribus (CP) profiles marked with black curves help to understand the curvature of the surface while changing only a single explanatory variable. B) CP profiles for individual variables, age (continuous) and class (categorical).", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/profile_age_class.png")
 ```
+
+```{r modelResponseCurveAnimation, echo=FALSE, fig.cap="(fig:modelResponseCurveAnimation) Animated model response 2D surface as in (fig:modelResponseCurveLine).", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/profile_age_class.gif")
+```
+
+
+
+```{r, echo=FALSE, eval=FALSE}
+# 3D animated map
+age <- rep(0:100, each = 5)
+class <- rep(c(3,2,1,4,5,6,7), each = 80)
+ac <- expand.grid(age, class)
+achenry <- henry[rep(1,nrow(ac)),]
+achenry$age <- ac$Var1
+achenry$class <- levels(titanic$class)[ac$Var2]
+
+library("rms")
+explain_lmr_v6 <- archivist::aread("pbiecek/models/2b9b6")
+
+achenry$predict <- predict(explain_lmr_v6, achenry)
+
+library(plotly)
+acmat <- matrix(achenry$predict, ncol = length(class))
+p <- plot_ly(z = ~acmat) %>% add_surface()
+p
+
+
+achenry$class <- reorder(achenry$class, achenry$predict, mean)
+
+gghenry <- ggplot(achenry[,c(1,3,8)], aes(class, age)) +
+ geom_raster(aes(fill = predict)) + coord_flip() +
+  scale_fill_gradient2(midpoint = 0.5)
+
+library(rayshader)
+plot_gg(gghenry, width = 5, height = 5,  multicore = TRUE, scale = 250, 
+        zoom = 0.7, 
+        theta = 10, phi = 30, windowsize = c(800, 800))
+```
+
 
 CP belongs to the class of techniques that examine local curvature of the model response surface. Other very popular technique from this class called LIME is presented in Chapter \@ref(LIME).
 
