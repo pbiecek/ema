@@ -2,182 +2,206 @@
 source("models/models_titanic.R")
 ```
 
-# Model's Performance {#modelPerformance}
+# Model Performance Measures {#modelPerformance}
 
 ## Introduction {#modelPerformanceIntro}
 
-In this chapter, we present methods that are useful for the evaluation of a model performance. These methods may be applied for several purposes.
+In this chapter, we present measures that are useful for the evaluation of a predictive model performance. They may be applied for several purposes:
  
-* Model assessment; we want to know how good is the model and how reliable are model predictions. How frequent and how large errors we may expect.
-* Model comparison; we want to compare two or more models in order to choose the better one.
-* Out-of-sample and out-of-time comparisons; we want to monitor model performance on a new data to check if the performance is stable.
+* model evaluation: we may want to know how good is the model, i.e., how reliable are the model predictions (how frequent and how large errors we may expect);
+* model comparison: we may want to compare two or more models in order to choose between them;
+* out-of-sample and out-of-time comparisons: we may want to check model's performance when applied to new data to evaluate if the performance has not worsened.
 
-Depending of the model objective (classification, regression, survival) different model performance metrics are being used. Moreover the list of useful metrics is growing as new applications emerge. In this chapter we will focus on the most common measures of model performance. 
-
+Depending of the nature of the dependent variable (continuous, binary, categorical, count, etc.), different model performance measures may be used. Moreover, the list of useful measures is growing as new applications emerge. In this chapter, we focus on a selected set of measures that are used in model-level exploration techniques that are introduced in subsequent chapters. 
 
 ## Intuition {#modelPerformanceIntuition}
 
-Most model performance measures are based on comparison of model predictions versus known values of a target variable. An ideal model will have predictions equal to true values of a target variable. In practice it is never the case and we need to quantify the disagreement.
+Most model performance measures are based on comparison of the model predictions with the (known) values of the dependent variable. For an ideal model, the predictions and the dependent-variable values should be equal. In practice, it is never the case, and we want to quantify the disagreement.
 
-Here we consider only models that output a single numeric value per observation, so the prediction may be equal, lower of higher than the true value. In applications one can penalize model differently for large or small errors, or differently for under/over predictions. This is why we need different performance measures.
-In the best possible scenario we can specify a single model performance measure before the model is created and then we optimize model for this measure. But in practice the more common scenario is to have few performance measures that are often selected after the model is created.
+In applications, we can weigh differently the situation when the prediction is, for instance, larger than the true value, as compared to the case  when it is smaller. Depending on the decision how to weigh different types of disagreement we may need different performance measures.
 
+When assessing model's performance, it is important to take into account the risk of overestimation of the performance when considering the data that were used for developing of the model. To mitigate the risk, various assessment stategies, such as cross-validation, have been proposed (see [@AppliedPredictiveModeling2013]). In what follows, we consider the simple train-test-split strategy, i.e., we assume that the available data are split into a training set and a testing set. Model is created on the training set, and the testing set is used to assess the model's performance.
+
+<!-- In the best possible scenario we can specify a single model performance measure before the model is created and then we optimize model for this measure. But in practice the more common scenario is to have few performance measures that are often selected after the model is created.
+-->
 
 ## Method {#modelPerformanceMethod}
 
-Here we assume that we have data split into a train and test sets. Model is created on the train set and the independent test set is used to assess the model performance. For more sophisticated validation strategies (cross validation, repeated cross validation, two level cross validation) see [@AppliedPredictiveModeling2013].
+Assume that we have got a testing dataset with $n$ observations on $p$ explanatory variables and on a dependent variable $Y$. Let $x_i$ denote the (column) vector of values of the explanatory variables for the $i$-th observation, and $y_i$ the corresponding value of the dependent variable. Denote by $\widehat{y}_i=f(x_i)$ model's $f()$ prediction corresponding to $y_i$. Let $X=(x'_1,\ldots,x'_n)$ denote the matrix of covariates for all $n$ observations, and $y=(y_1,\ldots,y_n)'$ denote the (column) vector of the values of the dependent variable.   
 
-In this chapter, let $X$ stands for the test data with $n$ observations and $p$ explanatory variables. Denote by  $\widehat{y}=(f(x_1),\ldots,f(x_n))$ the vector of predictions for model $f()$ for all the observations. Let $y$ denote the vector of observed values of the dependent variable $Y$.
+### Continuous dependent variable {#modelPerformanceMethodCont}
 
-### Regression
+The most popular model performance measure for models for a continuous dependent variable is the mean square error,  defined as
 
-The most popular model performance measure for regression problems is the mean square error defined as
+\begin{equation}
+MSE(f,X,y) = \frac{1}{n} \sum_{i}^{n} \{f(x_i) - y_i\}^2 = r_i^2,
+(\#eq:MSE)
+\end{equation}
 
-$$
-MSE(f, x) = \frac{1}{n} \sum_{i}^{n} (f(x_i) - y_i)^2.
-$$
+where $r_i=f(x_i) - y_i$ is the residual for the $i$-th observation. Thus, MSE can be seen as a sum of squared residuals. MSE is a convex differentiable function, which is important from an optimization point of view. As the measure weighs all differences equally, large residuals have got high impact on MSE. Thus, the measure is sensitive to outliers. For a ''perfect'' predictive model, which predicts all $y_i$ exactly, $MSE = 0$.
 
-MSE is a convex differentiable function so it has good properties from the optimization perspective.
-Large differences between $f(x_i) - y_i$ have high impact of the MSE so it is sensitive to outliers.
+Note that MSE is constructed on a different scale than the dependent variable. Thus, a more interpretable variant of this measure is the root mean square error (RMSE), defined as
 
-MSE is not on the same scale as the original target variable, so more interpretable variant of this measure is the Root Mean Square Error (RMSE)
+\begin{equation}
+RMSE(f, X, y) = \sqrt{MSE(f, X, y)}.
+(\#eq:RMSE)
+\end{equation}
 
-$$
-RMSE(f, x) = \sqrt{MSE(f, x)}.
-$$
+A popular variant of RMSE is its normalized version, $R^2$, defined as
 
-RMSE has the same unit as the target variable. A popular variation of the RMSE is it's normalized version called $R^2$ defined as
+\begin{equation}
+R^2(f, X, y) = 1 - \frac{MSE(f, X, y)}{MSE(f_0, X,y)}.
+(\#eq:R2)
+\end{equation}
 
-$$
-R^2(f, x) = 1 - \frac{MSE(f, x)}{MSE(baseline, x)}.
-$$
+In \@ref(eq:R2), $f_0()$ is a ''baseline'' model. For instance, in the case of the classical linear regression, $f_0()$ is the model that includes only the intercept, which implies the use of the average value of $Y$ as a prediction for all observations. $R^2$ is normalized in the sense that the ''perfect'' predictive model leads to $R^2 = 1$, while $R^2 = 0$ means that we are not doing better than the baseline model. In the context of the classical linear regresssion, $R^2$ is the familiar coefficient of determination and can be interpreted as the fraction of the total variance of $Y$ explained by model $f()$.
 
-Here the $baseline$ model is some naive solution, like an average value of a target variable. $R^2$ is normalized in a sense that best possible model will have $R^2 = 1$ while $R^2 = 0$ means that we are not better than a baseline (still we can do worse). Another interpretation of $R^2$ is that it's a ratio of variance explained by a model over total variance.
+Given sensitivity of MSE to outliers, sometimes the mean absolute error (MAE) is considered as a model performance measure:
 
+\begin{equation}
+MAE(f, X ,y) = \frac{1}{n} \sum_{i}^{n} |f(x_i) - y_i| = \frac{1}{n} \sum_{i}^{n} |r_i|.
+(\#eq:MAE)
+\end{equation}
 
-Mean absolute error (MAE) is a model performance measure more robust with respect to outliers. MAE is defined as
+MAE is more robust to outliers than MSE. A disadvantage of MAE are its less favorable mathematical properties. 
 
-$$
-MAE(f, x) = \frac{1}{n} \sum_{i}^{n} |f(x_i) - y_i|.
-$$
+### Binary dependent variable {#modelPerformanceMethodBin}
 
+To introduce model performance measures, we label the two possible values of the dependent variable as `success` and `failure`. We also assume that model prediction $f(x_i)$  takes the form of the predicted probability of success. 
 
-### Classification
+If, additionally, we assign the value of 1 to `success` and 0 to `failure`, it is possible to use MSE, RMSE, and MAE, as defined in \@ref(eq:MSE), \@ref(eq:RMSE), \@ref(eq:MAE), respectively, as a model performance measure. In practice, however, those summary measures are not often used. One of the main reasons is that they penalize too mildly for wrong predictions. In fact, the maximum penalty for an individual prediction is equal to 1 (if, for instance, the model yields zero probability for an actual success).
 
-Classification models are a bit harder to evaluate since the target variable takes values in some finite set of possible classes, while model predictions are numeric scores (often probabilities). For a moment let's assume that we are dealing with binary classification, i.e. two classes, let's call them `has` / `has not`. Model predictions are discretized with some given threshold $cutoff$. If model prediction for a class $C$ is higher than $cutoff$ then we will say that model predicts $C$.
+To address this issue, the log-likelihood function based on the Bernoulli distibution can be used:
 
-After such discretization the model results on a test data $X$ can be summarized by a following table:
+\begin{equation}
+l(f, X ,y) =  -\sum_{i=1}^{n} [y_i \ln\{f(x_i)\}+ (1-y_i) \ln\{1-f(x_i)\}].
+(\#eq:bernoulli)
+\end{equation}
 
-|                       | True value: `has`                 | True value: `has not`             | Total                      |
+Note that, in the machine-learning world, often $l(f, X ,y)/n$ is considered (sometimes also with $\ln$ replaced by $\log_2$) and termed ''logloss'' or ''cross-entropy''. The log-likelihood heavily ''penalizes'' the cases when the model-predicted probability of success $f(x_i)$ is high for an actual failure ($y_i=0$) and low for an actual success ($y_i=1$). 
+
+In many situations, however, a consequence of a prediction error depends on the form of the error. For this reason, performance measures based on the (estimated values of) probability of correct/wrong prediction are more often used. To introduce some of those measures, we assume that, for each observation from the testing dataset, the predicted probability of success $f(x_i)$ is compared to a fixed cut-off threshold, $C$ say. If the probability is larger than $C$, then we assume that the model predicts success; otherwise, we assume that it predicts failure. As a result of such a procedure, the comparison of the observed and predicted values of the dependent variable for the $n$ observations in the testing dataset can be summarized in the following table:
+
+|                       | True value: `success`                 | True value: `failure`             | Total                      |
 |-----------------------|-----------------------------------|-----------------------------------|----------------------------|
-|  Predicted: `has`     | True Positive: TP                 | False Positive: FP (type I error) | #predicted as `has`: P     |
-|  Predicted: `has not` | False Negative FN (type II error) | True Negative TN                  | #predicted as `has not`: N |
-| Total                 | #truly `has`                      | #truly `has has not`              | $n$                      |
+|  Predicted: `success`     | True Positive: TP                 | False Positive (type I error): FP  | P     |
+|  Predicted: `failure` | False Negative  (type II error): FN | True Negative: TN                  |  N |
+| Total                 | S                      | F              | $n$                      |
 
+In machine-learning world, the table is often referred to as the ''confusion table'' or ''confusion matrix''. In statsicts, it is often called the ''decision table''. The counts $TP$ and $TN$ on the diagonal of the table correspond to the cases when the predicted and observed value of the dependent variable $Y$ coincide. $FP$ is the number of cases in which failure is predicted as success. These are false-positive, or type I error, cases. On the other hand, $FN$ is the count of false-negative, or type II error, cases, in which success is predicted as failure. Marginally, there are $P$ predicted successes and $N$ predicted failures, with $P+N=n$. In the testing dataset, there are $S$ observed sucesses and $F$ observed failures, with $S+N=n$.
 
-The simplest measure of performance is **the accuracy**
+The simplest measure of model performance is **accuracy**, defined as
+
 $$
 ACC = \frac{TP+TN}{n}.
 $$
-The measure has clear interpretation, but it is not working well if classes are imbalanced.
+It is the fraction of correct predictions in the entire testing dataset. Accuracy is of interest if true positives and true negatives are more important than their false counterparts. However, accuracy may not be very informative when one of the binary categories (successes or failure) is much more prevalent. For example, if the testing data contain 90\% of successes, a model that would always predict a success would reach accuracy of 0.9, although one could argue that this is not a very useful model.  
 
-In machine learning there popular measures are **precision** and **recall**. Precision is defined as  
+There may be situations when false positives and/or false negatives may be of more concern. In that case, one might want to keep their number low. Hence, other measures, focused on the false results, might be of interest.
+
+In the machine-learning world, two other measures are often considered: **precision** and **recall**. Precision is defined as
+
 $$
-Precision = \frac{TP}{TP + FP}.
+Precision = \frac{TP}{TP+FP} = \frac{TP}{P}.
 $$
-It measures how frequent are true positive predictions among all predictions. Recall is defined as
+Precision is also referred to as the positive predictive value. It is the fraction of correct predictions among the predicted successes. Precision is high if the number of false positives is low. Thus, it is a useful measure when the penalty for committing the type I error (false positive) is high. For instance, consider the use of a genetic test in cancer diagnostics, with a positive result of the test taken as an indication of an increased risk of developing a cancer. A false positive result of a genetic test might mean that a person would have to unnecessarily cope with emotions and, possibly, medical procedures, related to the fact of being evaluated as having a high risk of developing a cancer. We might want to avoid this situation more than the false negative case. The latter would mean that the genetic test gives a negative result for a person that, actually, might be at an increased risk of developing a cancer. However, an increased risk does not mean that the person will develop cancer. And even so, we could hope that we could detect it in due time. 
+
+Recall is defined as
+
 $$
-Recall = \frac{TP}{TP + FN}.
+Recall = \frac{TP}{TP+FN} = \frac{TP}{S}.
 $$
-It measures how frequent are true positive predictions among truly positive cases. Harmonic mean of these two indexes is the F1 score defined as
+Recall is also referred to as sensitivity or true positive rate. It is the fraction of correct predictions among the true successes. Recall is high if the number of false negatives is low. Thus, it is a useful measure when the penalty for committing the type II error (false negative) is high. For instance, consider the use of an algorithm that predicts whether a bank transaction is fraudulent. A false negative result means that the algorithm accepts a fraudulent transaction as a legitimate one. Such a decision may have immediate and unpleasant consequences for the bank, because it may imply a non-recoverable loss of money. On the other hand, a false positive result means that a legitimate transaction is considered as fraudulent one and is blocked. However, upon further checking, the legitimate nature of the transaction can be confirmed with, perhaps, annoyed client as the only consequence for the bank. 
+
+The harmonic mean of these two measures defines the **F1 score**: 
+
 $$
-F1\  score = \frac{Precision * Recall}{Precision + Recall}.
+F1\  score = \frac{2}{\frac{1}{Precision} + \frac{1}{Recall}} = 2\cdot\frac{Precision \cdot Recall}{Precision + Recall}.
+$$
+F1 score tends to give a low value if either precision or recall is low, and a high value if both precision and recall are high. For instance, if precision is 0, F1 score will also be 0 irrespectively of the value of recall. Thus, it is a useful measure if we have got to seek a balance between precision and recall. 
+
+In statistics, and especially in applications in medicine, the popular measures are **sensitivity** and **specificity**. Sensitivity is simply another name for recall. Specificity is defined as
+
+$$
+Specificity = \frac{TN}{TN + FP} = \frac{TN}{F}.
+$$
+Specificity  is also referred to as true negative rate. It is the fraction of correct predictions among the true failures. Specificity is high if the number of false positives is low. Thus, as precision, it is a useful measure when the penalty for committing the type I error (false positive) is high.
+
+The reason why sensitivity and specificity may be more often used outside the machine-learning world is related to the fact that their values do not depend on the proportion $S/n$ (sometimes termed ''prevalence'') of true successess. This means that, once estimated in a sample obtained from one population, they may be applied to other populations, in which the prevalence may be different. This is not true for precision, because one can write 
+
+$$
+Precision = \frac{Sensitivity \cdot \frac{S}{n}}{Sensitivity \cdot \frac{S}{n}+Specificity \cdot \left(1-\frac{S}{n}\right)}.
 $$
 
-In statistics, especially in applications to medicine, popular measures are sensitivity and specificity. Sensitivity is another name for recall, defined as 
-$$
-Sensitivity = \frac{TP}{TP + FN}.
-$$
-Specificity is defined as 
-$$
-Specificity = \frac{TN}{FP + TN}.
-$$
-It measures how frequent are true negative predictions among truly negative cases.
+All the measures depend on the choice of cut-off $C$. To assess the form and the strength of dependence, a common approach is to construct the Receiver Operating Characteristic (ROC) curve. The curve plots the sensitivity in function of 1-specificity for all possible, ordered values of $C$. Figure \@ref(fig:exampleROC) presents the ROC curve for the random-forest model for the Titanic dataset (see Section \@ref(model-titanic-rf)). Note that the curve indicates an inverse relationship between sensitivity and specifcity: by increasing one measure, the other is decreased.     
 
-
-Of course all these measures depend on the choice of the $cutoff$. To get rid of this additional free parameter a common approach to summarize results for classification is the Receiver Operating Characteristic curve (ROC curve) that summarize Sensitivity and 1-Specificity for all possible values of $cutoff$ in a single plot.
-
-```{r exampleROC, fig.width=5, fig.height=5, echo=FALSE, fig.cap="(fig:exampleROC) Blue curve shows ROC for random forest model and for the Titanic dataset. Black line shows the diagonal. Area under ROC is called AUC. Gini index can be calculated as 2 x area between ROC and the diagonal (this area is highlighted).", out.width = '80%', fig.align='center'}
+```{r exampleROC, fig.width=5, fig.height=5, echo=FALSE, fig.cap="(fig:exampleROC) ROC curve for the random-forest model for the Titanic dataset. The Gini ceofficient can be calculated as 2 x area between the ROC curve and the diagonal (this area is highlighted).", out.width = '80%', fig.align='center'}
 knitr::include_graphics("figure/ROCcurve.png")
 ```
 
+The ROC curve is very informative. For a model that predicts successes and failures at random, the corresponding ROC curve will be equal to the diagonal line. On the other hand, for a model that yields perfect predictions, the ROC curve reduces to a two intervals that connect points (0,0), (0,1), and (1,1). 
 
-ROC curve is very informative, but for model comparison it is better to have one of just a few numbers that summaries model performance. So a very popular coefficient that summarizes the ROC curve is the AUC value, which stands for Area Under the ROC Curve and is calculated as the area under the ROC.
+Often, there is a need to summarize the ROC curve and, hence, model's performance. A popular measure that is used toward this aim is the area under the curve (AUC). For a model that predicts successes and failures at random, AUC is the area under the diagonal line, i.e., it is equal to 0.5. For a model that yields perfect predictions, AUC is equal to 1.
 
-Note that for a dummy classifier that just predict classes at random, the corresponding ROC curve will have diagonal line. On the other hand for perfect classifier the ROC curve reduce to a two intervals that connect point (0,0), (0,1) and (1,1). AUC for a random dummy classifier will be equal to 0.5, while for the perfect classifier AUC will be equal 1.
+Another ROC-curve-based measure that is often used is the Gini coefficient $G$. It is closely related to AUC; in fact, it can be calculated a $G = 2 \times AUC - 1$. For a model that predicts successes and failures at random, $G=0$; for a perfect-prediction model, $G = 1$.
 
-Yet another measure that is commonly used is the Gini coefficient. It is closely related to AUC, in fact it can be calculated a $G = 2*AUC - 1$. Therefore random dummy classifier has $G=0$ while perfect classifier has $G=1$.
+The value of Gini's coefficient or, equivalently, of $AUC-0.5$ allow a comparison of the model-based predictions with random guessing. A measure that explicitly compares a prediction model with a baseline (or null) model is the **lift**. Commonly, as the baseline model, random guessing is considered. In that case,
 
+$$
+Lift  = \frac{\frac{TP}{P}}{\frac{S}{n}} = \frac{Precision}{\frac{S}{n}}.
+$$
+Note that $S/n$ can be seen as the estimated probability of a correct prediction of a success for random guessing. n the other hand, $TP/P$ is the estimated  probability of a correct prediction a succcess given that the model predicts a success. Hence, informally speaking, if the lift indicates how many more (or less) times the model does better in predicting success than random quessing. As other measures, the lift depends on the choice of cut-off $C$. The plot of the lift as a function of $C$ is called the lift chart.
+
+There are many more measures aimed at measuring performance of a predictive model for a inary dependent variable. An overview can be found in, e.g., (Berrar D.  Performance Measures for Binary Classification. Encyclopedia of Bioinformatics and Computational Biology Volume 1, 2019, Pages 546-560).
+
+### Categorical dependent variable {#modelPerformanceMethodCateg}
+
+To introduce model performance measures, we assume that $y_i$ is now a vector of $K$ elements. Each element $y_{ik}$ ($k=1,\ldots,K$) is a binary variable indicating whether the $k$-th category was observed for the $i$-th observation. We assume that for each observation only one category can be observed. Thus, all elements of $y_i$ are equal to 0 except of one that is equal to 1. Furthermore, We assume that model prediction $f(x_i)$ takes the form of a vector of the predicted probabilities for each of the $K$ categories. The predicted category is the one with the highest predicted probability.
+
+The log-likelihood function \@ref(eq:bernoulli) can be adapted to the categorical dependent variable case as follows:
+
+\begin{equation}
+l(f, X ,y) =  -\sum_{i=1}^{n}\sum_{k=1}^{K} y_{ik} \ln\{f(x_i)_k\}.
+(\#eq:multinom)
+\end{equation}
+
+It is essentially the log-likelihood function based on a multinomial distibution. 
+
+It is also possible to extend the performance measures like accuracy, precision, etc., introduced in Section  \@ref(modelPerformanceMethodBin). Toward this end, first, a confusion table is created for each category $k$, treating the category as ''success'' and all other categories as ''failure''. Let us denote the counts in the table by $TP_k$, $FP_k$, $TN_k$, and $FN_k$. Based on the counts, we can compute the average accuracy across all classes as follows:
+
+\begin{equation}
+\overline{ACC} = \frac{1}{K}\sum_{k=1}^K\frac{TP_k+TN_k}{n}.
+(\#eq:accmacro)
+\end{equation}
+
+Similarly, one could compute the average precision, average sensitivity, etc. In machine-learning world, this approach is often termed ''macro-averaging''. The averages computed in that way treat all classes equally.  
+
+An alternative approach is to sum the appropriate counts from the confusion tables for all classes, and then form a measure based on so-computed cumulative counts. For instance, for precision, this would lead to 
+
+\begin{equation}
+\overline{Precision}_{\mu} = \frac{\sum_{k=1}^K TP_k}{\sum_{k=1}^K (TP_k+FP_k)}.
+(\#eq:precmicro)
+\end{equation}
+
+In machine-learning world, this approach is often termed ''micro-averaging'' (hence subscript $\mu$ for ''micro'' in $Precision_{\mu}$ in \@ref(eq:precmicro)). Note that, for accuracy, this computation still leads to \@ref(eq:accmacro). The measures computed in that way favor classes with larger numbers of observations.
+
+
+### Count dependent variable {#modelPerformanceMethodCount}
+
+In case of counts, one could consider using any of the measures for a continuous dependent variable mentioned in Section \@ref(modelPerformanceMethodCont). However, a particular feature of a count dependent variable is that, often, its variance depends on the mean value. Consequently, weighing all contributions to MSE equally, as in \@ref(eq:MSE), is not appropriate, because the same residual value $r_i$ indicates a larger discrepancy for a smaller  count $y_i$ than for a larger one. Therefore, a popular measure is of performance of a predictive model for counts is Pearson's statistic: 
+
+\begin{equation}
+\chi^2(f,X,y) = \sum_{i}^{n} \left\{\frac{f(x_i) - y_i}{\sqrt{f(x_i)}}\right\}^2 = \sum_{i}^{n} \left\{\frac{r_i}{\sqrt{f(x_i)}}\right\}^2.
+(\#eq:Pearson)
+\end{equation}
+
+From \@ref(eq:Pearson) it is clear that, if the same residual value is obtained for two different observed counts, it is assigned a larger weight for the count for which the predicted value is smaller. 
 
 ## Example
 
-### Titanic data {#modelPerformanceTitanic}
+### Apartments data {#modelPerformanceApartments}
 
-Let us consider two models for the Titanic data,  the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and the logistic regression model `titanic_lmr_v6` (see Section \@ref(model-titanic-lmr)).
-
-Once the explainer is created we can now use `model_performance` function from the `auditor` package to calculate various model performance measures.
-
-First, let's compare Accuracy, F1 and AUC for these two models.
-
-```
-## Model label:  Logistic Regression v6 
-##         score name
-## auc 0.8196991  auc
-## f1  0.6589018   f1
-## acc 0.8046689  acc
-
-## Model label:  Random Forest v6 
-##         score name
-## auc 0.8566304  auc
-## f1  0.7289880   f1
-## acc 0.8494521  acc
-```
-
-For every measure the Random Forest model is doing better. It has higher AUC, Accuracy and F1 score.
-
-```{r message=FALSE, echo=FALSE}
-library("auditor")
-library("randomForest")
-
-explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
-explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
-
-# model_performance(explainer_titanic_rf, score = c("auc", "f1", "acc"))
-# model_performance(explainer_titanic_lr, score = c("auc", "f1", "acc"))
-```
-
-Figure \@ref(fig:titanicROC) compares ROC curves for `titanic_rf_v6` and `titanic_lmr_v6`. Random Forest model dominates over Logistic Regression almost in every point, except for very high $cutoff$s.
-
-```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicROC) ROC curve for two models for Titanic dataset."}
-# plot results
-eva_rf <- model_evaluation(explainer_titanic_rf)
-eva_lr <- model_evaluation(explainer_titanic_lr)
-plot_roc(eva_rf, eva_lr)
-```
-
-Figure \@ref(fig:titanicLift) compares LIFT curves for `titanic_rf_v6` and `titanic_lmr_v6`. Also in this case Random Forest model dominates over Logistic Regression.
-
-
-```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicLift) LIFT curve for two models for Titanic dataset."}
-plot_lift(eva_rf, eva_lr)
-```
-
-
-### Appartments data {#modelPerformanceApartments}
-
-In this section we will compare two models for the apartments data (see Section \@ref(ApartmentDataset)), the random-forest model `apartments_lm_v5` (see Section \@ref(model-Apartments-lr)) and the logistic regression model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)).
-
-For regression model also the `model_performance` function from the `auditor` package can be used. MSE and MAE are presented below. Also in this case the Random Forest model is better.
+Let us consider the linear regression model `apartments_lm_v5` (see Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the data on the apartment prices  (see Section \@ref(ApartmentDataset)). Recall that, for these data, the dependent variable, the price, is continuous. Hence, we can use the performance measures presented in Section \@ref(modelPerformanceMethodCont). In particular, we consider MSE and MAE. The values of the two measures for the two models are presented below. 
 
 ```
 ## Model label:  Linear Regression v5 
@@ -190,6 +214,8 @@ For regression model also the `model_performance` function from the `auditor` pa
 ## mse 36669.1954  mse
 ## mae   144.0888  mae
 ```
+
+Both MSE and MAE indicate that, overall, the random-forest model performs better than the linear regression model.
 
 ```{r message=FALSE, echo=FALSE, eval=FALSE}
 library("auditor")
@@ -213,36 +239,71 @@ model_performance(explainer_apartments_rf, score = c("mse", "rmse", "mae"))
 ## mae    214.4939  mae
 ```
 
+### Titanic data {#modelPerformanceTitanic}
+
+Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and the logistic regression model `titanic_lmr_v6` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)). Recall that, for these data, the dependent variable is binary, with success defined as survival of the passenger. 
+
+First, we will take a look at the accuracy, F1 score, and AUC for the models.
+
+```
+## Model label:  Logistic Regression v6 
+##         score name
+## auc 0.8196991  auc
+## f1  0.6589018   f1
+## acc 0.8046689  acc
+
+## Model label:  Random Forest v6 
+##         score name
+## auc 0.8566304  auc
+## f1  0.7289880   f1
+## acc 0.8494521  acc
+```
+Overall, the random-forest model is performing better, as indicated by the larger values of all the measures. 
+
+```{r message=FALSE, echo=FALSE}
+# library("auditor")
+# library("randomForest")
+
+explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
+explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
+
+# model_performance(explainer_titanic_rf, score = c("auc", "f1", "acc"))
+# model_performance(explainer_titanic_lr, score = c("auc", "f1", "acc"))
+```
+
+Figure \@ref(fig:titanicROC) presents ROC curves for both models. The curve for the random-forest model lies above the one for the logistic regression model for the majority of the cut-offs $C$, except for the very high values.
+
+```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicROC) ROC curves for the  random-forest model and the logistic regression model for the Titanic dataset."}
+# plot results
+library("auditor")
+library("randomForest")
+
+eva_rf <- model_evaluation(explainer_titanic_rf)
+eva_lr <- model_evaluation(explainer_titanic_lr)
+plot_roc(eva_rf, eva_lr)
+```
+
+Figure \@ref(fig:titanicLift) presents lift curves for both models. Also in this case the curve for the random-forest suggests a better performance than for the logistic regression model, except for the very high values of cut-ff $C$. [TOMASZ: THIS CURVE IS NOT CONSISTENT WITH THE DEFINITION OF THE LIFT. EXPLAIN/CHANGE?]
+
+```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="(fig:titanicLift) Lift curves for the  random-forest model and the logistic regression model for the Titanic dataset."}
+plot_lift(eva_rf, eva_lr)
+```
 
 ## Pros and cons {#modelPerformanceProsCons}
 
+All model performance measures presented in this chapter face some limitations. For that reason, many measures are available, as the limitations of a particular measure were addressed by developing an alternative. For instance, RMSE is frequently used and reported for linear regression models. However, as it is sensitive to outliers, MAE was proposed. In case of predictive models for a binary dependent variable, the measures like accuracy, F1 score, sensitivity, and specificity, are often considered depending on the consequences of corrrect/incorrect predictions in a particular application. However, the value of those measures depends on the cut-off value used for creating the predictions. For this reason, ROC curve and AUC have been developed and have become very popular. They are not easily extanded to the case of a categircal dependent variable, though. 
 
-In this chapter we described a number of measures for model performance. Below you will find brief pros versus cons discussion for each measure separately.
-
-Root Mean Square Error (RMSE) is frequently used and reported for regression models. A disadvantage is that single outliers may affect this measure a lot.
-
-R-square $R^2$ measure is commonly used for linear models. It shares same disadvantages as the RMSE.
-
-Descriptive statistics like box-plot or histogram for residuals are informative. But they are hard to summarize with a single number therefore they are hard to compare between models.
-
-
-For classification the AUC is a very popular measure of model performance. But it is related with an unrealistic scenario that we consider all possible cutoffs while in applications in most cases we work with a single specified cutoff.
-
-On the other hand measures like Accuracy, F1, Precision and Recall are easy to interpret, but they depend on a single specific cutoff.
-
-For this reason it is common to report and compare few measures of model performance, each reflects different aspect of the model.
-
+Given the advantages and disadvantages of various measures, and the fact that each may reflect a different aspect of the predicitve performance of a model, it is customary to report and compare several of them when evaluating a model's performance.
 
 ## Code snippets for R {#modelPerformanceR}
 
-
 In this section, we present the key features of the `auditor` R package [@auditor] which is a part of the [DrWhy.AI](http://DrWhy.AI) universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/auditor/.
 
-Note that there are also other R packages that offer similar functionality, like `mlr` [@mlr], `caret` [@caret], `tidymodels` [@tidymodels], `ROCR` [@ROCR].
+Note that there are also other R packages that offer similar functionality. These include packeges `mlr` [@mlr], `caret` [@caret], `tidymodels` [@tidymodels], and `ROCR` [@ROCR].
 
-Below we will present functions for classification, but note that same function can be used for regression problems.
+For illustration purposes we use the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and the logistic regression model `titanic_lmr_v6` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)).the random-forest model `titanic_rf_v6` (see Section \@ref(odel-HR-rf)). Consequently, the  functions from the `auditor` package are applied in the context of a binary classification problem. However, the same functions can be used for, e.g., linear regression problems.
 
-First we load explainers for both models.
+To illustrate the use of the functions, we first load explainers for both models.
 
 ```{r modelPerformanceArchivistRead, message=FALSE, eval=FALSE}
 library("auditor")
@@ -252,37 +313,26 @@ explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
 explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
 ```
 
-Function `auditor::model_performance()` calculated selected metrics for model performance. Use the `score` argument to select desired metrics. Use `data` argument to specify test data (by default it will be extracted from an explainer). And use `cutoff` argument to specify cutoff for measures like F1 score of Accuracy.
+Function `auditor::model_performance()` calculates selected model performance measures. The `score` argument is used to select the desired measures. The `data` argument serves for specification of the test dataset, for which the selected measures are to be computed. Note that, by default, the data are extracted from the explainer object. Finally, it is possible to use the `cutoff` argument to specify the cut-off value to obtained cut-off-dependent measures like F1 score or accuracy.
 
 ```{r modelPerformanceMeasure, message=FALSE}
 model_performance(explainer_titanic_rf, score = c("auc", "f1", "acc"))
 model_performance(explainer_titanic_lr, score = c("auc", "f1", "acc"))
 ```
 
-For ROC or LIFT plots one needs to first use the `model_evaluation()` function and then either `plot_roc()` or `plot_lift()`.
+ROC or lift curves can be constructed by, first, using the `model_evaluation()` function. [TOMASZ: WHAT DOES IT DO?] Subseqeuntly, the resulting object is used in the `plot_roc()` or `plot_lift()` function calls. Both plot functions return `ggplot2` objects and can take one or more explainer objects as arguments. In the latter case, the profiles for each explainer are superimposed on one plot. 
 
-```{r titanicMEexamples, warning=FALSE, message=FALSE, fig.width=5, fig.height=5}
-
+```{r titanicMEexamples, warning=FALSE, message=FALSE, eval=FALSE, fig.width=5, fig.height=5}
 eva_rf <- model_evaluation(explainer_titanic_rf)
 eva_lr <- model_evaluation(explainer_titanic_lr)
-```
-
-Both plot functions return `ggplot2` objects and both can take one or more explanations as arguments. In the latter case profiles for each explanation will be superimposed in a plot. 
-
-```{r titanicROCexamples,fig.cap="(fig:titanicROCexamples) ROC and LIFT curves for two models for Titanic dataset.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5}
 plot_roc(eva_rf, eva_lr)
 plot_lift(eva_rf, eva_lr)
 ```
-
-ROC and LIFT curves presented in Figure \@ref(fig:titanicROCexamples) show that both models are better than a random model. On this dataset the Random forest model do better than the logistic regression model. 
-
-
-Both plots can be supplemented with boxplots for residuals. 
+The resulting plots are shown in Figures \@ref(fig:titanicROC) and \@ref(fig:titanicLift). Both plots can be supplemented with boxplots for residuals. Toward this end, the residuals have got to computed and added to the explainer object with the help of the `model_residual()` function. Subsequently, the `plot_residual_boxplot()` can be applied to the resulting object. [TOMASZ: CODE NOT WORKING FOR SOME REASON.]  
 
 ```{r titanicBoxplots,fig.cap="(fig:titanicBoxplots) Boxplots for residuals for two models on Titanic dataset.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=3}
-mr_rf <- model_residual(explainer_titanic_rf)
-mr_lm <- model_residual(explainer_titanic_lr)
+# mr_rf <- model_residual(explainer_titanic_rf)
+# mr_lm <- model_residual(explainer_titanic_lr)
 
-plot_residual_boxplot(mr_rf, mr_lm)
+# plot_residual_boxplot(mr_rf, mr_lm)
 ```
-
