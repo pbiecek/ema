@@ -85,13 +85,13 @@ Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X
 Conditional Dependency Profile for a model $f$ and a variable $x^j$ is defined as
 
 \begin{equation}
-g_{CD}^{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+g^{CD}_{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
 (\#eq:CDPdef)
 \end{equation}
 
 So it's an expected value over **conditional** distribution $(X^j,X^{-j})|X^j=z$.
 
-For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case $g_{CD}^{f, 1}(z) = 2*z$.
+For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case $g^{CD}_{f, 1}(z) = 2*z$.
 
 
 The natural estimator for Conditional Dependency Profiles introduced in [@ALEPlotRPackage] is
@@ -128,29 +128,27 @@ where $s$ is a smoothing factor.
 Accumulated Local Profile for a model $f$ and a variable $x^j$ is defined as
 
 \begin{equation}
-g_{AL}^{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
+g^{ALE}_{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
 (\#eq:ALEdef)
 \end{equation}
 
-where $z_0$ if the lower boundary  of $x^j$. The profile $g_{AL}^{f, j}(z)$ is calculated up to some constant $c$. Usually the constant $c$ is selected to set average $g_{AL}^{f, j}$ equal to 0 or an average of $f(x)$.
+where $z_0$ if the lower boundary  of $x^j$. The profile $g^{ALE}_{f, j}(z)$ is calculated up to some constant $c$. Usually the constant $c$ is selected to set average $g^{ALE}_{f, j}$ equal to 0 or an average of $f(x)$.
 
 The equation may be a bit complex, but the intuition is not that complicated. Instead of averaging Ceteris Paribus profiles we just look locally how quickly local CP profiles are changing. And ALE profile is reconstructed from such local partial changes as cumulative derivative over changes.
 
 So it's a cumulated  expected change of the model response along where the expected values are calculated  over **conditional** distribution $(X^j,X^{-j})|X^j=z$.
 
-For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution  of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case  $g_{AD}^{f, 1}(z) = z$.
+For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution  of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case  $g^{ALE}_{f, 1}(z) = z$.
 
 
 The natural estimator for Accumulated Local Profiles introduced in [@ALEPlotRPackage] is
 
 \begin{equation}
-\hat g^{ALE}_i(z) =
-\sum_{k=1}^{k_i(z)} \frac{1}{|N_i(k)|}
-\sum_{j \in N_i} [ f(x|^i = z_k) - f(x|^i = z_{k-1]) ] + c
+\hat g^{ALE}_i(z) = \sum_{k=1}^{k_i(z)} \frac{1}{|N_i(k)|} \sum_{j \in N_i} \left[ f(x|^i = z_k) - f(x|^i = z_{k-1}) \right] + c
 (\#eq:ALEPest)
 \end{equation}
 
-where $k_i(z)$ is the index of interval with point $z$, $N_i$ is the set of observations with $x_i$ in this interval. The difference $f(x|^i = z_k) - f(x|^i = z_{k-1])$ correspond to the difference of CP profiles in interval $k$, and this difference is averaged and accumulated.
+where $k_i(z)$ is the index of interval with point $z$, $N_i$ is the set of observations with $x_i$ in this interval. The difference $f(x|^i = z_k) - f(x|^i = z_{k-1})$ correspond to the difference of CP profiles in interval $k$, and this difference is averaged and accumulated.
 
 In Figure \@ref(fig:accumulatedLocalEffects) panel D the range of variable $x_i$ is divided into 4 separable intervals. The set $N_i$ contains all observations that fall into the same interval as observation $x_i$. The final ALE profile is constructed from accumulated differences of local CP profiles.
 
@@ -158,7 +156,7 @@ In Figure \@ref(fig:accumulatedLocalEffects) panel D the range of variable $x_i$
 Note that in general the $\hat g^{CD}_i(z)$ is not smooth in boundaries between $N_i$ subsets. Thus here we propose another smooth estimator for $g_i^{ALE}$
 
 \begin{equation}
-\tilde g^{ALE}_i(z) = \sum_{k \in {z_0, ..., z}} \frac{j = 1}{n}  w_{j}(k) [f(x|^i = z_k) - f(x|^i = z_k - \Delta)] + c
+\tilde g^{ALE}_i(z) = \sum_{k \in {z_0, ..., z}} \frac{1}{\sum_{j} w_{j}(k)} \sum_{j=1}^n w_{j}(k) \left[f(x|^i = z_k) - f(x|^i = z_k - \Delta)\right] + c
 (\#eq:ALEPest2)
 \end{equation}
 
@@ -184,19 +182,19 @@ Panel A) shows Ceteris Paribus for 8 data points, the feature $x_1$ is on the OX
 Panel B) shows Partial Dependency Profiles calculated as an average from CP profiles.
 
 $$
-g_{PD}^{f,1}(z) = E[z*x^2 + x^2] = 0
+g^{PD}_{f,1}(z) = E[z*x^2 + x^2] = 0
 $$
 
 Panel C) shows Conditional Dependency Profiles calculated as an average from conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
 
 $$
-g_{CD}^{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
+g^{CD}_{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
 $$
 
 Panel D) shows Accumulated Local Effects calculated as accumulated changes in conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
 
 $$
-g_{AL}^{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
+g^{AL}_{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
 $$
 
 

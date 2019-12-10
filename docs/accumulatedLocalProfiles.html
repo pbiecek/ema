@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Chapter 20 Accumulated Local Profiles | Predictive Models: Explore, Explain, and Debug</title>
   <meta name="description" content="This book introduces key concepts for exploration, explanation and visualization of complex predictive models." />
-  <meta name="generator" content="bookdown 0.14 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.10 and GitBook 2.6.7" />
 
   <meta property="og:title" content="Chapter 20 Accumulated Local Profiles | Predictive Models: Explore, Explain, and Debug" />
   <meta property="og:type" content="book" />
@@ -31,8 +31,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="partialDependenceProfiles.html"/>
-<link rel="next" href="residualDiagnostic.html"/>
+<link rel="prev" href="partialDependenceProfiles.html">
+<link rel="next" href="residualDiagnostic.html">
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
@@ -40,9 +40,6 @@
 <link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
-<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
-
-
 
 
 
@@ -79,6 +76,7 @@ a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
 a.sourceLine:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
@@ -502,13 +500,15 @@ Figure 20.1: (fig:accumulatedLocalEffects) Differences between Partial Dependenc
 <div id="partial-dependency-profile" class="section level3">
 <h3><span class="header-section-number">20.3.1</span> Partial Dependency Profile</h3>
 <p>Partial Dependency Profile is defined as an expected value from Ceteris Paribus Profiles.</p>
-<p><span class="math display">\[
+<p><span class="math display" id="eq:PDPdef">\[\begin{equation}
 g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
-\]</span>
-And can be estimated as average from CP profiles.</p>
-<p><span class="math display">\[
+\tag{20.2}
+\end{equation}\]</span></p>
+<p>And can be estimated as average from CP profiles.</p>
+<p><span class="math display" id="eq:PDPest">\[\begin{equation}
 \hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
-\]</span></p>
+\tag{20.3}
+\end{equation}\]</span></p>
 <p>As it is shown in Figure <a href="accumulatedLocalProfiles.html#fig:accumulatedLocalEffects">20.1</a> panel B, PD profiles are averages from all CP profiles.</p>
 </div>
 <div id="conditional-dependency-profile" class="section level3">
@@ -516,21 +516,24 @@ And can be estimated as average from CP profiles.</p>
 <p>As it was said, if there is some dependency between <span class="math inline">\(X_i\)</span> and <span class="math inline">\(X_{-i}\)</span> it makes no sense to average CP profiles over marginal <span class="math inline">\(X_{-i}\)</span> bacuse ,,all other things kep unchanges’’ is not a reliable approach.
 Instead, an intuitive approach would to use a conditional distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span> (which is of course unknown).</p>
 <p>Conditional Dependency Profile for a model <span class="math inline">\(f\)</span> and a variable <span class="math inline">\(x^j\)</span> is defined as</p>
-<p><span class="math display">\[
-g_{CD}^{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
-\]</span></p>
+<p><span class="math display" id="eq:CDPdef">\[\begin{equation}
+g^{CD}_{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
+\tag{20.4}
+\end{equation}\]</span></p>
 <p>So it’s an expected value over <strong>conditional</strong> distribution <span class="math inline">\((X^j,X^{-j})|X^j=z\)</span>.</p>
-<p>For example, let <span class="math inline">\(f(x_1, x_2) = x_1 + x_2\)</span> and distribution of <span class="math inline">\((x_1, x_2)\)</span> is given by <span class="math inline">\(x_1 \sim U[0,1]\)</span> and <span class="math inline">\(x_2=x_1\)</span>. In this case <span class="math inline">\(g_{CD}^{f, 1}(z) = 2*z\)</span>.</p>
+<p>For example, let <span class="math inline">\(f(x_1, x_2) = x_1 + x_2\)</span> and distribution of <span class="math inline">\((x_1, x_2)\)</span> is given by <span class="math inline">\(x_1 \sim U[0,1]\)</span> and <span class="math inline">\(x_2=x_1\)</span>. In this case <span class="math inline">\(g^{CD}_{f, 1}(z) = 2*z\)</span>.</p>
 <p>The natural estimator for Conditional Dependency Profiles introduced in <span class="citation">(Apley <a href="#ref-ALEPlotRPackage">2018</a>)</span> is</p>
-<p><span class="math display">\[
+<p><span class="math display" id="eq:CDPest">\[\begin{equation}
 \hat g^{CD}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
-\]</span>
-where <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> close to <span class="math inline">\(z\)</span>. This set will be used to estimate distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span>.</p>
+\tag{20.5}
+\end{equation}\]</span></p>
+<p>where <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> close to <span class="math inline">\(z\)</span>. This set will be used to estimate distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span>.</p>
 <p>In Figure <a href="accumulatedLocalProfiles.html#fig:accumulatedLocalEffects">20.1</a> panel C the range of variable <span class="math inline">\(x_i\)</span> is divided into 4 separable intervals. The set <span class="math inline">\(N_i\)</span> contains all observations that fall into the same interval as observation <span class="math inline">\(x_i\)</span>. The final CD profile is an average from closest pieces of CP profiles.</p>
 <p>Note that in general the <span class="math inline">\(\hat g^{CD}_i(z)\)</span> is neither smooth, nor continuous in boundaries between <span class="math inline">\(N_i\)</span> subsets. Thus here we propose another smooth estimator for <span class="math inline">\(g_i^{CD}\)</span></p>
-<p><span class="math display">\[
-\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}). 
-\]</span></p>
+<p><span class="math display" id="eq:CDPest2">\[\begin{equation}
+\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}) . 
+\tag{20.6}
+\end{equation}\]</span></p>
 <p>Weights <span class="math inline">\(w_j(z)\)</span> correspond to the distance between <span class="math inline">\(z\)</span> and observation <span class="math inline">\(x_j\)</span>. For categorical variables we may use simple indicator function <span class="math inline">\(w_j(z) := 1_{z == x^i_j}\)</span> while for continuous variables we may use Gaussian kernel
 <span class="math display">\[
 w_j(z) = \phi(z - x_j^i; 0; s),
@@ -540,13 +543,32 @@ where <span class="math inline">\(s\)</span> is a smoothing factor.</p>
 <div id="accumulated-local-profile" class="section level3">
 <h3><span class="header-section-number">20.3.3</span> Accumulated Local Profile</h3>
 <p>Accumulated Local Profile for a model <span class="math inline">\(f\)</span> and a variable <span class="math inline">\(x^j\)</span> is defined as</p>
-<p><span class="math display">\[
-g_{AL}^{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
+<p><span class="math display" id="eq:ALEdef">\[\begin{equation}
+g^{ALE}_{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
+\tag{20.7}
+\end{equation}\]</span></p>
+<p>where <span class="math inline">\(z_0\)</span> if the lower boundary of <span class="math inline">\(x^j\)</span>. The profile <span class="math inline">\(g^{ALE}_{f, j}(z)\)</span> is calculated up to some constant <span class="math inline">\(c\)</span>. Usually the constant <span class="math inline">\(c\)</span> is selected to set average <span class="math inline">\(g^{ALE}_{f, j}\)</span> equal to 0 or an average of <span class="math inline">\(f(x)\)</span>.</p>
+<p>The equation may be a bit complex, but the intuition is not that complicated. Instead of averaging Ceteris Paribus profiles we just look locally how quickly local CP profiles are changing. And ALE profile is reconstructed from such local partial changes as cumulative derivative over changes.</p>
+<p>So it’s a cumulated expected change of the model response along where the expected values are calculated over <strong>conditional</strong> distribution <span class="math inline">\((X^j,X^{-j})|X^j=z\)</span>.</p>
+<p>For example, let <span class="math inline">\(f(x_1, x_2) = x_1 + x_2\)</span> and distribution of <span class="math inline">\((x_1, x_2)\)</span> is given by <span class="math inline">\(x_1 \sim U[0,1]\)</span> and <span class="math inline">\(x_2=x_1\)</span>. In this case <span class="math inline">\(g^{ALE}_{f, 1}(z) = z\)</span>.</p>
+<p>The natural estimator for Accumulated Local Profiles introduced in <span class="citation">(Apley <a href="#ref-ALEPlotRPackage">2018</a>)</span> is</p>
+<p><span class="math display" id="eq:ALEPest">\[\begin{equation}
+\hat g^{ALE}_i(z) = \sum_{k=1}^{k_i(z)} \frac{1}{|N_i(k)|} \sum_{j \in N_i} \left[ f(x|^i = z_k) - f(x|^i = z_{k-1}) \right] + c
+\tag{20.8}
+\end{equation}\]</span></p>
+<p>where <span class="math inline">\(k_i(z)\)</span> is the index of interval with point <span class="math inline">\(z\)</span>, <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> in this interval. The difference <span class="math inline">\(f(x|^i = z_k) - f(x|^i = z_{k-1})\)</span> correspond to the difference of CP profiles in interval <span class="math inline">\(k\)</span>, and this difference is averaged and accumulated.</p>
+<p>In Figure <a href="accumulatedLocalProfiles.html#fig:accumulatedLocalEffects">20.1</a> panel D the range of variable <span class="math inline">\(x_i\)</span> is divided into 4 separable intervals. The set <span class="math inline">\(N_i\)</span> contains all observations that fall into the same interval as observation <span class="math inline">\(x_i\)</span>. The final ALE profile is constructed from accumulated differences of local CP profiles.</p>
+<p>Note that in general the <span class="math inline">\(\hat g^{CD}_i(z)\)</span> is not smooth in boundaries between <span class="math inline">\(N_i\)</span> subsets. Thus here we propose another smooth estimator for <span class="math inline">\(g_i^{ALE}\)</span></p>
+<p><span class="math display" id="eq:ALEPest2">\[\begin{equation}
+\tilde g^{ALE}_i(z) = \sum_{k \in {z_0, ..., z}} \frac{1}{\sum_{j} w_{j}(k)} \sum_{j=1}^n w_{j}(k) \left[f(x|^i = z_k) - f(x|^i = z_k - \Delta)\right] + c
+\tag{20.9}
+\end{equation}\]</span></p>
+<p>The set <span class="math inline">\({z_0, ..., z}\)</span> is a uniform grid of points between <span class="math inline">\(z_0\)</span> and <span class="math inline">\(z\)</span> with the step <span class="math inline">\(\Delta\)</span>.
+Weights <span class="math inline">\(w_i(k)\)</span> correspond to the distance between point <span class="math inline">\(k\)</span> and observation <span class="math inline">\(x_i\)</span>. For categorical variables we may use simple indicator function <span class="math inline">\(w_j(k) := 1_{k == x_j^i}\)</span> while for continuous variables we may use Gaussian kernel
+<span class="math display">\[
+w_j(k) = \phi(k - x_j^i; 0; s),
 \]</span>
-where <span class="math inline">\(z_0\)</span> if the lower boundary of <span class="math inline">\(x^j\)</span>. The profile <span class="math inline">\(g_{AL}^{f, j}(z)\)</span> is calculated up to some constant <span class="math inline">\(c\)</span>. Usually the constant <span class="math inline">\(c\)</span> is selected to keep average <span class="math inline">\(g_{AL}^{f, j}\)</span> equal to 0 or average <span class="math inline">\(f\)</span>.</p>
-<p>The equation may be a bit complex, but the intuition is not that complicated. Instead of aggregation of Ceteris Paribus we just look locally how quickly CP profiles are changing. And AL profile is reconstructed from such local partial changes.</p>
-<p>So it’s a cumulated expected change of the model response along where the expected values are calculated over <strong>conditional</strong> distribution <span class="math inline">\((X^j,X^{-j})|X^j=v\)</span>.</p>
-<p>For example, let <span class="math inline">\(f(x_1, x_2) = x_1 + x_2\)</span> and distribution of <span class="math inline">\((x_1, x_2)\)</span> is given by <span class="math inline">\(x_1 \sim U[0,1]\)</span> and <span class="math inline">\(x_2=x_1\)</span>. In this case <span class="math inline">\(g_{AD}^{f, 1}(z) = z\)</span>.</p>
+where <span class="math inline">\(s\)</span> is a smoothing factor.</p>
 </div>
 <div id="summaryFeatureEffects" class="section level3">
 <h3><span class="header-section-number">20.3.4</span> Comparison of Explainers for Feature Effects</h3>
@@ -557,15 +579,15 @@ Here we have a model <span class="math inline">\(f(x_1, x_2) = x_1*x_2 + x_2\)</
 <p>Panel A) shows Ceteris Paribus for 8 data points, the feature <span class="math inline">\(x_1\)</span> is on the OX axis while <span class="math inline">\(f\)</span> is on the OY.
 Panel B) shows Partial Dependency Profiles calculated as an average from CP profiles.</p>
 <p><span class="math display">\[
-g_{PD}^{f,1}(z) = E[z*x^2 + x^2] = 0
+g^{PD}_{f,1}(z) = E[z*x^2 + x^2] = 0
 \]</span></p>
 <p>Panel C) shows Conditional Dependency Profiles calculated as an average from conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for <span class="math inline">\(f\)</span> we can calculated it directly as.</p>
 <p><span class="math display">\[
-g_{CD}^{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
+g^{CD}_{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
 \]</span></p>
 <p>Panel D) shows Accumulated Local Effects calculated as accumulated changes in conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for <span class="math inline">\(f\)</span> we can calculated it directly as.</p>
 <p><span class="math display">\[
-g_{AL}^{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
+g^{AL}_{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
 \]</span></p>
 </div>
 </div>
@@ -602,34 +624,34 @@ Conditional dependency profiles can be calculated with the function <code>ingred
 Accumulated local profiles can be calculated with the function <code>ingredients::accumulated_dependency</code>.</p>
 <p>In all these cases the only required argument is the explainer and by default profiles are calculated for all variables.</p>
 <p>Below we use <code>variables</code> argument to limit list of variables for which profiles are calculated. Here we need profiles only for the <code>no.rooms</code> and <code>surface</code> variables.</p>
-<div class="sourceCode" id="cb164"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb164-1" data-line-number="1">explain_apartments_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_apartments_rf, </a>
-<a class="sourceLine" id="cb164-2" data-line-number="2">                                 <span class="dt">data =</span> apartments,</a>
-<a class="sourceLine" id="cb164-3" data-line-number="3">                                 <span class="dt">verbose =</span> <span class="ot">FALSE</span>)</a>
-<a class="sourceLine" id="cb164-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb164-5" data-line-number="5">pd_rf &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))</a>
-<a class="sourceLine" id="cb164-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb164-7" data-line-number="7"><span class="kw">plot</span>(pd_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Partial dependency&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb164-8" data-line-number="8"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Partial dependency for random forest model&quot;</span>) </a></code></pre></div>
+<pre class="sourceCode r"><code class="sourceCode r">explain_apartments_rf &lt;-<span class="st"> </span><span class="kw">explain</span>(model_apartments_rf, 
+                                 <span class="dt">data =</span> apartments,
+                                 <span class="dt">verbose =</span> <span class="ot">FALSE</span>)
+
+pd_rf &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))
+
+<span class="kw">plot</span>(pd_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Partial dependency&quot;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Partial dependency for random forest model&quot;</span>) </code></pre>
 <div class="figure" style="text-align: center"><span id="fig:aleExample1"></span>
 <img src="PM_VEE_files/figure-html/aleExample1-1.png" alt="Partial Dependency profile for surface and number of rooms" width="80%" />
 <p class="caption">
 Figure 20.3: Partial Dependency profile for surface and number of rooms
 </p>
 </div>
-<div class="sourceCode" id="cb165"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb165-1" data-line-number="1">ac_rf &lt;-<span class="st"> </span><span class="kw">accumulated_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))</a>
-<a class="sourceLine" id="cb165-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb165-3" data-line-number="3"><span class="kw">plot</span>(ac_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Accumulated dependency&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb165-4" data-line-number="4"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Accumulated dependency for random forest model&quot;</span>) </a></code></pre></div>
+<pre class="sourceCode r"><code class="sourceCode r">ac_rf &lt;-<span class="st"> </span><span class="kw">accumulated_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))
+
+<span class="kw">plot</span>(ac_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Accumulated dependency&quot;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Accumulated dependency for random forest model&quot;</span>) </code></pre>
 <div class="figure" style="text-align: center"><span id="fig:aleExample2"></span>
 <img src="PM_VEE_files/figure-html/aleExample2-1.png" alt="Accumulated dependency profile for surface and number of rooms" width="80%" />
 <p class="caption">
 Figure 20.4: Accumulated dependency profile for surface and number of rooms
 </p>
 </div>
-<div class="sourceCode" id="cb166"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb166-1" data-line-number="1">pd_rf &lt;-<span class="st"> </span><span class="kw">conditional_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))</a>
-<a class="sourceLine" id="cb166-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb166-3" data-line-number="3"><span class="kw">plot</span>(pd_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Conditional dependency&quot;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb166-4" data-line-number="4"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Conditional dependency for random forest model&quot;</span>) </a></code></pre></div>
+<pre class="sourceCode r"><code class="sourceCode r">pd_rf &lt;-<span class="st"> </span><span class="kw">conditional_dependency</span>(explain_apartments_rf, <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;no.rooms&quot;</span>, <span class="st">&quot;surface&quot;</span>))
+
+<span class="kw">plot</span>(pd_rf) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;Conditional dependency&quot;</span>) <span class="op">+</span>
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Surface and number of rooms&quot;</span>, <span class="st">&quot;Conditional dependency for random forest model&quot;</span>) </code></pre>
 <div class="figure" style="text-align: center"><span id="fig:aleExample3"></span>
 <img src="PM_VEE_files/figure-html/aleExample3-1.png" alt="Conditional dependency profile for surface and number of rooms" width="80%" />
 <p class="caption">
@@ -662,13 +684,11 @@ Figure 20.5: Conditional dependency profile for surface and number of rooms
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
-<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
 <script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
-<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
 <script>
 gitbook.require(["gitbook"], function(gitbook) {
 gitbook.start({
@@ -711,9 +731,8 @@ gitbook.start({
     script.type = "text/javascript";
     var src = "true";
     if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
-    if (location.protocol !== "file:")
-      if (/^https?:/.test(src))
-        src = src.replace(/^https?:/, '');
+    if (location.protocol !== "file:" && /^https?:/.test(src))
+      src = src.replace(/^https?:/, '');
     script.src = src;
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
