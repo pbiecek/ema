@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2019-12-09" />
+<meta name="date" content="2019-12-10" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -509,21 +509,33 @@ And can be estimated as average from CP profiles.</p>
 <p><span class="math display">\[
 \hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
 \]</span></p>
+<p>As it is shown in Figure <a href="accumulatedLocalProfiles.html#fig:accumulatedLocalEffects">20.1</a> panel B, PD profiles are averages from all CP profiles.</p>
 </div>
 <div id="conditional-dependency-profile" class="section level3">
 <h3><span class="header-section-number">20.3.2</span> Conditional Dependency Profile</h3>
-<p>As it was said, if <span class="math inline">\(X_i\)</span> and <span class="math inline">\(X_{-i}\)</span> are related it may have no sense to average CP profiles over marginal <span class="math inline">\(X_{-i}\)</span>. Instead, an intuitive approach would to use a conditional distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span>.</p>
+<p>As it was said, if there is some dependency between <span class="math inline">\(X_i\)</span> and <span class="math inline">\(X_{-i}\)</span> it makes no sense to average CP profiles over marginal <span class="math inline">\(X_{-i}\)</span> bacuse ,,all other things kep unchanges’’ is not a reliable approach.
+Instead, an intuitive approach would to use a conditional distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span> (which is of course unknown).</p>
 <p>Conditional Dependency Profile for a model <span class="math inline">\(f\)</span> and a variable <span class="math inline">\(x^j\)</span> is defined as</p>
 <p><span class="math display">\[
 g_{CD}^{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
 \]</span></p>
 <p>So it’s an expected value over <strong>conditional</strong> distribution <span class="math inline">\((X^j,X^{-j})|X^j=z\)</span>.</p>
 <p>For example, let <span class="math inline">\(f(x_1, x_2) = x_1 + x_2\)</span> and distribution of <span class="math inline">\((x_1, x_2)\)</span> is given by <span class="math inline">\(x_1 \sim U[0,1]\)</span> and <span class="math inline">\(x_2=x_1\)</span>. In this case <span class="math inline">\(g_{CD}^{f, 1}(z) = 2*z\)</span>.</p>
-<p>The natural estimator for Conditional Dependency Profiles is</p>
+<p>The natural estimator for Conditional Dependency Profiles introduced in <span class="citation">(Apley <a href="#ref-ALEPlotRPackage">2018</a>)</span> is</p>
 <p><span class="math display">\[
 \hat g^{CD}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
 \]</span>
-where <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> close to <span class="math inline">\(z\)</span>.</p>
+where <span class="math inline">\(N_i\)</span> is the set of observations with <span class="math inline">\(x_i\)</span> close to <span class="math inline">\(z\)</span>. This set will be used to estimate distribution <span class="math inline">\(X_{-i}|X_i=x_i\)</span>.</p>
+<p>In Figure <a href="accumulatedLocalProfiles.html#fig:accumulatedLocalEffects">20.1</a> panel C the range of variable <span class="math inline">\(x_i\)</span> is divided into 4 separable intervals. The set <span class="math inline">\(N_i\)</span> contains all observations that fall into the same interval as observation <span class="math inline">\(x_i\)</span>. The final CD profile is an average from closest pieces of CP profiles.</p>
+<p>Note that in general the <span class="math inline">\(\hat g^{CD}_i(z)\)</span> is neither smooth, nor continuous in boundaries between <span class="math inline">\(N_i\)</span> subsets. Thus here we propose another smooth estimator for <span class="math inline">\(g_i^{CD}\)</span></p>
+<p><span class="math display">\[
+\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}). 
+\]</span></p>
+<p>Weights <span class="math inline">\(w_j(z)\)</span> correspond to the distance between <span class="math inline">\(z\)</span> and observation <span class="math inline">\(x_j\)</span>. For categorical variables we may use simple indicator function <span class="math inline">\(w_j(z) := 1_{z == x^i_j}\)</span> while for continuous variables we may use Gaussian kernel
+<span class="math display">\[
+w_j(z) = \phi(z - x_j^i; 0; s),
+\]</span>
+where <span class="math inline">\(s\)</span> is a smoothing factor.</p>
 </div>
 <div id="accumulated-local-profile" class="section level3">
 <h3><span class="header-section-number">20.3.3</span> Accumulated Local Profile</h3>

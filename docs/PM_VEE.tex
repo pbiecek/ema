@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2019-12-09}
+    \date{2019-12-10}
 
 \usepackage{booktabs}
 
@@ -5588,10 +5588,13 @@ And can be estimated as average from CP profiles.
 \hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
 \]
 
+As it is shown in Figure \ref{fig:accumulatedLocalEffects} panel B, PD profiles are averages from all CP profiles.
+
 \hypertarget{conditional-dependency-profile}{%
 \subsubsection{Conditional Dependency Profile}\label{conditional-dependency-profile}}
 
-As it was said, if \(X_i\) and \(X_{-i}\) are related it may have no sense to average CP profiles over marginal \(X_{-i}\). Instead, an intuitive approach would to use a conditional distribution \(X_{-i}|X_i=x_i\).
+As it was said, if there is some dependency between \(X_i\) and \(X_{-i}\) it makes no sense to average CP profiles over marginal \(X_{-i}\) bacuse ,,all other things kep unchanges'' is not a reliable approach.
+Instead, an intuitive approach would to use a conditional distribution \(X_{-i}|X_i=x_i\) (which is of course unknown).
 
 Conditional Dependency Profile for a model \(f\) and a variable \(x^j\) is defined as
 
@@ -5603,12 +5606,26 @@ So it's an expected value over \textbf{conditional} distribution \((X^j,X^{-j})|
 
 For example, let \(f(x_1, x_2) = x_1 + x_2\) and distribution of \((x_1, x_2)\) is given by \(x_1 \sim U[0,1]\) and \(x_2=x_1\). In this case \(g_{CD}^{f, 1}(z) = 2*z\).
 
-The natural estimator for Conditional Dependency Profiles is
+The natural estimator for Conditional Dependency Profiles introduced in \citep{ALEPlotRPackage} is
 
 \[
 \hat g^{CD}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
 \]
-where \(N_i\) is the set of observations with \(x_i\) close to \(z\).
+where \(N_i\) is the set of observations with \(x_i\) close to \(z\). This set will be used to estimate distribution \(X_{-i}|X_i=x_i\).
+
+In Figure \ref{fig:accumulatedLocalEffects} panel C the range of variable \(x_i\) is divided into 4 separable intervals. The set \(N_i\) contains all observations that fall into the same interval as observation \(x_i\). The final CD profile is an average from closest pieces of CP profiles.
+
+Note that in general the \(\hat g^{CD}_i(z)\) is neither smooth, nor continuous in boundaries between \(N_i\) subsets. Thus here we propose another smooth estimator for \(g_i^{CD}\)
+
+\[
+\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}). 
+\]
+
+Weights \(w_j(z)\) correspond to the distance between \(z\) and observation \(x_j\). For categorical variables we may use simple indicator function \(w_j(z) := 1_{z == x^i_j}\) while for continuous variables we may use Gaussian kernel
+\[
+w_j(z) = \phi(z - x_j^i; 0; s),
+\]
+where \(s\) is a smoothing factor.
 
 \hypertarget{accumulated-local-profile}{%
 \subsubsection{Accumulated Local Profile}\label{accumulated-local-profile}}

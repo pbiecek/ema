@@ -63,36 +63,63 @@ For example, for the `apartments` dataset one can expect that features like `sur
 
 Partial Dependency Profile is defined as an expected value from Ceteris Paribus Profiles.
 
-$$
+\begin{equation}
 g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
-$$
+(\#eq:PDPdef)
+\end{equation}
+
 And can be estimated as average from CP profiles.
 
-$$
+\begin{equation}
 \hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
-$$
+(\#eq:PDPest)
+\end{equation}
+
+As it is shown in Figure \@ref(fig:accumulatedLocalEffects) panel B, PD profiles are averages from all CP profiles.
 
 ### Conditional Dependency Profile 
 
-As it was said, if $X_i$ and $X_{-i}$ are related it may have no sense to average CP profiles over marginal $X_{-i}$. Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X_i=x_i$. 
+As it was said, if there is some dependency between $X_i$ and $X_{-i}$ it makes no sense to average CP profiles over marginal $X_{-i}$ bacuse ,,all other things kep unchanges'' is not a reliable approach. 
+Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X_i=x_i$ (which is of course unknown). 
 
 Conditional Dependency Profile for a model $f$ and a variable $x^j$ is defined as
 
-$$
+\begin{equation}
 g_{CD}^{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
-$$
+(\#eq:CDPdef)
+\end{equation}
 
 So it's an expected value over **conditional** distribution $(X^j,X^{-j})|X^j=z$.
 
 For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case $g_{CD}^{f, 1}(z) = 2*z$.
 
 
-The natural estimator for Conditional Dependency Profiles is
+The natural estimator for Conditional Dependency Profiles introduced in [@ALEPlotRPackage] is
 
-$$
+\begin{equation}
 \hat g^{CD}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
+(\#eq:CDPest)
+\end{equation}
+
+where $N_i$ is the set of observations with $x_i$ close to $z$. This set will be used to estimate distribution $X_{-i}|X_i=x_i$.
+
+In Figure \@ref(fig:accumulatedLocalEffects) panel C the range of variable $x_i$ is divided into 4 separable intervals. The set $N_i$ contains all observations that fall into the same interval as observation $x_i$. The final CD profile is an average from closest pieces of CP profiles.
+
+
+
+Note that in general the $\hat g^{CD}_i(z)$ is neither smooth, nor continuous in boundaries between $N_i$ subsets. Thus here we propose another smooth estimator for $g_i^{CD}$
+
+\begin{equation}
+\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}). 
+(\#eq:CDPest2)
+\end{equation}
+
+
+Weights $w_j(z)$ correspond to the distance between $z$ and observation $x_j$. For categorical variables we may use simple indicator function $w_j(z) := 1_{z == x^i_j}$ while for continuous variables we may use Gaussian kernel
 $$
-where $N_i$ is the set of observations with $x_i$ close to $z$.
+w_j(z) = \phi(z - x_j^i; 0; s),
+$$
+where $s$ is a smoothing factor.
 
 
 
@@ -100,9 +127,11 @@ where $N_i$ is the set of observations with $x_i$ close to $z$.
 
 Accumulated Local Profile for a model $f$ and a variable $x^j$ is defined as
 
-$$
+\begin{equation}
 g_{AL}^{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
-$$
+(\#eq:ALEdef)
+\end{equation}
+
 where $z_0$ if the lower boundary  of $x^j$. The profile $g_{AL}^{f, j}(z)$ is calculated up to some constant $c$. Usually the constant $c$ is selected to keep average $g_{AL}^{f, j}$ equal to 0 or average $f$.
 
 The equation may be a bit complex, but the intuition is not that complicated. Instead of aggregation of Ceteris Paribus we just look locally how quickly CP profiles are changing. And AL profile is reconstructed from such local partial changes. 
