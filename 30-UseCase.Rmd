@@ -1,0 +1,202 @@
+# Use Case: Call Center {#ccUseCase}
+
+In previous chapters we introduced a number of methods for exploration of predictive models. In each chapter we show how to use a particular method for models created on `titanic` or `apartments` datasets. These examples we introduced and discussed separately as each of them was focused on a single method described in a given chapter.
+
+In this chapter we present an example of full circle for model development along the process introduces in chapter \@ref(modelDevelopmentProcess). We use here a single new dataset. Based on it we tour through the process of data preparation, model assembly and model understanding. In each phase we show how to combine results from different methods of exploration.
+Data used in this example is artificial, but the problem and dependencies in the data are based on a real world use case.
+
+The main goal of this chapter is to show how different techniques complement each other. Some phases, like data preparation, are simplified in order to leave space for the method for visual exploration and explanation of predictive models.
+
+
+## Introduction
+
+The story is following. We have a company (code name *EasyOC*), that is selling online car-insurance policies. The company has also a small call center, which is used in order to call selected customers and sell them the insurance by phone.
+Capabilities of the call center are limited by the number of people that can give a limited number of calls. Thus the *EasyOC* company wants to know whom to call in order to increase chances for selling insurance policies.
+
+This is exactly our task. To build a model that will predict which customers have highest odds for buying policies. They will be called first.
+
+The model will be created in two iterations. First will be focused on crisp modelling to get the number of candidate models. Second will be focused on fine fining and selection of the best model.
+
+## Iteration 1: Crisp modeling
+
+Goals for the first iteration are:
+
+- better understand data to avoid ,,Garbage In, Garbage Out'' flaws,
+- train few benchmark models to quickly access how good are baseline solutions,
+- explore trained models in order to be better prepared for the next iteration.
+
+
+### Data preparation 
+
+In this use case we assume that data is already collected in the desired format.
+We got data in a tabular form with 7 columns and 10000 rows. 
+
+Data come from an experiment in which 10000 clients were selected and to each of them we have a call. The column `sell` summarises the effect of the call if it is successful or not, columns `day`, `hour` and `days_to_insurance` describe conditions for the call, columns `production_year `, `segment` and `mileage` describe conditions of the car and also they tell something about the owner.
+
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+set.seed(1313)
+N <- 10000
+
+day <- sample(c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+              size = N, replace = TRUE)
+hour <- sample(8:20, size = N, replace = TRUE)
+age <- rpois(N, 3)
+production_year <- 2017 - age
+segment <- sample(c("Mini", "Small", "Large", "Executive"), N, replace = TRUE, prob = c(0.3,0.3,0.25,0.15))
+mileage <- 15000*(age + 1) + 1500*(2 + age)*rnorm(n = N)
+days_to_insurance <- c(round(runif(N/2, 0, 31)), rpois(N/2, 7)-5)
+
+# who is buing?
+#
+# larger chances is days_to_insurance is small, 0 after termination
+# a bit larger chances for large and executive cars
+# production year is important, new car more likely, low milage more likely
+# interaction segment and hour
+odds <- 2*xor(hour < 15, segment %in% c("Large", "Executive")) +
+  (mileage < 10000)*0.5 + (mileage < 25000)*0.5 + (mileage < 50000)*0.5 +
+  (age  < 2)*0.5 + (age < 3)*0.5 + (age < 1)*0.5 +
+  (days_to_insurance < 3)*1.2 + (days_to_insurance < 7)*1.2   - 2.5
+sell <- rbinom(N, 1, prob = pnorm(odds))
+
+call_center <- data.frame(day, hour, production_year, segment, 
+                          mileage = round(mileage), days_to_insurance, 
+                          sell)
+```
+
+```{r}
+head(call_center)
+```
+
+
+### Data exploration 
+
+HERE: ADD PAIRWISE ANALYSIS FOR EACH VARIABLE
+
+```{r callcenterHour, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:callcenterSegment) Response rate by hour in the Call Center data.", out.width = '70%', fig.align='center'}
+library("ggmosaic")
+library("DALEX")
+ggplot(data = call_center) +
+   geom_bar(aes(x = factor(hour), fill = factor(sell))) +
+   labs(x="Hour", y="Sell", title='Response rate for Sells per Hour') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+```
+
+```{r callcenterDays, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:callcenterSegment) Response rate by 'days to insurance' in the Call Center data.", out.width = '70%', fig.align='center'}
+ggplot(data = call_center) +
+   geom_bar(aes(x = cut(days_to_insurance, c(0,5,10,15,20,25,30)), fill = factor(sell)), position = "fill") +
+   labs(x="Days to insurance", y="Sell", title='Response rate for Sells per Days') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+```
+
+
+```{r callcenterSegment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:callcenterSegment) Response rate by segment in the Call Center data.", out.width = '70%', fig.align='center'}
+ggplot(data = call_center) +
+   geom_bar(aes(x = factor(segment), fill = factor(sell)), position = "fill") +
+   labs(x="Hour", y="Sell", title='Response rate for Sells per Segment') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+```
+
+
+### Model assembly
+
+HERE: Introduce some approaches to modeling
+
+
+```{r  warning=FALSE, message=FALSE}
+cc_glm <- glm(sell~., data = call_center, family = "binomial")
+
+library("gbm")
+cc_gbm <- gbm(sell~., data = call_center, distribution = "bernoulli",
+              interaction.depth = 3)
+
+library("ranger")
+cc_ranger <- ranger(sell~., data = call_center, classification = TRUE, probability = TRUE)
+
+library("DALEX")
+cc_glm_exp <- explain(cc_glm, data  = call_center,
+                      y = call_center$sell, 
+                      colorize = FALSE)
+cc_gbm_exp <- explain(cc_gbm, data  = call_center,
+                      y = call_center$sell, 
+                      colorize = FALSE)
+cc_ranger_exp <- explain(cc_ranger, data  = call_center,
+                      y = call_center$sell, 
+                      predict_function = function(m,x) 
+                        predict(m, x)$predictions[,1], 
+                      colorize = FALSE)
+```
+
+### Model understanding
+
+
+```{r  warning=FALSE, message=FALSE}
+library("auditor")
+mr_glm <- model_evaluation(cc_glm_exp)
+mr_gbm <- model_evaluation(cc_gbm_exp)
+mr_ranger <- model_evaluation(cc_ranger_exp)
+
+model_performance(cc_glm_exp, score = c("auc", "f1"))
+model_performance(cc_gbm_exp, score = c("auc", "f1"))
+model_performance(cc_ranger_exp, score = c("auc", "f1"))
+
+plot_roc(mr_gbm, mr_ranger, mr_glm)
+```
+
+
+```{r  warning=FALSE, message=FALSE}
+library("ingredients")
+
+fi_gbm <- feature_importance(cc_gbm_exp, loss_function = DALEX::loss_one_minus_auc)
+fi_ranger <- feature_importance(cc_ranger_exp, loss_function = DALEX::loss_one_minus_auc)
+plot(fi_gbm, fi_ranger) + ylab("1 - AUC")
+```
+
+
+```{r  warning=FALSE, message=FALSE}
+pd_gbm <- partial_dependency(cc_gbm_exp)
+pd_ranger <- partial_dependency(cc_ranger_exp)
+plot(pd_gbm, pd_ranger)
+
+```
+
+
+## Iteration 2: Fine tuning
+
+In the first iteration we have created three predictive models. It looks like best results are obtained with the `ranger` model. In this iteration we will tune this model and perform some validation of the model before it will be used in the production.
+  
+### Analysis of residuals
+
+```{r  warning=FALSE, message=FALSE}
+cc_mr_gbm <- model_residual(cc_gbm_exp)
+cc_mr_ranger <- model_residual(cc_ranger_exp)
+
+plot_residual_density(cc_mr_gbm, cc_mr_ranger)
+
+plot_residual_boxplot(cc_mr_gbm, cc_mr_ranger)
+
+plot_residual(cc_mr_gbm, variable = NULL)
+```
+
+
+### Sensitivity analysis
+
+
+Ceteris Paribus
+
+```{r  warning=FALSE, message=FALSE}
+call_center_25 <- select_sample(call_center, 25)
+cp_cc_gbm <- ceteris_paribus(cc_gbm_exp,new_observation = call_center_25)
+plot(cp_cc_gbm)
+
+cp_cp <- cluster_profiles(cp_cc_gbm, center = TRUE, variables = "hour")
+plot(cp_cp)
+```
+
+### Deeper analysis of individual observations
+
+```{r  warning=FALSE, message=FALSE}
+library("iBreakDown")
+mark <- call_center[1,]
+bd_cc_gbm <- break_down(cc_gbm_exp, new_observation = mark)
+plot(bd_cc_gbm)
+```
+
+

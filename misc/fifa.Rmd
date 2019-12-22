@@ -1,0 +1,271 @@
+---
+title: "Predictive model for FIFA 2019"
+output: 
+  html_document:
+    toc: true
+---
+
+# Read data
+
+Read the data from the kaggle website https://www.kaggle.com/karangadiya/fifa19.
+
+```{r loadData}
+(load("fifa19small.rda"))
+rownames(fifa19small) <- fifa19small$Name
+
+fifa19small["R. Lewandowski",]
+```
+
+
+# Feature engineering
+
+Value is skewed. Will be much easier to model sqrt(Value).
+
+```{r featureEng}
+fifa19small$SqrtValue <- sqrt(fifa19small$Value.EUR)
+
+fifa19small <- fifa19small[,-c(1, 2, 3, 4, 6)]
+```
+
+# Exploration
+
+Value is skewed. Will be much easier to model sqrt(Value).
+
+```{r dataExploration}
+library("ggplot2")
+library("DALEX")
+
+ggplot(fifa19small, aes(Age, SqrtValue)) +
+  geom_point() + geom_smooth(se = FALSE) +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(Age)) +
+  geom_histogram() +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(Reactions, SqrtValue)) +
+  geom_point() + geom_smooth(se = FALSE) +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(Reactions)) +
+  geom_histogram() +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(BallControl, SqrtValue)) +
+  geom_point() + geom_smooth(se = FALSE) +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(BallControl)) +
+  geom_histogram() +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(ShortPassing, SqrtValue)) +
+  geom_point() + geom_smooth(se = FALSE) +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(ShortPassing)) +
+  geom_histogram() +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(Dribbling, SqrtValue)) +
+  geom_point() + geom_smooth(se = FALSE) +
+  theme_drwhy()
+
+ggplot(fifa19small, aes(Dribbling)) +
+  geom_histogram() +
+  theme_drwhy()
+
+```
+
+# Create models
+
+Let's create following models:
+
+- `gbm` model with 250 trees 4 levels depth,
+- `gbm` model with 250 trees 1 level depth,
+- `randomForest` model with 250 trees.
+
+```{r createModels, war}
+library("gbm")
+fifa_gbm_deep <- gbm(SqrtValue~., data = fifa19small, n.trees = 250, interaction.depth = 4)
+
+fifa_gbm_shallow <- gbm(SqrtValue~., data = fifa19small, n.trees = 250, interaction.depth = 1)
+
+library("ranger")
+fifa_rf <- ranger(SqrtValue~., data = fifa19small, num.trees = 250)
+
+library("rms")
+fifa_ols <- ols(SqrtValue ~ rcs(Age) + rcs(Special) + rcs(International.Reputation) + rcs(Skill.Moves) + rcs(Crossing) + rcs(Finishing) + rcs(HeadingAccuracy) + rcs(ShortPassing) + rcs(Volleys) + rcs(Dribbling) + rcs(Curve) + rcs(FKAccuracy) + rcs(LongPassing) + rcs(BallControl) + rcs(Acceleration) + rcs(SprintSpeed) + rcs(Agility) + rcs(Reactions) + rcs(Balance) + rcs(ShotPower) + rcs(Jumping) + rcs(Stamina) + rcs(Strength) + rcs(LongShots) + rcs(Aggression) + rcs(Interceptions) + rcs(Positioning) + rcs(Vision) + rcs(Penalties) + rcs(Composure) + rcs(Marking) + rcs(StandingTackle) + rcs(SlidingTackle) + rcs(GKDiving) + rcs(GKHandling) + rcs(GKKicking) + rcs(GKPositioning) + rcs(GKReflexes), data = fifa19small)
+```
+
+# Create explainers
+
+```{r createExplainers}
+library("DALEX")
+fifa_gbm_exp_deep <- explain(fifa_gbm_deep, 
+                        data = fifa19small, 
+                        y = fifa19small$SqrtValue^2, 
+                        predict_function = function(m,x) 
+                          predict(m, x, n.trees = 250)^2,
+                        label = "GBM deep")
+
+fifa_gbm_exp_shallow <- explain(fifa_gbm_shallow, 
+                        data = fifa19small, 
+                        y = fifa19small$SqrtValue^2, 
+                        predict_function = function(m,x) 
+                          predict(m, x, n.trees = 250)^2,
+                        label = "GBM shallow")
+
+fifa_rf_exp <- explain(fifa_rf, 
+                        data = fifa19small, 
+                        y = fifa19small$SqrtValue^2, 
+                        predict_function = function(m,x) 
+                          predict(m, x)$predictions^2,
+                        label = "RF")
+
+fifa_rms_exp <- explain(fifa_ols, 
+                        data = fifa19small, 
+                        y = fifa19small$SqrtValue^2, 
+                        predict_function = function(m,x) 
+                          predict(m, x)^2,
+                        label = "RMS")
+```
+
+# Model performance
+
+```{r modelPerforamnce}
+library("auditor")
+
+fifa_mr_gbm_shallow <- model_residual(fifa_gbm_exp_shallow)
+fifa_mr_gbm_deep <- model_residual(fifa_gbm_exp_deep)
+fifa_mr_gbm_rf <- model_residual(fifa_rf_exp)
+fifa_mr_gbm_rms <- model_residual(fifa_rms_exp)
+
+plot_residual_boxplot(fifa_mr_gbm_shallow, fifa_mr_gbm_deep, fifa_mr_gbm_rf, fifa_mr_gbm_rms) +
+  scale_y_sqrt()
+
+plot_prediction(fifa_mr_gbm_shallow, abline = TRUE) +
+  scale_y_sqrt() +  scale_x_sqrt()
+plot_prediction(fifa_mr_gbm_deep, abline = TRUE)  +
+  scale_y_sqrt() +  scale_x_sqrt()
+plot_prediction(fifa_mr_gbm_rf, abline = TRUE)  +
+  scale_y_sqrt() +  scale_x_sqrt()
+plot_prediction(fifa_mr_gbm_rms, abline = TRUE) +
+  scale_y_sqrt() +  scale_x_sqrt()
+
+```
+
+# Feature importance
+
+```{r featureImportance}
+library("ingredients")
+fifa_feat <- ingredients::feature_importance(fifa_gbm_exp_shallow)
+plot(fifa_feat, max_vars = 12)
+
+fifa_feat <- ingredients::feature_importance(fifa_gbm_exp_deep)
+plot(fifa_feat, max_vars = 12)
+
+fifa_feat <- ingredients::feature_importance(fifa_rf_exp)
+plot(fifa_feat, max_vars = 12)
+
+fifa_feat <- ingredients::feature_importance(fifa_rms_exp)
+plot(fifa_feat, max_vars = 12)
+```
+
+# Partial Dependency Profiles
+
+```{r pdp}
+fifa19_pd_shallow <- ingredients::partial_dependency(fifa_gbm_exp_shallow, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+
+fifa19_pd_deep <- ingredients::partial_dependency(fifa_gbm_exp_deep, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+
+fifa19_pd_rf <- ingredients::partial_dependency(fifa_rf_exp, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+
+fifa19_pd_rms <- ingredients::partial_dependency(fifa_rms_exp, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+
+plot(fifa19_pd_shallow, fifa19_pd_deep, fifa19_pd_rf, fifa19_pd_rms) +
+  scale_y_log10()
+```
+
+# Break Down
+
+```{r breakDown}
+library("iBreakDown")
+
+fifa_pg <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["R. Lewandowski",])
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_gbm_exp_deep, new_observation = fifa19small["R. Lewandowski",])
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_rf_exp, new_observation = fifa19small["R. Lewandowski",])
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_rms_exp, new_observation = fifa19small["R. Lewandowski",])
+plot(fifa_pg)
+
+```
+
+# Break Down with interactions
+
+```{r iBreakDown}
+library("iBreakDown")
+
+fifa_pg <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["R. Lewandowski",], interactions = TRUE)
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_gbm_exp_deep, new_observation = fifa19small["R. Lewandowski",], interactions = TRUE)
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_rf_exp, new_observation = fifa19small["R. Lewandowski",], interactions = TRUE)
+plot(fifa_pg)
+
+fifa_pg <- break_down(fifa_rms_exp, new_observation = fifa19small["R. Lewandowski",], interactions = TRUE)
+plot(fifa_pg)
+
+```
+
+# Ceteris Paribus
+
+```{r ceterisParibus}
+fifa_cp_shallow <- ceteris_paribus(fifa_gbm_exp_shallow,
+                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
+                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
+                           )
+
+fifa_cp_deep <- ceteris_paribus(fifa_gbm_exp_deep,
+                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
+                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
+                           )
+
+fifa_cp_rf <- ceteris_paribus(fifa_rf_exp,
+                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
+                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
+                           )
+
+fifa_cp_rms <- ceteris_paribus(fifa_rms_exp,
+                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
+                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
+                           )
+
+plot(fifa_cp_shallow, fifa_cp_deep, fifa_cp_rf, fifa_cp_rms, color = "_label_") + 
+  show_observations(fifa_cp_rf, fifa_cp_shallow, fifa_cp_deep,fifa_cp_rms, variables = c("Age", "Reactions","BallControl", "Dribbling")) + 
+  scale_y_log10()
+
+```
+
+```
+
+library(modelStudio)
+fifa19_ms <- modelStudio(fifa_gbm_shallow, new_observation = fifa19small[c("Cristiano Ronaldo","R. Lewandowski"), ], B = 5, digits = 0)
+
+op <- modelStudioOptions(
+  margin.left = 6
+)
+
+print(fifa19_ms, options = op)
+
+r2d3::save_d3_html(fifa19_ms, file = "fifa19.html")
+
+```
+
