@@ -59,66 +59,79 @@ titanic$sibsp[is.na(titanic$sibsp)] = 0
 titanic$parch[is.na(titanic$parch)] = 0
 ```
 
-After imputing the missing values, we investigate the association between survival status and other variables. Figures \@ref(fig:titanicExplorationGender)-\@ref(fig:titanicExplorationFare) present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
+After imputing the missing values, we investigate the association between survival status and other variables. Figures \@ref(fig:titanicExplorationGenderAge)-\@ref(fig:titanicExplorationCountry) present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
-Figures \@ref(fig:titanicExplorationGender) and \@ref(fig:titanicExplorationAge) indicate that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figures \@ref(fig:titanicExplorationParch) and \@ref(fig:titanicExplorationSibsp), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanicExplorationClass) indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. Figure \@ref(fig:titanicExplorationFare) shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figures \@ref(fig:titanicExplorationEmbarked) and \@ref(fig:titanicExplorationCountry) do not suggest any noteworthy trends.        
+Figure \@ref(fig:titanicExplorationGenderAge) indicates that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figure \@ref(fig:titanicExplorationParch), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanicExplorationClass) indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. It also shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figure \@ref(fig:titanicExplorationCountry) does not suggest any noteworthy trends.        
 
-```{r titanicExplorationGender, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to gender in the Titanic data.", out.width = '70%', fig.align='center'}
+```{r titanicExplorationHistograms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Histogram of Age and Fare for the Titanic data.", out.width = '100%', fig.align='center'}
+library("ggplot2")
 library("ggmosaic")
-ggplot(data = titanic) +
+library("patchwork")
+library("forcats")
+titanic$age_cat   <- cut(titanic$age, c(0,5,10,20,30,100))
+titanic$parch_cat <- cut(titanic$parch, c(-1, 0,1,2, 100), labels = c("0", "1", "2", ">3"))
+titanic$sibsp_cat <- cut(titanic$sibsp, c(-1, 0,1,2, 100), labels = c("0", "1", "2", ">3"))
+titanic$country_cat <- fct_lump(titanic$country, 8)
+titanic$fare_cat  <- cut(titanic$fare, c(-1,0,10,25,50,520), c("0","1-10","10-24","25-50",">50"), include.lowest = TRUE)
+
+pl01 <- ggplot(titanic, aes(age)) +
+  geom_histogram(binwidth = 5, color = "white") + 
+  theme_drwhy() + ggtitle("Histograms for passanger Age")
+
+pl02 <- ggplot(titanic, aes(fare)) +
+  geom_histogram(binwidth = 10, color = "white") + 
+  theme_drwhy() + ggtitle("Histograms for passanger Fare")
+
+pl01 + pl02
+```
+
+
+```{r titanicExplorationGenderAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival status in group defined be Gender and Age for the Titanic data.", out.width = '100%', fig.align='center'}
+pl1 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
-   labs(x="Gender", y="Survived?", title='Survival for the titanic per Gender') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
-```
+   labs(x="Gender", y="Survived?", title='Survival per Gender') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) +  scale_fill_manual(values = colors_discrete_drwhy(2))
 
-```{r titanicExplorationAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival accroding to age group in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggmosaic")
-titanic$age_cat <- cut(titanic$age, c(0,2,5,10,18,30,50,70,100))
-ggplot(data = titanic) +
+pl2 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, age_cat), fill=survived)) +
-   labs(x="Age", y="Survived?", title='Survival for the titanic per Age') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Age", y="Survived?", title='Survival per Age') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+
+pl1 + pl2
 ```
 
+```{r titanicExplorationParch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival according to the number of parents/children and siblings/spouses in the Titanic data.", out.width = '100%', fig.align='center'}
+pl3 <- ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, parch_cat), fill=survived)) +
+   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival per no. Parents/Children') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
-```{r titanicExplorationParch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to the number of parents/children in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggplot2")
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, parch), fill=survived)) +
-   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival for the titanic per no. Parents/Children') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+pl4 <- ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, sibsp_cat), fill=survived)) +
+   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival per no. Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) +  scale_fill_manual(values = colors_discrete_drwhy(2))
+
+pl3 + pl4
 ```
 
-```{r titanicExplorationSibsp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to the number of siblings/spouses in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggplot2")
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, sibsp), fill=survived)) +
-   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival for the titanic per no. Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
-```
-```{r titanicExplorationClass, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to the class in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggmosaic")
-ggplot(data = titanic) +
+```{r titanicExplorationClass, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival according to the class and port of embarking in the Titanic data.", out.width = '100%', fig.align='center'}
+pl5 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, class), fill=survived)) +
-   labs(x="Passenger class", y="Survived?", title='Survival for the titanic per Class') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
-```
+   labs(x="Passenger class", y="Survived?", title='Survival  per Class') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
-```{r titanicExplorationFare, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to fare in the Titanic data.", out.width = '70%', fig.align='center', echo=FALSE}
-library("ggplot2")
-titanic$fare_cat <- cut(titanic$fare, c(-1,0,10,25,50,520), include.lowest = TRUE)
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, fare_cat), fill=survived)) +
-   labs(x="Fare", y="Survived?", title='Survival for the titanic as a function of Fare') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
-```
-
-```{r titanicExplorationEmbarked, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Survival according to the port of embarking in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggmosaic")
-ggplot(data = titanic) +
+pl6 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
-   labs(x="Embarked", y="Survived?", title='Survival for the titanic per harbor') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Embarked", y="Survived?", title='Survival per Harbor') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+
+pl5 + pl6
 ```
 
-```{r titanicExplorationCountry, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=8, fig.cap="Survival according to country in the Titanic data.", out.width = '70%', fig.align='center'}
-library("ggmosaic")
-ggplot(data = titanic) +
-   geom_mosaic(aes(x = product(survived, country), fill=survived)) +
-   labs(x="Country", y="Survived?", title='Survival for the titanic per Country') + theme_drwhy() + theme(legend.position = "none") + coord_flip() + scale_fill_manual(values = colors_discrete_drwhy(2))
+```{r titanicExplorationCountry, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival according to fare and country in the Titanic data.", out.width = '100%', fig.align='center'}
+pl7 <- ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, fare_cat), fill=survived)) +
+   labs(x="Fare", y="Survived?", title='Survival for the titanic as a function of Fare') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+
+pl8 <- ggplot(data = titanic) +
+   geom_mosaic(aes(x = product(survived, country_cat), fill=survived)) +
+   labs(x="Country", y="Survived?", title='Survival for the titanic per Country') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+
+pl7 + pl8
 ```
 
 
