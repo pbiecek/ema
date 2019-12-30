@@ -1,46 +1,8 @@
 # Model Development {#modelDevelopmentProcess}
 
-
-## Notation - from introduction {#notation}
-
-Methods described in this book were developed by different authors, who used different mathematical notations. 
-We try to keep the mathematical notation consistent throughout the entre book. In some cases this may result in formulae with a fairly complex system of indices.
-
-In this section, we provide a general overview of the notation we use. Whenever necessary, parts of the notation will be explained again in subsequent chapters.
-
-We consider predictive models that operate on a $p$-dimensional input space $\mathcal X$. By $x \in \mathcal X$ we will refer to a single point in this input space.
-
-In some cases models are described in context of a dataset with $n$ observations. By $x_i$ we refer to the $i$-th observation in this dataset. Of course, $x_i \in \mathcal X$.
-
-Some explainers are constructed around an observation of interest which will be denoted by $x_{*}$. The observation may not necessarily belong to the analyzed dataset; hence, the use of the asterisk in the index. Of course, $x_* \in \mathcal X$.
-
-Points in $\mathcal X$ are $p$ dimensional vectors. We will refer to the $j$-th coordinate by using $j$ in superscript. Thus, $x^j_i$ deontes the $j$-th coordinate of the $i$-th observation from the analyzed dataset. If $\mathcal J$ denotes a subset of indices, then $x^{\mathcal J}$ denotes the elements of vector $x$ corresponding to the indices included in $\mathcal J$. 
-
-We will use the notation $x^{-j}$ to refer to a vector that results from removing the $j$-th coordinate from vector $x$. By $x^{j|=z}$, we denote a vector with the values at all coordinates equal to the values in $x$, except of the $j$-th coordinate, which is set equal to $z$. So, if $w=x^{j|=z}$, then $w^j = z$ and $\forall_{k\neq j} w^k = x^k$.
-
-In this book, a model is a function $f:\mathcal X \rightarrow y$ that transforms a point from $\mathcal X$ into a real number. In most cases, the presented methods can be used directly for multi-variate dependent variables; however, we use examples with uni-variate responses to simplify the notation.
-
-We will use $r_i = y_i - f(x_i)$ we refer to the model residual, i.e., the difference between the observed value of the dependent variable $Y$ for the $i$-th observation from a particular dataset and the model prediction for the observaton.
-
-
-
-## Model visualization, exploration, and explanation - from introduction
-
-In general, the lifecycle of a model can be divided, into three phases: development (or building),  deployment, and maintenance. 
-
-Model development is the phase in which one is looking for the best available model. During this process, model exploration tools are useful. Exploration involves evaluation of the fit of the model, verification of the assumptions underlying the model (diagnostics), and assessment of the predictive performance of the model (validation). In our book we will focus on the visualization tools that can be useful in model exploration. We will not, however, discuss visualization methods for diagnostic purposes, as they are extensively discussed in many books devoted to statistical modelling. 
-
-Model deployment is the phase in which a predictive model is adopted for use. In this phase, it is crucial that the users gain confidence in using the model. It is worth noting that the users might not have been involved in the model development. Moreover, they may only have access to the binary implementation of the model, may not provide any insight into the details of the model structure. In this situation, model explanation tools can help to understand the factors that influence model predictions and boost confidence in the model. The tools are one of the main focus points of our book.
-
-Finally, a deployed model requires maintenance. In this phase, one monitors a model performance by, for instance, checking the validity of predictions for different datasets. If issues are detected, model explanation tools may be used to find the source of the problem and to suggest a modification of the structure of the model. 
-
-
-
-
-
 ## Introduction {#MDPIntro}
 
-In this book we present methods that can be used for exploration of models. But before we can explore a model, first we need to train one.
+In this book we present methods that can be used for exploration and explanation of predictive models. But before we can explore a model, first we need to train one.
 
 In this part of the book we overview the process of model development and introduce steps that lead to a model creation. It is not a comprehensive manual ,,how to train a model in 5 steps''. The goal of this chapter is to show what needs to be performed before we can do any diagnostic or exploration of a trained model.
 
@@ -48,37 +10,88 @@ Predictive models are created for different purposes. Sometimes it is a team of 
 
 Whatever it is a large model or small one, similar steps are to be taken during model development.
 
+
 ## The Process 
 
 Several approaches are proposed in order to describe the process of model development. Their main goal is to standardize the process. And the standardisation is important because it helps to plan resources needed to develop and maintain the model and also to not miss any important phase.
 
-The most known methodology for data science projects is CRISP-DM [@crisp1999], [@crisp2019wiki] which is a tool agnostic procedure. The key component of CRISP-DM is the break down of the whole process into six phases: business understanding, data understanding, data preparation, modeling, evaluation and deployment. CRISP-DM is general, it was designed for any data science project. For predictive models some methodologies are introduced in [@r4ds2019] and [@misconceptions2019]. First is a very simple, focused on interactions between three phases: data transformation, modeling and visualisation. 
+The most known methodology for data science projects is CRISP-DM [@crisp1999], [@crisp2019wiki] which is a tool agnostic procedure. The key component of CRISP-DM is the break down of the whole process into six phases, that are iterated: business understanding, data understanding, data preparation, modeling, evaluation and deployment. CRISP-DM is general, it was designed for any data science project. For predictive models some methodologies are introduced in [@r4ds2019] and [@misconceptions2019]. First is a very simple, focused on iteractions of three phases: data transformation, modeling and visualisation. 
 
-In this book we use *Model Development Process* described in [@mdp2019]. It is motivated by Rational Unified Process for Software Development [@rup1998], [@usdp1999], [@spiral1988]. The process is shown in Figure \@ref(fig:mdpGeneral). Model building usually may be decomposed into four phases. First is the problem formulation followed by crisp modeling and find tuning of a model. Once the model is created it needs to be maintained and one day decommissioned. 
+Figure \@ref(fig:MDPwashmachine) presents this iterative process divided into five steps. This is the common thinking about model development. Repeat until convergence, or repeat until best model is identified.
 
-During each phase some tasks are to be done. Some are related to *Data preparation*. Accessing, cleaning and preparation of the data may be time consuming task. Other tasks are related to *Data understanding*. Visual model exploration and feature engineering is often needed in order to create a good model. During the *Model assembly* consecutive versions of a model are being created and compared. New models are benchmarked and validated during the *Model audit*. *Model delivery* are task needed to put the model into production.
+```{r MDPwashmachine, echo=FALSE, fig.cap="Lifecycle of predictive model can be decomposed into six tasks. First we need data that is poured into the model development. The model development is highly iterative, learn something new about the data, assemble a new model based on current understanding, and validate the new model. Repeat these steps as long as needed to be satisfied with model performance. Once the model is created we can deliver the model to the production along with required tests and documentation.", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/MDP_washmachine.png")
+```
 
-```{r mdpGeneral, echo=FALSE, fig.cap="(fig:mdpGeneral) Overview of the Model Development Process. Horizontal axis show how time passes from the problem formulation to the model decommissioning. Vertical axis shows tasks are performed in a given phase. ", out.width = '99%', fig.align='center'}
+
+In this book we use *Model Development Process* introduced in [@mdp2019]. It is motivated by Rational Unified Process for Software Development [@rup1998], [@usdp1999], [@spiral1988]. One can think about MDP as an extension of process introduced in Figure \@ref(fig:MDPwashmachine). What is important is to notice that consecutive iterations are not identical. Our knowledge increases during the process and consecutive iterations are performed with different goals in mind.  
+This is why MDP is build an an untangled version of Figure \@ref(fig:MDPwashmachine). The MDP process is shown in Figure \@ref(fig:mdpGeneral). Each vertical stripe is a single run of the cycle. 
+First iterations are usually focused on *formulation of the problem*. Sometimes the problem is well stated, however it's a rare situation valid maybe for kaggle competitions. In most real-life problems the problem formulation requires lots of discussions and experiments. Once the problem is defined we can start building first prototypes, *crisp versions of models*. These initial versions of models are to verify if the problem can be solved and how far we are form the solution. Usually we gather more information and go for the next phase  the *fine tuning*. We repeat these iterations until a final version of a model is developed. Then we move to the last phase *maintenance and one day decommissioning*.  
+
+```{r mdpGeneral, echo=FALSE, fig.cap="Overview of the Model Development Process. Horizontal axis show how time passes from the problem formulation to the model decommissioning. Vertical axis shows tasks are performed in a given phase. Each veritical strip is a next iteration of cycle presented in Figure \\@(fig:MDPwashmachine)", out.width = '99%', fig.align='center'}
 knitr::include_graphics("figure/mdp_general.png")
 ```
 
-## Data preparation 
+Having in mind the map of model development we can point places where one can use methods presented in this book.
 
-In many cases the most time consuming phase of model development is the selection and aquisition of the right data. 
+As suggested in the title of this book, three primary applications are: exploration, explanation and debugging. *Exploration* refers to situations in which we better understand the data and the domain. Presented techniques can be used to speed up the variable engineering or variable selection. *Explanation* refers to situations in which we are interested in decision paths beyond particular predictions. *Debugging* refers to situations in which we want to understand week points of a model and correct them. These applications target phases Data understanding, Model assembly and Model audit.
 
-HERE: MORE DESCRIPTIONS AND REFERENCES ARE NEEDED. 
+In this book we present various examples based on three use cases, two introduced in Chapter \@ref(dataSetsIntro) and one in Chapter \@ref(UseCaseFIFA). Due to space limitation we do not show the full life cycle of these problems, but we are focused on phases Crisp modeling and Fine tuning.
+
+Rest of this chapter is focused on a brief overview of the notation and commonly used methods for data exploration, model training and model validation. 
+
+
+## Notation {#notation}
+
+Methods described in this book were developed by different authors, who used different mathematical notations. 
+We try to keep the mathematical notation consistent throughout the entre book. In some cases this may result in formulae with a fairly complex system of indices.
+
+In this section, we provide a general overview of the notation we use. Whenever necessary, parts of the notation will be explained again in subsequent chapters.
+
+We assume that the data consist $n$ observations/instances. Each observation is described by $p$ explanatory variables. Thus data is described as a set of points on a **$p$-dimensional input space** $\mathcal X \equiv \mathcal R^p$. By $x \in \mathcal X$ we will refer to a single point in this input space.
+By $x_i$ we refer to the $i$-th observation in this dataset. Of course, $x_i \in \mathcal X$.
+
+Some methods of model exploration are constructed around an observation of interest which will be denoted by $x_{*}$. The observation may not necessarily belong to the analyzed dataset; hence, the use of the asterisk in the index. Of course, $x_* \in \mathcal X$.
+
+Points in $\mathcal X$ are $p$ dimensional vectors. We will refer to the $j$-th coordinate by using $j$ in superscript. Thus, $x^j_i$ deontes the $j$-th coordinate of the $i$-th observation from the analyzed dataset. If $\mathcal J$ denotes a subset of indices, then $x^{\mathcal J}$ denotes the elements of vector $x$ corresponding to the indices included in $\mathcal J$. 
+
+We will use the notation $x^{-j}$ to refer to a vector that results from removing the $j$-th coordinate from vector $x$. By **$x^{j|=z}$**, we denote a vector with the values at all coordinates equal to the values in $x$, except of the $j$-th coordinate, which is set equal to $z$. So, if $w=x^{j|=z}$, then $w^j = z$ and $\forall_{k\neq j} w^k = x^k$. In other words $x^{j|=z} = (x^1, ..., x^{j-1}, z, x^{j+1}, ..., x^p)$.
+
+In this book, a model is a function $f:\mathcal X \rightarrow \mathcal R$ that transforms a point from $\mathcal X$ into a real number. In most cases, the presented methods can be used directly for multi-variate dependent variables; however, we use examples with uni-variate responses to simplify the notation.
+Typically, during the model development, we created many competing models. Formally we shall also index models to refer to a specific version of a trained model. But for the sake of simplicity we omit this index where it is not important.
+
+
+We will use $r_i = y_i - f(x_i)$ we refer to the **model residual**, i.e., the difference between the observed value of the dependent variable $Y$ for the $i$-th observation from a particular dataset and the model prediction for the observaton.
+
+
+
+
 
 ## Data exploration 
 
 Before we start the modeling we need to understand the data.
 Visual, tabular and statistical tools for data exploration are used depending on the character of variables.
 
-The most know introduction to data exploration is the famous book by John Tukey [@tukey1977]. It introduced new tools for data exploration, like for example boxplots for continuous variables.
-
-Availability of computational tools makes the process of data exploration easier and ore interactive. Find a good overview of techniques for data exploration in [@Nolan2015] or [@Wickham2017].
+The most know introduction to data exploration is the famous book by John Tukey [@tukey1977]. It introduced new tools for data exploration, like for example boxplots for continuous variables. Availability of computational tools makes the process of data exploration easier and ore interactive. Find a good overview of techniques for data exploration in [@Nolan2015] or [@Wickham2017].
 
 
-## Model assembly
+In this book we will relay on five visual methods for data exploration presented in Figure \@ref(fig:UMEPEDA). Two of them are used to present distribution of explanatory or target variables; three others are used to explore pairwise relations between variables.
+
+```{r UMEPEDA, echo=FALSE, fig.cap="Basic methods for visual exploration. Histogram for distribution of continuous or categorical variables, empirical cumulative distribution for continuous variables. Mosaic plot for relation between two categorical variables, boxplots for relation between continuous and categorical variables or scatterplot for relation between two continuous variables.", out.width = '75%', fig.align='center'}
+knitr::include_graphics("figure/UMEPEDA.png")
+```
+
+Distribution of categorical variable is summarized with a barplot, distribution of numerical variable is summarized with a histogram or empirical cumulative distribution function.
+
+Primary goal for exploration of target variable is to decide if some variable transformation is needed (e.g. if the variable is skewed or with fat tails) or to verify if target variable is balances (because some methods are not working well with unbalanced data). Exploration of dependent variables is performed mainly to decide if any variable transformation is needed.
+
+Relations between two variables, mostly between a single dependent variable and target variable, are visualized with mosaic plots (for two categorical variables), boxplots (for numerical and categorical variable) and scatter plots (for two numerical variables). Such exploration may provide some insights for variable selection/filtering (if the variable is not related with the target then variable may be removed from the model) or variable engineering (if from the exploration we gain information how a variable may be transformed).
+
+
+## Model training
+
+TODO: PBI
+
 
 Once the data is prepared we can start model assembly. 
 
