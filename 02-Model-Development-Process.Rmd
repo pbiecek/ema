@@ -90,14 +90,34 @@ Relations between two variables, mostly between a single dependent variable and 
 
 ## Model training
 
-TODO: PBI
+Usually the available data is split into two parts. One will be used for model training (estimation of model parameters), second will be used for model validation. The splitting may be repeated as in k-fold cross validation or repeated k-fold cross validation (see for example [@AppliedPredictiveModeling2013]). We leave the topic of model validation for Chapter \@ref(modelPerformance).
 
+Training procedures are different for different models, but most of them can be written as an optimization problem. Let $\Theta$ be a space for possible model parameters. Model training is a procedure of selection a $\theta$ that maximize some loss function $L$. For models with large parameter spaces it is common to add additional term $\lambda(\theta)$ that control the model complexity.
 
-Once the data is prepared we can start model assembly. 
+\begin{equation}
+\hat\theta = \arg \min_{\theta \in \Theta}  L (y, f_\theta(x)) + \lambda(\theta). 
+(\#eq:modelTrainingEq1)
+\end{equation}
 
-One can try different algorithms for model training, validation strategies, tuning of hyperparameters. This process is usually iterative and computationally heavy.
+For statistical models it is common to assume some family of probability distributions for $y|x$. In such case the loss function $L$ may be defined as a minus log-likelihood function for $\theta$. Likelihood is probability of observing $x$ as a function of parameter $\theta$.
 
-Find a good overview of techniques for model development in [@Venables2010] or [@AppliedPredictiveModeling2013].
+For example, in linear regression we assume that that observed vector of values $y$ follow a multidimensional Gaussian distribution 
+$$
+y \sim \mathcal N(x \beta, I\sigma^2),
+$$
+where $\theta = (\beta, \sigma^2)$. In this case equation \@ref(eq:modelTrainingEq1) become
+
+\begin{equation}
+\hat\theta = \arg \min_{\theta \in \Theta}  ||y - x \beta||_{2} + \lambda(\beta). 
+(\#eq:modelTrainingEq2)
+\end{equation}
+
+For linear regression, the penalty term $\lambda(\beta)$ is equal to $0$, and optimal parameters $\beta$ in equation \@ref(eq:modelTrainingEq2) have close analytical solution. In ridge regression the penalty  $\lambda(\beta) = ||\beta||_2$ and also  \@ref(eq:modelTrainingEq2) have analytical solution. For LASSO regression the penalty  $\lambda(\beta) = ||\beta||_1$ and $\beta$ are estimated through a numerical optimization.
+
+For classification, the natural choice for distribution of $y$ is a Binomial distribution. This leads to logistic regression and logistic loss function. For multi label classification frequent choice is the cross-entropy loss function. 
+
+Apart from linear models for $y$ there is a large variety of predictive models. Find a good overview of different techniques for model development in [@Venables2010] or [@AppliedPredictiveModeling2013].
+
 
 
 ## Model understanding
@@ -106,10 +126,10 @@ Usually the model development starts with some crisp early versions that are ref
 
 * summarise how good is the current version of a model. Section \@ref(modelPerformance) overviews measures for model performance. These measures are usually used to trace the progress in model development.
 * assess the feature importance. Section \@ref(featureImportance) shows how to assess influence of a single variable on model performance. Features that are not important are usually removed from a model during the model refinement. 
-* shows how a single feature affects the model response. Sections \@ref(partialDependenceProfiles) -- \@ref(featureEffects) present Partial Dependency Profiles, Accumulated Local Effects and Marginal Profiles. All these techniques help to understand how model consumes particular features. 
+* shows how a single feature affects the model response. Sections \@ref(partialDependenceProfiles) -- \@ref(accumulatedLocalProfiles) present Partial Dependency Profiles, Accumulated Local Effects and Marginal Profiles. All these techniques help to understand how model consumes particular features. 
 * identifies potential problems with a model. Section \@ref(residualDiagnostic) shows techniques for exploration of model residuals. Looking closer on residuals often help to improve the model. This is possible with tools for local model exploration which are presented in the fist part of the book.
 * performs sensitivity analysis for a model. Section \@ref(ceterisParibus) introduces Ceteris Paribus profiles that helps in a what-if analysis for a model.
-* validated local fit for a model. Section \@ref(localDiagnostics) introduces techniques for assessment if for a single observation the model support its prediction
+* validated local fit for a model. Section \@ref(localDiagnostics) introduces techniques for assessment if for a single observation the model support its prediction.
 * decompose model predictions into pieces that can be attributed to particular variables.  Sections \@ref(breakDown) -- \@ref(LIME) show different techniques like SHAP, LIME or Break Down for local exploration of a model.
 
 
