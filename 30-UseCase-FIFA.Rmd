@@ -31,25 +31,33 @@ set.seed(1313)
 library("ggmosaic")
 library("ggplot2")
 library("DALEX")
+library("patchwork")
 
 load("misc/fifa19small.rda")
 rownames(fifa19small) <- fifa19small$Name
 ```
 
-Player value is heavily skewed. Half of players have estimated values between 0.3 and 2.2 millions of Euro. But few players have estimated values higher than 100 millions of Euro. Below we present the empirical cumulative distribution function with log transformation of the OX axis.
+Players values are heavily skewed. Half of players have estimated value between 0.3 and 2.2 millions of Euro. But few players have estimated values higher than 100 millions of Euro. Figure \@ref(fig:distFIFA19Value) presents empirical cumulative distribution function and histogram with log transformation of the OX axis.
 
-```{r distFIFA19Value, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=4.5, fig.cap="(fig:distFIFA19Value) Empirical cummulative distribution function for values of players. The OX axis is in the log10 transformation.", out.width = '60%', fig.align='center'}
-ggplot(fifa19small, aes(Value.EUR)) +
+```{r distFIFA19Value, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=4.5, fig.cap="Empirical cummulative distribution function and histogram for values of players. The OX axis is in the log10 transformation.", out.width = '90%', fig.align='center'}
+pl1 <- ggplot(fifa19small, aes(Value.EUR)) +
   stat_ecdf(geom = "step", pad = FALSE) +
   theme_drwhy() + scale_x_log10(name = "Estimated value in Euro") + ylab("Fraction of players with value higher than x") +
   ggtitle("ECDF for player's value") + scale_y_continuous(label = scales::percent)
+
+pl2 <- ggplot(fifa19small, aes(Value.EUR)) +
+  geom_histogram(bins = 50) +
+  theme_drwhy() + scale_x_log10(name = "Estimated value in Euro") + ylab("Number of players with given value") +
+  ggtitle("Histogram for player's value") 
+
+pl1 + pl2
 ```
 
 Due to a large number of player characteristics we are not going to explore all of them but rather we will focus on four that will be discussed later in this chapter, namely: Age, Reactions, BallControl and ShortPassing.
 
 Figure \@ref(fig:distFIFA19histograms) presents distributions for these variables. For `Age` we see that most players are between 20 and 30 years old. What is interesting in `BallControl` and `ShortPassing` is that they have bimodal distribution. The reason for that is that these characteristics are very low for goalkeepers but higher for other players. The variable `Reactions` has Gaussian shaped distributtion with average 62 and standard deviation 9.
 
-```{r distFIFA19histograms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap="(fig:distFIFA19histograms) Distribution of selected characteristics of players.", out.width = '90%', fig.align='center'}
+```{r distFIFA19histograms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap="Histograms for selected characteristics of players. Note that BallControl and ShortPassing have bimodal distributions", out.width = '90%', fig.align='center'}
 fifa19small4 <- fifa19small[,c("Age", "Reactions", "BallControl", "ShortPassing")]
 
 library("tidyr")
@@ -64,7 +72,7 @@ ggplot(fifa19small4long, aes(value)) +
 Time to see how these variables are linked with player's value.
 Figure \@ref(fig:distFIFA19scatter) shows scatterplots for selected four characteristics. Because of the skewness of player's value the OY value is presented after log transformation.
 
-For `Age` it looks like the relation is not monotonic, there is some optimal age in which players value is the highest, between 24 and 28 years. Value of youngest players are on average 10x lower, same with olders players. 
+For `Age` it looks like the relation is not monotonic, there is some optimal age in which players value is the highest, between 24 and 28 years. Value of youngest players are on average 10x lower. Same with olders players. 
 
 For variables `BallControl` and `ShortPassing` the relation is not monotonic. In general the larger value of these coefficients the higher value of a player and most expensive are players with top characteristics. But among players with very low scores in `BallControl` and `ShortPassing` some are very expensive too. As it was suggested earlier, these players are probably goalkeepers.
 
@@ -82,15 +90,28 @@ ggplot(fifa19small4long, aes(value, Value.EUR)) +
 
 ```
 
+Figure \@ref(fig:distFIFA19scatter2) shows pairwise scatterplots for dependent variables. Three observations are clear from these scatterplots. One is that `Age` has positive correlation with other variables. On average older players have higher skills. Second is that skills are positively correlated, the correlation between `BallControl` and `ShortPassing` is higher than 0.9. Third is that goalkeepers' characteristics are different than rest of players.
+
+
+```{r distFIFA19scatter2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=9, fig.cap="(fig:distFIFA19scatter2) Scatterplot for realtion between selected four players characteristics and values of players.", out.width = '90%', fig.align='center'}
+library("GGally")
+ggpairs(fifa19small4v[,-1], 
+        diag = list(continuous = "barDiag")) +
+  theme_drwhy() + 
+   ggtitle("Scatterplot matrix for player's characteristics")
+
+```
 
 Let's compare results from this data exploration with exploration of predictive models that will be fitted on this data.
 
 
 ## Model assembly 
 
-Time to build a predictive model for player's value based on selected characteristics. We will quickly train some elastic model to further explore the relation between player's characteristics and value.
+Time to build a predictive model for players' value based on selected characteristics. We will use a trained elastic model to explore the relation between players' characteristics and players' values.
 
-If the data is clean then building a model is easy. For FIFA 19 data we will try four models with different structures that are able to catch different types of relations. Considered models are:
+Having clean data then model assembly is easy. For FIFA 19 data we will try four models with different structures that are able to catch different types of relations. One model would be enough, but we will try four different models to see if they catch similar relations.
+
+Considered models are:
 
 - boosting model with 250 trees 1 level depth as implemented in package `gbm` [@gbm],
 - boosting model with 250 trees 4 levels depth, this model shall be able to catch interactions between features,
@@ -148,9 +169,9 @@ fifa_rms_exp <- explain(fifa_ols,
 
 ## Model audit
 
-We have createwd four models. Let's see which model is better. Figure \@ref(fig:modelPerforamanceBoxplot) compares absolute model residuals. On average, smallest residuals are for the Random Forest model.
+We have created four models. Let's see which model is better. Figure \@ref(fig:modelPerforamanceBoxplot) compares distributtions of absolute model residuals. Crosses corresponds to average, which correspond to RMSE. On average, smallest residuals are for the Random Forest model.
 
-```{r modelPerforamanceBoxplot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap="(fig:modelPerforamanceBoxplot) Distribution of absolute values of residuals. The smaller are values the better is the model. Crosses stand for averages.", out.width = '70%', fig.align='center'}
+```{r modelPerforamanceBoxplot, warning=FALSE, message=FALSE, echo=TRUE, fig.width=8, fig.height=3, fig.cap="Distribution of absolute values of residuals. The smaller are values the better is the model. Crosses stand for averages.", out.width = '90%', fig.align='center'}
 library("auditor")
 
 fifa_mr_gbm_shallow <- model_residual(fifa_gbm_exp_shallow)
@@ -163,25 +184,17 @@ plot_residual_boxplot(fifa_mr_gbm_shallow, fifa_mr_gbm_deep, fifa_mr_gbm_rf, fif
   ggtitle("Distributions of model residuals")
 ```
 
-But performance is not everything. Figure \@ref(fig:modelPerformanceScatterplot) show diagnostic plots for every model. Each scatterplot shows true target variable against model predictions. The random forest model has predictions closest to the true target values. Extreme predictions (lowest and highest) are biased towards the mean, what is typical for such type of models.
+But performance is not everything. Figure \@ref(fig:modelPerformanceScatterplot) show diagnostic plots for every model. Each scatterplot shows true target variable against model predictions. The random forest model has predictions closest to the true target values. 
+
+Extreme predictions (lowest and highest) are biased towards the mean, what is typical for such type of models. This means that Random Forest models learned factors that influence players' values, but for the most expensive players these values will be underestimated.
 
 
-```{r modelPerformanceScatterplot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=9, fig.cap="(fig:modelPerformanceScatterplot) Diagnostic plots Predicted vs. True target values. Points correspond to particular players. The closer to the diagonal the better is the model.", out.width = '100%', fig.align='center'}
-# plot_prediction(fifa_mr_gbm_shallow, abline = TRUE) +
-#   scale_y_log10() +  scale_x_log10()
-# plot_prediction(fifa_mr_gbm_deep, abline = TRUE)  +
-#   scale_y_log10() +  scale_x_log10()
-# plot_prediction(fifa_mr_gbm_rf, abline = TRUE)  +
-#   scale_y_log10() +  scale_x_log10()
-# plot_prediction(fifa_mr_gbm_rms, abline = TRUE) +
-#   scale_y_log10() +  scale_x_log10()
-
+```{r modelPerformanceScatterplot, warning=FALSE, message=FALSE, echo=TRUE, fig.width=9, fig.height=9, fig.cap="Diagnostic plots Predicted vs. True target values. Points correspond to particular players. The closer to the diagonal the better is the model.", out.width = '80%', fig.align='center'}
 plot_prediction(fifa_mr_gbm_shallow, fifa_mr_gbm_deep, 
                 fifa_mr_gbm_rf, fifa_mr_gbm_rms, abline = TRUE) +
   scale_y_log10() +  scale_x_log10() +
   facet_wrap(~`_label_`) + theme(legend.position = "none") +
   ggtitle("Diagnostic plot Predicted vs True target values")
-
 ```
 
 
@@ -193,23 +206,17 @@ Figure \@ref(fig:featureImportance) shows variable importance plots for four sel
 Some variables are important for all models, like `Reactions` or `BallControl`. Importance of other variables may be very different. All models except random forest are using some characteristics of goalkeepers.
 
 
-```{r featureImportance, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=7, fig.cap="(fig:featureImportance) Variable importance plots for four considered models.", out.width = '100%', fig.align='center'}
+```{r featureImportance, warning=FALSE, message=FALSE, echo=TRUE, fig.width=10, fig.height=8, fig.cap="Variable importance plots for four considered models. Each bar starts in a RMSE for the model and ends in a RMSE calculated for data with permutated single variable.", out.width = '90%', fig.align='center'}
 library("ingredients")
+
 fifa_feat_gbm_shallow <- ingredients::feature_importance(fifa_gbm_exp_shallow)
-#plot(fifa_feat_gbm_shallow, max_vars = 12)
-
 fifa_feat_gbm_deep <- ingredients::feature_importance(fifa_gbm_exp_deep)
-#plot(fifa_feat_gbm_deep, max_vars = 12)
-
 fifa_feat_rf <- ingredients::feature_importance(fifa_rf_exp)
-#plot(fifa_feat_rf, max_vars = 12)
-
 fifa_feat_rms <- ingredients::feature_importance(fifa_rms_exp)
-#plot(fifa_feat_rms, max_vars = 12)
 
 plot(fifa_feat_rf, fifa_feat_rms, 
      fifa_feat_gbm_deep, fifa_feat_gbm_shallow, 
-     max_vars = 12) +facet_wrap(~label, ncol = 2, scales = "free_y")
+     max_vars = 12, bar_width = 4) + ylab("RMSE") + facet_wrap(~label, ncol = 1, scales = "free_y")
 ```
 
 Figure \@ref(fig:usecaseFIFApdp) shows Partial Dependency profiles for the most important variables. They show average relation between particular variable and players value.
@@ -226,19 +233,19 @@ One explanation is following: Youngest players have lower values not because of 
 This example also shows, that proper *exploration of models may be more insightful than exploration of raw data*. Variable `Age` is correlated with other confounding variables. This entangle was visible in the EDA analysis. But models learned to disentangle these effects.
 
 
-```{r usecaseFIFApdp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=8, fig.cap="(fig:usecaseFIFApdp) Partial dependency profiles for four selected variables.", out.width = '90%', fig.align='center'}
-fifa19_pd_shallow <- ingredients::partial_dependency(fifa_gbm_exp_shallow, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+```{r usecaseFIFApdp, warning=FALSE, message=FALSE, echo=TRUE, fig.width=9, fig.height=8, fig.cap="Partial dependency profiles for four selected variables and four considered models.", out.width = '90%', fig.align='center'}
+selected_variables <- c("Age", "Reactions","BallControl", "ShortPassing")
 
-fifa19_pd_deep <- ingredients::partial_dependency(fifa_gbm_exp_deep, variables = c("Age", "Reactions","BallControl", "Dribbling"))
-
-fifa19_pd_rf <- ingredients::partial_dependency(fifa_rf_exp, variables = c("Age", "Reactions","BallControl", "Dribbling"))
-
-fifa19_pd_rms <- ingredients::partial_dependency(fifa_rms_exp, variables = c("Age", "Reactions","BallControl", "Dribbling"))
+fifa19_pd_shallow <- ingredients::partial_dependency(fifa_gbm_exp_shallow, variables = selected_variables)
+fifa19_pd_deep <- ingredients::partial_dependency(fifa_gbm_exp_deep, variables = selected_variables)
+fifa19_pd_rf <- ingredients::partial_dependency(fifa_rf_exp, variables = selected_variables)
+fifa19_pd_rms <- ingredients::partial_dependency(fifa_rms_exp, variables = selected_variables)
 
 plot(fifa19_pd_shallow, fifa19_pd_deep, fifa19_pd_rf, fifa19_pd_rms) +
   scale_y_log10() +
   ggtitle("Partial Dependency profiles for selected variables")
 ```
+
 
 ## Instance understanding
 
@@ -253,11 +260,18 @@ fifa19small["R. Lewandowski",]
 
 In the chapter \@ref(breakDown) we showed a Break Down plots for presentation of variable attributions. In the Figure \@ref(fig:usecaseFIFAbreakDown) we show Break Down plots for Robert Lewandowski predictions.
 
-```{r usecaseFIFAbreakDown, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=7, fig.cap="(fig:usecaseFIFAbreakDown) Break down plot for GBM model.", out.width = '70%', fig.align='center'}
+```{r usecaseFIFAbreakDown, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=9, fig.cap="Break down plot for Robert Lewandowski. Results for GBM and RF model.", out.width = '70%', fig.align='center'}
 library("iBreakDown")
-fifa_pg <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["R. Lewandowski",])
-plot(fifa_pg) +
+fifa_bd_gbm <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["R. Lewandowski",])
+fifa_bd_rf <- break_down(fifa_rf_exp, new_observation = fifa19small["R. Lewandowski",])
+
+pl1 <- plot(fifa_bd_gbm) +
   ggtitle("Break Down plot for Robert Lewandowski (GBM model)")
+
+pl2 <- plot(fifa_bd_rf) +
+  ggtitle("Break Down plot for Robert Lewandowski (RF model)")
+
+pl1 / pl2
 ```
 
 In the chapter \@ref(shapley) we showed a SHAP values for presentation of variable attributions. In the Figure \@ref(fig:usecaseFIFAshap) we show SHAP plots for Robert Lewandowski predictions. As it was expected, these explanations are consistent.
@@ -274,10 +288,18 @@ Robert Lewandowski is a striker. It makes sense that his most valuable character
 How these plots will look like for goalkeepers? Figure \@ref(fig:usecaseFIFAbreakDownWS) show Break Down plots for Wojciech Szczęsny - most valuable polish goal keeper. As we see the most important coefficients make sense, most of them are liked with properties of goalkeepers.
 
 
-```{r usecaseFIFAbreakDownWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=7, fig.cap="(fig:usecaseFIFAbreakDownWS) Break down plot for GBM model.", out.width = '70%', fig.align='center'}
-fifa_pg <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["W. Szczęsny",])
-plot(fifa_pg) +
+```{r usecaseFIFAbreakDownWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=9, fig.cap="Break down plot for Wojciech Szczęsny. Results for GBM and RF model.", out.width = '70%', fig.align='center'}
+library("iBreakDown")
+fifa_bd_gbm <- break_down(fifa_gbm_exp_shallow, new_observation = fifa19small["W. Szczęsny",])
+fifa_bd_rf <- break_down(fifa_rf_exp, new_observation = fifa19small["W. Szczęsny",])
+
+pl1 <- plot(fifa_bd_gbm) +
   ggtitle("Break Down plot for Wojciech Szczęsny (GBM model)")
+
+pl2 <- plot(fifa_bd_rf) +
+  ggtitle("Break Down plot for Wojciech Szczęsny (RF model)")
+
+pl1 / pl2
 ```
 
 
@@ -286,30 +308,48 @@ In chapter \@ref(ceterisParibus) we introduced Ceteris Paribus profiles. These a
 All models give Robert best scores when it comes to `Reactions`, `BallControl` or `Dribling`. When it comes to Age we see that the predicted value is just before a larger drop in value prediction.
 
 
-```{r usecaseFIFAceterisParibus, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap="(fig:usecaseFIFAceterisParibus) Ceteris Paribus plots for four selected observations.", out.width = '90%', fig.align='center'}
+```{r usecaseFIFAceterisParibus, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap="Ceteris Paribus profiles for Robert Lewandowski for four selected observations.", out.width = '90%', fig.align='center'}
+selected_splits <- list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), ShortPassing = seq(20,100,0.1))
 
 fifa_cp_shallow <- ceteris_paribus(fifa_gbm_exp_shallow,
-                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
-                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
-                           )
+                           new_observation = fifa19small["R. Lewandowski",], variables = selected_variables,
+                           variable_splits = selected_splits)
 
 fifa_cp_deep <- ceteris_paribus(fifa_gbm_exp_deep,
-                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
-                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
-                           )
+                           new_observation = fifa19small["R. Lewandowski",], variables = selected_variables,
+                           variable_splits = selected_splits)
 
 fifa_cp_rf <- ceteris_paribus(fifa_rf_exp,
-                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
-                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
-                           )
+                           new_observation = fifa19small["R. Lewandowski",], variables = selected_variables,
+                           variable_splits = selected_splits)
 
 fifa_cp_rms <- ceteris_paribus(fifa_rms_exp,
-                           new_observation = fifa19small["R. Lewandowski",], variables = c("Age", "Reactions","BallControl", "Dribbling"),
-                           variable_splits = list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
-                           )
+                           new_observation = fifa19small["R. Lewandowski",], variables = selected_variables,
+                           variable_splits = selected_splits)
 
 plot(fifa_cp_shallow, fifa_cp_deep, fifa_cp_rf, fifa_cp_rms, color = "_label_") + 
-  show_observations(fifa_cp_rf, fifa_cp_shallow, fifa_cp_deep,fifa_cp_rms, variables = c("Age", "Reactions","BallControl", "Dribbling")) + 
+  show_observations(fifa_cp_rf, fifa_cp_shallow, fifa_cp_deep, fifa_cp_rms, variables = selected_variables) + 
   scale_y_log10()
 
+```
+
+
+
+
+```{r usecaseFIFAceterisParibusNeighbours, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=7.5, fig.cap="Ceteris Paribus profiles for neighbours of Robert Lewandowski.", out.width = '90%', fig.align='center'}
+library("ingredients")
+robert_neighbors <- select_neighbours(fifa19small["R. Lewandowski",], 
+                         data = fifa19small, 
+                         n = 10, 
+                         variables = selected_variables)
+
+cp_robert_neighbors <- ceteris_paribus(fifa_rf_exp, 
+                            robert_neighbors,
+                            variable_splits = selected_splits)
+
+plot(cp_robert_neighbors, color = '#ceced9') +
+  show_profiles(fifa_cp_rf, variables = selected_variables, size = 2) + 
+  show_observations(fifa_cp_rf, variables = selected_variables, size = 5) +
+#  show_residuals(cp_robert_neighbors) +
+  ggtitle("Local-fidelity plot for Robert", "Calculated for the fifa_rf_exp model")
 ```
