@@ -2,8 +2,8 @@
 
 We illustrate the methods presented in this book by using two datasets: 
    
-* *Sinking of the RMS Titanic* 
-* *Apartment prices* 
+* Predicting odds of survival out of *Sinking of the RMS Titanic* 
+* Predicting prices for *Apartments in Warsaw* 
 
 The first dataset will be used to illustrate the application of the techniques in the case of a predictive model for a binary dependent variable. The second one will provide an example for models for a continuous variable.
 
@@ -13,26 +13,25 @@ In this chapter, we provide a short description of each of the datasets, togethe
 
 ![Titanic sinking by Willy Stöwer](figure/Titanic.jpg)
 
-Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. The data are available in a dataset included in the `stablelearner` package. The dataset, after some data cleaning and variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
+Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. 
+The `stablelearner` package includes a data frame with some passenger characteristics. 
+The dataset, after some data cleaning and variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
 
-* *gender*, person's (passenger's or crew member's) gender, a factor (categorical variable) with two levels (categories);
-* *age*, person's age in years, a numerical variable; for adults, the age is given in (integer) years; for children younger than one year, the age is given as $x/12$, where $x$ is the number of months of child's age;
-* *class*, the class in which the passenger travelled, or the duty class of a crew member; a factor with seven levels
-* *embarked*, the harbor in which the person embarked on the ship, a factor with four levels;
-* *country*, person's home country, a factor with 48 levels;
-* *fare*, the price of the ticket (only available for passengers; 0 for crew members), a numerical variable;
-* *sibsp*, the number of siblings/spouses aboard the ship, a numerical variable;
-* *parch*, the number of parents/children aboard the ship, a numerical variable;
-* *survived*, a factor with two levels indicating whether the person survived or not.
+* *gender*, person's (passenger's or crew member's) gender, a factor (categorical variable) with two levels (categories) `male` (78%) and `female` (22%);
+* *age*, person's age in years, a numerical variable; the age is given in (integer) years, range 0 -- 74 years; 
+* *class*, the class in which the passenger travelled, or the duty class of a crew member; a factor with seven levels: `1st` (14.7%), `2nd` (12.9%), `3rd` (32.1%), `deck crew` (3%), `engineering crew` (14.7%), `restaurant staff` (3.1%), `victualling crew` (19.5%);
+* *embarked*, the harbor in which the person embarked on the ship, a factor with four levels, `Belfast` (8.9%), `Cherbourg` (12.3%), `Queenstown` (5.6%), `Southampton` (73.2%);
+* *country*, person's home country, a factor with 48 levels, the most common are `England` (51%), `United States` (12%), `Ireland` (6.2%) and `Sweden` (4.8%);
+* *fare*, the price of the ticket (only available for passengers; 0 for crew members), a numerical variable range 0 -- 512;
+* *sibsp*, the number of siblings/spouses aboard the ship, a numerical variable range 0 -- 8;
+* *parch*, the number of parents/children aboard the ship, a numerical variable range 0 -- 9;
+* *survived*, a factor with two levels `yes` (67.8%), `no` (32.2%), indicating whether the person survived or not.
 
 The R code below provides more info about the contents of the dataset, values of the variables, etc.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(titanic, 2)
-str(titanic)
-levels(titanic$class)
-levels(titanic$embarked)
 ```
 
 Models considered for this dataset will use *survived* as the (binary) dependent variable. 
@@ -43,23 +42,35 @@ It is always advisable to explore data before modelling. However, as this book i
 
 Before exploring the data, we first do some pre-processing. In particular, the value of variables *age*, *country*, *sibsp*, *parch*, and *fare* is missing for a limited number of observations (2, 81, 10, 10, and 26, respectively). Analyzing data with missing values is a topic on its own  (Little and Rubin 1987; Schafer 1997; Molenberghs and Kenward 2007). An often-used approach is to impute the missing values. Toward this end, multiple imputation should be considered (Schafer 1997; Molenberghs and Kenward 2007; van Buuren 2012). However, given the limited number of missing values and the intended illustrative use of the dataset, we will limit ourselves to, admittedly inferior, single imputation. In particular, we replace the missing *age* values by the mean of the observed ones, i.e., 30. Missing *country* will be coded by "X". For *sibsp* and *parch*, we replace the missing values by the most frequently observed value, i.e., 0. Finally, for *fare*, we use the mean fare for a given *class*, i.e., 0 pounds for crew, 89 pounds for the 1st, 22 pounds for the 2nd, and 13 pounds for the 3rd class. The R code presented below implements the imputation steps.
 
+* missing `age` is replaced by its average, that is 30
+
 ```{r, warning=FALSE, message=FALSE}
-# missing age is replaced by average (30)
 titanic$age[is.na(titanic$age)] = 30
-# missing country is replaced by "X"
+```
+* missing `country` is replaced by `"X"`
+
+```{r, warning=FALSE, message=FALSE}
 titanic$country <- as.character(titanic$country)
 titanic$country[is.na(titanic$country)] = "X"
 titanic$country <- factor(titanic$country)
-# missing fare is replaced by class average
+```
+
+* missing `fare` is replaced by within `class` average, that is 89, 22 and 13 correspondingly
+
+```{r, warning=FALSE, message=FALSE}
 titanic$fare[is.na(titanic$fare) & titanic$class == "1st"] = 89
 titanic$fare[is.na(titanic$fare) & titanic$class == "2nd"] = 22
 titanic$fare[is.na(titanic$fare) & titanic$class == "3rd"] = 13
-# missing sibsp, parch are replaced by 0
+```
+
+* missing `sibsp` and `parch` are replaced by 0
+
+```{r, warning=FALSE, message=FALSE}
 titanic$sibsp[is.na(titanic$sibsp)] = 0
 titanic$parch[is.na(titanic$parch)] = 0
 ```
 
-After imputing the missing values, we investigate the association between survival status and other variables. Figures \@ref(fig:titanicExplorationGenderAge)-\@ref(fig:titanicExplorationCountry) present graphically the proportion non- and survivors for different levels of the other variables. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
+After imputing the missing values, we investigate the association between survival status and other variables. Figures \@ref(fig:titanicExplorationGenderAge)-\@ref(fig:titanicExplorationCountry) present graphically the proportion non- and survivors for different levels of the other variables with the use of mosaic plots. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
 Figure \@ref(fig:titanicExplorationGenderAge) indicates that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figure \@ref(fig:titanicExplorationParch), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanicExplorationClass) indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. It also shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figure \@ref(fig:titanicExplorationCountry) does not suggest any noteworthy trends.        
 
@@ -76,17 +87,17 @@ titanic$fare_cat  <- cut(titanic$fare, c(-1,0,10,25,50,520), c("0","1-10","10-24
 
 pl01 <- ggplot(titanic, aes(age)) +
   geom_histogram(binwidth = 5, color = "white") + 
-  theme_drwhy() + ggtitle("Histograms for passanger Age")
+  theme_drwhy() + ggtitle("Histograms for Age")
 
 pl02 <- ggplot(titanic, aes(fare)) +
   geom_histogram(binwidth = 10, color = "white") + 
-  theme_drwhy() + ggtitle("Histograms for passanger Fare")
+  theme_drwhy() + ggtitle("Histograms for Fare")
 
 pl01 + pl02
 ```
 
 
-```{r titanicExplorationGenderAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival status in group defined be Gender and Age for the Titanic data.", out.width = '100%', fig.align='center'}
+```{r titanicExplorationGenderAge, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival status in groups defined be Gender and Age for the Titanic data.", out.width = '100%', fig.align='center'}
 pl1 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, gender), fill=survived)) +
    labs(x="Gender", y="Survived?", title='Survival per Gender') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) +  scale_fill_manual(values = colors_discrete_drwhy(2))
@@ -101,11 +112,11 @@ pl1 + pl2
 ```{r titanicExplorationParch, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival according to the number of parents/children and siblings/spouses in the Titanic data.", out.width = '100%', fig.align='center'}
 pl3 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, parch_cat), fill=survived)) +
-   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival per no. Parents/Children') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Number of Parents/Children Aboard", y="Survived?", title='Survival per n.o. Parents/Children') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
 pl4 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, sibsp_cat), fill=survived)) +
-   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival per no. Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) +  scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Number of Siblings/Spouses Aboard", y="Survived?", title='Survival per n.o. Siblings/Spouses') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) +  scale_fill_manual(values = colors_discrete_drwhy(2))
 
 pl3 + pl4
 ```
@@ -117,7 +128,7 @@ pl5 <- ggplot(data = titanic) +
 
 pl6 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, embarked), fill=survived)) +
-   labs(x="Embarked", y="Survived?", title='Survival per Harbor') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Embarked", y="Survived?", title='Survival per Embarking Harbor') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
 pl5 + pl6
 ```
@@ -125,19 +136,19 @@ pl5 + pl6
 ```{r titanicExplorationCountry, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Survival according to fare and country in the Titanic data.", out.width = '100%', fig.align='center'}
 pl7 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, fare_cat), fill=survived)) +
-   labs(x="Fare", y="Survived?", title='Survival for the titanic as a function of Fare') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Fare", y="Survived?", title='Survival per Fare group') + theme_drwhy() + theme(legend.position = "none", panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
 pl8 <- ggplot(data = titanic) +
    geom_mosaic(aes(x = product(survived, country_cat), fill=survived)) +
-   labs(x="Country", y="Survived?", title='Survival for the titanic per Country') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
+   labs(x="Country", y="Survived?", title='Survival per Country') + theme_drwhy() + theme(legend.position = "none", axis.text.x = element_text(angle = 90), panel.grid = element_blank()) + scale_fill_manual(values = colors_discrete_drwhy(2))
 
 pl7 + pl8
 ```
 
 
-### Logistic regression {#model-titanic-lmr}
+### Logistic regression model {#model-titanic-lmr}
 
-The dependent variable of interest, *survival*, is binary. Thus, a natural choice to build a predictive model is  logistic regression. We do not consider country as an explanatory variable. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. We also do not expect linear relation for the `fare` variable, but because of it's skewness, we do not use splines for this variable. The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
+The dependent variable of interest, *survival*, is binary. Thus, a natural choice is to start the predictive modelling with logistic regression model. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. We also do not expect linear relation for the `fare` variable, but because of it's skewness, we do not use splines for this variable. The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
@@ -147,10 +158,12 @@ titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class + sibsp +
 titanic_lmr_v6
 ```
 
+Note that our prime interest is not in the assessment of model performance, but rather in the understanding of model behavior. This is why we do not split the data int train/test subsets. The model is trained and will be explained on the whole dataset.
 
-### Random forest {#model-titanic-rf}
 
-As an alternative to a logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-level variable interactions, and is quite stable [@randomForestBreiman]. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
+### Random forest model {#model-titanic-rf}
+
+As a challanger to the logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-order variable interactions, and is quite stable [@randomForestBreiman]. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 
 In the first instance, we fit a model with the same set of explanatory variables as the logistic regression model. The results of the model are stored in model-object `titanic_rf_v6`.
 
@@ -169,15 +182,15 @@ titanic_rf_v3 <- randomForest(survived ~ class + gender + age, data = titanic)
 titanic_rf_v3
 ```
    
-### Gradient boosting {#model-titanic-gbm}
+### Gradient boosting model {#model-titanic-gbm}
 
-Finally, we consider the gradient-boosting model. [@Friedman00greedyfunction] The model is known for being able to accomodate higher-order interactions between variables. We use the same set of explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
+Finally, we consider yet another challanger -- the gradient-boosting model [@Friedman00greedyfunction]. The tree based boosting models are known for being able to accomodate higher-order interactions between variables. We use the same set of six explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
 ```{r titanicGBM01, warning=FALSE, message=FALSE}
 library("gbm")
 set.seed(1313)
 titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
-                      data = titanic, n.trees = 15000)
+                      data = titanic, n.trees = 15000, distribution = "bernoulli")
 titanic_gbm_v6
 ```
 
@@ -229,23 +242,22 @@ henry <- data.frame(
             fare = 25,
             embarked = factor("Cherbourg", levels = c("Belfast","Cherbourg","Queenstown","Southampton"))
 )
-round(predict(titanic_lmr_v6, henry, type = "fitted"),2)
-round(predict(titanic_rf_v6, henry, type = "prob")[1,2],2)
-round(predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000),2)
+predict(titanic_lmr_v6, henry, type = "fitted")
+predict(titanic_rf_v6, henry, type = "prob")
+predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000)
 ```
 
-### Explainers {#ExplainersTitanicRCode}
+### Model adapters {#ExplainersTitanicRCode}
 
-Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create a wrapper around the model. Toward this end, we use the `explain()` function from the `DALEX` package [@DALEX]. The function requires five arguments: 
+Model-objects created with different machine learning libraries may have different internal structures. Thus, first, we have got to create an adapter for the model that provides an uniform interface. Toward this end, we use the `explain()` function from the `DALEX` package [@DALEX]. The function requires five arguments: 
 
 * `model`, a model-object;
 * `data`, a validation data frame; 
 * `y`, observed values of the dependent variable for the validation data; 
 * `predict_function`, a function that returns prediction scores; if not specified, then a default `predict()` function is used;
-* `label`, a function that returns prediction scores; if not specified, then it is extracted from the `class(model)`. 
-In the example below we create explainers for the logistic regression, random forest, and gradient boosting models created for the Titanic data. 
+* `label`, an unique name of the model; if not specified, then it is extracted from the `class(model)`. 
 
-Each explainer wraps all elements needed to create a model explanation, i.e., a suitable `predict()` function, validation data set, and the model object. Thus, in subsequent chapters we will use the explainers instead of the model objects to keep code snippets more concise. 
+Each adapter containes all elements needed to create a model explanation, i.e., a suitable `predict()` function, validation data set, and the model object. Thus, in subsequent chapters we will use the explainers instead of the model objects to keep code snippets more concise. 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, 
@@ -264,7 +276,7 @@ explain_titanic_rf_v3 <- explain(model = titanic_rf_v3,
 explain_titanic_gbm_v6 <- explain(model = titanic_gbm_v6, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
-                                 predict_function = function(m, x) predict(m, x, n.trees = 100),
+                                 predict_function = function(m, x) predict(m, x, n.trees = 100), # TODO: is it still needed?
                                  label = "Generalized Boosted Regression v6")
 ```
 
@@ -285,9 +297,9 @@ explain_titanic_gbm_v6 <- explain(model = titanic_gbm_v6,
 
 ### List of objects for the `titanic` example  {#ListOfModelsTitanic}
 
-In the previous sections we have built several predictive models for the `titanic` data set. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
+In the previous sections we have built four predictive models for the `titanic` data set. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
 
-For the ease of reference, we summarize the models in Table \@ref(tab:archivistHooksOfModelsTitanic). The binary model-objects can be downloaded by using the indicated `archivist` hooks [@archivist]. By calling a function specified in the last column of the table, one can recreate a selected model in a local R environment.
+For the ease of reference, we summarize the models in Table \@ref(tab:archivistHooksOfModelsTitanic). The binary model-objects can be downloaded by using the indicated `archivist` hooks [@archivist]. By calling a function specified in the last column of the table, one can restore a selected model in its local R environment.
 
 Table: (\#tab:archivistHooksOfModelsTitanic) Predictive models created for the `titanic` dataset. 
 
@@ -316,13 +328,13 @@ Table: (\#tab:archivistHooksOfDataFramesTitanic) Data frames created for the `ti
 
 Predicting house prices is a common exercise used in machine-learning courses. Various datasets for house prices are available at websites like Kaggle (https://www.kaggle.com) or UCI Machine Learning Repository (https://archive.ics.uci.edu). 
 
-In this book, we will work with an interesting variant of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warszawa, the capital of Poland. However, the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. The natural question is then: which model should we choose? We will show that the model-explanation tools provide important insight into the key model characteristics and are helpful in model selection.
+In this book, we will work with an interesting variant of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warsaw, the capital of Poland. However, the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. The natural question is then: which model should we choose? We will show that the model-explanation tools provide important insight into the key model characteristics and are helpful in model selection.
 
 The dataset is available in the `DALEX` package [@DALEX]. It contains 1000 observations (apartments) and six variables:
 
-* *m2.price*, apatments price per meter-squared (in EUR), a numerical variable;
-* *construction.year*, the year of construction of the block of flats in which the apartment is located, a numerical variable;
-* *surface*, apartment's total surface in squared meters, a numerical variable;
+* *m2.price*, apatments price per meter-squared (in EUR), a numerical variable range 1607 -- 6595;
+* *construction.year*, the year of construction of the block of flats in which the apartment is located, a numerical variable range 1920 -- 2010;
+* *surface*, apartment's total surface in squared meters, a numerical variable range 20 -- 150;
 * *floor*, the floor at which the apartment is located (ground floor taken to be the first floor), a numerical integer variable with values from 1 to 10;
 * *no.rooms*, the total number of rooms, a numerical  variable with values from 1 to 6;
 * *distric*, a factor with 10 levels indicating tha distric of Warszawa where the apartment is located.
@@ -332,15 +344,11 @@ The R code below provides more info about the contents of the dataset, values of
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(apartments, 2)
-str(apartments)
-table(apartments$floor)
-table(apartments$no.rooms)
-levels(apartments$district)
 ```
 
 Models considered for this dataset will use *m2.price* as the (continuous) dependent variable.
 
-Model predictions will be obtained for a set of six apartments included in data frame `apartments_test`, also included in the `DALEX` package.
+Model predictions will be obtained for a set of six apartments included in data frame `apartments_test`.
 
 ```{r, warning=FALSE, message=FALSE}
 head(apartments_test)
@@ -351,52 +359,52 @@ head(apartments_test)
 Note that `apartments` is an artificial dataset created to illustrate and explain differences between random forest and linear regression. Hence, the structure of the data, the form and strength of association between variables, plausibility of distributional assumptions, etc., is better than in a real-life dataset. In fact, all these characteristics of the data are known. Nevertheless, we conduct some data exploration to illustrate the important aspects of the data.
 
 The variable of interest is *m2.price*, the price per meter-squared. The histogram presented in Figure  \@ref(fig:appartmentsExplorationMi2) indicates that the distribution of the variable is slightly skewed to the right. 
-```{r appartmentsExplorationMi2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsExplorationMi2) Distribution of the price per meter-squared in the apartments data."}
+```{r appartmentsExplorationMi2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Distribution of the price per meter-squared in the apartments data."}
 ggplot(data = apartments) +
    geom_histogram(aes(m2.price), binwidth = 100, color = "white") +
-   labs(x="Price per meter-squared", title='Distribution') + theme_drwhy() + theme(legend.position = "none") 
+   labs(x="Price per meter-squared", title='Histogram for appartments prices per m2') + theme_drwhy() + theme(legend.position = "none") 
 ```
 
 Figure  \@ref(fig:appartmentsMi2Construction) suggests (possibly) a nonlinear relation between *construction.year* and *m2.price*.
 
-```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Construction) Price per meter-squared vs. construction year"}
+```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Appartment price per m2 vs. year of construction"}
 ggplot(data = apartments, aes(construction.year, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Construction year", title='Price per meter-squared vs. contruction year') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Construction year", title='Appartment price per m2vs. contruction year') + theme_drwhy() + theme(legend.position = "none") 
 ```
 
 Figure \@ref(fig:appartmentsMi2Surface) indicates a linear relation between *surface* and *m2.price*.
 
-```{r appartmentsMi2Surface, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Surface) Price per meter-squared vs. surface"}
+```{r appartmentsMi2Surface, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Price per meter-squared vs. surface"}
 ggplot(data = apartments, aes(surface, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Surface (meter-squared)", title='Price per meter-squared vs. surface') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Surface (meter-squared)", title='Appartment price per m2 vs. surface') + theme_drwhy() + theme(legend.position = "none") 
 ```
 
 Relation between *floor* and *m2.price* is also close to linear, as seen in Figure \@ref(fig:appartmentsMi2Floor).
 
 ```{r appartmentsMi2Floor, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Floor) Price per meter-squared vs. floor"}
 ggplot(data = apartments, aes(floor, m2.price)) +
-  geom_violin(aes(group = floor), se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
-   geom_jitter(size = 0.3, width = 0.15, height = 0) +
-  geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Floor", title='Price per meter-squared vs. floor') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:10)
+    geom_boxplot(aes(group = floor), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
+    geom_jitter(size = 0.3, width = 0.15, height = 0) +
+    geom_smooth(se = FALSE, size=1, color = "#371ea3") +
+    labs(y="Price per meter-squared", x = "Floor", title='Appartment price per m2 vs. floor') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:10)
 ```
 
 There is a close to linear relation between *no.rooms* and *m2.price*, as suggested by Figure \@ref(fig:appartmentsMi2Norooms). It is worth noting that, quite naturally, surface and number of rooms are correlated (see Figure \@ref(fig:appartmentsSurfaceNorooms)).
 
-```{r appartmentsMi2Norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2Norooms) Price per meter-squared vs. number of rooms"}
+```{r appartmentsMi2Norooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Price per meter-squared vs. number of rooms"}
 ggplot(data = apartments, aes(no.rooms, m2.price, group = no.rooms)) +
-  geom_violin(se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
+    geom_boxplot(aes(group = floor), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
    geom_jitter(size = 0.3, width = 0.15, height = 0) +
-   labs(y="Price per meter-squared", x = "Number of rooms", title='Price per meter-squared vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") + scale_x_continuous(breaks = 1:6)
+   labs(y="Price per meter-squared", x = "Number of rooms", title='Appartment price per m2 vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") + scale_x_continuous(breaks = 1:6)
 ```
 
 ```{r appartmentsSurfaceNorooms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsSurfaceNorooms) Surface vs. number of rooms"}
 ggplot(data = apartments, aes(no.rooms, surface, group = no.rooms)) +
-  geom_violin(se = FALSE, size=0, fill = "#371ea3", alpha=0.3, scale = "width") +
+    geom_boxplot(aes(group = no.rooms), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
    geom_jitter(size = 0.3, width = 0.15, height = 0) +
    labs(y="Surface (meter-squared)", x = "Number of rooms", title='Relation between no rooms and price per square meter') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:6)
 ```
@@ -406,23 +414,23 @@ Prices depend on district. Violin plots in Figure \@ref(fig:appartmentsMi2Distri
 ```{r appartmentsMi2District, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="(fig:appartmentsMi2District) Price per meter-squared for different districts"}
 apartments$district <- reorder(apartments$district, apartments$m2.price, mean)
 ggplot(data = apartments, aes(district, m2.price)) +
-   geom_violin(fill = "#371ea3") +
-  geom_boxplot(width = 0.2, coef = 100, color = "white", fill = "#371ea3") +
-   labs(y="Price per meter-squared", x = "", title='Price per meter-squared vs. district') + theme_drwhy() + theme(legend.position = "none") + coord_flip()
+    geom_boxplot(aes(group = district), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
+    geom_jitter(size = 0.3, width = 0.15, height = 0) +
+    labs(y="Price per meter-squared", x = "", title='Price per meter-squared vs. district') + theme_drwhy() + theme(legend.position = "none") + coord_flip()
 ```
 
-### Linear regression {#model-Apartments-lr}
+### Linear regression model {#model-Apartments-lr}
 
-The dependent variable of interest, *m2.price*, is continuous. Thus, a natural choice to build a predictive model is  linear regression. We treat all the other variables in the `apartments` data frame as explanatory and include them in the model. The results of the model are stored in model-object `apartments_lm_v5`.
+The dependent variable of interest, *m2.price*, is continuous. Thus, a natural choice to build a predictive model is the linear regression. We treat all the other variables in the `apartments` data frame as explanatory and include them in the model. The results of the model are stored in model-object `apartments_lm_v5`.
 
 ```{r, warning=FALSE, message=FALSE}
 apartments_lm_v5 <- lm(m2.price ~ ., data = apartments)
-apartments_lm_v5
+anova(apartments_lm_v5)
 ```
 
-### Random forest {#model-Apartments-rf}
+### Random forest model {#model-Apartments-rf}
 
-As an alternative to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
+As a challanger to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 The results of the model are stored in model-object `apartments_rf_v5`. 
 
 ```{r, warning=FALSE, message=FALSE, eval = FALSE}
@@ -441,7 +449,14 @@ apartments_rf_v5
 
 ### Model predictions {#predictionsApartments}
 
-By aplying the `predict()` function to model-object `apartments_lm_v5` with `apartments_test` as the data frame for which predictions are to be computed, we obtain the predicted prices for the testing set of six apartments for the linear regression model. Subsequently, we compute the mean squared difference between the predicted and actual prices for the test apartments. We repeat the same steps for the random forest model.  
+The `predict()` function calculates predictions for a specific model. In the example below we use model-object `apartments_lm_v5` to calculate predictions for prices for first six rows. 
+
+```{r, warning=FALSE, message=FALSE}
+predict(apartments_lm_v5, apartments_test[1:6, ])
+```
+
+In the example below we calculate predictive performance for `apartments_lm_v5` and `apartments_rf_v5` as the square root of the average of squared errors (RMSE). 
+For the random forest model, the root-mean-square of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is almost identical as root-mean-square for the linear regression model `r round(rmsd_lm, 1)`. Thus, the question we may face is: should we choose the more complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
 
 ```{r, warning=FALSE, message=FALSE}
 predicted_apartments_lm <- predict(apartments_lm_v5, apartments_test)
@@ -452,10 +467,10 @@ rmsd_rf <- sqrt(mean((predicted_apartments_rf - apartments_test$m2.price)^2))
 rmsd_rf
 ```
 
-For the random forest model, the square-root of the mean squared difference is equal to `r round(rmsd_rf, 1)`. It is only minimally smaller than the value of `r round(rmsd_lm, 1)`, obtained for the linear regression model. Thus, the question we may face is: should we choose the more complex, but flexible random-forest model, or the simpler and easier to interpret linear model? In the subsequent chapters we will try to provide an answer to this question.
+As we will show in following chapters, a proper model exploration helps to understand which model we should choose. And even more, it helps to understand weak and strong sides of both models and in consequence we can create a new model better than these two.
 
 
-### Explainers {#ExplainersApartmentsRCode}
+### Model adapters {#ExplainersApartmentsRCode}
 
 In similar spirit to the Section \@ref(ExplainersTitanicRCode) we will use explainers also for predictive models created for the `apartments` dataset.
 
@@ -483,7 +498,7 @@ explain_apartments_rf_v5 <- explain(model = apartments_rf_v5,
 
 In Sections \@ref(model-Apartments-lr) and \@ref(model-Apartments-rf) we have built two predictive models for the `apartments` data set. The models will be used in the rest of the book to illustrate the model explanation methods and tools. 
 
-For the ease of reference, we summarize the models in Table \@ref(tab:archivistHooksOfModelsApartments). The binary model-objects can be downloaded by using the indicated `archivist` hooks [@archivist]. By calling a function specified in the last column of the table, one can recreate a selected model in a local R environment.
+For the ease of reference, we summarize the models in Table \@ref(tab:archivistHooksOfModelsApartments). The binary model-objects can be downloaded by using the indicated `archivist` hooks [@archivist]. By calling a function specified in the last column of the table, one can restore a selected model in a local R environment.
 
 Table: (\#tab:archivistHooksOfModelsApartments) Predictive models created for the `apartments` dataset. 
 
