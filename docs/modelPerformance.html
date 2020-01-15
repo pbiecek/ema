@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2020-01-09" />
+<meta name="date" content="2020-01-15" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -203,7 +203,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="7.1" data-path="breakDown.html"><a href="breakDown.html#BDIntuition"><i class="fa fa-check"></i><b>7.1</b> Intuition</a></li>
 <li class="chapter" data-level="7.2" data-path="breakDown.html"><a href="breakDown.html#BDMethod"><i class="fa fa-check"></i><b>7.2</b> Method</a><ul>
 <li class="chapter" data-level="7.2.1" data-path="breakDown.html"><a href="breakDown.html#break-down-for-linear-models"><i class="fa fa-check"></i><b>7.2.1</b> Break-down for linear models</a></li>
-<li class="chapter" data-level="7.2.2" data-path="breakDown.html"><a href="breakDown.html#break-down-for-general-case"><i class="fa fa-check"></i><b>7.2.2</b> Break-down for general case</a></li>
+<li class="chapter" data-level="7.2.2" data-path="breakDown.html"><a href="breakDown.html#break-down-for-a-general-case"><i class="fa fa-check"></i><b>7.2.2</b> Break-down for a general case</a></li>
 </ul></li>
 <li class="chapter" data-level="7.3" data-path="breakDown.html"><a href="breakDown.html#BDExample"><i class="fa fa-check"></i><b>7.3</b> Example: Titanic data</a></li>
 <li class="chapter" data-level="7.4" data-path="breakDown.html"><a href="breakDown.html#BDProsCons"><i class="fa fa-check"></i><b>7.4</b> Pros and cons</a></li>
@@ -654,34 +654,34 @@ Figure 16.3: (fig:titanicLift) Lift curves for the random-forest model and the l
 <p>Note that there are also other R packages that offer similar functionality. These include packeges <code>mlr</code> <span class="citation">(Bischl et al. <a href="#ref-mlr">2016</a>)</span>, <code>caret</code> <span class="citation">(Jed Wing et al. <a href="#ref-caret">2016</a>)</span>, <code>tidymodels</code> <span class="citation">(Max and Wickham <a href="#ref-tidymodels">2018</a>)</span>, and <code>ROCR</code> <span class="citation">(Sing et al. <a href="#ref-ROCR">2005</a>)</span>.</p>
 <p>For illustration purposes we use the random-forest model <code>titanic_rf_v6</code> (see Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a> and the logistic regression model <code>titanic_lmr_v6</code> (see Section <a href="dataSetsIntro.html#model-titanic-lmr">5.1.2</a>) for the Titanic data (see Section <a href="dataSetsIntro.html#TitanicDataset">5.1</a>).the random-forest model <code>titanic_rf_v6</code> (see Section <a href="#odel-HR-rf"><strong>??</strong></a>). Consequently, the functions from the <code>auditor</code> package are applied in the context of a binary classification problem. However, the same functions can be used for, e.g., linear regression problems.</p>
 <p>To illustrate the use of the functions, we first load explainers for both models.</p>
-<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb111-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
-<a class="sourceLine" id="cb111-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb111-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb111-4" data-line-number="4">explainer_titanic_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/51c50&quot;</span>)</a>
-<a class="sourceLine" id="cb111-5" data-line-number="5">explainer_titanic_lr &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/42d51&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb112-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
+<a class="sourceLine" id="cb112-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb112-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb112-4" data-line-number="4">explainer_titanic_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/51c50&quot;</span>)</a>
+<a class="sourceLine" id="cb112-5" data-line-number="5">explainer_titanic_lr &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/42d51&quot;</span>)</a></code></pre></div>
 <p>Function <code>auditor::model_performance()</code> calculates selected model performance measures. The <code>score</code> argument is used to select the desired measures. The <code>data</code> argument serves for specification of the test dataset, for which the selected measures are to be computed. Note that, by default, the data are extracted from the explainer object. Finally, it is possible to use the <code>cutoff</code> argument to specify the cut-off value to obtained cut-off-dependent measures like F1 score or accuracy.</p>
-<div class="sourceCode" id="cb112"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb112-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_rf, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_rf, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
 <pre><code>## Model label:  Logistic Regression v6 
 ##         score name
 ## auc 0.8196991  auc
 ## f1  0.6589018   f1
 ## acc 0.8046689  acc</code></pre>
-<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb114-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_lr, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" data-line-number="1"><span class="kw">model_performance</span>(explainer_titanic_lr, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>, <span class="st">&quot;acc&quot;</span>))</a></code></pre></div>
 <pre><code>## Model label:  Random Forest v6 
 ##         score name
 ## auc 0.8566304  auc
 ## f1  0.7289880   f1
 ## acc 0.8494521  acc</code></pre>
 <p>ROC or lift curves can be constructed by, first, using the <code>model_evaluation()</code> function. [TOMASZ: WHAT DOES IT DO?] Subseqeuntly, the resulting object is used in the <code>plot_roc()</code> or <code>plot_lift()</code> function calls. Both plot functions return <code>ggplot2</code> objects and can take one or more explainer objects as arguments. In the latter case, the profiles for each explainer are superimposed on one plot.</p>
-<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" data-line-number="1">eva_rf &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_rf)</a>
-<a class="sourceLine" id="cb116-2" data-line-number="2">eva_lr &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_lr)</a>
-<a class="sourceLine" id="cb116-3" data-line-number="3"><span class="kw">plot_roc</span>(eva_rf, eva_lr)</a>
-<a class="sourceLine" id="cb116-4" data-line-number="4"><span class="kw">plot_lift</span>(eva_rf, eva_lr)</a></code></pre></div>
+<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb117-1" data-line-number="1">eva_rf &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_rf)</a>
+<a class="sourceLine" id="cb117-2" data-line-number="2">eva_lr &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(explainer_titanic_lr)</a>
+<a class="sourceLine" id="cb117-3" data-line-number="3"><span class="kw">plot_roc</span>(eva_rf, eva_lr)</a>
+<a class="sourceLine" id="cb117-4" data-line-number="4"><span class="kw">plot_lift</span>(eva_rf, eva_lr)</a></code></pre></div>
 <p>The resulting plots are shown in Figures <a href="modelPerformance.html#fig:titanicROC">16.2</a> and <a href="modelPerformance.html#fig:titanicLift">16.3</a>. Both plots can be supplemented with boxplots for residuals. Toward this end, the residuals have got to computed and added to the explainer object with the help of the <code>model_residual()</code> function. Subsequently, the <code>plot_residual_boxplot()</code> can be applied to the resulting object. [TOMASZ: CODE NOT WORKING FOR SOME REASON.]</p>
-<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb117-1" data-line-number="1"><span class="co"># mr_rf &lt;- model_residual(explainer_titanic_rf)</span></a>
-<a class="sourceLine" id="cb117-2" data-line-number="2"><span class="co"># mr_lm &lt;- model_residual(explainer_titanic_lr)</span></a>
-<a class="sourceLine" id="cb117-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb117-4" data-line-number="4"><span class="co"># plot_residual_boxplot(mr_rf, mr_lm)</span></a></code></pre></div>
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" data-line-number="1"><span class="co"># mr_rf &lt;- model_residual(explainer_titanic_rf)</span></a>
+<a class="sourceLine" id="cb118-2" data-line-number="2"><span class="co"># mr_lm &lt;- model_residual(explainer_titanic_lr)</span></a>
+<a class="sourceLine" id="cb118-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb118-4" data-line-number="4"><span class="co"># plot_residual_boxplot(mr_rf, mr_lm)</span></a></code></pre></div>
 
 </div>
 </div>

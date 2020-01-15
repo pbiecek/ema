@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2020-01-09" />
+<meta name="date" content="2020-01-15" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -203,7 +203,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="7.1" data-path="breakDown.html"><a href="breakDown.html#BDIntuition"><i class="fa fa-check"></i><b>7.1</b> Intuition</a></li>
 <li class="chapter" data-level="7.2" data-path="breakDown.html"><a href="breakDown.html#BDMethod"><i class="fa fa-check"></i><b>7.2</b> Method</a><ul>
 <li class="chapter" data-level="7.2.1" data-path="breakDown.html"><a href="breakDown.html#break-down-for-linear-models"><i class="fa fa-check"></i><b>7.2.1</b> Break-down for linear models</a></li>
-<li class="chapter" data-level="7.2.2" data-path="breakDown.html"><a href="breakDown.html#break-down-for-general-case"><i class="fa fa-check"></i><b>7.2.2</b> Break-down for general case</a></li>
+<li class="chapter" data-level="7.2.2" data-path="breakDown.html"><a href="breakDown.html#break-down-for-a-general-case"><i class="fa fa-check"></i><b>7.2.2</b> Break-down for a general case</a></li>
 </ul></li>
 <li class="chapter" data-level="7.3" data-path="breakDown.html"><a href="breakDown.html#BDExample"><i class="fa fa-check"></i><b>7.3</b> Example: Titanic data</a></li>
 <li class="chapter" data-level="7.4" data-path="breakDown.html"><a href="breakDown.html#BDProsCons"><i class="fa fa-check"></i><b>7.4</b> Pros and cons</a></li>
@@ -541,34 +541,34 @@ Figure 10.5: (fig:LIMEexample02) Interpretable variable generated for age. LIME 
 <p>Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, <code>lime</code> performs global discretization using quartiles, <code>localModel</code> performs local discretization using CP profiles, while <code>live</code> and <code>iml</code> work directly on continuous variables.</p>
 <p>Due to these differences, the packages yield different results (explanations).</p>
 <p>In what follows, for illustration purposes, we use the <code>titanic_rf_v6</code> random-forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>. Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: <code>johny_d</code> - an 8-year-old passenger that travelled in the 1st class. <code>DALEX</code> explainers for the model and the <code>jonhy_d</code> data are retrieved via <code>archivist</code> hooks as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">5.1.7</a>.</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb68-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb68-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb68-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb68-4" data-line-number="4">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
-<a class="sourceLine" id="cb68-5" data-line-number="5">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a>
-<a class="sourceLine" id="cb68-6" data-line-number="6">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb69-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb69-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb69-4" data-line-number="4">titanic &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</a>
+<a class="sourceLine" id="cb69-5" data-line-number="5">titanic_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/31570&quot;</span>)</a>
+<a class="sourceLine" id="cb69-6" data-line-number="6">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a></code></pre></div>
 <div id="the-lime-package" class="section level3">
 <h3><span class="header-section-number">10.6.1</span> The lime package</h3>
 <p>The key elements of the <code>lime</code> package are functions <code>lime()</code>, which creates an explainer, and <code>explain()</code>, which evaluates explanations.</p>
 <p>The detailed results for the <code>titanic_rf_v6</code> random-forest model and <code>johny_d</code> are presented below. First we need to specifiy that we will work with a model for classification.</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb69-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
-<a class="sourceLine" id="cb69-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</a>
+<a class="sourceLine" id="cb70-2" data-line-number="2">model_type.randomForest &lt;-<span class="st"> </span><span class="cf">function</span>(x, ...) <span class="st">&quot;classification&quot;</span></a></code></pre></div>
 <p>Second we need to create an explainer - an object with all elements needed for calculation of explanations. This can be done with the <code>lime</code> function, the dataset and the model.</p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb70-1" data-line-number="1">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(titanic[,<span class="kw">colnames</span>(johny_d)], titanic_rf_v6)</a></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" data-line-number="1">lime_rf &lt;-<span class="st"> </span><span class="kw">lime</span>(titanic[,<span class="kw">colnames</span>(johny_d)], titanic_rf_v6)</a></code></pre></div>
 <p>In the last step we generate explanation. The <code>n_features</code> set the K for K-LASSO method. Here we ask for explanations not larger than 4 variables. The <code>n_permutations</code> argument defines how many points are to be sampled for a local model approximation. Here we use a set of 1000 artificial points for this.</p>
-<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" data-line-number="1">lime_expl &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(johny_d, lime_rf, <span class="dt">labels =</span> <span class="st">&quot;yes&quot;</span>, <span class="dt">n_features =</span> <span class="dv">4</span>, <span class="dt">n_permutations =</span> <span class="dv">1000</span>)</a>
-<a class="sourceLine" id="cb71-2" data-line-number="2">lime_expl</a>
-<a class="sourceLine" id="cb71-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb71-4" data-line-number="4"><span class="co">#      model_type case label label_prob  model_r2 model_intercept model_prediction</span></a>
-<a class="sourceLine" id="cb71-5" data-line-number="5"><span class="co">#1 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
-<a class="sourceLine" id="cb71-6" data-line-number="6"><span class="co">#2 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
-<a class="sourceLine" id="cb71-7" data-line-number="7"><span class="co">#3 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
-<a class="sourceLine" id="cb71-8" data-line-number="8"><span class="co">#4 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
-<a class="sourceLine" id="cb71-9" data-line-number="9"><span class="co">#  feature feature_value feature_weight  feature_desc                 data   prediction</span></a>
-<a class="sourceLine" id="cb71-10" data-line-number="10"><span class="co">#1    fare            72     0.00640936  21.00 &lt; fare 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
-<a class="sourceLine" id="cb71-11" data-line-number="11"><span class="co">#2  gender             2     0.30481181 gender = male 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
-<a class="sourceLine" id="cb71-12" data-line-number="12"><span class="co">#3   class             1    -0.16690730   class = 1st 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
-<a class="sourceLine" id="cb71-13" data-line-number="13"><span class="co">#4     age             8    -0.10026475     age &lt;= 22 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a></code></pre></div>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" data-line-number="1">lime_expl &lt;-<span class="st"> </span>lime<span class="op">::</span><span class="kw">explain</span>(johny_d, lime_rf, <span class="dt">labels =</span> <span class="st">&quot;yes&quot;</span>, <span class="dt">n_features =</span> <span class="dv">4</span>, <span class="dt">n_permutations =</span> <span class="dv">1000</span>)</a>
+<a class="sourceLine" id="cb72-2" data-line-number="2">lime_expl</a>
+<a class="sourceLine" id="cb72-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb72-4" data-line-number="4"><span class="co">#      model_type case label label_prob  model_r2 model_intercept model_prediction</span></a>
+<a class="sourceLine" id="cb72-5" data-line-number="5"><span class="co">#1 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb72-6" data-line-number="6"><span class="co">#2 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb72-7" data-line-number="7"><span class="co">#3 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb72-8" data-line-number="8"><span class="co">#4 classification    1    no      0.602 0.5806297       0.5365448        0.5805939</span></a>
+<a class="sourceLine" id="cb72-9" data-line-number="9"><span class="co">#  feature feature_value feature_weight  feature_desc                 data   prediction</span></a>
+<a class="sourceLine" id="cb72-10" data-line-number="10"><span class="co">#1    fare            72     0.00640936  21.00 &lt; fare 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb72-11" data-line-number="11"><span class="co">#2  gender             2     0.30481181 gender = male 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb72-12" data-line-number="12"><span class="co">#3   class             1    -0.16690730   class = 1st 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a>
+<a class="sourceLine" id="cb72-13" data-line-number="13"><span class="co">#4     age             8    -0.10026475     age &lt;= 22 1, 2, 8, 0, 0, 72, 4 0.602, 0.398</span></a></code></pre></div>
 <p>Result is a table with coefficients for the K-LASSO method. In the column <code>case</code> one will find an index of observation for which the explanation is calculated. Here it’s 1 since we asked for explanation for only one observation. Fist 7 columns are duplicated and they all summaries how well the local surrogate K-LASSO model fit to the black-box model.
 The <code>feature_weight</code> columns shows the <span class="math inline">\(\beta\)</span> coefficients in the K-LASSO model, <code>feature</code> column points out which variables have non zero coefficients in the K-LASSO method. The <code>feature_value</code> column denotes values for the selected features for the observation of interest. The <code>feature_description</code> column shows how the original feature was transformed into a interpretable feature.</p>
 <p>This implementation of the LIME method dichotomizes continuous variables by using quartiles. Hence, in the output we get a binary variable <code>age &lt; 22</code>.</p>
@@ -579,7 +579,7 @@ The <code>feature_weight</code> columns shows the <span class="math inline">\(\b
 \]</span></p>
 <p>Figure <a href="LIME.html#fig:limeExplLIMETitanic">10.6</a> shows the graphical presentation of the results, obtained by applying the generic <code>plot()</code> function.</p>
 <p>Color correspond to the sign of the <span class="math inline">\(\beta\)</span> coefficient while length of the bar corresponds to the absolute value of <span class="math inline">\(\beta\)</span> coefficient in the K-LASSO method.</p>
-<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="kw">plot_features</span>(lime_expl)</a></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="kw">plot_features</span>(lime_expl)</a></code></pre></div>
 <div class="figure" style="text-align: center"><span id="fig:limeExplLIMETitanic"></span>
 <img src="figure/lime_expl_lime_titanic.png" alt="(fig:limeExplLIMETitanic) LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `lime` package. " width="60%" />
 <p class="caption">
@@ -591,25 +591,25 @@ Figure 10.6: (fig:limeExplLIMETitanic) LIME-method results for the prediction fo
 <h3><span class="header-section-number">10.6.2</span> The localModel package</h3>
 <p>The key elements of the <code>localModel</code> package are functions <code>DALEX::explain()</code>, which creates an explainer, and <code>individual_surrogate_model()</code>, which develops the local white-box model.</p>
 <p>The detailed results for the <code>titanic_rf_v6</code> random-forest model and <code>johny_d</code> are presented below.</p>
-<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;localModel&quot;</span>)</a>
-<a class="sourceLine" id="cb73-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb73-3" data-line-number="3">localModel_rf &lt;-<span class="st"> </span>DALEX<span class="op">::</span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6,</a>
-<a class="sourceLine" id="cb73-4" data-line-number="4">                     <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
-<a class="sourceLine" id="cb73-5" data-line-number="5">localModel_lok &lt;-<span class="st"> </span><span class="kw">individual_surrogate_model</span>(localModel_rf, johny_d,</a>
-<a class="sourceLine" id="cb73-6" data-line-number="6">                                        <span class="dt">size =</span> <span class="dv">1000</span>, <span class="dt">seed =</span> <span class="dv">1313</span>)</a>
-<a class="sourceLine" id="cb73-7" data-line-number="7">localModel_lok</a>
-<a class="sourceLine" id="cb73-8" data-line-number="8"><span class="co">#   estimated                    variable dev_ratio response</span></a>
-<a class="sourceLine" id="cb73-9" data-line-number="9"><span class="co">#1 0.23479837                (Model mean) 0.6521442         </span></a>
-<a class="sourceLine" id="cb73-10" data-line-number="10"><span class="co">#2 0.14483341                 (Intercept) 0.6521442         </span></a>
-<a class="sourceLine" id="cb73-11" data-line-number="11"><span class="co">#3 0.08081853 class = 1st, 2nd, deck crew 0.6521442         </span></a>
-<a class="sourceLine" id="cb73-12" data-line-number="12"><span class="co">#4 0.00000000     gender = female, NA, NA 0.6521442         </span></a>
-<a class="sourceLine" id="cb73-13" data-line-number="13"><span class="co">#5 0.23282293                age &lt;= 15.36 0.6521442         </span></a>
-<a class="sourceLine" id="cb73-14" data-line-number="14"><span class="co">#6 0.02338929                fare &gt; 31.05 0.6521442    </span></a></code></pre></div>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;localModel&quot;</span>)</a>
+<a class="sourceLine" id="cb74-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb74-3" data-line-number="3">localModel_rf &lt;-<span class="st"> </span>DALEX<span class="op">::</span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf_v6,</a>
+<a class="sourceLine" id="cb74-4" data-line-number="4">                     <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
+<a class="sourceLine" id="cb74-5" data-line-number="5">localModel_lok &lt;-<span class="st"> </span><span class="kw">individual_surrogate_model</span>(localModel_rf, johny_d,</a>
+<a class="sourceLine" id="cb74-6" data-line-number="6">                                        <span class="dt">size =</span> <span class="dv">1000</span>, <span class="dt">seed =</span> <span class="dv">1313</span>)</a>
+<a class="sourceLine" id="cb74-7" data-line-number="7">localModel_lok</a>
+<a class="sourceLine" id="cb74-8" data-line-number="8"><span class="co">#   estimated                    variable dev_ratio response</span></a>
+<a class="sourceLine" id="cb74-9" data-line-number="9"><span class="co">#1 0.23479837                (Model mean) 0.6521442         </span></a>
+<a class="sourceLine" id="cb74-10" data-line-number="10"><span class="co">#2 0.14483341                 (Intercept) 0.6521442         </span></a>
+<a class="sourceLine" id="cb74-11" data-line-number="11"><span class="co">#3 0.08081853 class = 1st, 2nd, deck crew 0.6521442         </span></a>
+<a class="sourceLine" id="cb74-12" data-line-number="12"><span class="co">#4 0.00000000     gender = female, NA, NA 0.6521442         </span></a>
+<a class="sourceLine" id="cb74-13" data-line-number="13"><span class="co">#5 0.23282293                age &lt;= 15.36 0.6521442         </span></a>
+<a class="sourceLine" id="cb74-14" data-line-number="14"><span class="co">#6 0.02338929                fare &gt; 31.05 0.6521442    </span></a></code></pre></div>
 <p>In the column <code>localModel_lok</code> one will find <span class="math inline">\(\beta\)</span> coefficients for LASSO logistic regression while in the <code>variable</code> column one will find corresponding values.</p>
 <p>The implemented version of LIME dichotomizes continuous variables by using CP profiles. The CP profile for <code>johny_d</code>, presented in Figure <a href="ceterisParibus.html#fig:titanicCeterisProfile01D">11.9</a> in Chapter <a href="ceterisParibus.html#ceterisParibus">11</a>, indicated that, for age, the largest drop in the predicted probability of survival was observed for the age increasing beyond 15 years. Hence, in the output of the <code>individual_surrogate_model()</code>, we see a binary variable <code>age &lt; 15.36</code>.</p>
 <p>The graphical presentation of the results, obtained by applying the generic <code>plot()</code> function to the object resulting from the <code>application of the</code>explain()` function, is provided in Figure <a href="LIME.html#fig:limeExplLocalModelTitanic">10.7</a>.
 Bars correspond to <span class="math inline">\(\beta\)</span> coefficients in the LASSO model.</p>
-<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="kw">plot</span>(localModel_lok)</a></code></pre></div>
+<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="kw">plot</span>(localModel_lok)</a></code></pre></div>
 <div class="figure" style="text-align: center"><span id="fig:limeExplLocalModelTitanic"></span>
 <img src="figure/lime_expl_localModel_titanic.png" alt="(fig:limeExplLocalModelTitanic) LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `localModel` package. " width="60%" />
 <p class="caption">
@@ -621,30 +621,30 @@ Figure 10.7: (fig:limeExplLocalModelTitanic) LIME-method results for the predict
 <h3><span class="header-section-number">10.6.3</span> The iml package</h3>
 <p>The key elements of the <code>iml</code> package are functions <code>Predictor$new()</code>, which creates an explainer, and <code>LocalModel$new()</code>, which develops the local white-box model.</p>
 <p>The detailed results for the <code>titanic_rf_v6</code> random-forest model and <code>johny_d</code> are presented below.</p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb75-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
-<a class="sourceLine" id="cb75-2" data-line-number="2">iml_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(titanic_rf_v6, <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
-<a class="sourceLine" id="cb75-3" data-line-number="3">iml_glass_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(iml_rf, <span class="dt">x.interest =</span> johny_d, <span class="dt">k =</span> <span class="dv">6</span>)</a>
-<a class="sourceLine" id="cb75-4" data-line-number="4">iml_glass_box</a>
-<a class="sourceLine" id="cb75-5" data-line-number="5"><span class="co">#Interpretation method:  LocalModel </span></a>
-<a class="sourceLine" id="cb75-6" data-line-number="6"><span class="co">#</span></a>
-<a class="sourceLine" id="cb75-7" data-line-number="7"><span class="co">#Analysed predictor: </span></a>
-<a class="sourceLine" id="cb75-8" data-line-number="8"><span class="co">#Prediction task: unknown </span></a>
-<a class="sourceLine" id="cb75-9" data-line-number="9"><span class="co">#</span></a>
-<a class="sourceLine" id="cb75-10" data-line-number="10"><span class="co">#Analysed data:</span></a>
-<a class="sourceLine" id="cb75-11" data-line-number="11"><span class="co">#Sampling from data.frame with 2207 rows and 7 columns.</span></a>
-<a class="sourceLine" id="cb75-12" data-line-number="12"><span class="co">#</span></a>
-<a class="sourceLine" id="cb75-13" data-line-number="13"><span class="co">#Head of results:</span></a>
-<a class="sourceLine" id="cb75-14" data-line-number="14"><span class="co">#          beta x.recoded     effect  x.original              feature</span></a>
-<a class="sourceLine" id="cb75-15" data-line-number="15"><span class="co">#1 -0.158368701         1 -0.1583687         1st            class=1st</span></a>
-<a class="sourceLine" id="cb75-16" data-line-number="16"><span class="co">#2  1.739826204         1  1.7398262        male          gender=male</span></a>
-<a class="sourceLine" id="cb75-17" data-line-number="17"><span class="co">#3  0.018515945         0  0.0000000           0                sibsp</span></a>
-<a class="sourceLine" id="cb75-18" data-line-number="18"><span class="co">#4 -0.001484918        72 -0.1069141          72                 fare</span></a>
-<a class="sourceLine" id="cb75-19" data-line-number="19"><span class="co">#5  0.131819869         1  0.1318199 Southampton embarked=Southampton</span></a>
-<a class="sourceLine" id="cb75-20" data-line-number="20"><span class="co">#6  0.158368701         1  0.1583687         1st            class=1st</span></a></code></pre></div>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</a>
+<a class="sourceLine" id="cb76-2" data-line-number="2">iml_rf =<span class="st"> </span>Predictor<span class="op">$</span><span class="kw">new</span>(titanic_rf_v6, <span class="dt">data =</span> titanic[,<span class="kw">colnames</span>(johny_d)])</a>
+<a class="sourceLine" id="cb76-3" data-line-number="3">iml_glass_box =<span class="st"> </span>LocalModel<span class="op">$</span><span class="kw">new</span>(iml_rf, <span class="dt">x.interest =</span> johny_d, <span class="dt">k =</span> <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb76-4" data-line-number="4">iml_glass_box</a>
+<a class="sourceLine" id="cb76-5" data-line-number="5"><span class="co">#Interpretation method:  LocalModel </span></a>
+<a class="sourceLine" id="cb76-6" data-line-number="6"><span class="co">#</span></a>
+<a class="sourceLine" id="cb76-7" data-line-number="7"><span class="co">#Analysed predictor: </span></a>
+<a class="sourceLine" id="cb76-8" data-line-number="8"><span class="co">#Prediction task: unknown </span></a>
+<a class="sourceLine" id="cb76-9" data-line-number="9"><span class="co">#</span></a>
+<a class="sourceLine" id="cb76-10" data-line-number="10"><span class="co">#Analysed data:</span></a>
+<a class="sourceLine" id="cb76-11" data-line-number="11"><span class="co">#Sampling from data.frame with 2207 rows and 7 columns.</span></a>
+<a class="sourceLine" id="cb76-12" data-line-number="12"><span class="co">#</span></a>
+<a class="sourceLine" id="cb76-13" data-line-number="13"><span class="co">#Head of results:</span></a>
+<a class="sourceLine" id="cb76-14" data-line-number="14"><span class="co">#          beta x.recoded     effect  x.original              feature</span></a>
+<a class="sourceLine" id="cb76-15" data-line-number="15"><span class="co">#1 -0.158368701         1 -0.1583687         1st            class=1st</span></a>
+<a class="sourceLine" id="cb76-16" data-line-number="16"><span class="co">#2  1.739826204         1  1.7398262        male          gender=male</span></a>
+<a class="sourceLine" id="cb76-17" data-line-number="17"><span class="co">#3  0.018515945         0  0.0000000           0                sibsp</span></a>
+<a class="sourceLine" id="cb76-18" data-line-number="18"><span class="co">#4 -0.001484918        72 -0.1069141          72                 fare</span></a>
+<a class="sourceLine" id="cb76-19" data-line-number="19"><span class="co">#5  0.131819869         1  0.1318199 Southampton embarked=Southampton</span></a>
+<a class="sourceLine" id="cb76-20" data-line-number="20"><span class="co">#6  0.158368701         1  0.1583687         1st            class=1st</span></a></code></pre></div>
 <p>In the <code>effect</code> column on can read <span class="math inline">\(\beta\)</span> coefficients for the LASSO method.</p>
 <p>The implemented version of LIME does not transform continuous variables. The CP profile for <code>johny_d</code>, presented in Figure <a href="ceterisParibus.html#fig:titanicCeterisProfile01D">11.9</a> in Chapter <a href="ceterisParibus.html#ceterisParibus">11</a>, indicated that, for boys younger than 15-year-old, the predicted probability of survival did not change very much. Hence, in the printed output, age does not appear as an important variable.</p>
 <p>The graphical presentation of the results, obtained by applying the generic <code>plot()</code> function to the object resulting from the <code>application of the</code>explain()` function, is provided in Figure <a href="LIME.html#fig:limeExplIMLTitanic">10.8</a>. Note that only first 6 rows are listed in the table above. The whole table has 12 coefficients that corresponds to bars in the plot.</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="kw">plot</span>(iml_glass_box) </a></code></pre></div>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="kw">plot</span>(iml_glass_box) </a></code></pre></div>
 <div class="figure" style="text-align: center"><span id="fig:limeExplIMLTitanic"></span>
 <img src="figure/lime_expl_iml_titanic.png" alt="(fig:limeExplIMLTitanic) LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `iml` package. " width="60%" />
 <p class="caption">
