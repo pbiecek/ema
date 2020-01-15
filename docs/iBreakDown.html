@@ -286,7 +286,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="14.2" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#correlated-explanatory-variables"><i class="fa fa-check"></i><b>14.2</b> Correlated explanatory variables</a></li>
 <li class="chapter" data-level="14.3" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#models-with-interactions"><i class="fa fa-check"></i><b>14.3</b> Models with interactions</a></li>
 <li class="chapter" data-level="14.4" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#sparse-explanations"><i class="fa fa-check"></i><b>14.4</b> Sparse explanations</a></li>
-<li class="chapter" data-level="14.5" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#additional-uses-of-model-exploration-and-explanation"><i class="fa fa-check"></i><b>14.5</b> Additional uses of model exploration and explanation</a></li>
+<li class="chapter" data-level="14.5" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#additional-uses-of-model-exploration-and-explanation"><i class="fa fa-check"></i><b>14.5</b> Additional uses of model exploration and explanation</a><ul>
+<li class="chapter" data-level="14.5.1" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#model-studio"><i class="fa fa-check"></i><b>14.5.1</b> Model Studio</a></li>
+</ul></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="dataset-level.html"><a href="dataset-level.html"><i class="fa fa-check"></i>Dataset Level</a></li>
 <li class="chapter" data-level="15" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html"><i class="fa fa-check"></i><b>15</b> Introduction to Model Level Exploration</a></li>
@@ -427,17 +429,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="iBreakDown" class="section level1">
 <h1><span class="header-section-number">Chapter 8</span> Break-down Plots for Models with Interactions (iBreak-down Plots)</h1>
-<p>In Chapter <a href="breakDown.html#breakDown">7</a>, we presented a model-agnostic approach to evaluation of the importance of an explanatory variable for model predictions. An important issue is that, for models with interactions, the estimated value of the variable-importance measure depends on the ordering of the explanatory varaibles that is used when computing the measure.</p>
+<p>In Chapter <a href="breakDown.html#breakDown">7</a>, we presented a model-agnostic approach to evaluation of the importance of an explanatory variable for model predictions. An important issue is that, for some models, e.g. models with interactions, the estimated value of the variable-importance measure depends on the ordering of the explanatory variables that is used when computing the measure.</p>
 <p>In this chapter, we present an algorithm that addresses the issue. In particular, the algorithm identifies interactions between pairs of variables and takes them into account when constructing Break-down (BD) plots. In our presentation we focus on interactions that involve pairs of explanatory variables, but the algorithm can be easily extended to interactions involving a larger number of variables.</p>
 <div id="iBDIntuition" class="section level2">
 <h2><span class="header-section-number">8.1</span> Intuition</h2>
-<p>An interation means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we will consider the Titanic dataset (see Section <a href="dataSetsIntro.html#TitanicDataset">5.1</a>. For the sake of simplicity, we consider only two variables, <code>age</code> and <code>class</code>. In the data <code>age</code> is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, we will consider just two classess: the 2nd and “other”.</p>
-<p>Table <a href="iBreakDown.html#tab:titanicMaleSurvival">8.1</a> shows percentages of survivors for boys and adult men in the 2nd class and other classes on Titanic. Overall, the proportion of surviors among males is 20.5%. However, among boys in the 2nd class, the proportion is 91.7%. How do age and class contribute to this higher survival probability? Let us consider the following two decompositions.</p>
+<p>Lack of additivness means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we will consider the Titanic dataset (see Section <a href="dataSetsIntro.html#TitanicDataset">5.1</a>. For the sake of simplicity, we consider only two variables, <code>age</code> and <code>class</code>. In the data <code>age</code> is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, we will consider just two classes: the 2nd and “other”.</p>
+<p>Table <a href="iBreakDown.html#tab:titanicMaleSurvival">8.1</a> shows percentages of survivors for boys and adult men in the 2nd class and other classes on Titanic. Overall, the proportion of survivors among males is 20.5%. However, among boys in the 2nd class, the proportion is 91.7%. How do age and class contribute to this higher survival probability? Let us consider the following two decompositions.</p>
 <ul>
-<li>The overall probability of survival for males is 20.5%, but for the male passengers from the 2nd class the probability is even lower, i.e. 13.5%. Thus, the effect of the 2nd class is negative, as it decreases the probability of survival by 7%. Now, if, for male passengers of the 2nd class, we consider age, we see that the survival probability for boys increases by 78.2%, from 13.5% (for a male in the 2nd class) to 91.7%. Thus, by considering first the effect of the class, and then the effect of age, we can conclude the effect of -7% for the 2nd class and +78.2% for age (being a boy).</li>
-<li>The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of age (being a boy) is positive, as it increases the survival probability by 20.2%. On the other hand, for boys, travelling in the 2nd class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of age, and then the effect of class, we can conclude the effect of +20.2% for age (being a boy) and +51% for the 2nd class.</li>
+<li><p>Decomposition 1: The overall probability of survival for males is 20.5%, but for the male passengers from the 2nd class the probability is even lower, i.e. 13.5%. Thus, the effect of the 2nd class is negative, as it decreases the probability of survival by 7%. Now, if, for male passengers of the 2nd class, we consider age, we see that the survival probability for boys increases by 78.2%, from 13.5% (for a male in the 2nd class) to 91.7%. Thus, by considering first the effect of the class, and then the effect of age, we can conclude the effect of -7% for the 2nd class and +78.2% for age (being a boy).</p></li>
+<li><p>Decomposition 2: The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of age (being a boy) is positive, as it increases the survival probability by 20.2%. On the other hand, for boys, travelling in the 2nd class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of age, and then the effect of class, we can conclude the effect of +20.2% for age (being a boy) and +51% for the 2nd class.</p></li>
 </ul>
-<p>By considering effects of class and age in different order, we get very different contributions. This is because there is an interaction: the effect of class depends on the age and <code>vice versa</code>. In particular, from Table <a href="iBreakDown.html#tab:titanicMaleSurvival">8.1</a> we could conclude that the overall effect of 2nd class is negative (-7%), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of age (being a boy) is positive (+20.2%), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5%-7%+20.2%=33.7% for a boy in the 2nd class. However, the actually observed proportion is much higher, 90.7%. The difference of 90.7%-33.7%=57% is the interaction effect. We can intepret it as an additional effect of the 2nd class specific for boys, or as an additional effect of age (being a boy) for the 2nd class male passengers.</p>
 <table>
 <caption><span id="tab:titanicMaleSurvival">Table 8.1: </span> Proportions of survivors for men on Titanic.</caption>
 <thead>
@@ -469,22 +470,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 </tbody>
 </table>
-<p>The example illustrates that interactions complicate the evaluation of the importance of explanatory variables to model predictions. In what follows we present a simple alogrithm to include interactions in the BD plots.</p>
+<p>By considering effects of class and age in different order, we get very different contributions. This is because there is an interaction: the effect of class depends on the age and <code>vice versa</code>. In particular, from Table <a href="iBreakDown.html#tab:titanicMaleSurvival">8.1</a> we could conclude that the overall effect of 2nd class is negative (-7%), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of age (being a boy) is positive (+20.2%), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5%-7%+20.2%=33.7% for a boy in the 2nd class. However, the actually observed proportion is much higher, 90.7%. The difference of 90.7%-33.7%=57% is the interaction effect. We can interpret it as an additional effect of the 2nd class specific for boys, or as an additional effect of age (being a boy) for the 2nd class male passengers.</p>
+<p>The example illustrates that interactions complicate the evaluation of the importance of explanatory variables to model predictions. In what follows we present an algorithm to include interactions in the BD plots.</p>
 </div>
 <div id="iBDMethod" class="section level2">
 <h2><span class="header-section-number">8.2</span> Method</h2>
 <p>Identification of interactions in the model is performed in three steps <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span>:</p>
 <ol style="list-style-type: decimal">
 <li>Calculate the variable-importance measure separately for each explanatory variable. In particular, for each variable, compute <span class="math inline">\(\Delta^{j|\emptyset}(x_*)\)</span> (see Section <a href="breakDown.html#BDMethod">7.2</a>).</li>
-<li>Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}\)</span> (see Section <a href="breakDown.html#BDMethod">7.2</a>) and then <span class="math inline">\(\Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(x_*)-\Delta^{i|\emptyset}(x_*)-\Delta^{j|\emptyset}(x_*)\)</span>.</li>
+<li>Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}\)</span> (see Section <a href="breakDown.html#BDMethod">7.2</a>) and then</li>
+</ol>
+<p><span class="math display" id="eq:deltaBreakDownInteractions">\[\begin{equation}
+\Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(x_*)-\Delta^{i|\emptyset}(x_*)-\Delta^{j|\emptyset}(x_*).
+\tag{8.1}
+\end{equation}\]</span></p>
+<ol start="3" style="list-style-type: decimal">
 <li>Rank the so-obtained importance measures for the ``main’’ and interaction effects to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures <span class="math inline">\(v(j, x_*) = \Delta^{j|\{1, ..., j-1\}}(x_*)\)</span> (see Section <a href="breakDown.html#BDMethod">7.2</a>).</li>
 </ol>
-<p>The numerical complexity of the first step is <span class="math inline">\(O(p)\)</span>, where <span class="math inline">\(p\)</span> is the number of explanatory variables. For the second step, the complexity is <span class="math inline">\(O(p^2)\)</span>, while for the third step it is <span class="math inline">\(O(p)\)</span>. Thus, the complexity of the entire procedure is <span class="math inline">\(O(p^2)\)</span>.</p>
+<p>The numerical complexity of the first step is <span class="math inline">\(O(p)\)</span>, where <span class="math inline">\(p\)</span> is the number of explanatory variables. For the second step, the complexity is <span class="math inline">\(O(p^2)\)</span>, while for the third step it is <span class="math inline">\(O(p)\)</span>. Thus, the time complexity of the entire procedure is <span class="math inline">\(O(p^2)\)</span>.</p>
 </div>
 <div id="iBDExample" class="section level2">
 <h2><span class="header-section-number">8.3</span> Example: Titanic data</h2>
-<p>Let us consider the random-forest model <code>titanic_rf_v6</code> (see Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a> and passenger <code>johny_d</code> (see Section <a href="dataSetsIntro.html#predictions-titanic">5.1.5</a>) as the instance of interest in the Titanic data.</p>
-<p>Table <a href="iBreakDown.html#tab:titanicIBreakDownList">8.2</a> presents the expected model predictions <span class="math inline">\(E_X[f(X)|X^i = x_*^i, X^j = x_*^j]\)</span>, single-variable effects <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}(x_*)\)</span>, and interaction effects <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span> for each explanatory variable and each pair of variables. All the measures are calculated for <code>johny_d</code>, the instance of interest.
+<p>Let us consider the random-forest model <code>titanic_rf_v6</code> (see Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>) and passenger <code>johny_d</code> (see Section <a href="dataSetsIntro.html#predictions-titanic">5.1.5</a>) as the instance of interest in the Titanic data.</p>
+<p>Table <a href="iBreakDown.html#tab:titanicIBreakDownList">8.2</a> presents the expected model predictions <span class="math inline">\(E_X[f(X)|X^i = x_*^i, X^j = x_*^j]\)</span>, single-variable effects <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}(x_*)\)</span> (see Equation <a href="breakDown.html#eq:deltaBreakDownAdditive">(7.5)</a>), and interaction effects <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span> (see Equation <a href="iBreakDown.html#eq:deltaBreakDownInteractions">(8.1)</a>) for each explanatory variable and each pair of variables. All the measures are calculated for <code>johny_d</code>, the instance of interest.
 The rows in the table are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is simply measured by <span class="math inline">\(\Delta^{\{i,j\}}(x_*)\)</span> while for the pairs of variables the net impact is measured by <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span>. This way if two variables are important but there is no interaction, then the net effect of interaction <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span> is smaller than additive effect of each variable and the interaction will be lower in the table, see <code>age</code> and <code>gender</code>. Contrary, is the interaction is important then its net effect will be higher than each variable separately, see <code>fare</code> and <code>class</code>.</p>
 <p>Based on the ordering of the rows, the following sequence of variables is identified as informative:</p>
 <ul>
@@ -495,7 +503,7 @@ The rows in the table are sorted according to the absolute value of the net impa
 <li>then <code>sibsp</code>, and <code>parch</code> as variables with lowest net effects but still larger than effect of their interaction.</li>
 </ul>
 <table>
-<caption><span id="tab:titanicIBreakDownList">Table 8.2: </span> Expected model predictions <span class="math inline">\(E_X[f(X)|X^i = x_*^i, X^j = x_*^j]\)</span>, single-variable effects <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}(x_*)\)</span>, and interaction effects <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span> for the random-forest model <code>titanic_rf_v6</code> and passenger <code>johny_d</code> in the Titanic data. The rows in the table are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is simply measured by <span class="math inline">\(\Delta^{\{i,j\}}(x_*)\)</span> while for the pairs of variables the net impact is measured by <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span>.</caption>
+<caption><span id="tab:titanicIBreakDownList">Table 8.2: </span> Expected model predictions <span class="math inline">\(E_X[f(X)|X^i = x_*^i, X^j = x_*^j]\)</span>, single-variable effects <span class="math inline">\(\Delta^{\{i,j\}|\emptyset}(x_*)\)</span> (see Equation <a href="breakDown.html#eq:deltaBreakDownAdditive">(7.5)</a>), and interaction effects <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span> (see Equation <a href="iBreakDown.html#eq:deltaBreakDownInteractions">(8.1)</a>) for the random-forest model <code>titanic_rf_v6</code> and passenger <code>johny_d</code> in the Titanic data. The rows are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is defined as <span class="math inline">\(\Delta^{\{i,j\}}(x_*)\)</span> while for the pairs of variables the net impact is equal to <span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span>.</caption>
 <colgroup>
 <col width="41%" />
 <col width="15%" />
@@ -506,7 +514,7 @@ The rows in the table are sorted according to the absolute value of the net impa
 <tr class="header">
 <th align="left">Variable</th>
 <th align="right"><span class="math inline">\(E_X[f(X)|X^{i}= x_*^{i},X^{j}= x_*^{j}]\)</span></th>
-<th align="right"><span class="math inline">\(\Delta^{\{i,j\}}(x_*)\)</span></th>
+<th align="right"><span class="math inline">\(\Delta^{\{i,j\}|\emptyset}(x_*)\)</span></th>
 <th align="right"><span class="math inline">\(\Delta_{I}^{\{i,j\}}(x_*)\)</span></th>
 </tr>
 </thead>
@@ -734,7 +742,9 @@ The rows in the table are sorted according to the absolute value of the net impa
 </tr>
 </tbody>
 </table>
-<p>Figure <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">8.1</a> presents the BD plot corresponding to the results from Table <a href="iBreakDown.html#tab:titanicIBreakDownList2">8.3</a>. Given that the plots includes an interaction, the polot is called iBreak-down (iBD) plot.</p>
+<p>Figure <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">8.1</a> presents the BD plot corresponding to the results from Table <a href="iBreakDown.html#tab:titanicIBreakDownList2">8.3</a>.</p>
+<p>As we see the interaction between <code>fare</code> and <code>class</code> is included in the plot as a single bar. As effects of these two variables cannot be disentangled, the plot shows combination of both variables as a single contribution.
+From Table <a href="iBreakDown.html#tab:titanicIBreakDownList">8.2</a> we can read that <code>class</code> alone would increase average prediction by <span class="math inline">\(0.185\)</span>, <code>fare</code> would increase average prediction by <span class="math inline">\(0.143\)</span>, but together they increase the average prediction only by <span class="math inline">\(0.098\)</span>. It’s because the <code>fare=72</code> is a high value on average, but is below median when it comes for the 1st class passengers. So these two values combined <code>fare:class=72:1st</code> signal a cheaper version of the fist class, this is why its contribution to model prediction is smaller than contribution of <code>class</code> and <code>fare</code> separately.</p>
 <pre><code>## Preparation of a new explainer is initiated
 ##   -&gt; model label       :  randomForest  (  default  )
 ##   -&gt; data              :  2207  rows  10  cols 
@@ -746,45 +756,52 @@ The rows in the table are sorted according to the absolute value of the net impa
 ##   -&gt; model_info        :  package randomForest , ver. 4.6.14 , task classification (  default  ) 
 ##   A new explainer has been created!</code></pre>
 <div class="figure" style="text-align: center"><span id="fig:iBreakDownTitanicExamplePlot"></span>
-<img src="PM_VEE_files/figure-html/iBreakDownTitanicExamplePlot-1.png" alt="(fig:iBreakDownTitanicExamplePlot) Break-down plot with interactions for the `titanic_rf_v6` model and `johny_d` for the Titanic data." width="80%" />
+<img src="PM_VEE_files/figure-html/iBreakDownTitanicExamplePlot-1.png" alt="Break-down plot with interactions for the `titanic_rf_v6` model and `johny_d` for the Titanic data." width="70%" />
 <p class="caption">
-Figure 8.1: (fig:iBreakDownTitanicExamplePlot) Break-down plot with interactions for the <code>titanic_rf_v6</code> model and <code>johny_d</code> for the Titanic data.
+Figure 8.1: Break-down plot with interactions for the <code>titanic_rf_v6</code> model and <code>johny_d</code> for the Titanic data.
 </p>
 </div>
 </div>
 <div id="iBDProsCons" class="section level2">
 <h2><span class="header-section-number">8.4</span> Pros and cons</h2>
-<p>iBD plots share many features of BD plots for models without interactions. However, in case of interactions, the iBD plots provide more correct explanations.</p>
+<p>iBD plots share many pros and cons of BD plots for models without interactions (see section <a href="breakDown.html#BDProsCons">7.4</a>). However, in case of interactions, the iBD plots provide more correct explanations.</p>
 <p>Though the numerical complexity of the iBD procedure is quadratic, it may be time-consuming in case of models with a large number of explanatory variables. If <span class="math inline">\(p\)</span> stands for the number of variables, then we need to estimate <span class="math inline">\(p*(p+1)/2\)</span> net effects for single variables and pair of variables. For datasets with small number of observations calculations of net effects will suffer from larger variance and therefore larger randomness in the ranking of effects.
 The identification of interactions in the presented procedure is not based on a formal statistical significance test. Thus, for small sample sizes, the procedure may be prone to errors.</p>
 </div>
 <div id="iBDRcode" class="section level2">
 <h2><span class="header-section-number">8.5</span> Code snippets for R</h2>
-<p>For illustration purposes, we use the <code>titanic_rf_v6</code> random-forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>. Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: <code>johny_d</code> - an 8-year-old passenger that travelled in the 1st class.</p>
-<p><code>DALEX</code> explainers for the model and the <code>jonhy_d</code> data are retrieved via <code>archivist</code> hooks as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">5.1.7</a>.</p>
+<p>For illustration purposes, we use the <code>titanic_rf_v6</code> random-forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>. Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: <code>henry</code> - an 47-years old passenger that travelled in the 1st class.</p>
+<p><code>DALEX</code> explainers for the model and the <code>henry</code> data are retrieved via <code>archivist</code> hooks as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">5.1.7</a>.</p>
 <div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
 <a class="sourceLine" id="cb56-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
 <a class="sourceLine" id="cb56-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb56-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
 <a class="sourceLine" id="cb56-5" data-line-number="5">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a>
-<a class="sourceLine" id="cb56-6" data-line-number="6">johny_d</a></code></pre></div>
+<a class="sourceLine" id="cb56-6" data-line-number="6">henry</a></code></pre></div>
+<pre><code>##   class gender age sibsp parch fare  embarked
+## 1   1st   male  47     0     0   25 Cherbourg</code></pre>
 <p>The key function to construct iBD plots is the <code>iBreakDown::break_down()</code> function from the <code>iBreakDown</code> R package <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span>. The use of the function has already been explained in Section <a href="breakDown.html#BDR">7.5</a>. The additional necessary argument is <code>interactions = TRUE</code>.</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
-<a class="sourceLine" id="cb57-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">break_down</span>(explain_rf_v6, johny_d, <span class="dt">interactions =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb57-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb57-4" data-line-number="4">bd_rf</a></code></pre></div>
-<pre><code>##                                          contribution
-## Random Forest v6: intercept                     0.235
-## Random Forest v6: age = 8                       0.270
-## Random Forest v6: fare:class = 72:1st           0.039
-## Random Forest v6: gender = male                -0.083
-## Random Forest v6: embarked = Southampton       -0.003
-## Random Forest v6: sibsp = 0                    -0.006
-## Random Forest v6: parch = 0                    -0.030
-## Random Forest v6: prediction                    0.422</code></pre>
-<p>Applying the generic <code>plot()</code> function to the object resulting from the application of the <code>break_down()</code> function creates an iBD plot. In this case, it is the plot from Figure <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">8.1</a>.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb58-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">break_down</span>(explain_rf_v6, henry, <span class="dt">interactions =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb58-3" data-line-number="3">bd_rf</a></code></pre></div>
+<pre><code>##                                                contribution
+## Random Forest v6: intercept                           0.235
+## Random Forest v6: class = 1st                         0.185
+## Random Forest v6: gender = male                      -0.124
+## Random Forest v6: embarked:fare = Cherbourg:25        0.107
+## Random Forest v6: age = 47                           -0.125
+## Random Forest v6: sibsp = 0                          -0.032
+## Random Forest v6: parch = 0                          -0.001
+## Random Forest v6: prediction                          0.246</code></pre>
+<p>Now we can plot this object with the generic <code>plot()</code> function.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
+<div class="figure" style="text-align: center"><span id="fig:iBDforHenry"></span>
+<img src="PM_VEE_files/figure-html/iBDforHenry-1.png" alt="Generic plot() function for the iBreakDown method calculated for `henry`" width="70%" />
+<p class="caption">
+Figure 8.2: Generic plot() function for the iBreakDown method calculated for <code>henry</code>
+</p>
+</div>
+<p>The Figure <a href="iBreakDown.html#fig:iBDforHenry">8.2</a> shows iBD plot for <code>henry</code> while Figure <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">8.1</a> shows iBD plot for <code>johny_d</code>. In this case different variables were identified as an interaction. As <code>fare=25</code> for <code>henry</code> is much lower than <code>fare=72</code> for <code>johny_d</code> effect of <code>class</code> was not modified by <code>fare</code>.</p>
 
 </div>
 </div>

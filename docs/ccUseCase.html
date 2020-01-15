@@ -286,7 +286,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="14.2" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#correlated-explanatory-variables"><i class="fa fa-check"></i><b>14.2</b> Correlated explanatory variables</a></li>
 <li class="chapter" data-level="14.3" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#models-with-interactions"><i class="fa fa-check"></i><b>14.3</b> Models with interactions</a></li>
 <li class="chapter" data-level="14.4" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#sparse-explanations"><i class="fa fa-check"></i><b>14.4</b> Sparse explanations</a></li>
-<li class="chapter" data-level="14.5" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#additional-uses-of-model-exploration-and-explanation"><i class="fa fa-check"></i><b>14.5</b> Additional uses of model exploration and explanation</a></li>
+<li class="chapter" data-level="14.5" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#additional-uses-of-model-exploration-and-explanation"><i class="fa fa-check"></i><b>14.5</b> Additional uses of model exploration and explanation</a><ul>
+<li class="chapter" data-level="14.5.1" data-path="summaryInstanceLevel.html"><a href="summaryInstanceLevel.html#model-studio"><i class="fa fa-check"></i><b>14.5.1</b> Model Studio</a></li>
+</ul></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="dataset-level.html"><a href="dataset-level.html"><i class="fa fa-check"></i>Dataset Level</a></li>
 <li class="chapter" data-level="15" data-path="modelLevelExploration.html"><a href="modelLevelExploration.html"><i class="fa fa-check"></i><b>15</b> Introduction to Model Level Exploration</a></li>
@@ -451,7 +453,7 @@ Capabilities of the call center are limited by the number of people that can giv
 <p>In this use case we assume that data is already collected in the desired format.
 We got data in a tabular form with 7 columns and 10000 rows.</p>
 <p>Data come from an experiment in which 10000 clients were selected and to each of them we have a call. The column <code>sell</code> summarises the effect of the call if it is successful or not, columns <code>day</code>, <code>hour</code> and <code>days_to_insurance</code> describe conditions for the call, columns <code>production_year</code>, <code>segment</code> and <code>mileage</code> describe conditions of the car and also they tell something about the owner.</p>
-<div class="sourceCode" id="cb199"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb199-1" data-line-number="1"><span class="kw">head</span>(call_center)</a></code></pre></div>
+<div class="sourceCode" id="cb200"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb200-1" data-line-number="1"><span class="kw">head</span>(call_center)</a></code></pre></div>
 <pre><code>##         day hour production_year   segment mileage days_to_insurance sell
 ## 1 Wednesday   13            2013     Large   75331                11    0
 ## 2  Thursday   10            2015 Executive   52368                30    0
@@ -485,19 +487,19 @@ Figure 24.3: (fig:callcenterSegment) Response rate by segment in the Call Center
 <div id="model-assembly-1" class="section level3">
 <h3><span class="header-section-number">24.2.3</span> Model assembly</h3>
 <p>HERE: Introduce some approaches to modeling</p>
-<div class="sourceCode" id="cb201"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb201-1" data-line-number="1">cc_glm &lt;-<span class="st"> </span><span class="kw">glm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
-<a class="sourceLine" id="cb201-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb201-3" data-line-number="3"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
-<a class="sourceLine" id="cb201-4" data-line-number="4">cc_gbm &lt;-<span class="st"> </span><span class="kw">gbm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">distribution =</span> <span class="st">&quot;bernoulli&quot;</span>,</a>
-<a class="sourceLine" id="cb201-5" data-line-number="5">              <span class="dt">interaction.depth =</span> <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb201-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb201-7" data-line-number="7"><span class="kw">library</span>(<span class="st">&quot;ranger&quot;</span>)</a>
-<a class="sourceLine" id="cb201-8" data-line-number="8">cc_ranger &lt;-<span class="st"> </span><span class="kw">ranger</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">classification =</span> <span class="ot">TRUE</span>, <span class="dt">probability =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb201-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb201-10" data-line-number="10"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb201-11" data-line-number="11">cc_glm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_glm, <span class="dt">data  =</span> call_center,</a>
-<a class="sourceLine" id="cb201-12" data-line-number="12">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
-<a class="sourceLine" id="cb201-13" data-line-number="13">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb202"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb202-1" data-line-number="1">cc_glm &lt;-<span class="st"> </span><span class="kw">glm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>)</a>
+<a class="sourceLine" id="cb202-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb202-3" data-line-number="3"><span class="kw">library</span>(<span class="st">&quot;gbm&quot;</span>)</a>
+<a class="sourceLine" id="cb202-4" data-line-number="4">cc_gbm &lt;-<span class="st"> </span><span class="kw">gbm</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">distribution =</span> <span class="st">&quot;bernoulli&quot;</span>,</a>
+<a class="sourceLine" id="cb202-5" data-line-number="5">              <span class="dt">interaction.depth =</span> <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb202-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb202-7" data-line-number="7"><span class="kw">library</span>(<span class="st">&quot;ranger&quot;</span>)</a>
+<a class="sourceLine" id="cb202-8" data-line-number="8">cc_ranger &lt;-<span class="st"> </span><span class="kw">ranger</span>(sell<span class="op">~</span>., <span class="dt">data =</span> call_center, <span class="dt">classification =</span> <span class="ot">TRUE</span>, <span class="dt">probability =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb202-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb202-10" data-line-number="10"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb202-11" data-line-number="11">cc_glm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_glm, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb202-12" data-line-number="12">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb202-13" data-line-number="13">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>## Preparation of a new explainer is initiated
 ##   -&gt; model label       :  lm  (  default  )
 ##   -&gt; data              :  10000  rows  7  cols 
@@ -510,9 +512,9 @@ Figure 24.3: (fig:callcenterSegment) Response rate by segment in the Call Center
 ##   -&gt; residuals         :  numerical, min =  -0.8796371 , mean =  -3.64491e-13 , max =  0.9784902  
 ##   -&gt; model_info        :  package stats , ver. 3.6.1 , task regression (  default  ) 
 ##   A new explainer has been created!</code></pre>
-<div class="sourceCode" id="cb203"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb203-1" data-line-number="1">cc_gbm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_gbm, <span class="dt">data  =</span> call_center,</a>
-<a class="sourceLine" id="cb203-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
-<a class="sourceLine" id="cb203-3" data-line-number="3">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb204"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb204-1" data-line-number="1">cc_gbm_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_gbm, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb204-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb204-3" data-line-number="3">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>## Preparation of a new explainer is initiated
 ##   -&gt; model label       :  gbm  (  default  )
 ##   -&gt; data              :  10000  rows  7  cols 
@@ -525,11 +527,11 @@ Figure 24.3: (fig:callcenterSegment) Response rate by segment in the Call Center
 ##   -&gt; residuals         :  numerical, min =  -0.9556962 , mean =  0.0005771515 , max =  0.950436  
 ##   -&gt; model_info        :  package gbm , ver. 2.1.5 , task classification (  default  ) 
 ##   A new explainer has been created!</code></pre>
-<div class="sourceCode" id="cb205"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb205-1" data-line-number="1">cc_ranger_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_ranger, <span class="dt">data  =</span> call_center,</a>
-<a class="sourceLine" id="cb205-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
-<a class="sourceLine" id="cb205-3" data-line-number="3">                      <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) </a>
-<a class="sourceLine" id="cb205-4" data-line-number="4">                        <span class="kw">predict</span>(m, x)<span class="op">$</span>predictions[,<span class="dv">1</span>], </a>
-<a class="sourceLine" id="cb205-5" data-line-number="5">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb206"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb206-1" data-line-number="1">cc_ranger_exp &lt;-<span class="st"> </span><span class="kw">explain</span>(cc_ranger, <span class="dt">data  =</span> call_center,</a>
+<a class="sourceLine" id="cb206-2" data-line-number="2">                      <span class="dt">y =</span> call_center<span class="op">$</span>sell, </a>
+<a class="sourceLine" id="cb206-3" data-line-number="3">                      <span class="dt">predict_function =</span> <span class="cf">function</span>(m,x) </a>
+<a class="sourceLine" id="cb206-4" data-line-number="4">                        <span class="kw">predict</span>(m, x)<span class="op">$</span>predictions[,<span class="dv">1</span>], </a>
+<a class="sourceLine" id="cb206-5" data-line-number="5">                      <span class="dt">colorize =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>## Preparation of a new explainer is initiated
 ##   -&gt; model label       :  ranger  (  default  )
 ##   -&gt; data              :  10000  rows  7  cols 
@@ -545,38 +547,38 @@ Figure 24.3: (fig:callcenterSegment) Response rate by segment in the Call Center
 </div>
 <div id="model-understanding-2" class="section level3">
 <h3><span class="header-section-number">24.2.4</span> Model understanding</h3>
-<div class="sourceCode" id="cb207"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb207-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
-<a class="sourceLine" id="cb207-2" data-line-number="2">mr_glm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_glm_exp)</a>
-<a class="sourceLine" id="cb207-3" data-line-number="3">mr_gbm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_gbm_exp)</a>
-<a class="sourceLine" id="cb207-4" data-line-number="4">mr_ranger &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_ranger_exp)</a>
-<a class="sourceLine" id="cb207-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb207-6" data-line-number="6"><span class="kw">model_performance</span>(cc_glm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb208"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb208-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;auditor&quot;</span>)</a>
+<a class="sourceLine" id="cb208-2" data-line-number="2">mr_glm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_glm_exp)</a>
+<a class="sourceLine" id="cb208-3" data-line-number="3">mr_gbm &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_gbm_exp)</a>
+<a class="sourceLine" id="cb208-4" data-line-number="4">mr_ranger &lt;-<span class="st"> </span><span class="kw">model_evaluation</span>(cc_ranger_exp)</a>
+<a class="sourceLine" id="cb208-5" data-line-number="5"></a>
+<a class="sourceLine" id="cb208-6" data-line-number="6"><span class="kw">model_performance</span>(cc_glm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
 <pre><code>## Model label:  lm 
 ##         score name
 ## auc 0.7665343  auc
 ## f1  0.7225864   f1</code></pre>
-<div class="sourceCode" id="cb209"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb209-1" data-line-number="1"><span class="kw">model_performance</span>(cc_gbm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb210"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb210-1" data-line-number="1"><span class="kw">model_performance</span>(cc_gbm_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
 <pre><code>## Model label:  gbm 
 ##         score name
 ## auc 0.9152082  auc
 ## f1  0.8418023   f1</code></pre>
-<div class="sourceCode" id="cb211"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb211-1" data-line-number="1"><span class="kw">model_performance</span>(cc_ranger_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
+<div class="sourceCode" id="cb212"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb212-1" data-line-number="1"><span class="kw">model_performance</span>(cc_ranger_exp, <span class="dt">score =</span> <span class="kw">c</span>(<span class="st">&quot;auc&quot;</span>, <span class="st">&quot;f1&quot;</span>))</a></code></pre></div>
 <pre><code>## Model label:  ranger 
 ##          score name
 ## auc 0.01147623  auc
 ## f1  0.06348253   f1</code></pre>
-<div class="sourceCode" id="cb213"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb213-1" data-line-number="1"><span class="kw">plot_roc</span>(mr_gbm, mr_ranger, mr_glm)</a></code></pre></div>
+<div class="sourceCode" id="cb214"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb214-1" data-line-number="1"><span class="kw">plot_roc</span>(mr_gbm, mr_ranger, mr_glm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-84-1.png" width="672" /></p>
+<div class="sourceCode" id="cb215"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb215-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
+<a class="sourceLine" id="cb215-2" data-line-number="2"></a>
+<a class="sourceLine" id="cb215-3" data-line-number="3">fi_gbm &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_gbm_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
+<a class="sourceLine" id="cb215-4" data-line-number="4">fi_ranger &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_ranger_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
+<a class="sourceLine" id="cb215-5" data-line-number="5"><span class="kw">plot</span>(fi_gbm, fi_ranger) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;1 - AUC&quot;</span>)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-85-1.png" width="672" /></p>
-<div class="sourceCode" id="cb214"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb214-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb214-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb214-3" data-line-number="3">fi_gbm &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_gbm_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
-<a class="sourceLine" id="cb214-4" data-line-number="4">fi_ranger &lt;-<span class="st"> </span><span class="kw">feature_importance</span>(cc_ranger_exp, <span class="dt">loss_function =</span> DALEX<span class="op">::</span>loss_one_minus_auc)</a>
-<a class="sourceLine" id="cb214-5" data-line-number="5"><span class="kw">plot</span>(fi_gbm, fi_ranger) <span class="op">+</span><span class="st"> </span><span class="kw">ylab</span>(<span class="st">&quot;1 - AUC&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb216"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb216-1" data-line-number="1">pd_gbm &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_gbm_exp)</a>
+<a class="sourceLine" id="cb216-2" data-line-number="2">pd_ranger &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_ranger_exp)</a>
+<a class="sourceLine" id="cb216-3" data-line-number="3"><span class="kw">plot</span>(pd_gbm, pd_ranger)</a></code></pre></div>
 <p><img src="PM_VEE_files/figure-html/unnamed-chunk-86-1.png" width="672" /></p>
-<div class="sourceCode" id="cb215"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb215-1" data-line-number="1">pd_gbm &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_gbm_exp)</a>
-<a class="sourceLine" id="cb215-2" data-line-number="2">pd_ranger &lt;-<span class="st"> </span><span class="kw">partial_dependency</span>(cc_ranger_exp)</a>
-<a class="sourceLine" id="cb215-3" data-line-number="3"><span class="kw">plot</span>(pd_gbm, pd_ranger)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-87-1.png" width="672" /></p>
 </div>
 </div>
 <div id="iteration-2-fine-tuning" class="section level2">
@@ -584,34 +586,34 @@ Figure 24.3: (fig:callcenterSegment) Response rate by segment in the Call Center
 <p>In the first iteration we have created three predictive models. It looks like best results are obtained with the <code>ranger</code> model. In this iteration we will tune this model and perform some validation of the model before it will be used in the production.</p>
 <div id="analysis-of-residuals" class="section level3">
 <h3><span class="header-section-number">24.3.1</span> Analysis of residuals</h3>
-<div class="sourceCode" id="cb216"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb216-1" data-line-number="1">cc_mr_gbm &lt;-<span class="st"> </span><span class="kw">model_residual</span>(cc_gbm_exp)</a>
-<a class="sourceLine" id="cb216-2" data-line-number="2">cc_mr_ranger &lt;-<span class="st"> </span><span class="kw">model_residual</span>(cc_ranger_exp)</a>
-<a class="sourceLine" id="cb216-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb216-4" data-line-number="4"><span class="kw">plot_residual_density</span>(cc_mr_gbm, cc_mr_ranger)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-88-1.png" width="672" /></p>
-<div class="sourceCode" id="cb217"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb217-1" data-line-number="1"><span class="kw">plot_residual_boxplot</span>(cc_mr_gbm, cc_mr_ranger)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-88-2.png" width="672" /></p>
-<div class="sourceCode" id="cb218"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb218-1" data-line-number="1"><span class="kw">plot_residual</span>(cc_mr_gbm, <span class="dt">variable =</span> <span class="ot">NULL</span>)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-88-3.png" width="672" /></p>
+<div class="sourceCode" id="cb217"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb217-1" data-line-number="1">cc_mr_gbm &lt;-<span class="st"> </span><span class="kw">model_residual</span>(cc_gbm_exp)</a>
+<a class="sourceLine" id="cb217-2" data-line-number="2">cc_mr_ranger &lt;-<span class="st"> </span><span class="kw">model_residual</span>(cc_ranger_exp)</a>
+<a class="sourceLine" id="cb217-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb217-4" data-line-number="4"><span class="kw">plot_residual_density</span>(cc_mr_gbm, cc_mr_ranger)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-87-1.png" width="672" /></p>
+<div class="sourceCode" id="cb218"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb218-1" data-line-number="1"><span class="kw">plot_residual_boxplot</span>(cc_mr_gbm, cc_mr_ranger)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-87-2.png" width="672" /></p>
+<div class="sourceCode" id="cb219"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb219-1" data-line-number="1"><span class="kw">plot_residual</span>(cc_mr_gbm, <span class="dt">variable =</span> <span class="ot">NULL</span>)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-87-3.png" width="672" /></p>
 </div>
 <div id="sensitivity-analysis" class="section level3">
 <h3><span class="header-section-number">24.3.2</span> Sensitivity analysis</h3>
 <p>Ceteris Paribus</p>
-<div class="sourceCode" id="cb219"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb219-1" data-line-number="1">call_center_<span class="dv">25</span> &lt;-<span class="st"> </span><span class="kw">select_sample</span>(call_center, <span class="dv">25</span>)</a>
-<a class="sourceLine" id="cb219-2" data-line-number="2">cp_cc_gbm &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(cc_gbm_exp,<span class="dt">new_observation =</span> call_center_<span class="dv">25</span>)</a>
-<a class="sourceLine" id="cb219-3" data-line-number="3"><span class="kw">plot</span>(cp_cc_gbm)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-89-1.png" width="672" /></p>
-<div class="sourceCode" id="cb220"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb220-1" data-line-number="1">cp_cp &lt;-<span class="st"> </span><span class="kw">cluster_profiles</span>(cp_cc_gbm, <span class="dt">center =</span> <span class="ot">TRUE</span>, <span class="dt">variables =</span> <span class="st">&quot;hour&quot;</span>)</a>
-<a class="sourceLine" id="cb220-2" data-line-number="2"><span class="kw">plot</span>(cp_cp)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-89-2.png" width="672" /></p>
+<div class="sourceCode" id="cb220"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb220-1" data-line-number="1">call_center_<span class="dv">25</span> &lt;-<span class="st"> </span><span class="kw">select_sample</span>(call_center, <span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb220-2" data-line-number="2">cp_cc_gbm &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(cc_gbm_exp,<span class="dt">new_observation =</span> call_center_<span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb220-3" data-line-number="3"><span class="kw">plot</span>(cp_cc_gbm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-88-1.png" width="672" /></p>
+<div class="sourceCode" id="cb221"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb221-1" data-line-number="1">cp_cp &lt;-<span class="st"> </span><span class="kw">cluster_profiles</span>(cp_cc_gbm, <span class="dt">center =</span> <span class="ot">TRUE</span>, <span class="dt">variables =</span> <span class="st">&quot;hour&quot;</span>)</a>
+<a class="sourceLine" id="cb221-2" data-line-number="2"><span class="kw">plot</span>(cp_cp)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-88-2.png" width="672" /></p>
 </div>
 <div id="deeper-analysis-of-individual-observations" class="section level3">
 <h3><span class="header-section-number">24.3.3</span> Deeper analysis of individual observations</h3>
-<div class="sourceCode" id="cb221"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb221-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
-<a class="sourceLine" id="cb221-2" data-line-number="2">mark &lt;-<span class="st"> </span>call_center[<span class="dv">1</span>,]</a>
-<a class="sourceLine" id="cb221-3" data-line-number="3">bd_cc_gbm &lt;-<span class="st"> </span><span class="kw">break_down</span>(cc_gbm_exp, <span class="dt">new_observation =</span> mark)</a>
-<a class="sourceLine" id="cb221-4" data-line-number="4"><span class="kw">plot</span>(bd_cc_gbm)</a></code></pre></div>
-<p><img src="PM_VEE_files/figure-html/unnamed-chunk-90-1.png" width="672" /></p>
+<div class="sourceCode" id="cb222"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb222-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb222-2" data-line-number="2">mark &lt;-<span class="st"> </span>call_center[<span class="dv">1</span>,]</a>
+<a class="sourceLine" id="cb222-3" data-line-number="3">bd_cc_gbm &lt;-<span class="st"> </span><span class="kw">break_down</span>(cc_gbm_exp, <span class="dt">new_observation =</span> mark)</a>
+<a class="sourceLine" id="cb222-4" data-line-number="4"><span class="kw">plot</span>(bd_cc_gbm)</a></code></pre></div>
+<p><img src="PM_VEE_files/figure-html/unnamed-chunk-89-1.png" width="672" /></p>
 
 </div>
 </div>
