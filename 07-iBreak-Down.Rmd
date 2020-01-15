@@ -1,19 +1,18 @@
 #  Break-down Plots for Models with Interactions (iBreak-down Plots) {#iBreakDown}
 
-In Chapter \@ref(breakDown), we presented a model-agnostic approach to evaluation of the importance of an explanatory variable for model predictions. An important issue is that, for models with interactions, the estimated value of the variable-importance measure depends on the ordering of the explanatory varaibles that is used when computing the measure. 
+In Chapter \@ref(breakDown), we presented a model-agnostic approach to evaluation of the importance of an explanatory variable for model predictions. An important issue is that, for some models, e.g. models with interactions, the estimated value of the variable-importance measure depends on the ordering of the explanatory variables that is used when computing the measure. 
 
 In this chapter, we present an algorithm that addresses the issue. In particular, the algorithm identifies interactions between pairs of variables and takes them into account when constructing Break-down (BD) plots. In our presentation we focus on interactions that involve pairs of explanatory variables, but the algorithm can be easily extended to interactions involving a larger number of variables.
 
 ## Intuition {#iBDIntuition}
 
-An interation means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we will consider the Titanic dataset (see Section \@ref(TitanicDataset). For the sake of simplicity, we consider only two variables, `age` and `class`. In the data `age` is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, we will consider just two classess: the 2nd and "other".
+Lack of additivness means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we will consider the Titanic dataset (see Section \@ref(TitanicDataset). For the sake of simplicity, we consider only two variables, `age` and `class`. In the data `age` is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, we will consider just two classes: the 2nd and "other".
 
-Table \@ref(tab:titanicMaleSurvival) shows percentages of survivors for boys and adult men in the 2nd class and other classes on Titanic. Overall, the proportion of surviors among males is 20.5%. However, among boys in the 2nd class, the proportion is 91.7%. How do age and class contribute to this higher survival probability? Let us consider the following two decompositions.
+Table \@ref(tab:titanicMaleSurvival) shows percentages of survivors for boys and adult men in the 2nd class and other classes on Titanic. Overall, the proportion of survivors among males is 20.5%. However, among boys in the 2nd class, the proportion is 91.7%. How do age and class contribute to this higher survival probability? Let us consider the following two decompositions.
 
-* The overall probability of survival for males is 20.5%, but for the male passengers from the 2nd class the probability is even lower, i.e. 13.5%. Thus, the effect of the 2nd class is negative, as it decreases the probability of survival by 7%. Now, if, for male passengers of the 2nd class, we  consider age, we see that the survival probability for boys increases by 78.2%, from 13.5% (for a male in the 2nd class) to 91.7%. Thus, by considering first the effect of the class, and then the effect of age, we can conclude the effect of -7% for the 2nd class and +78.2% for age (being a boy).
-* The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of age (being a boy) is positive, as it increases the survival probability by 20.2%. On the other hand, for boys, travelling in the 2nd class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of age, and then the effect of class, we can conclude the effect of +20.2% for age (being a boy) and +51% for the 2nd class.
+* Decomposition 1: The overall probability of survival for males is 20.5%, but for the male passengers from the 2nd class the probability is even lower, i.e. 13.5%. Thus, the effect of the 2nd class is negative, as it decreases the probability of survival by 7%. Now, if, for male passengers of the 2nd class, we consider age, we see that the survival probability for boys increases by 78.2%, from 13.5% (for a male in the 2nd class) to 91.7%. Thus, by considering first the effect of the class, and then the effect of age, we can conclude the effect of -7% for the 2nd class and +78.2% for age (being a boy).
 
-By considering effects of class and age in different order, we get very different contributions. This is because there is an interaction: the effect of class depends on the age and ``vice versa``. In particular, from Table \@ref(tab:titanicMaleSurvival) we could conclude that the overall effect of 2nd class is negative (-7%), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of age (being a boy) is positive (+20.2%), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5%-7%+20.2%=33.7% for a boy in the 2nd class. However, the actually observed proportion is much higher, 90.7%. The difference of 90.7%-33.7%=57% is the interaction effect. We can intepret it as an additional effect of the 2nd class specific for boys, or as an additional effect of age (being a boy) for the 2nd class male passengers.   
+* Decomposition 2: The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of age (being a boy) is positive, as it increases the survival probability by 20.2%. On the other hand, for boys, travelling in the 2nd class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of age, and then the effect of class, we can conclude the effect of +20.2% for age (being a boy) and +51% for the 2nd class.
 
 Table: (\#tab:titanicMaleSurvival) Proportions of survivors for men on Titanic.
 
@@ -23,6 +22,8 @@ Table: (\#tab:titanicMaleSurvival) Proportions of survivors for men on Titanic.
 |other            |22/69 = 31.9%  |306/1469 = 20.8% |328/1538 = 21.3% |
 |Total            |33/81 = 40.7%  |319/1635 = 19.5% |352/1716 = 20.5% |
 
+
+By considering effects of class and age in different order, we get very different contributions. This is because there is an interaction: the effect of class depends on the age and ``vice versa``. In particular, from Table \@ref(tab:titanicMaleSurvival) we could conclude that the overall effect of 2nd class is negative (-7%), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of age (being a boy) is positive (+20.2%), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5%-7%+20.2%=33.7% for a boy in the 2nd class. However, the actually observed proportion is much higher, 90.7%. The difference of 90.7%-33.7%=57% is the interaction effect. We can interpret it as an additional effect of the 2nd class specific for boys, or as an additional effect of age (being a boy) for the 2nd class male passengers.   
 
 ```{r, eval=FALSE, echo=FALSE}
 library(DALEX)
@@ -37,23 +38,29 @@ knitr::kable(table_formated, booktabs = TRUE,
   caption = 'Caption.')
 ```
 
-The example illustrates that interactions complicate the evaluation of the importance of explanatory variables to model predictions. In what follows we present a simple alogrithm to include interactions in the BD plots. 
+The example illustrates that interactions complicate the evaluation of the importance of explanatory variables to model predictions. In what follows we present an algorithm to include interactions in the BD plots. 
 
 ## Method {#iBDMethod}
 
 Identification of interactions in the model is performed in three steps [@iBreakDownRPackage]:
 
 1. Calculate the variable-importance measure separately for each explanatory variable. In particular, for each variable, compute $\Delta^{j|\emptyset}(x_*)$ (see Section \@ref(BDMethod)).
-2. Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute $\Delta^{\{i,j\}|\emptyset}$ (see Section \@ref(BDMethod)) and then $\Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(x_*)-\Delta^{i|\emptyset}(x_*)-\Delta^{j|\emptyset}(x_*)$.
+2. Calculate the measure for each pair of variables. Subtract the obtained value from the sum of the measures for the particular variables to obtain a contribution attributable to an interaction. In particular, for each pair of variables, compute $\Delta^{\{i,j\}|\emptyset}$ (see Section \@ref(BDMethod)) and then 
+
+\begin{equation}
+\Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(x_*)-\Delta^{i|\emptyset}(x_*)-\Delta^{j|\emptyset}(x_*).
+(\#eq:deltaBreakDownInteractions)
+\end{equation}
+
 3. Rank the so-obtained importance measures for the ``main'' and interaction effects to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures $v(j, x_*) = \Delta^{j|\{1,  ..., j-1\}}(x_*)$ (see Section \@ref(BDMethod)).
 
-The numerical complexity of the first step is $O(p)$, where $p$ is the number of explanatory variables. For the second step, the complexity is $O(p^2)$, while for the third step it is $O(p)$. Thus, the complexity of the entire procedure is $O(p^2)$.
+The numerical complexity of the first step is $O(p)$, where $p$ is the number of explanatory variables. For the second step, the complexity is $O(p^2)$, while for the third step it is $O(p)$. Thus, the time complexity of the entire procedure is $O(p^2)$.
 
 ## Example: Titanic data {#iBDExample} 
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data.
+Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data.
 
-Table \@ref(tab:titanicIBreakDownList) presents the expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$, and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ for each explanatory variable and each pair of variables. All the measures are calculated for `johny_d`, the instance of interest. 
+Table \@ref(tab:titanicIBreakDownList) presents the expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$ (see Equation \@ref(eq:deltaBreakDownAdditive)), and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ (see Equation \@ref(eq:deltaBreakDownInteractions)) for each explanatory variable and each pair of variables. All the measures are calculated for `johny_d`, the instance of interest. 
 The rows in the table are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is simply measured by $\Delta^{\{i,j\}}(x_*)$ while for the pairs of variables the net impact is measured by $\Delta_{I}^{\{i,j\}}(x_*)$. This way if two variables are important but there is no interaction, then the net effect of interaction $\Delta_{I}^{\{i,j\}}(x_*)$ is smaller than additive effect of each variable and the interaction will be lower in the table, see `age` and `gender`.  Contrary, is the interaction is important then its net effect will be higher than each variable separately, see `fare` and `class`. 
 
 Based on the ordering of the rows, the following sequence of variables is identified as informative: 
@@ -64,9 +71,9 @@ Based on the ordering of the rows, the following sequence of variables is identi
 * then `embarked` because of its net effect $-0.011$, 
 * then `sibsp`, and `parch` as variables with lowest net effects but still larger than effect of their interaction.
 
-Table: (\#tab:titanicIBreakDownList) Expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$, and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ for the random-forest model `titanic_rf_v6` and passenger `johny_d` in the Titanic data. The rows in the table are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is simply measured by $\Delta^{\{i,j\}}(x_*)$ while for the pairs of variables the net impact is measured by $\Delta_{I}^{\{i,j\}}(x_*)$.
+Table: (\#tab:titanicIBreakDownList) Expected model predictions $E_X[f(X)|X^i = x_*^i, X^j = x_*^j]$, single-variable effects $\Delta^{\{i,j\}|\emptyset}(x_*)$ (see Equation \@ref(eq:deltaBreakDownAdditive)), and interaction effects $\Delta_{I}^{\{i,j\}}(x_*)$ (see Equation \@ref(eq:deltaBreakDownInteractions)) for the random-forest model `titanic_rf_v6` and passenger `johny_d` in the Titanic data. The rows are sorted according to the absolute value of the net impact of the variable or net impact of the interaction between two variables. For a single variable the net impact is defined as  $\Delta^{\{i,j\}}(x_*)$ while for the pairs of variables the net impact is equal to  $\Delta_{I}^{\{i,j\}}(x_*)$.
 
-|Variable        |$E_X[f(X)|X^{i}= x_*^{i},X^{j}= x_*^{j}]$| $\Delta^{\{i,j\}}(x_*)$ | $\Delta_{I}^{\{i,j\}}(x_*)$|
+|Variable        |$E_X[f(X)|X^{i}= x_*^{i},X^{j}= x_*^{j}]$| $\Delta^{\{i,j\}|\emptyset}(x_*)$ | $\Delta_{I}^{\{i,j\}}(x_*)$|
 |:---------------|-----:|------:|---------:|
 |age             | 0.505|  0.270|          |
 |fare:class      | 0.333|  0.098|    -0.231|
@@ -112,9 +119,12 @@ Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $\Delta^{j|\{
 |sibsp = 0              |   -0.006    |   0.452    |
 |parch = 0              |   -0.030    |   0.422    |
 
-Figure \@ref(fig:iBreakDownTitanicExamplePlot) presents the BD plot corresponding to the results from Table \@ref(tab:titanicIBreakDownList2). Given that the plots includes an interaction, the polot is called iBreak-down (iBD) plot.
+Figure \@ref(fig:iBreakDownTitanicExamplePlot) presents the BD plot corresponding to the results from Table \@ref(tab:titanicIBreakDownList2). 
 
-```{r iBreakDownTitanicExamplePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:iBreakDownTitanicExamplePlot) Break-down plot with interactions for the `titanic_rf_v6` model and `johny_d` for the Titanic data.", out.width = '80%', fig.align='center'}
+As we see the interaction between `fare` and `class` is included in the plot as a single bar. As effects of these two variables cannot be disentangled, the plot shows combination of both variables as a single contribution.
+From Table \@ref(tab:titanicIBreakDownList) we can read that `class` alone would increase average prediction by $0.185$, `fare` would increase average prediction by $0.143$, but together they increase the average prediction only by $0.098$. It's because the `fare=72` is a high value on average, but is below median when it comes for the 1st class passengers. So these two values combined `fare:class=72:1st` signal a cheaper version of the fist class, this is why its contribution to model prediction is smaller than contribution of `class` and `fare` separately.
+
+```{r iBreakDownTitanicExamplePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Break-down plot with interactions for the `titanic_rf_v6` model and `johny_d` for the Titanic data.", out.width = '70%', fig.align='center', fig.width=8, fig.height=4}
 library("DALEX")
 library("iBreakDown")
 library("randomForest")
@@ -155,7 +165,8 @@ load("models/titanic.rda")
 explain_titanic_rf <- explain(model = titanic_rf_v6, 
                               data = titanic[,-9],
                               y = titanic$survived == "yes",
-                              colorize = FALSE)
+                              colorize = FALSE, 
+                              verbose = FALSE)
 
 johny_d <- data.frame(
   class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
@@ -179,43 +190,41 @@ interaction_preference <- 1
 keep_distributions = FALSE
 label = "rf_model"
 
-common_variables <- intersect(colnames(new_observation), 
-            colnames(data))
-        new_observation <- new_observation[, common_variables, 
-            drop = FALSE]
-        data <- data[, common_variables, drop = FALSE]
+common_variables <- intersect(colnames(new_observation), colnames(data))
+new_observation <- new_observation[, common_variables, drop = FALSE]
+data <- data[, common_variables, drop = FALSE]
         
-    target_yhat_all <- predict_function(x, new_observation)
-    selected_target = 1
-        single_predict_function <- function(...) {
-            predictions <- predict_function(...)
-            if (!is.null(dim(predictions))) {
-                return(predictions[selected_target])
-            }
-            predictions
-        }
-        target_yhat <- single_predict_function(x, new_observation)
-        baseline_yhat <- mean(single_predict_function(x, data))
-        average_yhats <- unlist(iBreakDown:::calculate_1d_changes(x, new_observation, 
-            data, single_predict_function))
-        diffs_1d <- average_yhats - baseline_yhat
-        feature_path_1d <- data.frame(E = average_yhats, diff = diffs_1d, adiff = abs(diffs_1d), 
-            diff_norm = diffs_1d, adiff_norm = abs(diffs_1d), 
-            ind1 = 1:p, ind2 = NA)
-        rownames(feature_path_1d) <- gsub(rownames(feature_path_1d), 
-            pattern = ".yhats", replacement = "")
-        inds <- data.frame(ind1 = unlist(lapply(2:p, function(i) i:p)), 
-            ind2 = unlist(lapply(2:p, function(i) rep(i - 1, 
-                p - i + 1))))
-        changes <- iBreakDown:::calculate_2d_changes(x, new_observation, data, 
-            single_predict_function, inds, diffs_1d)
-        diffs_2d <- changes$average_yhats - baseline_yhat
-        diffs_2d_norm <- changes$average_yhats_norm - baseline_yhat
-        feature_path_2d <- data.frame(E = changes$average_yhats, diff = diffs_2d, adiff = abs(diffs_2d) * 
-            interaction_preference, diff_norm = diffs_2d_norm, 
-            adiff_norm = abs(diffs_2d_norm) * interaction_preference, 
-            ind1 = inds$ind1, ind2 = inds$ind2)
-        feature_path <- rbind(feature_path_1d, feature_path_2d)
+target_yhat_all <- predict_function(x, new_observation)
+selected_target <- 1
+single_predict_function <- function(...) {
+    predictions <- predict_function(...)
+    if (!is.null(dim(predictions))) {
+        return(predictions[selected_target])
+    }
+    predictions
+}
+target_yhat <- single_predict_function(x, new_observation)
+baseline_yhat <- mean(single_predict_function(x, data))
+average_yhats <- unlist(iBreakDown:::calculate_1d_changes(x, new_observation, 
+    data, single_predict_function))
+diffs_1d <- average_yhats - baseline_yhat
+feature_path_1d <- data.frame(E = average_yhats, diff = diffs_1d, adiff = abs(diffs_1d), 
+    diff_norm = diffs_1d, adiff_norm = abs(diffs_1d), 
+    ind1 = 1:p, ind2 = NA)
+rownames(feature_path_1d) <- gsub(rownames(feature_path_1d), 
+    pattern = ".yhats", replacement = "")
+inds <- data.frame(ind1 = unlist(lapply(2:p, function(i) i:p)), 
+    ind2 = unlist(lapply(2:p, function(i) rep(i - 1, 
+        p - i + 1))))
+changes <- iBreakDown:::calculate_2d_changes(x, new_observation, data, 
+    single_predict_function, inds, diffs_1d)
+diffs_2d <- changes$average_yhats - baseline_yhat
+diffs_2d_norm <- changes$average_yhats_norm - baseline_yhat
+feature_path_2d <- data.frame(E = changes$average_yhats, diff = diffs_2d, adiff = abs(diffs_2d) * 
+    interaction_preference, diff_norm = diffs_2d_norm, 
+    adiff_norm = abs(diffs_2d_norm) * interaction_preference, 
+    ind1 = inds$ind1, ind2 = inds$ind2)
+feature_path <- rbind(feature_path_1d, feature_path_2d)
         
 knitr::kable(feature_path[order(-feature_path$adiff_norm),c(1,2,4)])
 
@@ -225,16 +234,16 @@ knitr::kable(as.data.frame(break_down(explain_titanic_rf, johny_d, interactions 
 
 ## Pros and cons {#iBDProsCons}
 
-iBD plots share many features of BD plots for models without interactions. However, in case of interactions, the iBD plots provide more correct explanations. 
+iBD plots share many pros and cons of BD plots for models without interactions (see section \@ref(BDProsCons)). However, in case of interactions, the iBD plots provide more correct explanations. 
 
 Though the numerical complexity of the iBD procedure is quadratic, it may be time-consuming in case of models with a large number of explanatory variables. If $p$ stands for the number of variables, then we need to estimate $p*(p+1)/2$ net effects for single variables and pair of variables. For datasets with small number of observations calculations of net effects will suffer from larger variance and therefore larger randomness in the ranking of effects.
 The identification of interactions in the presented procedure is not based on a formal statistical significance test. Thus, for small sample sizes, the procedure may be prone to errors.
 
 ## Code snippets for R {#iBDRcode}
 
-For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `johny_d` - an 8-year-old passenger that travelled in the 1st class.
+For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `henry` - an 47-years old passenger that travelled in the 1st class.
 
-`DALEX` explainers for the model and the `jonhy_d` data are retrieved via `archivist` hooks as listed in Section \@ref(ListOfModelsTitanic). 
+`DALEX` explainers for the model and the `henry` data are retrieved via `archivist` hooks as listed in Section \@ref(ListOfModelsTitanic). 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("randomForest")
@@ -242,28 +251,30 @@ explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 
 library("DALEX")
 johny_d <- archivist::aread("pbiecek/models/e3596")
-johny_d
+henry
 ```
-
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 library("randomForest")
 library("DALEX")
 load("models/explain_rf_v6.rda")
-load("models/johny_d.rda")
+load("models/henry.rda")
+henry
 ```
 
 The key function to construct iBD plots is the `iBreakDown::break_down()` function from the `iBreakDown` R package [@iBreakDownRPackage]. The use of the function has already been explained in Section \@ref(BDR). The additional necessary argument is `interactions = TRUE`.
 
 ```{r, warning=FALSE, message=FALSE}
 library("iBreakDown")
-bd_rf <- break_down(explain_rf_v6, johny_d, interactions = TRUE)
-
+bd_rf <- break_down(explain_rf_v6, henry, interactions = TRUE)
 bd_rf
 ```
 
-Applying the generic `plot()` function to the object resulting from the application of the `break_down()` function creates an iBD plot. In this case, it is the plot from Figure \@ref(fig:iBreakDownTitanicExamplePlot).
+Now we can plot this object with the generic `plot()` function. 
 
-```{r, warning=FALSE, message=FALSE}
+```{r iBDforHenry, warning=FALSE, message=FALSE, fig.cap="Generic plot() function for the iBreakDown method calculated for `henry`", out.width = '70%', fig.align='center', fig.width=8, fig.height=4}
 plot(bd_rf) 
 ```
+
+The Figure \@ref(fig:iBDforHenry) shows iBD plot for `henry` while Figure  \@ref(fig:iBreakDownTitanicExamplePlot) shows iBD plot for `johny_d`. In this case different variables were identified as an interaction. As `fare=25` for `henry` is much lower than `fare=72` for `johny_d` effect of `class` was not modified by `fare`.
+
 
