@@ -1,10 +1,10 @@
 <img width="300" align="right" src="figure/front.png">
 
-# Predictive Models: Explore, Explain, and Debug
-## Human-Centered Interpretable Machine Learning
-
-Work in progress.
+# Explanatory Model Analysis
+## Explore, Explain and Examine Predictive Models
 
 See the html website here: https://pbiecek.github.io/PM_VEE/
 
-It's a part of the [DrWhy.AI](http://drwhy.ai/) project
+A note to readers: this text is a work in progress. 
+
+We've released this initial version to get more feedback. Feedback can be given at the GitHub repo https://github.com/pbiecek/PM_VEE/issues. We are primarily interested in the organization and consistency of the content, but any comments will be welcommed.

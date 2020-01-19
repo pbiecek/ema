@@ -2,22 +2,22 @@
 
 In Chapter \@ref(breakDown), we introduced Break-down (BD) plots, a method of assessment of local variable-importance based on the contribution of an explanatory variable to model's prediction. We also indicated that, in the presence of  interactions, the computed value of the contribution depends on the order of explanatory covariates that is used in calculations. One solution to the problem is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter \@ref(iBreakDown), is to identify interactions and explicitly present their contributions to the predictions.
 
-In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable's contribution over all, or a large number of, possible orderings. The idea is closely linked to ''Shapley values'' [@shapleybook1952], developed originally for cooperative games.
+In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable's contribution over all, or a large number of, possible orderings. The idea is closely linked to ,,Shapley values'' [@shapleybook1952], developed originally for cooperative games.
 
-The approach was first introduced in [@imeJLMR] and [@Strumbelj2014]. It was widely adopted after the publication of the 2017 paper [@SHAP] and Python's library SHAP [@shapPackage]. The authors of SHAP (SHapley Additive exPlanations) introduced an efficient algorithm for tree-based models [@TreeSHAP]. They also showed that SHAP values were an unification of a collection of different commonly used techniques for model explanations.
+The approach was first introduced in [@imeJLMR] and [@Strumbelj2014]. It was widely adopted after the publication of the 2017 paper [@SHAP] and Python's library SHAP [@shapPackage]. The authors of SHAP (SHapley Additive exPlanations) introduced an efficient algorithm for tree-based models [@TreeSHAP]. They also showed that SHAP values can be presented an unification of a collection of different commonly used techniques for model explanations [@SHAP].
 
 ## Intuition {#SHAPIntuition}
 
-Figure \@ref(fig:shap10orderings) presents BD plots for ten random orderings (indicated by the order of the rows in each plot) of explanatory variables for the prediction for `johny_d` (see Section \@ref(predictions-titanic)) for the random-forest model (see Section \@ref(model-titanic-rf) for the Titanic dataset. The plots show clear differences in the contributions of various variables for different orderings. The most remarkable differences can be observed for variables `fare` and `class`, with contributions changing the sign depending on the ordering. 
+Figure \@ref(fig:shap10orderings) presents BD plots for ten random orderings (indicated by the order of the rows in each plot) of explanatory variables for the prediction for `johny_d` (see Section \@ref(predictions-titanic)) for the random-forest model (see Section \@ref(model-titanic-rf)) for the Titanic dataset. The plots show clear differences in the contributions of various variables for different orderings. The most remarkable differences can be observed for variables `fare` and `class`, with contributions changing the sign depending on the ordering. 
 
 ```{r shap10orderings, echo=FALSE, fig.cap="(fig:shap10orderings) Break-down plots for ten random orderings of explanatory variables for the prediction for `johny_d` for the random-forest model for the Titanic dataset. Each panel presents a single ordering, indicated by the order of the rows in the plot", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/shap_10_replicates.png")
 ```
 
-To remove the influence of the ordring of the variables, we can compute an average value of the contributions. 
-Figure \@ref(fig:shapOrdering) presents the average contributions, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive averages. Violet box-plots summarize the distribution of the contributions for each explanatory variable. The plot indicates that the most important variables, from the point of view of the prediction for `johny_d`, are `age` and `gender`.
+To remove the influence of the ordering of the variables, we can compute an average value of the contributions. 
+Figure \@ref(fig:shapOrdering) presents the average contributions, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive averages. Violet box-plots summarize the distribution of the contributions for each explanatory variable across different orderings. The plot indicates that the most important variables, from the point of view of the prediction for `johny_d` are `age` and `gender`.
 
-```{r shapOrdering, echo=FALSE, fig.cap="(fig:shapOrdering) Average contributions for ten random orderings. Red and green bars present the averages. Box-plots summarize the distribution of contributions for each explanatory variable across the orderings.", out.width = '70%', fig.align='center'}
+```{r shapOrdering, echo=FALSE, fig.cap="Average contributions for ten random orderings. Red and green bars present the averages. Box-plots summarize the distribution of contributions for each explanatory variable across the orderings.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/shap_ordering.png")
 ```
 
@@ -85,11 +85,11 @@ knitr::kable(as.data.frame(shap_attributions[shap_attributions$B == 0,c(3,1)]))
 
 ## Method {#SHAPMethod}
 
-SHapley Additive exPlanations (SHAP) are based on ''Shapley values,'' a concept in cooperative game theory developed by Lloyd Shapley [@shapleybook1952]. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name SHAP values when referring to values calculated with the SHAP method.
+SHapley Additive exPlanations (SHAP) are based on ,,Shapley values,'' a concept in cooperative game theory developed by Lloyd Shapley [@shapleybook1952]. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name SHAP values when referring to values calculated with the SHAP method.
 
-Consider the following problem. A coalition of players cooperates, and obtains a certain overall gain from the  cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question [@shapleybook1952].
+Consider the following problem. A coalition of players cooperates, and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question [@shapleybook1952].
 
-Now let's translate this problem to the context of model predictions. Explanatory variables are the players, while  model $f()$ plays the role of the coalition. The payoff from the coalition is the model prediction. The problem to solve is how to distribute the model prediction across particular variables?
+Now let's translate this problem to the context of model predictions. Explanatory variables are the players, while model $f()$ plays the role of the coalition. The payoff from the coalition is the model prediction. The problem to solve is how to distribute the model prediction across particular variables?
 
 The idea of using Shapley values for evaluation of local variable-importance was introduced in [@imeJLMR]. We define them here in the notation introduced in Section \@ref(BDMethod).
 
@@ -162,7 +162,8 @@ explain_titanic_rf <- explain(model = titanic_rf_v6,
                               data = titanic[,c(1:4,6:8)],
                               y = titanic$survived == "yes", 
                               label = "Random Forest v6",
-                              colorize = FALSE)
+                              colorize = FALSE,
+                              verbose = FALSE)
 
 
 johny_d <- data.frame(
@@ -186,17 +187,16 @@ Box-plots in Figure \@ref(fig:shappJohny02) present the distribution of the cont
 
 The picture for `fare` and `class` is more complex, as their contributions can even change the sign, depending on the ordering. While Figure \@ref(fig:shappJohny02) presents the SHAP values separately for each of the variables, it is worth noting that, by using the iBD plot in Section \@ref(iBDExample) the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. 
 
-```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:shappJohny02) Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values. ", out.width = '80%', fig.align='center'}
-plot(shap_johny) + ggtitle("Average attributions for Johny D")
+```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Left plot: Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values. Right plot: Average attributions without boxplots.", fig.width=11, fig.height=6, out.width = '100%', fig.align='center'}
+library("patchwork")
+
+pl1 <- plot(shap_johny) + ggtitle("Average attributions for Johny D")
+pl2 <- plot(shap_johny, show_boxplots = FALSE) + ggtitle("Average attributions for Johny D")
+pl1 + pl2
 ```
 
-In most applications the detailed information about the distribution of variable contributions across the considered orderings of explanatory variabled will not be necessary. Thus, one could simplify the plot by presenting only the SHAP values, as in Figure \@ref(fig:shappJohny01).
+In most applications the detailed information about the distribution of variable contributions across the considered orderings of explanatory variables will not be necessary. Thus, one could simplify the plot by presenting only the SHAP values, as in right panel in Figure \@ref(fig:shappJohny02). Table \@ref(tab:shapOrderingTable) presents the SHAP values underlying this plot. 
 
-```{r shappJohny01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:shappJohny01) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings.", out.width = '80%', fig.align='center'}
-plot(shap_johny, show_boxplots = FALSE) + ggtitle("Average attributions for Johny D")
-```
-
-Table \@ref(tab:shapOrderingTable) presents the SHAP values underlying the plot in Figure \@ref(fig:shappJohny01). 
 Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings.
 
 |Variable      |   SHAP value|
@@ -214,7 +214,7 @@ Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` fo
 
 SHAP values provide a uniform approach to decompose model predictions into parts that can be attributed additively to different explanatory variables. In [@SHAP] it is shown that the method unifies different approaches to additive features attribution, like DeepLIFT [@DeepLIFT], Layer-Wise Relevance Propagation [@LWRP], or LIME [@lime]. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.
 
-An important drawback of the SHAP values is that they are based on the assumption of additivity of variable effects. If the model is not additive, then the SHAP values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modelling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.
+An important drawback of the SHAP values is that they are additive attributions of variable effects. If the model is not additive, then the SHAP values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modeling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.
 
 It is worth noting that, for an additive model, the approaches presented in Chapters \@ref(breakDown),   \@ref(iBreakDown), and in the current one lead to same variable contributions. It is because for additive models different orderings lead to same attributions. And since SHAP values can bee seen as an average across all ordering it's an average from identical values.
 
@@ -222,11 +222,10 @@ An important practical limitation of the method is that, for large models, the c
  
 ## Code snippets for R {#SHAPRcode}
 
-In this section, we present the key features of the `iBreakDown` R package [@iBreakDownRPackage] which is a part of the  `DrWhy.AI` universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/iBreakDown/.
-
+In this section, we present the key features of the `iBreakDown` R package [@iBreakDownRPackage] which is a part of the  `DrWhy.AI` universe. The package covers all methods presented in this chapter. 
 Note that there are also other R packages that offer similar functionality, like `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage], and `iml` [@imlRPackage].
 
-For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `johny_d` - an 8-year-old passenger that travelled in the 1st class.
+For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `henry` - an 42-year-old passenger that travelled in the 1st class.
 
 `DALEX` explainers for the model and the `jonhy_d` data are retrieved via `archivist` hooks as listed in Section \@ref(ListOfModelsTitanic). 
 
@@ -235,42 +234,46 @@ library("randomForest")
 explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 
 library("DALEX")
-johny_d <- archivist::aread("pbiecek/models/e3596")
-johny_d
+henry <- archivist::aread("pbiecek/models/e3596")
+henry
 ```
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE}
 library("randomForest")
 library("DALEX")
 load("models/explain_rf_v6.rda")
-load("models/johny_d.rda")
+load("models/henry.rda")
+henry
 ```
 
 We obtain the model prediction for this instance with the help of the `predict()' function. 
 
 ```{r, warning=FALSE, message=FALSE}
-predict(explain_rf_v6, johny_d)
+predict(explain_rf_v6, henry)
 ```
 
-With the help of function `shap()` from the `iBreakDown` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for whcih the SHAP values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object conctructs the plot that includes the SHAP values and the corresponding box-plots.
+With the help of function `shap()` from the `iBreakDown` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for which the SHAP values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object constructs the plot that includes the SHAP values and the corresponding box-plots.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '50%', fig.align='center'}
 library("iBreakDown")
 
-shap_johny <- shap(explain_rf_v6, johny_d, B = 25)
-plot(shap_johny) 
+shap_henry <- shap(explain_rf_v6, henry, B = 25)
+plot(shap_henry) 
 ```
 
-To obtain a plot with only SHAP values, as in Figure \@ref(fig:shappJohny02), we can use the `show_boxplots=FALSE` argument in the `plot()` function call.
+To obtain a plot with only SHAP values, we can use the `show_boxplots=FALSE` argument in the `plot()` function call.
 
-```{r, warning=FALSE, message=FALSE}
-plot(shap_johny, show_boxplots = FALSE) 
+```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '50%', fig.align='center'}
+plot(shap_henry, show_boxplots = FALSE) 
 ```
+
+When we compare this plot with the `johny_d` in Figure \@ref(fig:shappJohny02) the largest difference is related to effect of `age`. Young `johny_d` has larger than average chances of survival, much larger than 47 years old `henry`.
+
 
 The object obtained as a result of the application of function `shap()` allows to compute other summary statistics beyond the average.
 
- ```{r, warning=FALSE, message=FALSE}
- shap_johny
-
+```{r, warning=FALSE, message=FALSE}
+shap_henry
 ```
+
 
