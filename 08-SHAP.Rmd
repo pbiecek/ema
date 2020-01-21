@@ -85,7 +85,7 @@ knitr::kable(as.data.frame(shap_attributions[shap_attributions$B == 0,c(3,1)]))
 
 ## Method {#SHAPMethod}
 
-SHapley Additive exPlanations (SHAP) are based on ,,Shapley values,'' a concept in cooperative game theory developed by Lloyd Shapley [@shapleybook1952]. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name SHAP values when referring to values calculated with the SHAP method.
+SHapley Additive exPlanations (SHAP) are based on ,,Shapley values,'' a concept in cooperative game theory developed by Lloyd Shapley [@shapleybook1952]. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for ML models. We will use the name Shapley values.
 
 Consider the following problem. A coalition of players cooperates, and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? The Shapley value provides one possible fair answer to this question [@shapleybook1952].
 
@@ -93,7 +93,7 @@ Now let's translate this problem to the context of model predictions. Explanator
 
 The idea of using Shapley values for evaluation of local variable-importance was introduced in [@imeJLMR]. We define them here in the notation introduced in Section \@ref(BDMethod).
 
-Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model prediction $f(x_*)$ for a particular instance of interest $x_*$. The SHAP value is defined as follows:
+Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model prediction $f(x_*)$ for a particular instance of interest $x_*$. The Shapley value is defined as follows:
 \begin{equation}
 \varphi(x_*,j) = \frac{1}{p!} \sum_{J} \Delta^{j|\pi(J,j)}(x_*),  
 (\#eq:SHAP)
@@ -116,7 +116,7 @@ S \subseteq \{1,\dots,p\}\setminus \{j\} \\ |S|=s
 \end{eqnarray}
 where $|S|$ denotes the cardinal number (size) of set $S$ and the second sum is taken over all subsets $S$ of explanatory variables, excluding the $j$-th one, of size $s$. 
 
-Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p-1}$, i.e., it is much smaller than number of all permutations $p!$. Nevertheless, for a large $p$, it may not be feasible to compute the SHAP value from \@ref(eq:SHAP) nor \@ref(eq:SHAP1). In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced in [@Strumbelj2014]. An efficient implementation of computations of SHAP values was introduced in [@SHAP]. 
+Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p}-1$, i.e., it is much smaller than number of all permutations $p!$. Nevertheless, for a large $p$, it may not be feasible to compute the Shapley values from \@ref(eq:SHAP) nor \@ref(eq:SHAP1). In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced in [@Strumbelj2014]. An efficient implementation of computations of Shapley values was introduced in [@SHAP]. 
 
 From the properties of Shapley values for cooperative games it follows that, in the context of predictive models, they enjoy the following properties:
 
@@ -183,11 +183,11 @@ shap_johny <- shap(explain_titanic_rf, johny_d, B = 25)
 
 Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
 
-Box-plots in Figure \@ref(fig:shappJohny02) present the distribution of the contributions $\Delta^{j|\pi(J,j)}(x_*)$ for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive SHAP values across the orderings. It is clear that the young age of Johny D results in a positive contribution for all orderings. The SHAP value is equal to $0.2525$. On the other hand, the effect of gender is in all cases negative, with the SHAP value equal to $-0.0908$.
+Box-plots in Figure \@ref(fig:shappJohny02) present the distribution of the contributions $\Delta^{j|\pi(J,j)}(x_*)$ for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive Shapley values across the orderings. It is clear that the young age of Johny D results in a positive contribution for all orderings. The Shapley value is equal to $0.2525$. On the other hand, the effect of gender is in all cases negative, with the Shapley value equal to $-0.0908$.
 
-The picture for `fare` and `class` is more complex, as their contributions can even change the sign, depending on the ordering. While Figure \@ref(fig:shappJohny02) presents the SHAP values separately for each of the variables, it is worth noting that, by using the iBD plot in Section \@ref(iBDExample) the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. 
+The picture for `fare` and `class` is more complex, as their contributions can even change the sign, depending on the ordering. While Figure \@ref(fig:shappJohny02) presents the Shapley values separately for each of the variables, it is worth noting that, by using the iBD plot in Section \@ref(iBDExample) the pair was identified as one for each an interaction effect was present. Hence, the effect of the variables should not be separated. 
 
-```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Left plot: Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the SHAP values. Right plot: Average attributions without boxplots.", fig.width=11, fig.height=6, out.width = '100%', fig.align='center'}
+```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Variable contributions for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings. Left plot: Box-plots summarize the distribution of the contributions for each explanatory variable across the orderings. Red and green bars present the Shapley values. Right plot: Average attributions without boxplots.", fig.width=11, fig.height=5.5, out.width = '100%', fig.align='center'}
 library("patchwork")
 
 pl1 <- plot(shap_johny) + ggtitle("Average attributions for Johny D")
@@ -195,11 +195,11 @@ pl2 <- plot(shap_johny, show_boxplots = FALSE) + ggtitle("Average attributions f
 pl1 + pl2
 ```
 
-In most applications the detailed information about the distribution of variable contributions across the considered orderings of explanatory variables will not be necessary. Thus, one could simplify the plot by presenting only the SHAP values, as in right panel in Figure \@ref(fig:shappJohny02). Table \@ref(tab:shapOrderingTable) presents the SHAP values underlying this plot. 
+In most applications the detailed information about the distribution of variable contributions across the considered orderings of explanatory variables will not be necessary. Thus, one could simplify the plot by presenting only the Shapley values, as in right panel in Figure \@ref(fig:shappJohny02). Table \@ref(tab:shapOrderingTable) presents the Shapley values underlying this plot. 
 
-Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings.
+Table: (\#tab:shapOrderingTable) Shapley values for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data for 25 random orderings.
 
-|Variable      |   SHAP value|
+|Variable      | Shapley value|
 |:-------------|------------:|
 |age = 8       |    0.2525   |
 |class = 1st   |    0.0246   |
@@ -212,13 +212,13 @@ Table: (\#tab:shapOrderingTable) SHAP values for the prediction for `johny_d` fo
 
 ## Pros and cons {#SHAProsCons}
 
-SHAP values provide a uniform approach to decompose model predictions into parts that can be attributed additively to different explanatory variables. In [@SHAP] it is shown that the method unifies different approaches to additive features attribution, like DeepLIFT [@DeepLIFT], Layer-Wise Relevance Propagation [@LWRP], or LIME [@lime]. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.
+Shapley values provide a uniform approach to decompose model predictions into parts that can be attributed additively to different explanatory variables. In [@SHAP] it is shown that the method unifies different approaches to additive features attribution, like DeepLIFT [@DeepLIFT], Layer-Wise Relevance Propagation [@LWRP], or LIME [@lime]. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.
 
-An important drawback of the SHAP values is that they are additive attributions of variable effects. If the model is not additive, then the SHAP values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modeling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.
+An important drawback of the Shapley values is that they are additive attributions of variable effects. If the model is not additive, then the Shapley values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modeling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.
 
-It is worth noting that, for an additive model, the approaches presented in Chapters \@ref(breakDown),   \@ref(iBreakDown), and in the current one lead to same variable contributions. It is because for additive models different orderings lead to same attributions. And since SHAP values can bee seen as an average across all ordering it's an average from identical values.
+It is worth noting that, for an additive model, the approaches presented in Chapters \@ref(breakDown),   \@ref(iBreakDown), and in the current one lead to same variable contributions. It is because for additive models different orderings lead to same attributions. And since Shapley values can bee seen as an average across all ordering it's an average from identical values.
 
-An important practical limitation of the method is that, for large models, the calculation of the SHAP values is time consuming. However, sub-sampling can be used to address the issue. 
+An important practical limitation of the method is that, for large models, the calculation of the Shapley values is time consuming. However, sub-sampling can be used to address the issue. 
  
 ## Code snippets for R {#SHAPRcode}
 
@@ -252,7 +252,7 @@ We obtain the model prediction for this instance with the help of the `predict()
 predict(explain_rf_v6, henry)
 ```
 
-With the help of function `shap()` from the `iBreakDown` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for which the SHAP values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object constructs the plot that includes the SHAP values and the corresponding box-plots.
+With the help of function `shap()` from the `iBreakDown` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object constructs the plot that includes the Shapley values and the corresponding box-plots.
 
 ```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '50%', fig.align='center'}
 library("iBreakDown")
@@ -261,7 +261,7 @@ shap_henry <- shap(explain_rf_v6, henry, B = 25)
 plot(shap_henry) 
 ```
 
-To obtain a plot with only SHAP values, we can use the `show_boxplots=FALSE` argument in the `plot()` function call.
+To obtain a plot with only Shapley values, we can use the `show_boxplots=FALSE` argument in the `plot()` function call.
 
 ```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '50%', fig.align='center'}
 plot(shap_henry, show_boxplots = FALSE) 

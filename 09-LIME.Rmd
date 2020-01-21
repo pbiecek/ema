@@ -2,111 +2,115 @@
 
 ## Introduction {#LIMEIntroduction}
 
-Ceteris-paribus (CP) profiles, introduced in Chapter \@ref(ceterisParibus), are suitable for models with a small number of interpretable explanatory variables. In case of such models it makes sense to explore each variable separately and analyze how does it affect model predictions.
+Break-down (BD) and Shapley plots, introduced in Chapters \@ref(breakDown) and \@ref(shapley), respectively, are most suitable for models with a small or moderate number of explanatory variables. 
 
-Break-down (BD) plots and plots of Shapley values, introduced in Chapters \@ref(breakDown) and \@ref(shapley), respectively, are most suitable for modela with a small or moderate number of explanator variables. These plots do not offer as detailed information as the CP profiles, but can include more variables.
+None of those approaches is well-suited for models with a very large number of explanatory variables. In genomics or image recognition, models with hundreds of thousands or milions of input variables are not uncommon. In such cases, sparse explainers with small number of non zero effects offer a useful alternative. The most popular example of such sparse explainers are Local Interpretable Model-agnostic Explanations (LIME) and their modifications.
 
-None of those approaches is well-suited for models with a large number of explanatory variables. Such models with even thousands of variables are not uncommon in, for instance, genomics. Also, if most of explanatory variables are binary, then CP profiles and BD plots are not very infromative. In such cases, sparse explainers offer a useful alternative. The most popular example of such explainers are Local Interpretable Model-agnostic Explanations (LIME) and their modifications.
-
-The LIME method was originally proposed in [@lime]. The key idea behind this method is to locally approximate a black-box model by a simpler white-box model, which is easier to interpret. In this chapter, we describe the approach.  
+The LIME method was originally proposed in [@lime]. The key idea behind this method is to locally approximate a black-box model by a simpler glass-box model, which is easier to interpret. In this chapter, we describe this approach.  
 
 ## Intuition {#LIMEIntuition}
 
-The intuition behind LIME is explained in Figure \@ref(fig:limeEx). We want to understand the predictions of a complex black-box model around a single instance of interest. The model presented in Figure \@ref(fig:limeEx) is a binary classifier, i.e., it pertains to a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas correspond to the decision regions, i.e., they indicate for which combinations of the variables the model classifies the observation to one of the two classes. The instance of interest is marked with the large black dot. By using an artificial dataset around the instance of interest, we can use a simpler white-box model that will locally approximate the predictions of the black-box model. The white-box model may then serve as a ''local explainer'' for the more complex model.
+The intuition behind the LIME method is explained in Figure \@ref(fig:limeEx). We want to understand factors that influence a complex black-box model around a single instance of interest. Areas presented in Figure \@ref(fig:limeEx) correspond to decision regions for a binary classifier, i.e., it pertains to a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas correspond to the decision regions, i.e., they indicate for which combinations of the variables the model classifies the observation to one of the two classes. The instance of interest is marked with the large black dot. By using an artificial dataset around the instance of interest, we can use a simpler glass-box model that will locally approximate the predictions of the black-box model. The glass-box model may then serve as a ''local explainer'' for the more complex model.
 
-We may select different classes of white-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. The important point is to limit the complexity of the models, so that they are easier to explain. 
+We may select different classes of glass-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. The important point is to limit the complexity of the models, so that they are easier to explain. 
 
-```{r limeEx, echo=FALSE, fig.cap="(fig:limeEx) The idea behind local model approximations. The axes represent the values of two continuous explanatory variables in a binary-classification mode. The colored areas for which combinations of the variables the model classifies the observation to one of the two classes. To ''explain'' the prediction for the instance of interest (the large black dot), an artificial dataset around it is used to construct a simpler white-box model (here, a logistic-regression model, indicated by the dashed line) that locally approximates the predictions of the black-box model.", out.width = '70%', fig.align='center'}
+```{r limeEx, echo=FALSE, fig.cap="(fig:limeEx) The idea behind local model approximations. The axes represent the values of two continuous explanatory variables in a binary-classification mode. The colored areas for which combinations of the variables the model classifies the observation to one of the two classes. To ''explain'' the prediction for the instance of interest (the large black dot), an artificial dataset around it is used to construct a simpler glass-box model (here, a logistic-regression model, indicated by the dashed line) that locally approximates the predictions of the black-box model.", out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/limeEx.png")
 ```
 
 ## Method {#LIMEMethod}
 
-We want to find a model that locally approximates a black-box model $f()$ around the instance of interest $x_*$. Consider class $G$ of interpretable models. To find the required approximation, We can can consider the following ''loss function,''
+As an explanation, we want to find a model that locally approximates a black-box model $f()$ around the instance of interest $x_*$. Consider class $G$ of interpretable models (linear moedls or decision trees). To find the required approximation, we consider the following ,,loss function''
 
 $$
-L(f, g, \Pi_{x_*}) + \Omega (g), 
+\hat g = \argmin_{g \in G} L(f, g, \Pi_{x_*}) + \Omega (g), 
 $$
-where model $g()$ belongs to class $G$, $\Pi_{x_*}$ of $x^*$ defines a neighborhood of $x_*$ in which approximation is sought, $L()$ is a goodness-of-fit measure (e.g., the likelihood), and $\Omega(g)$ is a penalty for the complexity of model $g()$. The penalty is used to select simple models from class $G$. 
 
-Note that the models $f()$ and $g()$ may apply to different data spaces. The black-box model (function) $f(x):\mathcal X \rightarrow \mathcal R$ is defined on the original, lare-dimensional space $\mathcal X$. The white-box model (function) $g:\mathcal X' \rightarrow \mathcal R$ applies to a lower-dmension, more interpretable space $\mathcal X'$. We will present some examples of $\mathcal X'$ in the next section. For now we will just assume that function $h()$ transforms $\mathcal X$ into $\mathcal X'$.
+where model $g()$ belongs to class $G$, $\Pi_{x_*}$ defines a neighborhood of $x_*$ in which approximation is sought, $L()$ is a fidelity measure between models $f()$ and $g()$, and $\Omega(g)$ is a penalty for the complexity of model $g()$. The penalty is used to select simple models from class $G$. 
 
-If we limit class $G$ to sparse linear models, the following algorithm may be used to find an interpretable white-box model $g()$ that includes $K$ most important, interpretable explanatory variables: 
+Note that the models $f()$ and $g()$ may operate on different variable spaces. The black-box model (function) $f(x):\mathcal X \rightarrow \mathcal R$ is defined on the original, large, p-dimensional space $\mathcal X$. The glass-box model (function) $g:\mathcal X' \rightarrow \mathcal R$ applies to a lower q-dmensional, interpretable space $\mathcal X'$, and usually $q << p$. We will present some examples of $\mathcal X'$ in the next section. For now we will just assume that some function $h()$ transforms $\mathcal X$ into $\mathcal X'$.
+
+If we limit class $G$ to sparse linear models with $K$ non zero coefficients, the following algorithm may be used to find an interpretable glass-box model $g()$ that includes $K$ most important, interpretable explanatory variables: 
 
 ```
-Input: x - observation to be explained
-Input: N - sample size for the white-box model 
-Input: K - number of variables for the white-box model
-Input: similarity - distance function between observations in the original input space
-1. Let x' = h(x) be an interpretable version of x 
+Input: x* - observation to be explained
+Input: N  - sample size for the glass-box model 
+Input: K  - complexity, number of variables for the glass-box model
+Input: similarity - distance function in the original input space
+1. Let x' = h(x*) be a version of x* in the interpretable space
 2. for i in 1...N {
 3.   z'[i] <- sample_around(x') 
-     # prediction for a new observation. 
-     # z[i] is created based on z'[i] 
+# prediction for a new observation z'[i] 
 4.   y'[i] <- f(z[i]) 
-5.   w'[i] <- similarity(x, z[i]) 
+5.   w'[i] <- similarity(x', z'[i]) 
 6. }
 7. return K-LASSO(y', x', w')
 ```
 
-In Step 7, $K-LASSO(y', x', w')$ stands for a weighted LASSO linear-regression that selects $K$ most important variables based on new dataset $(y', x')$ with weights $w'$. 
+In Step 7, $K-LASSO(y', x', w')$ stands for a weighted LASSO linear-regression that selects $K$ variables based on new dataset $(y', x')$ with weights $w'$. 
 
-The practical implementation of the idea involves three important steps, which are discussed in the subsequent sub-sections.
+The practical implementation of this idea involves three important steps, which are discussed in the subsequent sub-sections.
 
 ### Interpretable data representation
 
-As it has been mentioned, the black-box model $f()$ and the white-box model $g()$ may apply to different data spaces. For example, let's consider a VGG16 neural network [@Simonyan15] trained for ImageNet data. The model uses an image of the size of $244 \times 244$ pixels as input and predicts to which of 1000 potential categories does the image belong to. The original data space is of dimension $3 \times 244 \times 244$ (three single-color channels *red, green, blue* for a single pixel $\times 244 \times 244$ pixels), i.e., it is 178,608-dimensional. Explaining predictions in such a high-dimensional space is difficult. Instead, the space can be transformed into superpixels, which are treated as binary features that can be turned on or off. Figure \@ref(fig:duckHorse06) presents an example of 100 superpixels created for an ambiguous picture. Thus, in this case the black-box model $f()$ operates in principle on data space $\mathcal X=R^{178,608}$, while the white-box model $g()$ works on space $\mathcal X' = \{0,1\}^{100}$.
+As it has been mentioned, the black-box model $f()$ and the glass-box model $g()$ operates on different data spaces. For example, let's consider a VGG16 neural network [@Simonyan15] trained for ImageNet data [@ImageNet]. The model uses an image of the size of $244 \times 244$ pixels as input and predicts to which of 1000 potential categories does the image belong to. The original data space is of dimension $3 \times 244 \times 244$ (three single-color channels *red, green, blue* for a single pixel $\times 244 \times 244$ pixels), i.e., the input space is 178,608-dimensional. Explaining predictions in such a high-dimensional space is difficult. Instead, the space can be transformed into superpixels, which are treated as binary features that can be turned on or off. Figure \@ref(fig:duckHorse06) presents an example of 100 superpixels created for an ambiguous picture. Thus, in this case the black-box model $f()$ operates in principle on data space $\mathcal X=R^{178,608}$, while the glass-box model $g()$ works on space $\mathcal X' = \{0,1\}^{100}$.
 
-It is worth noting that superpixels are frequent choices for image data. For text data, words are frequently used as interpretable variables. To reduce to complexity of the data space, continuous variables are often discretized to obtain interpretable tabular data. In case of categorical variables, combination of categires is often used.
+It is worth noting that superpixels are frequent choices for image data. For text data, words are frequently used as interpretable variables. To reduce to complexity of the data space, continuous variables are often discretized to obtain interpretable tabular data. In case of categorical variables, combination of categories is often used. We will present examples in the next section.
 
-```{r duckHorse06, echo=FALSE, fig.cap="(fig:duckHorse06) The left panel shows an ambiguous picture, half-horse and half-duck. The right panel shows 100 superpixels identified for this figure. Source: www.rowsdowr.com", out.width = '100%', fig.align='center'}
+```{r duckHorse06, echo=FALSE, fig.cap="The left panel shows an ambiguous picture, half-horse and half-duck. The right panel shows 100 superpixels identified for this figure. Source: https://twitter.com/finmaddison/status/352128550704398338", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/duck_horse_06.png")
 ```
 
 ### Sampling around the instance of interest
 
-To develop the locally-approximation white-box model, new data points around the instance of interest are needed. It may not be enough to sample points from the original dataset, because in a high-dimensional data space the data are usually very sparse and data points are ''far'' from each other. For this reason, the data for the development of the white-box model are often created by using perturbations of the instance of interest. 
+To develop the locally-approximation glass-box model, we need new data points in the interpretable space around the instance of interest. It may not be enough to sample points from the original dataset, because in a high-dimensional data space the data are usually very sparse and data points are ,,far'' from each other. We need new artificial datapoints in the interpretable space. For this reason, the data for the development of the glass-box model are often created by using perturbations of the instance of interest. 
 
-For a set of binary variables, the common choice is to change (from 0 to 1 or from 1 to 0) the value of a randomly-selected number of variables describing the instance of interest. 
+For a set of binary variables in the interpretable space, the common choice is to flip (from 0 to 1 or from 1 to 0) the value of a randomly-selected number of variables describing the instance of interest. 
 
-For continuous variables, various proposals are introduced in different papers. For example [@imlPackage] and [@molnar2019] adds some Gaussian noise to continuous variables. In [@limePackage] continuous variables are discretized with the use of quintiles and the perturbations are don on discretized variables. In  [@localModelPackage] continuous variables are discretized based on segmentation of local Ceteris Paribus profiles.
+For continuous variables, various proposals are introduced in different papers. For example [@imlRPackage] and [@molnar2019] adds some Gaussian noise to continuous variables. In [@limePackage] continuous variables are discretized with the use of quintiles and the perturbations are don on discretized variables. In  [@localModelPackage] continuous variables are discretized based on segmentation of local Ceteris Paribus profiles.
 
 
-In the example of the duck-horse in Figure \@ref(fig:duckHorse06), the perturbations of the image would be created by randomly including or excluding some of the superpixels.
+In the example of the duck-horse in Figure \@ref(fig:duckHorse06), the perturbations of the image would be created by randomly including or excluding some of the superpixels. See an example in Figure
 
-### Developing the white-box model
+[PRZEMEK] TODO: add figure with substet of superpixels !!!
 
-Once the new data were sampled around the instance of interest, we may attempt to develop an interpretable white-box model $g()$ from class $G$. 
 
-The most common choices for $G$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the $K-LASSO$ method has been mentioned. An alternative choice are classification-and-regression trees.
+
+### Developing the glass-box model
+
+Once the new data were sampled around the instance of interest, we may attempt to develop an interpretable glass-box model $g()$ from class $G$. 
+
+The most common choices for $G$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO [@Tibshirani94regressionshrinkage] or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the K-LASSO method has been mentioned. An alternative choice are classification-and-regression trees [@CARTtree].
 
 The VGG16 network for each picture predicts 1000 probabilities that corresponds to the 1000 classes used for training.
-For the duck-horse picture the two most likely classes are *standard poodle* and *goose*. 
-Figure \@ref(fig:duckHorse04) presents LIME explanations for these top two classes. The explanations were obtained with the $K-LASSO$ method which selected $K$ superpixels that were the most influential from the model-prediction point of view. Here we show results for $K=15$. For each of the selected two classes, the top $K$ superpixels are highlighted. It is interesting to observe that the superpixel which contains the beak is influential for the prediction ''goose,'' while the superpixels linked with the colour are influential for the prediction ''standard poodle''.
+For the duck-horse picture the two most likely classes are *'standard poodle'* and *'goose'*. 
+Figure \@ref(fig:duckHorse04) presents LIME explanations for these top two classes. The explanations were obtained with the K-LASSO method which selected $K$ superpixels that were the most influential from the model-prediction point of view. Here we show results for $K=15$. For each of the selected two classes, the $K$ superpixels with non-zero coefficients are highlighted. It is interesting to observe that the superpixel which contains the beak is influential for the prediction *'goose'*, while the superpixels linked with the white colour are influential for the prediction *'standard poodle'*. This is aligned with the intiotion thus such additional validation increses trust in model prediction.
 
-```{r duckHorse04, echo=FALSE, fig.cap="(fig:duckHorse04) LIME for two predictions (''standard poodle'' and ''goose'') obtained by the VGG16 network with ImageNet weights for the half-duck, half-horse image. Source: https://twitter.com/finmaddison/status/352128550704398338", out.width = '100%', fig.align='center'}
+```{r duckHorse04, echo=FALSE, fig.cap="LIME for two predictions ('standard poodle' and 'goose') obtained by the VGG16 network with ImageNet weights for the half-duck, half-horse image.", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/duck_horse_04.png")
 ```
 
 ## Example: Titanic data {#LIMEExample}
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
+Most examples of LIME method are related to the text or image data. Here we present examples for tabular data to facilitate comparisons between methods introduced in different chapters.
+Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and passenger `johny_d` (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
 
-Figure \@ref(fig:LIMEexample01) presents explanations generated by the LIME method.
-In this example interpretable data representation is in the form of a binary vector. Each variable is dychotomized into two levels. For example `age` is transformed into a binary variable `<=`/`>` than 15.36, `class` is transformed into a binary variable `1st`/`2nd`/`deck crew` and so on. 
+First, we need to define an interpertable input space. One option would be to gather similar variables into larger constructs corresponding to concepts. For example `class` and `fare` variables can be combines into a concept `wealth`, `age` and `gender` into a concept `demography` and so on. In this example we have relatively small number of variables so we will use a simpler interpretable data representation in the form of a binary vector. Each variable is dychotomized into two levels. For example `age` is transformed into a binary variable `<=`/`>` than 15, `class` is transformed into a binary variable `1st`/`2nd`/`deck crew` and so on. 
 The LIME algorithm is applied to this interpretable feature space and the K-LASSO method with K=3 is used to identify 3 most important variables that will be transformed into an explanation.
-Figure \@ref(fig:LIMEexample01) shows coefficients estimated in the K-LASSO model.
-The three variables that are identified as the most influential are: age, gender, and class. Note that, for age, a dichotomized version of the orignially conitinuous variable is used. On the other hand, for class, a dichotomized version based on the combination of several original categories is used. 
+
+Once the interpretable variable space is defined, we need to transform `johny_d` to this space and generate a new dataset that will be used for K-LASSO approximations of random forest model. Figure \@ref(fig:LIMEexample01) shows coefficients estimated in this K-LASSO model.
+
+The three variables that are identified as the most influential are: `age`, `gender`, and `class`. Note that, for age, a dichotomized version of the orignially conitinuous variable is used. On the other hand, for class, a dichotomized version based on the combination of several original categories is used. 
 
 
-```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:LIMEexample01) LIME method for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data. Presented values are beta coefficients in the K-LASSO model fitted locally to the  response from the original model.", out.width = '60%', fig.align='center'}
+```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="LIME method for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data. Presented values are beta coefficients in the K-LASSO model fitted locally to the  response from the original model.", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/LIMEexample01.png")
 ```
 
-The interpretable features can be defined in a many different ways. One idea would to be use quartiles for the feature of interest. Another idea is to use Ceteris Paribus profiles and change point method [@picard_1985] to find a local discretization. Different implementations of LIME differ in the way how the interpretable feature space is created.  
-Figure \@ref(fig:LIMEexample02) illustrates how the two levels for age can be extracted from the Ceteris Paribus profile with the change point method.
+The interpretable features can be defined in a many different ways. One idea would to be use quartiles for the feature of interest. Another idea is to use Ceteris Paribus profiles (see Chapter \@ref(ceterisParibus) and change-point method [@picard_1985] to find a instance specific discretization (Figure \@ref(fig:LIMEexample02) illustrates how the two levels for age can be extracted from the Ceteris Paribus profile).
+Different implementations of LIME differ in the way how the interpretable feature space is created.  
 
-```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="(fig:LIMEexample02) Interpretable variable generated for age. LIME method for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data.", out.width = '60%', fig.align='center'}
+```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Interpretable instance-level discretisation of age variable. Based on the Ceteris Paribus profiles we may estimate an optimal change-point as 15 years.", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/LIMEexample02.png")
 ```
 
@@ -135,19 +139,21 @@ As mentioned by [@lime], the LIME method
 - offers an *interpretable representation*, because the original data space is transformed into a more interpretable lower-dimension space (like tranformation from individual pixels to super pixels for image data),
 - provides *local fidelity*, i.e., the explanations are locally well-fitted to the black-box model.
 
-The method has been widely adopted in text and image analysis, in part due to the interpretable data representation. The underlying intuition for the method is easy to understand: a simpler model is used to approximate a more complex one. By using a simpler model, with a smaller number of interpretable explanatory variabes, predictions are easier to explain. The LIME method can be applied to complex, high-dimensional models.
+The method has been widely adopted in text and image analysis, in part due to the interpretable data representation. Also, explanations are delivered as a subset of an image/text and our brain is good in the justification of such explanations. The underlying intuition for the method is easy to understand: a simpler model is used to approximate a more complex one. By using a simpler model, with a smaller number of interpretable explanatory variabes, predictions are easier to explain. The LIME method can be applied to complex, high-dimensional models.
 
-There are several important limitations. For instance, despite several proposals, the issue of finding interpretable representations for continuous and categorical variables is not solved yet. Also, because the white-box model is selected to approximate the black-box model, and the data themselves, the method does not control the quality of the local fit of the white-box model to the data. Thus, the latter model may be misleading.
+But there are several important limitations. For instance, despite several proposals, the issue of finding interpretable representations for continuous and categorical variables is not solved yet. Also, because the glass-box model is selected to approximate the black-box model, and the data themselves, the method does not control the quality of the local fit of the glass-box model to the data. Thus, the latter model may be misleading.
 
-Finally, in high-dimensional data, data points are sparse. Defining a ''local neighborhood'' of the instance of interest may not be straghtforward.
+Finally, in high-dimensional data, data points are sparse. Defining a ''local neighborhood'' of the instance of interest may not be straightforward.
+Importance of the local neighbourhood is presented for example in the article [@LIMESHAPstability]. Sometimes even slight changes in the neighbourhood affects strongly obtained explanations.
+
+To summarise, the most useful applications of LIME are limited to high dimensional data for which one can defined a low-dimensional interpretable data representation, as in image analysis, text analysis or genomics.
 
 
 ## Code snippets for R {#LIMERcode}
 
-LIME and similar methods are implemented in various R and Python packages. For example, `lime` [@R-lime] is a port of the LIME Python library [@shapPackage], while `live` [@R-live], `localModel` [@localModelPackage], and `iml` [@imlRPackage] are separate R packages. 
+LIME and similar methods are implemented in various R and Python packages. For example, `lime` [@R-lime] is a port of the LIME Python library [@shapPackage], while `live` [@R-live], `localModel` [@localModelPackage], and `iml` [@imlRPackage] are separate R packages that implements this method from scratch. 
 
 Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, `lime` performs global discretization using quartiles, `localModel` performs local discretization using CP profiles, while `live` and `iml` work directly on continuous variables.
-
 Due to these differences, the packages yield different results (explanations).
 
 In what follows, for illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `johny_d` - an 8-year-old passenger that travelled in the 1st class. `DALEX` explainers for the model and the `jonhy_d` data are retrieved via `archivist` hooks as listed in Section \@ref(ListOfModelsTitanic). 
@@ -222,7 +228,7 @@ knitr::include_graphics("figure/lime_expl_lime_titanic.png")
 
 ### The localModel package
 
-The key elements of the `localModel` package are functions ``DALEX::explain()``, which creates an explainer, and `individual_surrogate_model()`, which develops the local white-box model.
+The key elements of the `localModel` package are functions ``DALEX::explain()``, which creates an explainer, and `individual_surrogate_model()`, which develops the local glass-box model.
 
 The detailed results for the `titanic_rf_v6` random-forest model and `johny_d` are presented below. 
 
@@ -262,7 +268,7 @@ knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
 
 ### The iml package
 
-The key elements of the `iml` package are functions ``Predictor$new()``, which creates an explainer, and `LocalModel$new()`, which develops the local white-box model.
+The key elements of the `iml` package are functions ``Predictor$new()``, which creates an explainer, and `LocalModel$new()`, which develops the local glass-box model.
 
 The detailed results for the `titanic_rf_v6` random-forest model and `johny_d` are presented below. 
 
