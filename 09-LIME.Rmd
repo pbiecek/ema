@@ -10,12 +10,12 @@ The LIME method was originally proposed in [@lime]. The key idea behind this met
 
 ## Intuition {#LIMEIntuition}
 
-The intuition behind the LIME method is explained in Figure \@ref(fig:limeEx). We want to understand factors that influence a complex black-box model around a single instance of interest. Areas presented in Figure \@ref(fig:limeEx) correspond to decision regions for a binary classifier, i.e., it pertains to a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas correspond to the decision regions, i.e., they indicate for which combinations of the variables the model classifies the observation to one of the two classes. The instance of interest is marked with the large black dot. By using an artificial dataset around the instance of interest, we can use a simpler glass-box model that will locally approximate the predictions of the black-box model. The glass-box model may then serve as a ''local explainer'' for the more complex model.
+The intuition behind the LIME method is explained in Figure \@ref(fig:limeIntroduction). We want to understand factors that influence a complex black-box model around a single instance of interest. Areas presented in Figure \@ref(fig:limeIntroduction) correspond to decision regions for a binary classifier, i.e., it pertains to a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas correspond to the decision regions, i.e., they indicate for which combinations of the variables the model classifies the observation to one of the two classes. The instance of interest is marked with the large black dot. By using an artificial dataset around the instance of interest, we can use a simpler glass-box model that will locally approximate the predictions of the black-box model. The glass-box model may then serve as a ''local explainer'' for the more complex model.
 
 We may select different classes of glass-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. The important point is to limit the complexity of the models, so that they are easier to explain. 
 
-```{r limeEx, echo=FALSE, fig.cap="(fig:limeEx) The idea behind local model approximations. The axes represent the values of two continuous explanatory variables in a binary-classification mode. The colored areas for which combinations of the variables the model classifies the observation to one of the two classes. To ''explain'' the prediction for the instance of interest (the large black dot), an artificial dataset around it is used to construct a simpler glass-box model (here, a logistic-regression model, indicated by the dashed line) that locally approximates the predictions of the black-box model.", out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/limeEx.png")
+```{r limeIntroduction, echo=FALSE, fig.cap="The idea behind LIME approximation with local glass-box model. The colored areas correspond to decision regions for a complex binary classification model. The black cross corresponds to the instance of interest $x^*$. Small dots correspond to the generated new data. Size of dots corresponds to proximity $\\Pi$ to the instance of interest, i.e. to weights $w'$. Dashed line correspond to a simple linear model fitted for the artificial data. It approximates the black box model around the instance of interest. The simple linear model ,,explains'' local behaviour of the black box model.", out.width = '70%', fig.align='center'}
+knitr::include_graphics("figure/lime_introduction.png")
 ```
 
 ## Method {#LIMEMethod}
@@ -23,7 +23,7 @@ knitr::include_graphics("figure/limeEx.png")
 As an explanation, we want to find a model that locally approximates a black-box model $f()$ around the instance of interest $x_*$. Consider class $G$ of interpretable models (linear moedls or decision trees). To find the required approximation, we consider the following ,,loss function''
 
 $$
-\hat g = \argmin_{g \in G} L(f, g, \Pi_{x_*}) + \Omega (g), 
+\hat g = \arg \min_{g \in G} L(f, g, \Pi_{x_*}) + \Omega (g), 
 $$
 
 where model $g()$ belongs to class $G$, $\Pi_{x_*}$ defines a neighborhood of $x_*$ in which approximation is sought, $L()$ is a fidelity measure between models $f()$ and $g()$, and $\Omega(g)$ is a penalty for the complexity of model $g()$. The penalty is used to select simple models from class $G$. 
@@ -70,10 +70,13 @@ For a set of binary variables in the interpretable space, the common choice is t
 For continuous variables, various proposals are introduced in different papers. For example [@imlRPackage] and [@molnar2019] adds some Gaussian noise to continuous variables. In [@limePackage] continuous variables are discretized with the use of quintiles and the perturbations are don on discretized variables. In  [@localModelPackage] continuous variables are discretized based on segmentation of local Ceteris Paribus profiles.
 
 
-In the example of the duck-horse in Figure \@ref(fig:duckHorse06), the perturbations of the image would be created by randomly including or excluding some of the superpixels. See an example in Figure
+In the example of the duck-horse in Figure \@ref(fig:duckHorse06), the perturbations of the image would be created by randomly including or excluding some of the superpixels. 
+See an example in Figure \@ref(fig:duckHorseProcess).
 
-[PRZEMEK] TODO: add figure with substet of superpixels !!!
 
+```{r duckHorseProcess, echo=FALSE, fig.cap="In the original input space image is described by RGB colors for each pixel (left panel). The image is transformed into the interpretable input space with 100 super pixels (central panel). The artificial data is a subset of superpixels (right panel).", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/duck_horse_process.png")
+```
 
 
 ### Developing the glass-box model
@@ -107,30 +110,10 @@ The three variables that are identified as the most influential are: `age`, `gen
 knitr::include_graphics("figure/LIMEexample01.png")
 ```
 
-The interpretable features can be defined in a many different ways. One idea would to be use quartiles for the feature of interest. Another idea is to use Ceteris Paribus profiles (see Chapter \@ref(ceterisParibus) and change-point method [@picard_1985] to find a instance specific discretization (Figure \@ref(fig:LIMEexample02) illustrates how the two levels for age can be extracted from the Ceteris Paribus profile).
+The interpretable features can be defined in a many different ways. One idea would to be use quartiles for the feature of interest. Another idea is to use Ceteris Paribus profiles (see Chapter \@ref(ceterisParibus) and change-point method [@picard_1985] to find a instance specific discretization.
 Different implementations of LIME differ in the way how the interpretable feature space is created.  
 
-```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Interpretable instance-level discretisation of age variable. Based on the Ceteris Paribus profiles we may estimate an optimal change-point as 15 years.", out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/LIMEexample02.png")
-```
 
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-load("models/explain_rf_v6.rda")
-load("models/titanic.rda")
-load("models/henry.rda")
-library("localModel")
-library("DALEX")
-library("ggplot2")
-library("randomForest")
-
-localModel_lok <- individual_surrogate_model(explain_rf_v6, johny_d,
-                                        size = 5000, seed = 1313)
-localModel_lok
-plot(localModel_lok) + facet_null() + ggtitle("localModel explanations for Johny D","Random Forest v6") + theme_drwhy_vertical()
-plot_interpretable_feature(localModel_lok, "age") + ggtitle("Interpretable representation for age","Random Forest v6" ) + xlab("age") + ylab("model response")
-
-```
 
 ## Pros and cons {#LIMEProsCons}
 
@@ -184,10 +167,11 @@ Second we need to create an explainer - an object with all elements needed for c
 lime_rf <- lime(titanic[,colnames(johny_d)], titanic_rf_v6)
 ```
 
-In the last step we generate explanation. The `n_features` set the K for K-LASSO method. Here we ask for explanations not larger than 4 variables.  The `n_permutations` argument defines how many points are to be sampled for a local model approximation. Here we use a set of 1000 artificial points for this.
+In the last step we generate an explanation. The `n_features` set the K for K-LASSO method. Here we ask for explanations not larger than 4 variables.  The `n_permutations` argument defines how many points are to be sampled for a local model approximation. Here we use a set of 1000 artificial points for this.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-lime_expl <- lime::explain(johny_d, lime_rf, labels = "yes", n_features = 4, n_permutations = 1000)
+lime_expl <- lime::explain(johny_d, lime_rf, labels = "yes", 
+                           n_features = 4, n_permutations = 1000)
 lime_expl
 
 #      model_type case label label_prob  model_r2 model_intercept model_prediction
@@ -202,7 +186,7 @@ lime_expl
 #4     age             8    -0.10026475     age <= 22 1, 2, 8, 0, 0, 72, 4 0.602, 0.398
 ```
 
-Result is a table with coefficients for the K-LASSO method. In the column `case` one will find an index of observation for which the explanation is calculated. Here it's 1 since we asked for explanation for only one observation. Fist 7 columns are duplicated and they all summaries how well the local surrogate K-LASSO model fit to the black-box model.
+In this table the `feature_weight` column has coefficients for the K-LASSO method in the explanation. In the column `case` one will find an index of observation for which the explanation is calculated. Here it's 1 since we asked for explanation for only one observation. 
 The `feature_weight` columns shows the $\beta$ coefficients in the K-LASSO model, `feature` column points out which variables have non zero coefficients in the K-LASSO method.  The `feature_value` column denotes values for the selected features for the observation of interest. The `feature_description` column shows how the original feature was transformed into a interpretable feature.
 
 This implementation of the LIME method dichotomizes continuous variables by using quartiles. Hence, in the output we get a binary variable `age < 22`. 
@@ -216,7 +200,7 @@ $$
 
 Figure \@ref(fig:limeExplLIMETitanic) shows the graphical presentation of the results, obtained by applying the generic `plot()` function.
 
-Color correspond to the sign of the $\beta$ coefficient while length of the bar corresponds to the absolute value of  $\beta$ coefficient in the K-LASSO method.
+Color corresponds to the sign of the $\beta$ coefficient while length of the bar corresponds to the absolute value of  $\beta$ coefficient in the K-LASSO method.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot_features(lime_expl)
@@ -228,7 +212,7 @@ knitr::include_graphics("figure/lime_expl_lime_titanic.png")
 
 ### The localModel package
 
-The key elements of the `localModel` package are functions ``DALEX::explain()``, which creates an explainer, and `individual_surrogate_model()`, which develops the local glass-box model.
+The `localModel` package operates on  `DALEX::explain()` object. The main function in this package is `individual_surrogate_model()` which trains the local glass-box model.
 
 The detailed results for the `titanic_rf_v6` random-forest model and `johny_d` are presented below. 
 
@@ -236,11 +220,11 @@ The detailed results for the `titanic_rf_v6` random-forest model and `johny_d` a
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 library("localModel")
 
-localModel_rf <- DALEX::explain(model = titanic_rf_v6,
+explainer_titanic_rf <- DALEX::explain(model = titanic_rf_v6,
                      data = titanic[,colnames(johny_d)])
-localModel_lok <- individual_surrogate_model(localModel_rf, johny_d,
+local_model_rf <- individual_surrogate_model(explainer_titanic_rf, johny_d,
                                         size = 1000, seed = 1313)
-localModel_lok
+local_model_rf
 #   estimated                    variable dev_ratio response
 #1 0.23479837                (Model mean) 0.6521442         
 #2 0.14483341                 (Intercept) 0.6521442         
@@ -250,19 +234,44 @@ localModel_lok
 #6 0.02338929                fare > 31.05 0.6521442    
 ```
 
-In the column `localModel_lok` one will find $\beta$ coefficients for LASSO logistic regression while in the `variable` column one will find corresponding values.
+In the column `estimated` one will find $\beta$ coefficients for LASSO logistic regression while in the `variable` column one will find corresponding values.
 
 The implemented version of LIME dichotomizes continuous variables by using CP profiles. The CP profile for `johny_d`, presented in Figure \@ref(fig:titanicCeterisProfile01D) in Chapter \@ref(ceterisParibus), indicated that, for age, the largest drop in the predicted probability of survival was observed for the age increasing beyond 15 years. Hence, in the output of the `individual_surrogate_model()`, we see a binary variable `age < 15.36`.   
 
-The graphical presentation of the results, obtained by applying the generic `plot()` function to the object resulting from the `application of the `explain()` function, is provided in Figure \@ref(fig:limeExplLocalModelTitanic). 
-Bars correspond to $\beta$ coefficients in the LASSO model.
+Figure \@ref(fig:LIMEexample02) illustrates how the two levels for age can be extracted from the Ceteris Paribus profile.
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-plot(localModel_lok)
+```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap="Interpretable instance-level discretisation of age variable. Based on the Ceteris Paribus profiles we may estimate an optimal change-point as 15 years.", out.width = '60%', fig.align='center'}
+knitr::include_graphics("figure/LIMEexample02.png")
 ```
 
 
-```{r limeExplLocalModelTitanic, echo=FALSE, fig.cap="(fig:limeExplLocalModelTitanic) LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `localModel` package. ", out.width = '60%', fig.align='center'}
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width="50%"}
+load("models/explain_rf_v6.rda")
+load("models/titanic.rda")
+load("models/henry.rda")
+library("localModel")
+library("DALEX")
+library("ggplot2")
+library("randomForest")
+
+localModel_lok <- individual_surrogate_model(explain_rf_v6, johny_d,
+                                        size = 5000, seed = 1313)
+localModel_lok
+plot(localModel_lok) + facet_null() + ggtitle("localModel explanations for Johny D","Random Forest v6") + theme_drwhy_vertical()
+plot_interpretable_feature(localModel_lok, "age") + ggtitle("Interpretable representation for age","Random Forest v6" ) + xlab("age") + ylab("model response")
+
+```
+
+
+The graphical presentation of the results, obtained by applying the generic `plot()` function is provided in Figure \@ref(fig:limeExplLocalModelTitanic). 
+Bars correspond to $\beta$ coefficients in the LASSO model.
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+plot(local_model_rf)
+```
+
+
+```{r limeExplLocalModelTitanic, echo=FALSE, fig.cap="LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `localModel` package. ", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
 ```
 

@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2020-01-19" />
+<meta name="date" content="2020-01-22" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -232,7 +232,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="10.3" data-path="LIME.html"><a href="LIME.html#LIMEMethod"><i class="fa fa-check"></i><b>10.3</b> Method</a><ul>
 <li class="chapter" data-level="10.3.1" data-path="LIME.html"><a href="LIME.html#interpretable-data-representation"><i class="fa fa-check"></i><b>10.3.1</b> Interpretable data representation</a></li>
 <li class="chapter" data-level="10.3.2" data-path="LIME.html"><a href="LIME.html#sampling-around-the-instance-of-interest"><i class="fa fa-check"></i><b>10.3.2</b> Sampling around the instance of interest</a></li>
-<li class="chapter" data-level="10.3.3" data-path="LIME.html"><a href="LIME.html#developing-the-white-box-model"><i class="fa fa-check"></i><b>10.3.3</b> Developing the white-box model</a></li>
+<li class="chapter" data-level="10.3.3" data-path="LIME.html"><a href="LIME.html#developing-the-glass-box-model"><i class="fa fa-check"></i><b>10.3.3</b> Developing the glass-box model</a></li>
 </ul></li>
 <li class="chapter" data-level="10.4" data-path="LIME.html"><a href="LIME.html#LIMEExample"><i class="fa fa-check"></i><b>10.4</b> Example: Titanic data</a></li>
 <li class="chapter" data-level="10.5" data-path="LIME.html"><a href="LIME.html#LIMEProsCons"><i class="fa fa-check"></i><b>10.5</b> Pros and cons</a></li>
@@ -487,7 +487,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <ol start="3" style="list-style-type: decimal">
 <li>Rank the so-obtained importance measures for the ``main’’ and interaction effects to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures <span class="math inline">\(v(j, x_*) = \Delta^{j|\{1, ..., j-1\}}(x_*)\)</span> (see Section <a href="breakDown.html#BDMethod">7.2</a>).</li>
 </ol>
-<p>The numerical complexity of the first step is <span class="math inline">\(O(p)\)</span>, where <span class="math inline">\(p\)</span> is the number of explanatory variables. For the second step, the complexity is <span class="math inline">\(O(p^2)\)</span>, while for the third step it is <span class="math inline">\(O(p)\)</span>. Thus, the time complexity of the entire procedure is <span class="math inline">\(O(p^2)\)</span>.</p>
+<p>The time complexity of the first step is <span class="math inline">\(O(p)\)</span>, where <span class="math inline">\(p\)</span> is the number of explanatory variables. For the second step, the complexity is <span class="math inline">\(O(p^2)\)</span>, while for the third step it is <span class="math inline">\(O(p)\)</span>. Thus, the time complexity of the entire procedure is <span class="math inline">\(O(p^2)\)</span>.</p>
 </div>
 <div id="iBDExample" class="section level2">
 <h2><span class="header-section-number">8.3</span> Example: Titanic data</h2>
@@ -745,16 +745,6 @@ The rows in the table are sorted according to the absolute value of the net impa
 <p>Figure <a href="iBreakDown.html#fig:iBreakDownTitanicExamplePlot">8.1</a> presents the BD plot corresponding to the results from Table <a href="iBreakDown.html#tab:titanicIBreakDownList2">8.3</a>.</p>
 <p>As we see the interaction between <code>fare</code> and <code>class</code> is included in the plot as a single bar. As effects of these two variables cannot be disentangled, the plot shows combination of both variables as a single contribution.
 From Table <a href="iBreakDown.html#tab:titanicIBreakDownList">8.2</a> we can read that <code>class</code> alone would increase average prediction by <span class="math inline">\(0.185\)</span>, <code>fare</code> would increase average prediction by <span class="math inline">\(0.143\)</span>, but together they increase the average prediction only by <span class="math inline">\(0.098\)</span>. It’s because the <code>fare=72</code> is a high value on average, but is below median when it comes for the 1st class passengers. So these two values combined <code>fare:class=72:1st</code> signal a cheaper version of the fist class, this is why its contribution to model prediction is smaller than contribution of <code>class</code> and <code>fare</code> separately.</p>
-<pre><code>## Preparation of a new explainer is initiated
-##   -&gt; model label       :  randomForest  (  default  )
-##   -&gt; data              :  2207  rows  10  cols 
-##   -&gt; target variable   :  2207  values 
-##   -&gt; predict function  :  yhat.randomForest  will be used (  default  )
-##   -&gt; predicted values  :  numerical, min =  0 , mean =  0.2353095 , max =  1  
-##   -&gt; residual function :  difference between y and yhat (  default  )
-##   -&gt; residuals         :  numerical, min =  -0.892 , mean =  0.0868473 , max =  1  
-##   -&gt; model_info        :  package randomForest , ver. 4.6.14 , task classification (  default  ) 
-##   A new explainer has been created!</code></pre>
 <div class="figure" style="text-align: center"><span id="fig:iBreakDownTitanicExamplePlot"></span>
 <img src="PM_VEE_files/figure-html/iBreakDownTitanicExamplePlot-1.png" alt="Break-down plot with interactions for the `titanic_rf_v6` model and `johny_d` for the Titanic data." width="70%" />
 <p class="caption">
@@ -772,18 +762,18 @@ The identification of interactions in the presented procedure is not based on a 
 <h2><span class="header-section-number">8.5</span> Code snippets for R</h2>
 <p>For illustration purposes, we use the <code>titanic_rf_v6</code> random-forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>. Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: <code>henry</code> - an 47-years old passenger that travelled in the 1st class.</p>
 <p><code>DALEX</code> explainers for the model and the <code>henry</code> data are retrieved via <code>archivist</code> hooks as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">5.1.7</a>.</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb56-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb56-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
-<a class="sourceLine" id="cb56-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb56-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb56-5" data-line-number="5">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a>
-<a class="sourceLine" id="cb56-6" data-line-number="6">henry</a></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
+<a class="sourceLine" id="cb55-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
+<a class="sourceLine" id="cb55-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb55-4" data-line-number="4">johny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</a>
+<a class="sourceLine" id="cb55-5" data-line-number="5">henry</a></code></pre></div>
 <pre><code>##   class gender age sibsp parch fare  embarked
 ## 1   1st   male  47     0     0   25 Cherbourg</code></pre>
 <p>The key function to construct iBD plots is the <code>iBreakDown::break_down()</code> function from the <code>iBreakDown</code> R package <span class="citation">(Gosiewska and Biecek <a href="#ref-iBreakDownRPackage">2019</a><a href="#ref-iBreakDownRPackage">a</a>)</span>. The use of the function has already been explained in Section <a href="breakDown.html#BDR">7.5</a>. The additional necessary argument is <code>interactions = TRUE</code>.</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
-<a class="sourceLine" id="cb58-2" data-line-number="2">bd_rf &lt;-<span class="st"> </span><span class="kw">break_down</span>(explain_rf_v6, henry, <span class="dt">interactions =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb58-3" data-line-number="3">bd_rf</a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb57-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;iBreakDown&quot;</span>)</a>
+<a class="sourceLine" id="cb57-3" data-line-number="3">bd_rf &lt;-<span class="st"> </span><span class="kw">break_down</span>(explain_rf_v6, henry, <span class="dt">interactions =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb57-4" data-line-number="4">bd_rf</a></code></pre></div>
 <pre><code>##                                                contribution
 ## Random Forest v6: intercept                           0.235
 ## Random Forest v6: class = 1st                         0.185
@@ -794,7 +784,7 @@ The identification of interactions in the presented procedure is not based on a 
 ## Random Forest v6: parch = 0                          -0.001
 ## Random Forest v6: prediction                          0.246</code></pre>
 <p>Now we can plot this object with the generic <code>plot()</code> function.</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw">plot</span>(bd_rf) </a></code></pre></div>
 <div class="figure" style="text-align: center"><span id="fig:iBDforHenry"></span>
 <img src="PM_VEE_files/figure-html/iBDforHenry-1.png" alt="Generic plot() function for the iBreakDown method calculated for `henry`" width="70%" />
 <p class="caption">

@@ -64,6 +64,7 @@ img <- image_read('https://www.favrify.com/wp-content/uploads/2015/03/155.jpg')
 img <- image_read('https://i.ytimg.com/vi/jolXso_OO-c/maxresdefault.jpg')
 img <- image_read('https://www.data-imaginist.com/assets/images/kitten.jpg')
 img <- image_read('~/Desktop/duck_horse.png')
+img_path <- '~/Desktop/duck_horse.png'
 img_path <- file.path(tempdir(), 'kitten.jpg')
 image_write(img, img_path)
 plot(as.raster(img))
@@ -126,4 +127,8 @@ for (i in 8:20) {
 
 
 
+plot_superpixels(img_path, n_superpixels = 100, weight = 40, colour = "white")
+explanation <- explain(img_path, explainer, n_labels = 4, n_features = 20, n_permutations = 35)
+plot_image_explanation(explanation, display = 'block', 
+                             threshold = 0.2, block_col = 'white')
 
