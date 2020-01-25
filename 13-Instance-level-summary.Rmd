@@ -1,14 +1,41 @@
 # Summary of Instance-level Explainers {#summaryInstanceLevel}
 
-In the first part of the book, we introduced a number of techniques for exploration and explanation of model predictions for instances of interest. In this chaper, we discuss their strengths and weaknesses taking into account different possible applications. 
+In the first part of the book, we introduced a number of techniques for exploration and explanation of model predictions for individual instances. 
+In each chapter we introduced and presented a single technique.
+But in practice these techniques rarely shall be used separately. It's more informative to combine different views offered by each technique into a more holistic overview.
 
-[TOMASZ: THIS WOULD LOOK MORE APPROPRIATE AS A FINAL SECTION OF A CHAPTER, IN WHICH THERE WOULD BE ONE OR TWO WORKED EXAMPLES ILLUSTRATING APPLICATION OF VARIOUS METHODS.]
+See an example in Figure \@ref(instanceExplainer). Four different approaches to the explanation of the random forest model are used. 
+First row shows results from variable attribution methods like LIME, SHAP and Break Down. All these method agree that the most important variables for `johny_d` are his `age`, `gender`, `class` and `fare.` Since `fare` and `class` are correlated and possibly `age` is in the interaction with `gender` then the additive decomposition is 	ambiguous. 
+Second row shows Ceteris Paribus profiles for these four most important variables. We see that higher age or being in the `2nd` class in he `restaurant staff` would decrease the model response while lower fare (which is counter intuitive), being a female or in the `deck crew` would increase the model response. 
+Third row show univariate distributions of particular variables. We see that `fare=72` is very high as for a ticket and that only small fraction of people on the titanic were children (no kids in the crew). Combination of different perspectives supplement each other.
+
+```{r instanceLevelExplainers, echo=FALSE, fig.cap="Instance-level explanations of the fandom forest model for the titanic data and `johny_d` an 8-years old boy that travels in the 1ts class. ", out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/instance_level.png")
+```
+
+In the Chapter \@ref(UseCaseFIFA) we show an example how instance level explanations may be combined with dataset level explanations on a new use-case related to FIFA 19 data.
+
+
+## Champion Challenger analysis
+
+TODO: PBI
+
+
+
+
+
+
+
+
+
+
+
+On one hand it is good to supplement different techniques for explanation with each other, but on another hand these techniques are different and may be more or less suitable for some selected problems. Below we discuss some differences. 
+
 
 ## Number of explanatory variables in the model
 
 One of the most important criteria for selection of model exploration and explaination methods is the number of explanatory variables in the model.
-
-![figure/instanceExplainer.jpg](figure/instanceExplainer.jpg)
 
 ### Low to medium number of explanatory variables
 
@@ -19,7 +46,7 @@ In such a situation, the most detailed information about the influence of the va
 
 ### Medium to large number of explanatory variables
 
-In models with a medium or large number of variables, it is still possible that most (or all) of them are interpretable. An example of such a model is a credit-scoring model [TOMASZ: SCORING IN WHICH SENSE? THE RISK OF PAYMENT OF INSTALLMENTS?] based on behavioral data that may include 100+ variables. [TOMASZ: WE HAVE NOT GOT ANY EXAMPLE.] 
+In models with a medium or large number of variables, it is still possible that most (or all) of them are interpretable. An example of such a model is a car-insurance pricing model in which we need to estimate the value of an insurance based on behavioral data that includes 100+ variables about characteristics of the driver and characteristics of the car. 
 
 When the number of explanatory variables increases, it becomes harder to show CP profile for each individual variable. In such situation, the most common approach is to use BD plots, presented in Chapter \@ref(breakDown), or plots of Shapley values, discussed in Cahpter \@ref(shapley)). They allow a quick evaluation whether a particular variable has got a positive or negative effect on model's prediction; we can also judge the size of the effect. If necessary, it is possible to limit the plots only to the variables with the largest effects.
 
@@ -29,15 +56,18 @@ When the number of explanatory variables is very large, it may be difficult to i
 
 ## Correlated explanatory variables
 
-Most of the presented methods assumed that explanatory variables are independent. Obviously, this is not always the case. For instance, in the case of the data on aparemten prices (see Chapter \@ref(ApartmentDataset)), the number of rooms and surface of an apartment will most likely be positively associated.
+When we derived some properties for presented methods we assumed that explanatory variables are independent. Obviously, this is not always the case. For instance, in the case of the data on aparement prices (see Chapter \@ref(ApartmentDataset)), the number of rooms and surface of an apartment will most likely be positively associated same is true for the class variable and fare for titanic data. 
+
+Of course all presented methods can be applied for correlated features, however sometimes it may be harder to analyze these features independently from each other.
 
 To address the issue, the two most common approaches are:
 * to create new features that are independent (sometimes it is possible due to domain knowledge; sometimes it can e achieve by using principal components analysis or a similar technique),
-* permute variables in blocks to preserve the correlation structure, as it was described in Chapter \@ref(LIME) . 
+* construct two-dimensional extensions for CP plots (model response is plotted as a 2d surface) or permute variables in blocks to preserve the correlation structure of variables. 
 
 ## Models with interactions
 
-In models with initeractions, the effect of one explanatory variable may depend on values of other variables. For example, the probability of survival on Titanic may decrease with age, but the effect may be different for different classes of passengers. [TOMASZ: WE HAVE NOT GOT SUCH A MODEL.] In such a case, to explore and explain model's predictions, we have got to consider not individual variables, but sets of variables included in interactions. To identify interactions, we can use BD plots as described in Chapter \@ref(iBreakDown). To investigate the effect of  pairwise interactions, we can use 2D CP profiles, as introduced in \@ref(). [TOMASZ: WE MISS A CHAPTER ON 2D PROFILES. WORTH RE-INTRODUCING? OR - WE SHOULD HAVE AN EXAMPLE.] 
+In models with interactions, the effect of one explanatory variable may depend on values of other variables. For example, the probability of survival on Titanic may decrease with age, but the effect may be different for different classes of passengers. 
+In such a case, to explore and explain model's predictions, we have got to consider not individual variables, but sets of variables included in interactions. To identify interactions, we can use BD plots as described in Chapter \@ref(iBreakDown). To show effects of an interaction we may use a set of CP profiles. For the Titanic example we may use CP profiles for age with to instances that differ only in gender. The less parallel are such profiles the higher the effect of an interaction.
 
 ## Sparse explanations
 
@@ -51,20 +81,5 @@ In the previous chapters we focused on the application of the presented methods 
 
 * Additional domain-specific validation. Understanding which factors are important for model predictions helps in evalaution of the plausibility of the model. If the effects of some variables on the predictions are inconsistent with the domain knowledge, then this may provide a ground for criticising the model and, eventually, replacing it by another one. On the other hand, if the influence of the variables on model predictions is consistent with prior expectations, the user may become more confident with the model. Such a confidence is fundamental when the model predictions are used as a support for taking decisions that may lead to serious consequences, like in the case of, for example, predictive models in medicine.
 
-* Model selection. In case of multiple candidate models, one may use results of the model explanation techniques to select one of the candidates. It is possible that, even if two models are similar in terms of a global model fit, the fit of one of them is locally much better. Consider the following, highly hypothethical example. Assume that a model is sought to predict whether it will rain on a particular day in a region where it rains on a half of the days. Two models are considered: one which simply predicts that it will rain every other day, and another that predicts that it will rain every day since October till March. Arguably, both models are rather unsophisticated (to say the least), but they both predict that, on average, half of the days wll be rainy. However, investigation of the instance predictions (for individual days) may lead to a preference for one of them. [TOMASZ: NOT SURE IF HELPFUL, BUT WANTED TO MAKE THIS CASE MORE CONCRETE.]    
-
-### Model Studio
-
-* model studio for `titanic_rf_v4` model https://titanic-rf-v4.netlify.com
-* model studio for `titanic_rf_v6` model https://titanic-rf-v6.netlify.com
-* model studio for `titanic_gbm_v6` model https://titanic-gbm-v6.netlify.com
-* model studio for `titanic_lmr_v6` model https://titanic-lmr-v6.netlify.com
-
-
-```{r titanicRfV6ModelStudio, echo=FALSE, fig.cap="Example view of modelStudio for titanic-rf-v6 model.", out.width = '95%', fig.align='center'}
-knitr::include_graphics("figure/titanic_rf_v6.png")
-```
-
-
-
+* Model selection. In case of multiple candidate models, one may use results of the model explanation techniques to select one of the candidates. It is possible that, even if two models are similar in terms of a global model fit, the fit of one of them is locally much better. Consider the following, highly hypothethical example. Assume that a model is sought to predict whether it will rain on a particular day in a region where it rains on a half of the days. Two models are considered: one which simply predicts that it will rain every other day, and another that predicts that it will rain every day since October till March. Arguably, both models are rather unsophisticated (to say the least), but they both predict that, on average, half of the days wll be rainy. However, investigation of the instance predictions (for individual days) may lead to a preference for one of them. 
 
