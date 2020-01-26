@@ -106,9 +106,11 @@ We use the random forest model `titanic_rf_v6` developed for the Titanic dataset
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 library("randomForest")
-explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
-
 library("DALEX")
+explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
+# recreate object to have predict function
+explain_rf_v6 <- explain(explain_rf_v6$model, data = explain_rf_v6$data,
+        y = explain_rf_v6$y)
 henry <- archivist::aread("pbiecek/models/a6538")
 henry
 ```
@@ -162,6 +164,17 @@ plot(cp_henry_neighbors, color = '#ceced9') +
   show_observations(cp_henry, variables = "age", size = 5) +
 #  show_residuals(cp_henry_neighbors, variables = "age") +
   ggtitle("Local-fidelity plot for Henry", "Calculated for the titanic_rf_v6 model")
+```
+
+
+
+```{r titanicCeterisParibus08, warning=FALSE, message=FALSE, fig.width=7, fig.height=2, out.width = '70%', fig.align='center'}
+residuals_distribution(explain_rf_v6,
+                          henry)
+
+residuals_distribution(explain_rf_v6,
+                          henry, variables = "age")
+
 ```
 
 
