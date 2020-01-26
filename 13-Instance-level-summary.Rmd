@@ -4,7 +4,7 @@ In the first part of the book, we introduced a number of techniques for explorat
 In each chapter we introduced and presented a single technique.
 But in practice these techniques rarely shall be used separately. It's more informative to combine different views offered by each technique into a more holistic overview.
 
-See an example in Figure \@ref(instanceExplainer). Four different approaches to the explanation of the random forest model are used. 
+See an example in Figure \@ref(fig:instanceLevelExplainers). Four different approaches to the explanation of the random forest model are used. 
 First row shows results from variable attribution methods like LIME, SHAP and Break Down. All these method agree that the most important variables for `johny_d` are his `age`, `gender`, `class` and `fare.` Since `fare` and `class` are correlated and possibly `age` is in the interaction with `gender` then the additive decomposition is 	ambiguous. 
 Second row shows Ceteris Paribus profiles for these four most important variables. We see that higher age or being in the `2nd` class in he `restaurant staff` would decrease the model response while lower fare (which is counter intuitive), being a female or in the `deck crew` would increase the model response. 
 Third row show univariate distributions of particular variables. We see that `fare=72` is very high as for a ticket and that only small fraction of people on the titanic were children (no kids in the crew). Combination of different perspectives supplement each other.
@@ -14,20 +14,6 @@ knitr::include_graphics("figure/instance_level.png")
 ```
 
 In the Chapter \@ref(UseCaseFIFA) we show an example how instance level explanations may be combined with dataset level explanations on a new use-case related to FIFA 19 data.
-
-
-## Champion Challenger analysis
-
-TODO: PBI
-
-
-
-
-
-
-
-
-
 
 
 On one hand it is good to supplement different techniques for explanation with each other, but on another hand these techniques are different and may be more or less suitable for some selected problems. Below we discuss some differences. 
@@ -82,4 +68,98 @@ In the previous chapters we focused on the application of the presented methods 
 * Additional domain-specific validation. Understanding which factors are important for model predictions helps in evalaution of the plausibility of the model. If the effects of some variables on the predictions are inconsistent with the domain knowledge, then this may provide a ground for criticising the model and, eventually, replacing it by another one. On the other hand, if the influence of the variables on model predictions is consistent with prior expectations, the user may become more confident with the model. Such a confidence is fundamental when the model predictions are used as a support for taking decisions that may lead to serious consequences, like in the case of, for example, predictive models in medicine.
 
 * Model selection. In case of multiple candidate models, one may use results of the model explanation techniques to select one of the candidates. It is possible that, even if two models are similar in terms of a global model fit, the fit of one of them is locally much better. Consider the following, highly hypothethical example. Assume that a model is sought to predict whether it will rain on a particular day in a region where it rains on a half of the days. Two models are considered: one which simply predicts that it will rain every other day, and another that predicts that it will rain every day since October till March. Arguably, both models are rather unsophisticated (to say the least), but they both predict that, on average, half of the days wll be rainy. However, investigation of the instance predictions (for individual days) may lead to a preference for one of them. 
+
+
+## Champion Challenger analysis
+
+The techniques for explaining and exploring models have many applications. One of them is the opportunity to compare models.
+
+Why compare models? 
+One scenario is the Champion-Challenger analysis. Let's assume that some institution uses a predictive model but wants to know if they could get a better model using other modeling techniques. For example, the risk department in a bank uses logistical regression to assess credit risk. The model has some efficiency and is the so-called champion - the best model considered in the class of logistic regression models.
+However, it is worth checking whether using more complex models, so called challengers, e.g. boosting or random trees, will not be more effective. And if they are more effective, the question will arise as to how these challengers differ from the champion.
+
+Another reason why we want to compare models is because of the iterativness of the modeling process itself (see \@ref(MDPprocess)). During the modeling process many versions of the models are created, often with different structures, sometimes with very similar efficiency. Comparative analysis allows for better understanding how these models differ from each other.
+
+
+Below is an example of champion-challenger analysis for Random Forest model `model_titanic_rf`, logistic regression model `model_titanic_lmr`, boosting model of `model_titanic_gbm` and support-vector machines (SVM) model of `model_titanic_svm`.
+
+Each of these models has a different way of functioning. Random forest and boosting models are on trees, so the response curves will be stepped one. The logistic regression and booster models have continuous and smooth response curves. 
+
+
+
+Figure \@ref(fig:championChallengerSHAP) shows the Shapley values for the four models built in chapter \@ref(TitanicDataset) using the example of `john_d`. For three models, namely random forest, boosting and logistic regression, similar variables are indicated as important: `class`, `age` and `gender`. For the SVM model the most important variable is `gender`, followed by `age` and `parch`.
+
+
+```{r championChallengerSHAP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap="SHAP plots for four different models for the Titanic data.", out.width = '100%', fig.align='center'}
+library("iBreakDown")
+library("randomForest")
+library("gbm")
+library("e1071")
+library("rms")
+library("DALEX")
+library("ingredients")
+load("models/models_titanic.rda")
+load("models/explain_rf_v6.rda")
+explain_titanic_rf <- explain_rf_v6
+load("models/johny_d.rda")
+
+set.seed(1313)
+sp_rf_johny <- shap(explain_titanic_rf, johny_d)
+sp_gbm_johny <- shap(explain_titanic_gbm, johny_d)
+sp_svm_johny <- shap(explain_titanic_svm, johny_d)
+sp_lmr_johny <- shap(explain_titanic_lmr, johny_d)
+
+library(patchwork)
+scale_y <- scale_y_continuous("", limits = c(-0.16, 0.32))
+(plot(sp_rf_johny) + scale_y | plot(sp_gbm_johny) + scale_y) / 
+  (plot(sp_svm_johny) + scale_y | plot(sp_lmr_johny) + scale_y) +
+  plot_annotation(title = "Shap values for johny_d", 
+                  theme = DALEX::theme_drwhy())
+```
+
+
+Shapley values show an additive distribution for model predictions. In the chapter \@ref(iBreakDown) we discussed what to do if the add-on attribute may not reflect the exact behaviour of the model. 
+Figure \@ref(fig:championChallengerBD) compares Break Down plots with interactions for the four models under consideration.
+
+Each of these models obviously has a different estimate for the chances of survival for `johny_d`. The highest estimate has the logistic regression model $0.764$ while the lowest estimate has the random forest model $0.441$. For the SVM model, the most important variable is `gender` and for the other models, `age` and `class`. The Random Forest model included interactions of `fare:class` and the SVM model included interactions of `fare:age`.
+
+
+```{r championChallengerBD, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap="Break Down plots for four different models for the Titanic data.", out.width = '100%', fig.align='center'}
+set.seed(1)
+bd_rf_johny <- break_down(explain_titanic_rf, johny_d, interactions = TRUE)
+bd_gbm_johny <- break_down(explain_titanic_gbm, johny_d, interactions = TRUE)
+bd_svm_johny <- break_down(explain_titanic_svm, johny_d, interactions = TRUE)
+bd_lmr_johny <- break_down(explain_titanic_lmr, johny_d, interactions = TRUE)
+
+library(patchwork)
+scale_y <- scale_y_continuous("", limits = c(0,1))
+(plot(bd_rf_johny) + scale_y | plot(bd_gbm_johny) + scale_y) / 
+  (plot(bd_svm_johny) + scale_y | plot(bd_lmr_johny) + scale_y) +
+  plot_annotation(title = "Break Down plot for johny_d", 
+                  theme = DALEX::theme_drwhy())
+```
+
+Figure \@ref(fig:championChallengerCP) shows Ceteris Paribus profiles for the four models considered for the `age` and `fare` variables. 
+The logistic regression and GBM models behave in a similar way. Random forest and SVM models are much less sensitive to the `age` variable.
+
+
+```{r championChallengerCP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=5, fig.cap="Ceteris Paribus profiles for four different models for the Titanic data.", out.width = '80%', fig.align='center'}
+splits <- list(age = seq(0,70,0.1), fare = seq(0,100,0.2))
+
+cp_rf_johny <- ceteris_paribus(explain_titanic_rf, johny_d, variable_splits = splits)
+cp_gbm_johny <- ceteris_paribus(explain_titanic_gbm, johny_d, variable_splits = splits)
+cp_svm_johny <- ceteris_paribus(explain_titanic_svm, johny_d, variable_splits = splits)
+cp_lmr_johny <- ceteris_paribus(explain_titanic_lmr, johny_d, variable_splits = splits)
+
+plot(cp_rf_johny, cp_gbm_johny, cp_svm_johny, cp_lmr_johny, 
+     color = "_label_") +
+  show_observations(cp_rf_johny, cp_gbm_johny, cp_svm_johny, cp_lmr_johny, 
+                    variables = c("age", "fare"), size = 3) +
+  guides(col = guide_legend(nrow = 1)) + scale_color_discrete("Model:") +
+  ggtitle("Ceteris Paribus profile for johny_d")
+```
+
+Each of the four models under consideration has a different structure and each of them is for some reason a complex model. Random forest and boosting models are complex due to the large number of trees used for prediction. The SVM model is complex due to the non-linear function of the kernel and the logistic regression model due to spline transformations. 
+
+The compilation of the operating profile of the models side-by-side allows for a better understanding of the similarities and differences in the signals that these models have learned.
 
