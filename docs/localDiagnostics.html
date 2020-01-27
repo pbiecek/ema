@@ -4,11 +4,11 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Chapter 13 Local Diagnostics With Ceteris-paribus Profiles | Explanatory Model Analysis</title>
+  <title>Chapter 13 Local Diagnostics Plots | Explanatory Model Analysis</title>
   <meta name="description" content="This book introduces unified language for exploration, explanation and examination of predictive machine learning models." />
   <meta name="generator" content="bookdown 0.14 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Chapter 13 Local Diagnostics With Ceteris-paribus Profiles | Explanatory Model Analysis" />
+  <meta property="og:title" content="Chapter 13 Local Diagnostics Plots | Explanatory Model Analysis" />
   <meta property="og:type" content="book" />
   
   
@@ -16,7 +16,7 @@
   <meta name="github-repo" content="pbiecek/ema" />
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Chapter 13 Local Diagnostics With Ceteris-paribus Profiles | Explanatory Model Analysis" />
+  <meta name="twitter:title" content="Chapter 13 Local Diagnostics Plots | Explanatory Model Analysis" />
   
   <meta name="twitter:description" content="This book introduces unified language for exploration, explanation and examination of predictive machine learning models." />
   
@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2020-01-25" />
+<meta name="date" content="2020-01-27" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -265,13 +265,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="12.6.2" data-path="ceterisParibusOscillations.html"><a href="ceterisParibusOscillations.html#advanced-use-of-the-calculate_oscillations-function"><i class="fa fa-check"></i><b>12.6.2</b> Advanced use of the <code>calculate_oscillations</code> function</a></li>
 </ul></li>
 </ul></li>
-<li class="chapter" data-level="13" data-path="localDiagnostics.html"><a href="localDiagnostics.html"><i class="fa fa-check"></i><b>13</b> Local Diagnostics With Ceteris-paribus Profiles</a><ul>
+<li class="chapter" data-level="13" data-path="localDiagnostics.html"><a href="localDiagnostics.html"><i class="fa fa-check"></i><b>13</b> Local Diagnostics Plots</a><ul>
 <li class="chapter" data-level="13.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntro"><i class="fa fa-check"></i><b>13.1</b> Introduction</a></li>
 <li class="chapter" data-level="13.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagIntuition"><i class="fa fa-check"></i><b>13.2</b> Intuition</a></li>
 <li class="chapter" data-level="13.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagMethod"><i class="fa fa-check"></i><b>13.3</b> Method</a><ul>
 <li class="chapter" data-level="13.3.1" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagNeighbors"><i class="fa fa-check"></i><b>13.3.1</b> Nearest neighbors</a></li>
-<li class="chapter" data-level="13.3.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProfiles"><i class="fa fa-check"></i><b>13.3.2</b> Profiles for neighbors</a></li>
-<li class="chapter" data-level="13.3.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagLFplot"><i class="fa fa-check"></i><b>13.3.3</b> Local-fidelity plot</a></li>
+<li class="chapter" data-level="13.3.2" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagLFplot"><i class="fa fa-check"></i><b>13.3.2</b> Local-fidelity plot</a></li>
+<li class="chapter" data-level="13.3.3" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProfiles"><i class="fa fa-check"></i><b>13.3.3</b> Local-stability plot for neighbors</a></li>
 </ul></li>
 <li class="chapter" data-level="13.4" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagExample"><i class="fa fa-check"></i><b>13.4</b> Example: Titanic</a></li>
 <li class="chapter" data-level="13.5" data-path="localDiagnostics.html"><a href="localDiagnostics.html#cPLocDiagProsCons"><i class="fa fa-check"></i><b>13.5</b> Pros and cons</a></li>
@@ -390,37 +390,43 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
             <section class="normal" id="section-">
 <div id="localDiagnostics" class="section level1">
-<h1><span class="header-section-number">Chapter 13</span> Local Diagnostics With Ceteris-paribus Profiles</h1>
+<h1><span class="header-section-number">Chapter 13</span> Local Diagnostics Plots</h1>
 <div id="cPLocDiagIntro" class="section level2">
 <h2><span class="header-section-number">13.1</span> Introduction</h2>
-<p>It may happen that, while the global predictive performance of the model is good, model predictions for some observations are very bad. In this chapter, we present two local-diagnostics techniques that can address this issue. In particular, we focus on fidelity plots: the plot of CP profiles for nearest neighbors and the local-fidelity plot.</p>
-<p>The idea behind fidelity plots is to select a number of observations (“neighbors”) from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.</p>
+<p>It may happen that, while the global predictive performance of a model is good, the model predictions for some observations are very misfitted. We often say that the model does not cover well some areas of the input space.</p>
+<p>For example, a model calibrated for typical patients in a certain hospital may not do well with exceptionally young patients. Or a model calibrated for the credit risk of spring holiday consumer loans may not work well on a group of autumn loans for Christmas holiday gifts.
+For this reason, we should not be satisfied with global measures of model performance. For important decisions, it is good to check how the model behaves for observations similar to the instance of interest.</p>
+<p>In this chapter, we present two local-diagnostics techniques that address this issue, namely, <em>local fidelity plots</em> that show local performance around observation of interest and <em>local stability plots</em> that show the local stability around observation of interest.</p>
+<p>The general idea behind fidelity plots is to select a number of observations (“neighbors”) from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.</p>
 </div>
 <div id="cPLocDiagIntuition" class="section level2">
 <h2><span class="header-section-number">13.2</span> Intuition</h2>
-<p>One approach to local model diagnostics is to examine how the predictions vary for observations from the training dataset. Figure <a href="localDiagnostics.html#fig:profileWith10NN">13.1</a> presents CP profiles for the instance of interest and its 10 nearest neighbors for the random forest model for the Titanic dataset (Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.</p>
-<div class="figure" style="text-align: center"><span id="fig:profileWith10NN"></span>
-<img src="figure/example_cp.png" alt="(fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the `titanic_rf_b6` model. The profiles are almost parallel and close to each other what suggests the stability of the model." width="50%" />
-<p class="caption">
-Figure 13.1: (fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the <code>titanic_rf_b6</code> model. The profiles are almost parallel and close to each other what suggests the stability of the model.
-</p>
-</div>
-<p>Once we have selected the nearest neighbors, we can also look closer at the model fit around the point of interest.
-Figure <a href="localDiagnostics.html#fig:profileBack2BackHist">13.2</a> presents histograms of residuals for the entire dataset and the selected neighbors for the random forest model for the Apartments dataset (Section <a href="dataSetsIntro.html#model-Apartments-rf">5.2.3</a>). The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable average performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This sugests that, on average, the model predictions are biased for the instance of interest.</p>
+<p>Assume that we have identified a set of observations from the training data similar in terms of dependent variables to the observation of interest.
+The basic idea behind local fidelity plots is to compare distribution of residuals for these similar cases against distribution of all residuals.</p>
+<p>Figure <a href="localDiagnostics.html#fig:profileBack2BackHist">13.1</a> presents histograms of residuals for the entire dataset and the selected neighbors for the random forest model for the Apartments dataset (Section <a href="dataSetsIntro.html#model-Apartments-rf">5.2.3</a>). The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable average performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This suggests that for the apartment of interest around this apartment the model is biased towards values smaller than observed (residuals are positive, so on average <span class="math inline">\(y\)</span> is higher than <span class="math inline">\(\hat y\)</span>, see <a href="modelDevelopmentProcess.html#eq:modelResiduals">(2.1)</a>).</p>
 <div class="figure" style="text-align: center"><span id="fig:profileBack2BackHist"></span>
-<img src="figure/bb_hist.png" alt="(fig:profileBack2BackHist) Histograms of residuals for the `apartments_rf_v5` model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest." width="70%" />
+<img src="figure/bb_hist.png" alt="Histograms of residuals for the `apartments_rf_v5` model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest." width="80%" />
 <p class="caption">
-Figure 13.2: (fig:profileBack2BackHist) Histograms of residuals for the <code>apartments_rf_v5</code> model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.
+Figure 13.1: Histograms of residuals for the <code>apartments_rf_v5</code> model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.
 </p>
 </div>
+<p>Another approach to local model diagnostics is to examine how stable is model behaviour around the observation of interest.
+Figure <a href="localDiagnostics.html#fig:profileWith10NN">13.2</a> presents CP profiles for variable <code>age</code> for the instance of interest and its 10 nearest neighbors for the random forest model for the Titanic dataset (Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.</p>
+<div class="figure" style="text-align: center"><span id="fig:profileWith10NN"></span>
+<img src="figure/example_cp.png" alt="Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the `titanic_rf_b6` model. The profiles are almost parallel and close to each other what suggests the stability of the model." width="50%" />
+<p class="caption">
+Figure 13.2: Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the <code>titanic_rf_b6</code> model. The profiles are almost parallel and close to each other what suggests the stability of the model.
+</p>
+</div>
+<p>Of course CP profiles for different variables may be very different so a natural question arises which variables shall we examine. The most natural choice is to explore the most important variables according to results from the Break Down, SHAP, LIME od CP Oscillations methods.</p>
 </div>
 <div id="cPLocDiagMethod" class="section level2">
 <h2><span class="header-section-number">13.3</span> Method</h2>
-<p>The proposed method is based on three elements:</p>
+<p>The proposed method is based on three steps:</p>
 <ul>
-<li>identification of nearest neighbors,</li>
-<li>calculation and visualization of CP profiles for the selected neighbors, and</li>
-<li>analysis of residuals for the neighbors.</li>
+<li>first, we need to select observations nearest to the observation of interest,</li>
+<li>for fidelity analysis we need to calculate and compare residuals for the neighbors.</li>
+<li>for stability analysis we need to calculate and visualize CP profiles for the selected neighbors.</li>
 </ul>
 <p>In what follows we discuss each of the elements in more detail.</p>
 <div id="cPLocDiagNeighbors" class="section level3">
@@ -430,53 +436,58 @@ Figure 13.2: (fig:profileBack2BackHist) Histograms of residuals for the <code>ap
 <li>How many neighbors should we choose?</li>
 <li>What metric should be used to measure the “proximity” of observations?</li>
 </ul>
-<p>The answer to both questions is, of course, <em>it depends</em>.</p>
+<p>The answer to both questions is <em>it depends</em>.</p>
 <ul>
 <li>The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neighbors works fine. However, one should always take into account computational time (smaller number of neighbors results in quicker calculations) and the size of the dataset (for a small dataset, smaller sets of neighbors may be preferred).</li>
-<li>The metric is very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accommodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:</li>
-</ul>
-<p><span class="math display">\[
+<li>The metric is very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accommodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:
+<span class="math display">\[
 d_{gower}(x_i, x_j) = \frac 1p \sum_{k=1}^p d^k(x_i^k, x_j^k),
 \]</span>
-where <span class="math inline">\(x_i\)</span> is a <span class="math inline">\(p\)</span>-dimensional vector of explanatory covariates for the <span class="math inline">\(i\)</span>-th observation and <span class="math inline">\(d^k(x_i^k,x_j^k)\)</span> is the distance between values of the <span class="math inline">\(k\)</span>-th variable for the <span class="math inline">\(i\)</span>-th and <span class="math inline">\(j\)</span>-th observations. Note that <span class="math inline">\(d^k()\)</span> depends on the nature of the variable. For instance, for a continuous variable it is equal to <span class="math inline">\(|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}\)</span>, i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply <span class="math inline">\(I(x_i^k = x_j^k)\)</span>, where <span class="math inline">\(I()\)</span> is the indicator function. Note that <span class="math inline">\(p\)</span> may be equal to the number of all explanatory variables included in the model, or only a subset of them. An advantage of Gower similarity measure is that it “deals” with heterogeneous vectors with both categorical and continuous variables.</p>
+where <span class="math inline">\(x_i\)</span> is a <span class="math inline">\(p\)</span>-dimensional vector of explanatory covariates for the <span class="math inline">\(i\)</span>-th observation and <span class="math inline">\(d^k(x_i^k,x_j^k)\)</span> is the distance between values of the <span class="math inline">\(k\)</span>-th variable for the <span class="math inline">\(i\)</span>-th and <span class="math inline">\(j\)</span>-th observations. Note that <span class="math inline">\(d^k()\)</span> depends on the nature of the variable. For instance, for a continuous variable it is equal to <span class="math inline">\(|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}\)</span>, i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply <span class="math inline">\(I(x_i^k = x_j^k)\)</span>, where <span class="math inline">\(I()\)</span> is the indicator function. Note that <span class="math inline">\(p\)</span> may be equal to the number of all explanatory variables included in the model, or only a subset of them. An advantage of Gower similarity measure is that it “deals” with heterogeneous vectors with both categorical and continuous variables.
+The disadvantage of Gower similarity measure is that it does not take into account neither variable correlation nor variable importance. For high dimensional setting an interesting alternative would be the proximity measure in Random Forest <span class="citation">(Breiman <a href="#ref-randomForestBreiman">2001</a>)</span>. It takes into account variable importance but requires a fitted Random Rorest model.</li>
+</ul>
 <p>Once we have decided on the number of neighbors, we can use the chosen metric to select the required number observations “closest” to the one of interest.</p>
 </div>
-<div id="cPLocDiagProfiles" class="section level3">
-<h3><span class="header-section-number">13.3.2</span> Profiles for neighbors</h3>
-<p>Once nearest neighbors have been identified, we can graphically compare CP profiles for selected (or all) variables.</p>
-<p>For a model with a large number of variables, we may end up with a large number of plots. In such a case a better strategy is to focus only on <span class="math inline">\(K\)</span> most important variables, selected by using the variable-importance measure (see Chapter <a href="ceterisParibusOscillations.html#ceterisParibusOscillations">12</a>).</p>
-</div>
 <div id="cPLocDiagLFplot" class="section level3">
-<h3><span class="header-section-number">13.3.3</span> Local-fidelity plot</h3>
-<p>CP profiles are helpful to assess the model stability. In addition, we can enhance the plot by adding residuals to it to allow evaluation of the local model fit. For model <span class="math inline">\(f()\)</span> and observation <span class="math inline">\(i\)</span> described by the vector of explanatory variables <span class="math inline">\(x_i\)</span>, the residual is the difference between the observed and predicted value of the dependent variable <span class="math inline">\(Y_i\)</span>, i.e.,</p>
+<h3><span class="header-section-number">13.3.2</span> Local-fidelity plot</h3>
+<p>Figure <a href="localDiagnostics.html#fig:profileBack2BackHist">13.1</a> illustrates two distribution of residuals, for the whole dataset and for neighbours of the observation of interest.</p>
+<p>For a typical observation these two distributions shall be similar. An alarming situation would be if the residuals for neighbours will be shifted towards the extremely positive of negative values.</p>
+<p>Apart from visual examination we may also use some statistical tests that compares these two distributions. Since we cannot assume any distribution for residuals we can use a nonparametric test like Wilcoxon test or Kolmogorov-Smirnov test.</p>
+<p>[TODO: maybe we need a better test for the stochastic dominance, or it is enough to have a test for location parameter?]</p>
+</div>
+<div id="cPLocDiagProfiles" class="section level3">
+<h3><span class="header-section-number">13.3.3</span> Local-stability plot for neighbors</h3>
+<p>Once nearest neighbors have been identified, we can graphically compare CP profiles for selected (or all) variables.</p>
+<p>For a model with a large number of variables, we may end up with a large number of plots. In such a case a better strategy is to focus only on <span class="math inline">\(K\)</span> most important variables, selected by using the variable-importance measure (see for example Chapter <a href="ceterisParibusOscillations.html#ceterisParibusOscillations">12</a>).</p>
+<p>CP profiles are helpful to assess the model stability. In addition, we can enhance the plot by adding residuals to it to allow evaluation of the local model fit. For model <span class="math inline">\(f()\)</span> and observation <span class="math inline">\(i\)</span> described by the vector of explanatory variables <span class="math inline">\(x_i\)</span>, the residual is the difference between the observed and predicted value of the dependent variable <span class="math inline">\(Y_i\)</span>. Let us recall the definition <a href="modelDevelopmentProcess.html#eq:modelResiduals">(2.1)</a>:</p>
 <p><span class="math display">\[
 r_i = y_i - f(x_i).
 \]</span>
 Note that, for a binary variable, the residual is the difference between the value of 0 or 1, depending on how we code “success,” and the value of the predicted probability of “success.” This defintion also applies to categorical responses, as it is common to define, in such case, a binary “success” indicator and compute the predicted probaiblity of “success” for each category separately.</p>
-<p>The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot.</p>
+<p>The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot. See an example in Figure <a href="localDiagnostics.html#fig:profileWith10NN">13.2</a>.</p>
 </div>
 </div>
 <div id="cPLocDiagExample" class="section level2">
 <h2><span class="header-section-number">13.4</span> Example: Titanic</h2>
 <p>As an example, we will use the predictions for the random forest model for the Titanic data (see Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a>).</p>
 <p>Figure <a href="localDiagnostics.html#fig:localFidelityPlots">13.3</a> presents a detailed explanation of the elements of a local-fidelity plot for <em>age</em>, a continuous explanatory variable. The plot includes eight nearest neighbors of Henry (see Section <a href="dataSetsIntro.html#predictions-titanic">5.1.5</a>). Profiles are quite apart from each other, which indicates potential instability of model predictions. However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.</p>
-<p>Figure <a href="localDiagnostics.html#fig:localFidelityPlots2">13.4</a> presents a local-fidelity plot for the categorical explanatory variable <code>class</code>. Henry and his neighbors traveled in the <code>1st</code> class. In different panels we see how the predicted probabilityof survival changes if the <code>1st</code> class is replaced, for instance, by the <code>2nd</code> (in most cases, they probability will be reduced) or the <code>deck crew</code> (in most cases, the probability will increase). Such plots can help to detect interactions, as we see that the same change (let’s say, from the <code>1st</code> to the <code>3rd</code> class) results in a different change of the model prediction.</p>
 <div class="figure" style="text-align: center"><span id="fig:localFidelityPlots"></span>
-<img src="figure/localFidelityPlots.png" alt="(fig:localFidelityPlots) Elements of a local-fidelity plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines." width="70%" />
+<img src="figure/localFidelityPlots.png" alt="Elements of a local-stability plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines." width="70%" />
 <p class="caption">
-Figure 13.3: (fig:localFidelityPlots) Elements of a local-fidelity plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.
+Figure 13.3: Elements of a local-stability plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.
 </p>
 </div>
+<p>Figure <a href="localDiagnostics.html#fig:localFidelityPlots2">13.4</a> presents a local-fidelity plot for the categorical explanatory variable <code>class</code>. Henry and his neighbors traveled in the <code>1st</code> class. In different panels we see how the predicted probabilityof survival changes if the <code>1st</code> class is replaced, for instance, by the <code>2nd</code> (in most cases, they probability will be reduced) or the <code>deck crew</code> (in most cases, the probability will increase). Such plots can help to detect interactions, as we see that the same change (let’s say, from the <code>1st</code> to the <code>3rd</code> class) results in a different change of the model prediction.</p>
 <div class="figure" style="text-align: center"><span id="fig:localFidelityPlots2"></span>
-<img src="figure/cp_fidelity_2.png" alt="(fig:localFidelityPlots2) The local-fidelity plot for the categorical explanatory variable `class` in the random effects model for the Titanic data, Henry, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from  `1st` to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the `1st` to the `2nd` class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to `deck crew` members increases the predicted probability." width="70%" />
+<img src="figure/cp_fidelity_2.png" alt="The local-stability plot for the categorical explanatory variable `class` in the random effects model for the Titanic data, `johny_d`, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from  `1st` to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the `1st` to the `2nd` class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to `deck crew` members increases the predicted probability." width="70%" />
 <p class="caption">
-Figure 13.4: (fig:localFidelityPlots2) The local-fidelity plot for the categorical explanatory variable <code>class</code> in the random effects model for the Titanic data, Henry, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from <code>1st</code> to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the <code>1st</code> to the <code>2nd</code> class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to <code>deck crew</code> members increases the predicted probability.
+Figure 13.4: The local-stability plot for the categorical explanatory variable <code>class</code> in the random effects model for the Titanic data, <code>johny_d</code>, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from <code>1st</code> to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the <code>1st</code> to the <code>2nd</code> class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to <code>deck crew</code> members increases the predicted probability.
 </p>
 </div>
 </div>
 <div id="cPLocDiagProsCons" class="section level2">
 <h2><span class="header-section-number">13.5</span> Pros and cons</h2>
-<p>Local-fidelity plots may be very helpful to check if</p>
+<p>Local fidelity and stability plots may be very helpful to check if</p>
 <ul>
 <li>the model is locally additive, as for such models the CP profiles should be parallel;</li>
 <li>the model is locally stable, as in that case the CP profiles should be close to each other;</li>
@@ -486,57 +497,51 @@ Figure 13.4: (fig:localFidelityPlots2) The local-fidelity plot for the categoric
 </div>
 <div id="cPLocDiagR" class="section level2">
 <h2><span class="header-section-number">13.6</span> Code snippets for R</h2>
-<p>In this section, we show how to use the R package <code>ingredients</code> <span class="citation">(Biecek et al. <a href="#ref-ingredientsRPackage">2019</a>)</span> to construct local-fidelity plots. More details and examples can be found at <code>https://modeloriented.github.io/ingredients/</code>.</p>
+<p>In this section, we show how to use the R package <code>DALEX</code> <span class="citation">(Biecek <a href="#ref-DALEX">2018</a>)</span> to construct local-fidelity plots.</p>
 <p>We use the random forest model <code>titanic_rf_v6</code> developed for the Titanic dataset (see Section <a href="dataSetsIntro.html#model-titanic-rf">5.1.3</a> ) as the example. Recall that we try to address a classification problem for a binary dependent variable - we want to predict the probability of survival for a selected passenger.</p>
 <p><code>DALEX</code> explainers for the model and the <code>henry</code> data frame are retrieved via <code>archivist</code> hooks, as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">5.1.7</a>.</p>
 <div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb103-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</a>
-<a class="sourceLine" id="cb103-2" data-line-number="2">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
-<a class="sourceLine" id="cb103-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb103-4" data-line-number="4"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
-<a class="sourceLine" id="cb103-5" data-line-number="5">henry &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/a6538&quot;</span>)</a>
-<a class="sourceLine" id="cb103-6" data-line-number="6">henry</a></code></pre></div>
+<a class="sourceLine" id="cb103-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</a>
+<a class="sourceLine" id="cb103-3" data-line-number="3">explain_rf_v6 &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/9b971&quot;</span>)</a>
+<a class="sourceLine" id="cb103-4" data-line-number="4"><span class="co"># recreate object to have predict function</span></a>
+<a class="sourceLine" id="cb103-5" data-line-number="5">explain_rf_v6 &lt;-<span class="st"> </span><span class="kw">explain</span>(explain_rf_v6<span class="op">$</span>model,</a>
+<a class="sourceLine" id="cb103-6" data-line-number="6">                         <span class="dt">data =</span> explain_rf_v6<span class="op">$</span>data,</a>
+<a class="sourceLine" id="cb103-7" data-line-number="7">                         <span class="dt">y =</span> explain_rf_v6<span class="op">$</span>y,</a>
+<a class="sourceLine" id="cb103-8" data-line-number="8">                         <span class="dt">verbose =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb103-9" data-line-number="9">henry &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/a6538&quot;</span>)</a>
+<a class="sourceLine" id="cb103-10" data-line-number="10">henry</a></code></pre></div>
 <pre><code>##   class gender age sibsp parch fare  embarked
 ## 1   1st   male  47     0     0   25 Cherbourg</code></pre>
-<p>We will show how to construct Figure <a href="localDiagnostics.html#fig:profileWith10NN">13.1</a>. Toward this aim we need some number of passengers most similar to <code>henry</code>. To select the ‘’neighbors’’, we use the <code>select_neighbours()</code> function from the <code>ingredients</code> package. It returns <code>n</code> observations (by default, 20) most similar to the observation of interest according to the <code>distance</code> measure (by default, the Gower distance is used).</p>
-<p>In the example below, we select 10 nearest neighbors to <code>henry</code> find from the <code>titanic</code> dataset. Note that the similarity is based only on two explanatory variables, <em>gender</em>, and <em>class</em>, as indicated in the argument <code>variables</code>.</p>
-<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ingredients&quot;</span>)</a>
-<a class="sourceLine" id="cb105-2" data-line-number="2">henry_neighbors &lt;-<span class="st"> </span><span class="kw">select_neighbours</span>(henry, </a>
-<a class="sourceLine" id="cb105-3" data-line-number="3">                         <span class="dt">data =</span> titanic, </a>
-<a class="sourceLine" id="cb105-4" data-line-number="4">                         <span class="dt">n =</span> <span class="dv">10</span>, </a>
-<a class="sourceLine" id="cb105-5" data-line-number="5">                         <span class="dt">variables =</span> <span class="kw">c</span>(<span class="st">&quot;class&quot;</span>, <span class="st">&quot;gender&quot;</span>))</a></code></pre></div>
-<p>Now we are ready to plot profiles for Henry and his neighbors. First, we have got to calculate the corresponding profiles with <code>ceteris_paribus()</code> function introduced in Section <a href="ceterisParibus.html#CPR">11.6</a>.</p>
-<div class="sourceCode" id="cb106"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb106-1" data-line-number="1">cp_henry &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_rf_v6, </a>
-<a class="sourceLine" id="cb106-2" data-line-number="2">                            henry,</a>
-<a class="sourceLine" id="cb106-3" data-line-number="3">                            <span class="dt">variable_splits =</span> <span class="kw">list</span>(<span class="dt">age =</span> <span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">80</span>,<span class="fl">0.1</span>)))</a>
-<a class="sourceLine" id="cb106-4" data-line-number="4">cp_henry_neighbors &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_rf_v6, </a>
-<a class="sourceLine" id="cb106-5" data-line-number="5">                            henry_neighbors,</a>
-<a class="sourceLine" id="cb106-6" data-line-number="6">                            <span class="dt">variable_splits =</span> <span class="kw">list</span>(<span class="dt">age =</span> <span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">80</span>,<span class="fl">0.1</span>)))</a></code></pre></div>
-<p>Subsequently, we can plot the profiles. Note that, in the example below, we do this only for a single variable <code>age</code>.</p>
-<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" data-line-number="1"><span class="kw">library</span>(<span class="st">&quot;ggplot2&quot;</span>)</a>
-<a class="sourceLine" id="cb107-2" data-line-number="2"></a>
-<a class="sourceLine" id="cb107-3" data-line-number="3"><span class="kw">plot</span>(cp_henry_neighbors, <span class="dt">color =</span> <span class="st">&#39;#ceced9&#39;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb107-4" data-line-number="4"><span class="co">#  show_profiles(cp_henry, size = 2)  +</span></a>
-<a class="sourceLine" id="cb107-5" data-line-number="5"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Ceteris-paribus profiles for Henry and neighbors&quot;</span>, <span class="st">&quot;Calculated for the titanic_rf_v6 model&quot;</span>)</a></code></pre></div>
-<p><img src="ema_files/figure-html/titanicCeterisParibus05-1.png" width="70%" style="display: block; margin: auto;" /></p>
-<p>To construct the local-fidelity plot presented in Figure <a href="localDiagnostics.html#fig:localFidelityPlots">13.3</a>, we have got to add the information about the observed values of the dependent variable for the selected neighbors. Toward this aim, we use the <code>y</code> argument in the <code>ceteris_paribus()</code> function. The argument takes numerical values. Our binary dependent variable <code>survived</code> assumes values <code>yes/no</code>; to convert them to numerical values, we use the <code>survived == &quot;yes&quot;</code> expression.</p>
-<div class="sourceCode" id="cb108"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb108-1" data-line-number="1">cp_henry_neighbors &lt;-<span class="st"> </span><span class="kw">ceteris_paribus</span>(explain_rf_v6,</a>
-<a class="sourceLine" id="cb108-2" data-line-number="2">                          henry_neighbors, </a>
-<a class="sourceLine" id="cb108-3" data-line-number="3">                          <span class="dt">y =</span> henry_neighbors<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>,</a>
-<a class="sourceLine" id="cb108-4" data-line-number="4">                          <span class="dt">variable_splits =</span> <span class="kw">list</span>(<span class="dt">age =</span> <span class="kw">seq</span>(<span class="dv">0</span>,<span class="dv">80</span>,<span class="fl">0.1</span>)))</a></code></pre></div>
-<p>Finally, we add residuals to the plot by using the <code>show_residuals()</code> function. As a result, we obtain the local-fidelity plot for <code>henry</code>.</p>
-<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb109-1" data-line-number="1"><span class="kw">plot</span>(cp_henry_neighbors, <span class="dt">color =</span> <span class="st">&#39;#ceced9&#39;</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb109-2" data-line-number="2"><span class="co">#  show_profiles(cp_henry, size = 2) + </span></a>
-<a class="sourceLine" id="cb109-3" data-line-number="3"><span class="st">  </span><span class="kw">show_observations</span>(cp_henry, <span class="dt">variables =</span> <span class="st">&quot;age&quot;</span>, <span class="dt">size =</span> <span class="dv">5</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb109-4" data-line-number="4"><span class="co">#  show_residuals(cp_henry_neighbors, variables = &quot;age&quot;) +</span></a>
-<a class="sourceLine" id="cb109-5" data-line-number="5"><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Local-fidelity plot for Henry&quot;</span>,<span class="st">&quot;Calculated for the titanic_rf_v6 model&quot;</span>)</a></code></pre></div>
-<p><img src="ema_files/figure-html/titanicCeterisParibus07-1.png" width="70%" style="display: block; margin: auto;" /></p>
+<p>We will show how to construct fidelity plot as in Figure <a href="localDiagnostics.html#fig:profileWith10NN">13.2</a>. Toward this aim we need some number of passengers most similar to <code>henry</code>.
+Here we are using <code>residuals_distribution</code> function from the <code>DALEX</code> package. First argument is an explainer, second the instance of interest, optional arguments are <code>neighbours</code> (number of neighbours) and <code>distance</code> (by default, the Gower distance is used).</p>
+<p>This function needs to calculate residuals, so explainer shall be created with the <code>y</code> argument and also the <code>residual_function</code> argument.</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" data-line-number="1"><span class="kw">residuals_distribution</span>(explain_rf_v6,</a>
+<a class="sourceLine" id="cb105-2" data-line-number="2">                          henry,</a>
+<a class="sourceLine" id="cb105-3" data-line-number="3">                          <span class="dt">neighbours =</span> <span class="dv">100</span>)</a></code></pre></div>
+<p><img src="ema_files/figure-html/residualDistributionFidelityPlot-1.png" width="70%" style="display: block; margin: auto;" /></p>
+<p>The function <code>residuals_distribution()</code> can be also used for a local stability plot as in Figure <a href="localDiagnostics.html#fig:localFidelityPlots">13.3</a> and <a href="#fig:residualDistributionStabilityPlotClass"><strong>??</strong></a>. To do this we need to also specify an <code>variables</code> argument.</p>
+<p>Toward this aim, we use the <code>y</code> argument in the <code>ceteris_paribus()</code> function. The argument takes numerical values. Our binary dependent variable <code>survived</code> assumes values <code>yes/no</code>; to convert them to numerical values, we use the <code>survived == &quot;yes&quot;</code> expression.</p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb106-1" data-line-number="1"><span class="kw">residuals_distribution</span>(explain_rf_v6,</a>
+<a class="sourceLine" id="cb106-2" data-line-number="2">                          henry, </a>
+<a class="sourceLine" id="cb106-3" data-line-number="3">                       <span class="dt">neighbours =</span> <span class="dv">10</span>,</a>
+<a class="sourceLine" id="cb106-4" data-line-number="4">                       <span class="dt">variables =</span> <span class="st">&quot;age&quot;</span>)</a></code></pre></div>
+<p><img src="ema_files/figure-html/residualDistributionStabilityPlot-1.png" width="70%" style="display: block; margin: auto;" /></p>
+<p>As we see the 10 passangers closest to <code>henry</code> are all from the <code>1st</code> class with age span between 20 and 60. Profiles for both <code>age</code> and <code>class</code> looks stable.</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" data-line-number="1"><span class="kw">residuals_distribution</span>(explain_rf_v6,</a>
+<a class="sourceLine" id="cb107-2" data-line-number="2">                          henry, </a>
+<a class="sourceLine" id="cb107-3" data-line-number="3">                       <span class="dt">neighbours =</span> <span class="dv">10</span>,</a>
+<a class="sourceLine" id="cb107-4" data-line-number="4">                       <span class="dt">variables =</span> <span class="st">&quot;class&quot;</span>)</a></code></pre></div>
+<p><img src="ema_files/figure-html/residualDistributionStabilityPlotClass-1.png" width="70%" style="display: block; margin: auto;" /></p>
 
 </div>
 </div>
 <h3>References</h3>
 <div id="refs" class="references">
-<div id="ref-ingredientsRPackage">
-<p>Biecek, Przemyslaw, Hubert Baniecki, Adam Izdebski, and Katarzyna Pekala. 2019. <em>Ingredients: Effects and Importances of Model Ingredients</em>.</p>
+<div id="ref-DALEX">
+<p>Biecek, Przemyslaw. 2018. <em>DALEX: Explainers for Complex Predictive Models in R</em>. <em>Journal of Machine Learning Research</em>. Vol. 19. <a href="http://jmlr.org/papers/v19/18-416.html">http://jmlr.org/papers/v19/18-416.html</a>.</p>
+</div>
+<div id="ref-randomForestBreiman">
+<p>Breiman, Leo. 2001. “Random Forests.” In <em>Machine Learning</em>, 45:5–32. <a href="https://doi.org/10.1023/A:1010933404324">https://doi.org/10.1023/A:1010933404324</a>.</p>
 </div>
 </div>
             </section>

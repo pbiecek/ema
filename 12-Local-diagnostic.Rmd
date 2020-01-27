@@ -133,7 +133,8 @@ explain_rf_v6 <- archivist::aread("pbiecek/models/9b971")
 # recreate object to have predict function
 explain_rf_v6 <- explain(explain_rf_v6$model,
                          data = explain_rf_v6$data,
-                         y = explain_rf_v6$y)
+                         y = explain_rf_v6$y,
+                         verbose = FALSE)
 henry <- archivist::aread("pbiecek/models/a6538")
 henry
 ```
@@ -143,14 +144,14 @@ Here we are using `residuals_distribution` function from the `DALEX` package. Fi
 
 This function needs to calculate residuals, so explainer shall be created with the `y` argument and also the `residual_function` argument.
 
-```{r residualDistributionFidelityPlot, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=2, out.width = '70%', fig.align='center'}
+```{r residualDistributionFidelityPlot, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
 residuals_distribution(explain_rf_v6,
                           henry,
                           neighbours = 100)
 ```
 
 
-The function `residuals_distribution()` can be also used for a local stability plot as in Figure \@ref(fig:localFidelityPlots). To do this we need to also specify an `variables` argument.
+The function `residuals_distribution()` can be also used for a local stability plot as in Figure \@ref(fig:localFidelityPlots) and \@ref(fig:residualDistributionStabilityPlotClass). To do this we need to also specify an `variables` argument.
 
 Toward this aim, we use the `y` argument in the `ceteris_paribus()` function. The argument takes numerical values. Our binary dependent variable `survived` assumes values `yes/no`; to convert them to numerical values, we use the `survived == "yes"` expression.
 
@@ -160,6 +161,15 @@ residuals_distribution(explain_rf_v6,
                           henry, 
                        neighbours = 10,
                        variables = "age")
+```
+
+As we see the 10 passangers closest to `henry` are all from the `1st` class with age span between 20 and 60. Profiles for both `age` and `class` looks stable.
+
+```{r residualDistributionStabilityPlotClass, warning=FALSE, message=FALSE, fig.width=7, fig.height=5, out.width = '70%', fig.align='center'}
+residuals_distribution(explain_rf_v6,
+                          henry, 
+                       neighbours = 10,
+                       variables = "class")
 ```
 
 

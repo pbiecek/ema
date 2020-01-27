@@ -130,7 +130,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{2020-01-25}
+    \date{2020-01-27}
 
 \usepackage{booktabs}
 
@@ -462,7 +462,12 @@ We will use the notation \(x^{-j}\) to refer to a vector that results from remov
 In this book, a model is a function \(f:\mathcal X \rightarrow \mathcal R\) that transforms a point from \(\mathcal X\) into a real number. In most cases, the presented methods can be used directly for multi-variate dependent variables; however, we use examples with uni-variate responses to simplify the notation.
 Typically, during the model development, we create many competing models. Formally we shall index models to refer to a specific version of a trained model. But for the sake of simplicity we omit these indexes where they are not important.
 
-We will use \(r_i = y_i - f(x_i)\) we refer to the \textbf{model residual}, i.e., the difference between the observed value of the dependent variable \(Y\) for the \(i\)-th observation from a particular dataset and the model prediction for the observaton.
+Later in this book we will use the term \textbf{model residual} as the the difference between the observed value of the dependent variable \(Y\) for the \(i\)-th observation from a particular dataset and the model prediction for the observaton
+
+\begin{equation}
+r_i = y_i - f(x_i) = y_i - \hat y_i.
+\label{eq:modelResiduals}
+\end{equation}
 
 \hypertarget{data-exploration}{%
 \subsection{Data exploration}\label{data-exploration}}
@@ -3749,19 +3754,39 @@ Another approach is to calculate the expectation \eqref{eq:VIPCPdef} over the em
 \begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/titanicCeterisProfile02I-1} \end{center}
 
 \hypertarget{localDiagnostics}{%
-\section{Local Diagnostics With Ceteris-paribus Profiles}\label{localDiagnostics}}
+\section{Local Diagnostics Plots}\label{localDiagnostics}}
 
 \hypertarget{cPLocDiagIntro}{%
 \subsection{Introduction}\label{cPLocDiagIntro}}
 
-It may happen that, while the global predictive performance of the model is good, model predictions for some observations are very bad. In this chapter, we present two local-diagnostics techniques that can address this issue. In particular, we focus on fidelity plots: the plot of CP profiles for nearest neighbors and the local-fidelity plot.
+It may happen that, while the global predictive performance of a model is good, the model predictions for some observations are very misfitted. We often say that the model does not cover well some areas of the input space.
 
-The idea behind fidelity plots is to select a number of observations (``neighbors'') from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.
+For example, a model calibrated for typical patients in a certain hospital may not do well with exceptionally young patients. Or a model calibrated for the credit risk of spring holiday consumer loans may not work well on a group of autumn loans for Christmas holiday gifts.
+For this reason, we should not be satisfied with global measures of model performance. For important decisions, it is good to check how the model behaves for observations similar to the instance of interest.
+
+In this chapter, we present two local-diagnostics techniques that address this issue, namely, \emph{local fidelity plots} that show local performance around observation of interest and \emph{local stability plots} that show the local stability around observation of interest.
+
+The general idea behind fidelity plots is to select a number of observations (``neighbors'') from the validation dataset that are closest to the instance (observation) of interest. Then, for the selected observations, we plot CP profiles and check how stable they are. Additionally, if we know true values of the dependent variable for the selected neighbors, we may add residuals to the plot to evaluate the local fit of the model.
 
 \hypertarget{cPLocDiagIntuition}{%
 \subsection{Intuition}\label{cPLocDiagIntuition}}
 
-One approach to local model diagnostics is to examine how the predictions vary for observations from the training dataset. Figure \ref{fig:profileWith10NN} presents CP profiles for the instance of interest and its 10 nearest neighbors for the random forest model for the Titanic dataset (Section \ref{model-titanic-rf}). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.
+Assume that we have identified a set of observations from the training data similar in terms of dependent variables to the observation of interest.
+The basic idea behind local fidelity plots is to compare distribution of residuals for these similar cases against distribution of all residuals.
+
+Figure \ref{fig:profileBack2BackHist} presents histograms of residuals for the entire dataset and the selected neighbors for the random forest model for the Apartments dataset (Section \ref{model-Apartments-rf}). The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable average performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This suggests that for the apartment of interest around this apartment the model is biased towards values smaller than observed (residuals are positive, so on average \(y\) is higher than \(\hat y\), see \eqref{eq:modelResiduals}).
+
+\textbackslash{}begin\{figure\}
+
+\{\centering \includegraphics[width=0.8\linewidth]{figure/bb_hist}
+
+\}
+
+\textbackslash{}caption\{Histograms of residuals for the \texttt{apartments\_rf\_v5} model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.\}\label{fig:profileBack2BackHist}
+\textbackslash{}end\{figure\}
+
+Another approach to local model diagnostics is to examine how stable is model behaviour around the observation of interest.
+Figure \ref{fig:profileWith10NN} presents CP profiles for variable \texttt{age} for the instance of interest and its 10 nearest neighbors for the random forest model for the Titanic dataset (Section \ref{model-titanic-rf}). The profiles are almost parallel and very close to each other. This suggests that model predictions are stable around the instance of interest, because small changes in the explanatory variables (represented by the nearest neighbors) have not got much influence on the predictions.
 
 \textbackslash{}begin\{figure\}
 
@@ -3769,34 +3794,24 @@ One approach to local model diagnostics is to examine how the predictions vary f
 
 \}
 
-\textbackslash{}caption\{(fig:profileWith10NN) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the \texttt{titanic\_rf\_b6} model. The profiles are almost parallel and close to each other what suggests the stability of the model.\}\label{fig:profileWith10NN}
+\textbackslash{}caption\{Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the \texttt{titanic\_rf\_b6} model. The profiles are almost parallel and close to each other what suggests the stability of the model.\}\label{fig:profileWith10NN}
 \textbackslash{}end\{figure\}
 
-Once we have selected the nearest neighbors, we can also look closer at the model fit around the point of interest.
-Figure \ref{fig:profileBack2BackHist} presents histograms of residuals for the entire dataset and the selected neighbors for the random forest model for the Apartments dataset (Section \ref{model-Apartments-rf}). The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable average performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This sugests that, on average, the model predictions are biased for the instance of interest.
-
-\textbackslash{}begin\{figure\}
-
-\{\centering \includegraphics[width=0.7\linewidth]{figure/bb_hist}
-
-\}
-
-\textbackslash{}caption\{(fig:profileBack2BackHist) Histograms of residuals for the \texttt{apartments\_rf\_v5} model for the Apartments dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.\}\label{fig:profileBack2BackHist}
-\textbackslash{}end\{figure\}
+Of course CP profiles for different variables may be very different so a natural question arises which variables shall we examine. The most natural choice is to explore the most important variables according to results from the Break Down, SHAP, LIME od CP Oscillations methods.
 
 \hypertarget{cPLocDiagMethod}{%
 \subsection{Method}\label{cPLocDiagMethod}}
 
-The proposed method is based on three elements:
+The proposed method is based on three steps:
 
 \begin{itemize}
 \tightlist
 \item
-  identification of nearest neighbors,
+  first, we need to select observations nearest to the observation of interest,
 \item
-  calculation and visualization of CP profiles for the selected neighbors, and
+  for fidelity analysis we need to calculate and compare residuals for the neighbors.
 \item
-  analysis of residuals for the neighbors.
+  for stability analysis we need to calculate and visualize CP profiles for the selected neighbors.
 \end{itemize}
 
 In what follows we discuss each of the elements in more detail.
@@ -3814,7 +3829,7 @@ There are two important questions related to the selection of the neighbors ``ne
   What metric should be used to measure the ``proximity'' of observations?
 \end{itemize}
 
-The answer to both questions is, of course, \emph{it depends}.
+The answer to both questions is \emph{it depends}.
 
 \begin{itemize}
 \tightlist
@@ -3822,33 +3837,41 @@ The answer to both questions is, of course, \emph{it depends}.
   The smaller the number of neighbors, the more local is the analysis. However, a very small number will lead to a larger variability of the results. In many cases we found that 20 neighbors works fine. However, one should always take into account computational time (smaller number of neighbors results in quicker calculations) and the size of the dataset (for a small dataset, smaller sets of neighbors may be preferred).
 \item
   The metric is very important. The more explanatory variables, the more important is the choice. In particular, the metric should be capable of accommodating variables of different nature (categorical, continuous). Our default choice is the Gower similarity measure:
+  \[
+  d_{gower}(x_i, x_j) = \frac 1p \sum_{k=1}^p d^k(x_i^k, x_j^k),
+  \]
+  where \(x_i\) is a \(p\)-dimensional vector of explanatory covariates for the \(i\)-th observation and \(d^k(x_i^k,x_j^k)\) is the distance between values of the \(k\)-th variable for the \(i\)-th and \(j\)-th observations. Note that \(d^k()\) depends on the nature of the variable. For instance, for a continuous variable it is equal to \(|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}\), i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply \(I(x_i^k = x_j^k)\), where \(I()\) is the indicator function. Note that \(p\) may be equal to the number of all explanatory variables included in the model, or only a subset of them. An advantage of Gower similarity measure is that it ``deals'' with heterogeneous vectors with both categorical and continuous variables.
+  The disadvantage of Gower similarity measure is that it does not take into account neither variable correlation nor variable importance. For high dimensional setting an interesting alternative would be the proximity measure in Random Forest \citep{randomForestBreiman}. It takes into account variable importance but requires a fitted Random Rorest model.
 \end{itemize}
 
-\[
-d_{gower}(x_i, x_j) = \frac 1p \sum_{k=1}^p d^k(x_i^k, x_j^k),
-\]
-where \(x_i\) is a \(p\)-dimensional vector of explanatory covariates for the \(i\)-th observation and \(d^k(x_i^k,x_j^k)\) is the distance between values of the \(k\)-th variable for the \(i\)-th and \(j\)-th observations. Note that \(d^k()\) depends on the nature of the variable. For instance, for a continuous variable it is equal to \(|x_i^k-x_j^k|/\{max(x_1^k,\ldots,x_n^k)-min(x_1^k,\ldots,x_n^k)\}\), i.e., the absolute difference scaled by the observed range of the variable. On the other hand, for a categorical variable, it is simply \(I(x_i^k = x_j^k)\), where \(I()\) is the indicator function. Note that \(p\) may be equal to the number of all explanatory variables included in the model, or only a subset of them. An advantage of Gower similarity measure is that it ``deals'' with heterogeneous vectors with both categorical and continuous variables.
-
 Once we have decided on the number of neighbors, we can use the chosen metric to select the required number observations ``closest'' to the one of interest.
-
-\hypertarget{cPLocDiagProfiles}{%
-\subsubsection{Profiles for neighbors}\label{cPLocDiagProfiles}}
-
-Once nearest neighbors have been identified, we can graphically compare CP profiles for selected (or all) variables.
-
-For a model with a large number of variables, we may end up with a large number of plots. In such a case a better strategy is to focus only on \(K\) most important variables, selected by using the variable-importance measure (see Chapter \ref{ceterisParibusOscillations}).
 
 \hypertarget{cPLocDiagLFplot}{%
 \subsubsection{Local-fidelity plot}\label{cPLocDiagLFplot}}
 
-CP profiles are helpful to assess the model stability. In addition, we can enhance the plot by adding residuals to it to allow evaluation of the local model fit. For model \(f()\) and observation \(i\) described by the vector of explanatory variables \(x_i\), the residual is the difference between the observed and predicted value of the dependent variable \(Y_i\), i.e.,
+Figure \ref{fig:profileBack2BackHist} illustrates two distribution of residuals, for the whole dataset and for neighbours of the observation of interest.
+
+For a typical observation these two distributions shall be similar. An alarming situation would be if the residuals for neighbours will be shifted towards the extremely positive of negative values.
+
+Apart from visual examination we may also use some statistical tests that compares these two distributions. Since we cannot assume any distribution for residuals we can use a nonparametric test like Wilcoxon test or Kolmogorov-Smirnov test.
+
+{[}TODO: maybe we need a better test for the stochastic dominance, or it is enough to have a test for location parameter?{]}
+
+\hypertarget{cPLocDiagProfiles}{%
+\subsubsection{Local-stability plot for neighbors}\label{cPLocDiagProfiles}}
+
+Once nearest neighbors have been identified, we can graphically compare CP profiles for selected (or all) variables.
+
+For a model with a large number of variables, we may end up with a large number of plots. In such a case a better strategy is to focus only on \(K\) most important variables, selected by using the variable-importance measure (see for example Chapter \ref{ceterisParibusOscillations}).
+
+CP profiles are helpful to assess the model stability. In addition, we can enhance the plot by adding residuals to it to allow evaluation of the local model fit. For model \(f()\) and observation \(i\) described by the vector of explanatory variables \(x_i\), the residual is the difference between the observed and predicted value of the dependent variable \(Y_i\). Let us recall the definition \eqref{eq:modelResiduals}:
 
 \[
 r_i = y_i - f(x_i).
 \]
 Note that, for a binary variable, the residual is the difference between the value of 0 or 1, depending on how we code ``success,'' and the value of the predicted probability of ``success.'' This defintion also applies to categorical responses, as it is common to define, in such case, a binary ``success'' indicator and compute the predicted probaiblity of ``success'' for each category separately.
 
-The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot.
+The plot that includes CP profiles for the nearest neighbors and the corresponding residuals is called a local-fidelity plot. See an example in Figure \ref{fig:profileWith10NN}.
 
 \hypertarget{cPLocDiagExample}{%
 \subsection{Example: Titanic}\label{cPLocDiagExample}}
@@ -3857,30 +3880,30 @@ As an example, we will use the predictions for the random forest model for the T
 
 Figure \ref{fig:localFidelityPlots} presents a detailed explanation of the elements of a local-fidelity plot for \emph{age}, a continuous explanatory variable. The plot includes eight nearest neighbors of Henry (see Section \ref{predictions-titanic}). Profiles are quite apart from each other, which indicates potential instability of model predictions. However, the residuals included in the plots are positive and negative, indicating that, on average, the instance prediction should not be biased.
 
-Figure \ref{fig:localFidelityPlots2} presents a local-fidelity plot for the categorical explanatory variable \texttt{class}. Henry and his neighbors traveled in the \texttt{1st} class. In different panels we see how the predicted probabilityof survival changes if the \texttt{1st} class is replaced, for instance, by the \texttt{2nd} (in most cases, they probability will be reduced) or the \texttt{deck\ crew} (in most cases, the probability will increase). Such plots can help to detect interactions, as we see that the same change (let's say, from the \texttt{1st} to the \texttt{3rd} class) results in a different change of the model prediction.
-
 \begin{figure}
 
 {\centering \includegraphics[width=0.7\linewidth]{figure/localFidelityPlots} 
 
 }
 
-\caption{(fig:localFidelityPlots) Elements of a local-fidelity plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.}\label{fig:localFidelityPlots}
+\caption{Elements of a local-stability plot for a continuous explanatory variable. The green line shows the Ceteris-paribus profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative intervals. Stable model will have profiles close to each other; additive model will have parallel lines.}\label{fig:localFidelityPlots}
 \end{figure}
 
-\begin{figure}
+Figure \ref{fig:localFidelityPlots2} presents a local-fidelity plot for the categorical explanatory variable \texttt{class}. Henry and his neighbors traveled in the \texttt{1st} class. In different panels we see how the predicted probabilityof survival changes if the \texttt{1st} class is replaced, for instance, by the \texttt{2nd} (in most cases, they probability will be reduced) or the \texttt{deck\ crew} (in most cases, the probability will increase). Such plots can help to detect interactions, as we see that the same change (let's say, from the \texttt{1st} to the \texttt{3rd} class) results in a different change of the model prediction.
 
-{\centering \includegraphics[width=0.7\linewidth]{figure/cp_fidelity_2} 
+\textbackslash{}begin\{figure\}
 
-}
+\{\centering \includegraphics[width=0.7\linewidth]{figure/cp_fidelity_2}
 
-\caption{(fig:localFidelityPlots2) The local-fidelity plot for the categorical explanatory variable `class` in the random effects model for the Titanic data, Henry, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from  `1st` to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the `1st` to the `2nd` class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to `deck crew` members increases the predicted probability.}\label{fig:localFidelityPlots2}
-\end{figure}
+\}
+
+\textbackslash{}caption\{The local-stability plot for the categorical explanatory variable \texttt{class} in the random effects model for the Titanic data, \texttt{johny\_d}, and his 10 neighbors. Each panel indicates how the model prediction would change if the class changed from \texttt{1st} to another one. Dots indicate original model predictions for the neighbors; the end of the interval corresponds to model prediction after changing the class. The top-lef panel indicates that, for the majority of the neighbors, the change from the \texttt{1st} to the \texttt{2nd} class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the lass to \texttt{deck\ crew} members increases the predicted probability.\}\label{fig:localFidelityPlots2}
+\textbackslash{}end\{figure\}
 
 \hypertarget{cPLocDiagProsCons}{%
 \subsection{Pros and cons}\label{cPLocDiagProsCons}}
 
-Local-fidelity plots may be very helpful to check if
+Local fidelity and stability plots may be very helpful to check if
 
 \begin{itemize}
 \tightlist
@@ -3897,7 +3920,7 @@ The drawback is that such plots are quite complex and lack objective measures of
 \hypertarget{cPLocDiagR}{%
 \subsection{Code snippets for R}\label{cPLocDiagR}}
 
-In this section, we show how to use the R package \texttt{ingredients} \citep{ingredientsRPackage} to construct local-fidelity plots. More details and examples can be found at \texttt{https://modeloriented.github.io/ingredients/}.
+In this section, we show how to use the R package \texttt{DALEX} \citep{DALEX} to construct local-fidelity plots.
 
 We use the random forest model \texttt{titanic\_rf\_v6} developed for the Titanic dataset (see Section \ref{model-titanic-rf} ) as the example. Recall that we try to address a classification problem for a binary dependent variable - we want to predict the probability of survival for a selected passenger.
 
@@ -3906,9 +3929,13 @@ We use the random forest model \texttt{titanic\_rf\_v6} developed for the Titani
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(}\StringTok{"randomForest"}\NormalTok{)}
-\NormalTok{explain_rf_v6 <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/9b971"}\NormalTok{)}
-
 \KeywordTok{library}\NormalTok{(}\StringTok{"DALEX"}\NormalTok{)}
+\NormalTok{explain_rf_v6 <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/9b971"}\NormalTok{)}
+\CommentTok{# recreate object to have predict function}
+\NormalTok{explain_rf_v6 <-}\StringTok{ }\KeywordTok{explain}\NormalTok{(explain_rf_v6}\OperatorTok{$}\NormalTok{model,}
+                         \DataTypeTok{data =}\NormalTok{ explain_rf_v6}\OperatorTok{$}\NormalTok{data,}
+                         \DataTypeTok{y =}\NormalTok{ explain_rf_v6}\OperatorTok{$}\NormalTok{y,}
+                         \DataTypeTok{verbose =} \OtherTok{FALSE}\NormalTok{)}
 \NormalTok{henry <-}\StringTok{ }\NormalTok{archivist}\OperatorTok{::}\KeywordTok{aread}\NormalTok{(}\StringTok{"pbiecek/models/a6538"}\NormalTok{)}
 \NormalTok{henry}
 \end{Highlighting}
@@ -3919,71 +3946,48 @@ We use the random forest model \texttt{titanic\_rf\_v6} developed for the Titani
 ## 1   1st   male  47     0     0   25 Cherbourg
 \end{verbatim}
 
-We will show how to construct Figure \ref{fig:profileWith10NN}. Toward this aim we need some number of passengers most similar to \texttt{henry}. To select the `'neighbors'', we use the \texttt{select\_neighbours()} function from the \texttt{ingredients} package. It returns \texttt{n} observations (by default, 20) most similar to the observation of interest according to the \texttt{distance} measure (by default, the Gower distance is used).
+We will show how to construct fidelity plot as in Figure \ref{fig:profileWith10NN}. Toward this aim we need some number of passengers most similar to \texttt{henry}.
+Here we are using \texttt{residuals\_distribution} function from the \texttt{DALEX} package. First argument is an explainer, second the instance of interest, optional arguments are \texttt{neighbours} (number of neighbours) and \texttt{distance} (by default, the Gower distance is used).
 
-In the example below, we select 10 nearest neighbors to \texttt{henry} find from the \texttt{titanic} dataset. Note that the similarity is based only on two explanatory variables, \emph{gender}, and \emph{class}, as indicated in the argument \texttt{variables}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"ingredients"}\NormalTok{)}
-\NormalTok{henry_neighbors <-}\StringTok{ }\KeywordTok{select_neighbours}\NormalTok{(henry, }
-                         \DataTypeTok{data =}\NormalTok{ titanic, }
-                         \DataTypeTok{n =} \DecValTok{10}\NormalTok{, }
-                         \DataTypeTok{variables =} \KeywordTok{c}\NormalTok{(}\StringTok{"class"}\NormalTok{, }\StringTok{"gender"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-Now we are ready to plot profiles for Henry and his neighbors. First, we have got to calculate the corresponding profiles with \texttt{ceteris\_paribus()} function introduced in Section \ref{CPR}.
+This function needs to calculate residuals, so explainer shall be created with the \texttt{y} argument and also the \texttt{residual\_function} argument.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{cp_henry <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explain_rf_v6, }
-\NormalTok{                            henry,}
-                            \DataTypeTok{variable_splits =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{age =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{80}\NormalTok{,}\FloatTok{0.1}\NormalTok{)))}
-\NormalTok{cp_henry_neighbors <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explain_rf_v6, }
-\NormalTok{                            henry_neighbors,}
-                            \DataTypeTok{variable_splits =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{age =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{80}\NormalTok{,}\FloatTok{0.1}\NormalTok{)))}
+\KeywordTok{residuals_distribution}\NormalTok{(explain_rf_v6,}
+\NormalTok{                          henry,}
+                          \DataTypeTok{neighbours =} \DecValTok{100}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-Subsequently, we can plot the profiles. Note that, in the example below, we do this only for a single variable \texttt{age}.
+\begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/residualDistributionFidelityPlot-1} \end{center}
+
+The function \texttt{residuals\_distribution()} can be also used for a local stability plot as in Figure \ref{fig:localFidelityPlots} and \ref{fig:residualDistributionStabilityPlotClass}. To do this we need to also specify an \texttt{variables} argument.
+
+Toward this aim, we use the \texttt{y} argument in the \texttt{ceteris\_paribus()} function. The argument takes numerical values. Our binary dependent variable \texttt{survived} assumes values \texttt{yes/no}; to convert them to numerical values, we use the \texttt{survived\ ==\ "yes"} expression.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{)}
-
-\KeywordTok{plot}\NormalTok{(cp_henry_neighbors, }\DataTypeTok{color =} \StringTok{'#ceced9'}\NormalTok{) }\OperatorTok{+}
-\CommentTok{#  show_profiles(cp_henry, size = 2)  +}
-\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Ceteris-paribus profiles for Henry and neighbors"}\NormalTok{, }\StringTok{"Calculated for the titanic_rf_v6 model"}\NormalTok{)}
+\KeywordTok{residuals_distribution}\NormalTok{(explain_rf_v6,}
+\NormalTok{                          henry, }
+                       \DataTypeTok{neighbours =} \DecValTok{10}\NormalTok{,}
+                       \DataTypeTok{variables =} \StringTok{"age"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/titanicCeterisParibus05-1} \end{center}
+\begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/residualDistributionStabilityPlot-1} \end{center}
 
-To construct the local-fidelity plot presented in Figure \ref{fig:localFidelityPlots}, we have got to add the information about the observed values of the dependent variable for the selected neighbors. Toward this aim, we use the \texttt{y} argument in the \texttt{ceteris\_paribus()} function. The argument takes numerical values. Our binary dependent variable \texttt{survived} assumes values \texttt{yes/no}; to convert them to numerical values, we use the \texttt{survived\ ==\ "yes"} expression.
+As we see the 10 passangers closest to \texttt{henry} are all from the \texttt{1st} class with age span between 20 and 60. Profiles for both \texttt{age} and \texttt{class} looks stable.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{cp_henry_neighbors <-}\StringTok{ }\KeywordTok{ceteris_paribus}\NormalTok{(explain_rf_v6,}
-\NormalTok{                          henry_neighbors, }
-                          \DataTypeTok{y =}\NormalTok{ henry_neighbors}\OperatorTok{$}\NormalTok{survived }\OperatorTok{==}\StringTok{ "yes"}\NormalTok{,}
-                          \DataTypeTok{variable_splits =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{age =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{80}\NormalTok{,}\FloatTok{0.1}\NormalTok{)))}
+\KeywordTok{residuals_distribution}\NormalTok{(explain_rf_v6,}
+\NormalTok{                          henry, }
+                       \DataTypeTok{neighbours =} \DecValTok{10}\NormalTok{,}
+                       \DataTypeTok{variables =} \StringTok{"class"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-Finally, we add residuals to the plot by using the \texttt{show\_residuals()} function. As a result, we obtain the local-fidelity plot for \texttt{henry}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(cp_henry_neighbors, }\DataTypeTok{color =} \StringTok{'#ceced9'}\NormalTok{) }\OperatorTok{+}
-\CommentTok{#  show_profiles(cp_henry, size = 2) + }
-\StringTok{  }\KeywordTok{show_observations}\NormalTok{(cp_henry, }\DataTypeTok{variables =} \StringTok{"age"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{5}\NormalTok{) }\OperatorTok{+}
-\CommentTok{#  show_residuals(cp_henry_neighbors, variables = "age") +}
-\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{"Local-fidelity plot for Henry"}\NormalTok{, }\StringTok{"Calculated for the titanic_rf_v6 model"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/titanicCeterisParibus07-1} \end{center}
+\begin{center}\includegraphics[width=0.7\linewidth]{ema_files/figure-latex/residualDistributionStabilityPlotClass-1} \end{center}
 
 \hypertarget{summaryInstanceLevel}{%
 \section{Summary of Instance-level Explainers}\label{summaryInstanceLevel}}
@@ -4115,7 +4119,7 @@ The logistic regression and GBM models behave in a similar way. Random forest an
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\linewidth]{ema_files/figure-latex/championChallengerCP-1} 
+{\centering \includegraphics[width=1\linewidth]{ema_files/figure-latex/championChallengerCP-1} 
 
 }
 
@@ -4707,11 +4711,11 @@ Let's calculate feature importance
 ##   -> model label       :  randomForest  (  default  )
 ##   -> data              :  9000  rows  5  cols 
 ##   -> target variable   :  9000  values 
+##   -> model_info        :  package randomForest , ver. 4.6.14 , task regression (  default  ) 
 ##   -> predict function  :  yhat.randomForest  will be used (  default  )
 ##   -> predicted values  :  numerical, min =  1977.609 , mean =  3511.789 , max =  5839.917  
 ##   -> residual function :  difference between y and yhat (  default  )
 ##   -> residuals         :  numerical, min =  -1970.395 , mean =  -0.2658962 , max =  1944.719  
-##   -> model_info        :  package randomForest , ver. 4.6.14 , task regression (  default  ) 
 ##   A new explainer has been created!
 \end{verbatim}
 
@@ -4742,7 +4746,7 @@ On a diagnostic plot is useful to present feature importance as an interval that
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{ema_files/figure-latex/unnamed-chunk-67-1.pdf}
+\includegraphics{ema_files/figure-latex/unnamed-chunk-66-1.pdf}
 
 \hypertarget{more-models}{%
 \subsection{More models}\label{more-models}}
@@ -4787,11 +4791,11 @@ For these models we use \texttt{DALEX} explainers created with \texttt{explain()
 ##   -> model label       :  lm  (  default  )
 ##   -> data              :  9000  rows  5  cols 
 ##   -> target variable   :  9000  values 
+##   -> model_info        :  package stats , ver. 3.6.1 , task regression (  default  ) 
 ##   -> predict function  :  yhat.lm  will be used (  default  )
 ##   -> predicted values  :  numerical, min =  1792.597 , mean =  3506.836 , max =  6241.447  
 ##   -> residual function :  difference between y and yhat (  default  )
 ##   -> residuals         :  numerical, min =  -257.2555 , mean =  4.687686 , max =  472.356  
-##   -> model_info        :  package stats , ver. 3.6.1 , task regression (  default  ) 
 ##   A new explainer has been created!
 \end{verbatim}
 
@@ -4827,11 +4831,11 @@ For these models we use \texttt{DALEX} explainers created with \texttt{explain()
 ##   -> model label       :  randomForest  (  default  )
 ##   -> data              :  9000  rows  5  cols 
 ##   -> target variable   :  9000  values 
+##   -> model_info        :  package randomForest , ver. 4.6.14 , task regression (  default  ) 
 ##   -> predict function  :  yhat.randomForest  will be used (  default  )
 ##   -> predicted values  :  numerical, min =  1977.609 , mean =  3511.789 , max =  5839.917  
 ##   -> residual function :  difference between y and yhat (  default  )
 ##   -> residuals         :  numerical, min =  -1970.395 , mean =  -0.2658962 , max =  1944.719  
-##   -> model_info        :  package randomForest , ver. 4.6.14 , task regression (  default  ) 
 ##   A new explainer has been created!
 \end{verbatim}
 
@@ -4867,11 +4871,11 @@ For these models we use \texttt{DALEX} explainers created with \texttt{explain()
 ##   -> model label       :  svm  (  default  )
 ##   -> data              :  9000  rows  5  cols 
 ##   -> target variable   :  9000  values 
+##   -> model_info        :  package e1071 , ver. 1.7.2 , task regression (  default  ) 
 ##   -> predict function  :  yhat.svm  will be used (  default  )
 ##   -> predicted values  :  numerical, min =  1692.954 , mean =  3493.954 , max =  6256.247  
 ##   -> residual function :  difference between y and yhat (  default  )
 ##   -> residuals         :  numerical, min =  -1553.981 , mean =  17.56927 , max =  2452.467  
-##   -> model_info        :  package e1071 , ver. 1.7.2 , task regression (  default  ) 
 ##   A new explainer has been created!
 \end{verbatim}
 
@@ -4906,7 +4910,7 @@ When we compare other features it looks like in all models the \texttt{district}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{ema_files/figure-latex/unnamed-chunk-70-1.pdf}
+\includegraphics{ema_files/figure-latex/unnamed-chunk-69-1.pdf}
 
 There is interesting difference between linear model and others in the way how important is the \texttt{construction.year}. For linear model this variable is not importance, while for remaining two models there is some importance.
 
