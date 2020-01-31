@@ -242,14 +242,15 @@ Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta
 Results from Table \@ref(tab:titanicBreakDownDeltasConseq) are presented as a waterfall plot in Figure \@ref(fig:BDjohnyExample).
 
 ```{r BDjohnyExample, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Break-down plot for the `titanic_rf_v6` model and `johny_d` for the Titanic data.", out.width = '70%', fig.align='center'}
-library("iBreakDown")
 library("randomForest")
 library("DALEX")
 library("ggplot2")
 load("models/explain_rf_v6.rda")
 load("models/johny_d.rda")
-bd_rf <- break_down(explain_rf_v6,
-                 johny_d)
+bd_rf <- variable_attribution(explain_rf_v6,
+                 new_observation = johny_d,
+                 type = "break_down")
+
 plot(bd_rf) + ggtitle("Break-down plot for `titanic_rf_v6`")
 ```
 
@@ -262,7 +263,7 @@ Break-down plots for non-additive models may be misleading, as they show only th
 
 ## Code snippets for R {#BDR}
 
-In this section, we present key features of the `iBreakDown` R package [@iBreakDownRPackage] which is a part of the  `DrWhy.AI` universe. The  package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
+In this section, we use an `DALEX::variable_attribution()` function which is a wrapper for `iBreakDown` R package [@iBreakDownRPackage]. The  package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
 
 For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `henry` - a 47-year-old passenger that travelled in the 1st class.
 
@@ -287,15 +288,16 @@ henry
 
 ### Basic use of the `break_down()` function
 
-The `iBreakDown::break_down()` function calculates the variable-importance measures for a selected model and the instance of interest. The result of applying the `break_down()` function is a data frame containg the calculated measures. In the simplest call, the function requires only two arguments: the model explainers and the data frame for  the instance of interest. The call below essentailly re-creates the variable-importance values ($\Delta^{j|\{1,\ldots,j\}}$) presented in Table \@ref(tab:titanicBreakDownDeltasConseq).
+The `DALEX::variable_attribution()` function calculates the variable-importance measures for a selected model and the instance of interest. 
+The result of applying the `variable_attribution()` function is a data frame containg the calculated measures. In the simplest call, the function requires only three arguments: the model explainer, the data frame for the instance of interest and the method for calculation of variable attribution, here `break_down`. The call below essentailly re-creates the variable-importance values ($\Delta^{j|\{1,\ldots,j\}}$) presented in Table \@ref(tab:titanicBreakDownDeltasConseq).
 
 ```{r, warning=FALSE, message=FALSE}
-library("iBreakDown")
-bd_rf <- break_down(explain_rf_v6, henry)
-bd_rf
+bd_rf <- variable_attribution(explain_rf_v6,
+                 new_observation = henry,
+                 type = "break_down")
 ```
 
-Applying the generic `plot()` function to the object resulting from the application of the `break_down()` function creates a BD plot. In this case, it is the plot from Figure \@ref(fig:BDhenryExample).
+Applying the generic `plot()` function to the object resulting from the application of the `variable_attribution()` function creates a BD plot. In this case, it is the plot from Figure \@ref(fig:BDhenryExample).
 
 ```{r BDhenryExample, warning=FALSE, message=FALSE,  fig.cap="Generic plot() function for the BreakDown method calculated for `henry`.", out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
 plot(bd_rf) 
@@ -307,7 +309,7 @@ Both explanations refer to the same model `model_rf_v6`. In both cases the `clas
 
 ### Advanced use of the `break_down()` function
 
-The function `break_down()` allows more arguments. The most commonly used are:
+The function `variable_attribution()` allows more arguments. The most commonly used are:
 
 * `x` - a wrapper over a model created with function `DALEX::explain()`, 
 * `new_observation` - an observation to be explained is should be a data frame with structure that matches the training data, 
@@ -319,19 +321,22 @@ In what follows we illustrate the use of the arguments.
 First, we will specify the ordering of the explanatory variables. Toward this end we can use integer indexes or variable names. The latter option is prerferable in most cases because of transparency. Additionally, to reduce clutter in the plot, we set `max_features = 3` argument in the `plot()` function. 
 
 ```{r, warning=FALSE, message=FALSE,  fig.cap="Break Down plot for top three variables.", out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
-library("iBreakDown")
-bd_rf_order <- break_down(explain_rf_v6,
-                 henry,
+bd_rf_order <- variable_attribution(explain_rf_v6,
+                 new_observation = henry,
+                 type = "break_down",
                  order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"))
+
 plot(bd_rf_order, max_features = 3) 
 ```
 
 We can use the`keep_distributions = TRUE` argument to enrich the resulting object with additional information about conditional distributions. Subsequently, we can apply the `plot_distributions = TRUE` argument in the `plot()` function to present the distributions as violin plots. Red dots in the plots indicate the average model predictions.  Thin black lines between violin plots correspond to predictions for individual observations. They can be used to  trace how model predictions change after consecutive conditionings.
 
 ```{r, warning=FALSE, message=FALSE,  fig.cap="Break Down plot with distributions for a defined order of variables.", out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
-bd_rf_distr <- break_down(explain_rf_v6,
-                 henry,
+bd_rf_distr <- variable_attribution(explain_rf_v6,
+                 new_observation = henry,
+                 type = "break_down",
                  order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),
                  keep_distributions = TRUE)
+
 plot(bd_rf_distr, plot_distributions = TRUE) 
 ```

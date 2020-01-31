@@ -155,7 +155,6 @@ $$
 library("DALEX")
 library("randomForest")
 library("ggplot2")
-library("iBreakDown")
 load("models/titanic_rf_v6.rda")
 load("models/titanic.rda")
 explain_titanic_rf <- explain(model = titanic_rf_v6, 
@@ -176,7 +175,11 @@ johny_d <- data.frame(
   fare = 72,
   embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
 )
-shap_johny <- shap(explain_titanic_rf, johny_d, B = 25)
+
+shap_johny <- variable_attribution(explain_titanic_rf,
+                 new_observation = johny_d,
+                 B = 25,
+                 type = "shap")
 ```
 
 ## Example: Titanic data {#SHAPExample}
@@ -222,7 +225,7 @@ An important practical limitation of the method is that, for large models, the c
  
 ## Code snippets for R {#SHAPRcode}
 
-In this section, we present the key features of the `iBreakDown` R package [@iBreakDownRPackage] which is a part of the  `DrWhy.AI` universe. The package covers all methods presented in this chapter. 
+In this section, we use an `DALEX::variable_attribution()` function which is a wrapper for `iBreakDown` R package [@iBreakDownRPackage]. The  package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
 Note that there are also other R packages that offer similar functionality, like `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage], and `iml` [@imlRPackage].
 
 For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `henry` - an 42-year-old passenger that travelled in the 1st class.
@@ -252,12 +255,13 @@ We obtain the model prediction for this instance with the help of the `predict()
 predict(explain_rf_v6, henry)
 ```
 
-With the help of function `shap()` from the `iBreakDown` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object constructs the plot that includes the Shapley values and the corresponding box-plots.
+With the help of function `variable_attribution()` we can re-create Figure \@ref(fig:shappJohny01). The function is applied to the explainer, created with the `explain()` function from the `DALEX` package, and a data frame for the instance of interest. Additionally, in the `B=25` argument we indicate that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. The resulting object is a data frame with variable contributions computed for every ordering. Applying the generic function `plot()` to the object constructs the plot that includes the Shapley values and the corresponding box-plots.
 
 ```{r, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '50%', fig.align='center'}
-library("iBreakDown")
-
-shap_henry <- shap(explain_rf_v6, henry, B = 25)
+shap_henry <- variable_attribution(explain_rf_v6, 
+                                   henry, 
+                                   type = "shap",
+                                   B = 25)
 plot(shap_henry) 
 ```
 
