@@ -74,7 +74,7 @@ There are several issues related to the use of the CP oscillations. For example,
 
 ## Code snippets for R {#CPOscR}
 
-In this section, we present key features of R package `ingredients` which is a part of the `DrWhy.AI` universe and covers all methods presented in this chapter. 
+In this section, we present key features of R package `DALEX` which is a part of the `DrWhy.AI` universe and covers all methods presented in this chapter. 
 
 For illustration purposes we use the random forest model  `titanic_rf_v6` (see Section \@ref(model-HR-rf)). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for a single observation: `henry` - a 47-year-old passenger that travelled in the 1st class.
 
@@ -96,56 +96,50 @@ load("models/explain_rf_v6.rda")
 load("models/henry.rda")
 ```
 
-### Basic use of the `calculate_oscillations` function
+### Basic use of the `variable_attribution` function
 
 To calculate CP oscillations, we have got to calculate CP profiles for the selected observation. We use `henry` as the instance prediction of interest.
 
-CP profiles are calculated by applying the `ceteris_paribus()` function to the wrapper object. 
+CP profiles are calculated by applying the `variable_attribution()` function to the `explainer` object to calculate the oscillations and the estimated value of the variable-importance measure \@ref(eq:VIPCPdef).
 
 ```{r titanicCeterisProfile02C, warning=FALSE, message=FALSE}
 library("ingredients")
 library("ggplot2")
 
-cp_titanic_rf <- ceteris_paribus(explain_rf_v6, henry)
-```
-
-The resulting object can subsequently be processed with the `calculate_oscillations()` function to calculate the oscillations and the estimated value of the variable-importance measure \@ref(eq:VIPCPdef).
-
-```{r titanicCeterisProfile02D, warning=FALSE, message=FALSE}
-oscillations_titanic_rf <- calculate_oscillations(cp_titanic_rf)
+oscillations_titanic_rf <- variable_attribution(explain_rf_v6, henry, type = "oscillations")
 oscillations_titanic_rf
 ```
 
-Note that, by default, `calculate_oscillations()` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$, given in \@ref(eq:VIPCPuni), using all unique values of the explanatory variable as the grid points.
+Note that, by default, `variable_attribution(type = "oscillations")` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$, given in \@ref(eq:VIPCPuni), using all unique values of the explanatory variable as the grid points.
 
-The `calculate_oscillations()` function returns an object of class `ceteris_paribus_oscillations`, which has a form of a data frame, but has also an overloaded `plot()` function. We can use the latter function to plot the local variable-importance measures for the instance of interest. 
+The`variable_attribution(type = "oscillations")` function returns an object of class `ceteris_paribus_oscillations`, which has a form of a data frame, but has also an overloaded `plot()` function. We can use the latter function to plot the local variable-importance measures for the instance of interest. 
 
 ```{r titanicCeterisProfile02E, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '70%', fig.align='center'}
 oscillations_titanic_rf$`_ids_` <- "Henry"
 plot(oscillations_titanic_rf) + ggtitle("Ceteris Paribus Oscillations")
 ```
 
-### Advanced use of the `calculate_oscillations` function
+### Advanced use of the `variable_attribution` function
 
-As mentioned in the previous section, `calculate_oscillations()` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$ using all unique values of the explanatory variable as the grid points. However, other approaches are also possible.
+As mentioned in the previous section, `variable_attribution()` estimates $vip_{CP}^j(x_*)$ by $\widehat{vip}_{CP}^{j,uni}(x_*)$ using all unique values of the explanatory variable as the grid points. However, other approaches are also possible.
 
 One is to use $\widehat{vip}_{CP}^{j,uni}(x_*)$, but assuming an equi-distant grid of values for a continuous explanatory variable. Toward this aim, we have got to explicitly specify a dense uniform grid of values for such a variable. The `variable_splits` argument can be used for this purpose.
 
 ```{r titanicCeterisProfile02F, warning=FALSE, message=FALSE}
-cp_titanic_rf_uniform <- ceteris_paribus(explain_rf_v6, henry, 
+oscillations_uniform <- variable_attribution(explain_rf_v6, henry, 
               variable_splits = list(age = seq(0, 65, 0.1),
                                      fare = seq(0, 200, 0.1),
                                      sibsp = seq(0, 8, 0.1),
                                      parch = seq(0, 8, 0.1),
                                      gender = unique(titanic$gender),
                                      embarked = unique(titanic$embarked),
-                                     class = unique(titanic$class)))
+                                     class = unique(titanic$class)), 
+              type = "oscillations")
 ```
 
 Subsequently, we apply the `calculate_oscillations()` function to compute the oscillations and the variable-importance measures.
 
 ```{r titanicCeterisProfile02G, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '70%', fig.align='center'}
-oscillations_uniform <- calculate_oscillations(cp_titanic_rf_uniform)
 oscillations_uniform$`_ids_` <- "Henry"
 oscillations_uniform
 plot(oscillations_uniform) + ggtitle("Ceteris Paribus Oscillations", "Expectation over uniform distribution")
@@ -156,19 +150,19 @@ Another approach is to calculate the expectation \@ref(eq:VIPCPdef) over the emp
 ```{r titanicCeterisProfile02H, warning=FALSE, message=FALSE}
 titanic <- na.omit(titanic)
 
-cp_titanic_rf_empirical <- ceteris_paribus(explain_rf_v6, henry, 
+oscillations_empirical <- variable_attribution(explain_rf_v6, henry, 
               variable_splits = list(age = titanic$age,
                                      fare = titanic$fare,
                                      sibsp = titanic$sibsp,
                                      parch = titanic$parch,
                                      gender = titanic$gender,
                                      embarked = titanic$embarked,
-                                     class = titanic$class))
+                                     class = titanic$class),
+              type = "oscillations")
 ```
 
 
 ```{r titanicCeterisProfile02I, warning=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width = '70%', fig.align='center'}
-oscillations_empirical <- calculate_oscillations(cp_titanic_rf_empirical)
 oscillations_empirical$`_ids_` <- "Henry"
 oscillations_empirical
 plot(oscillations_empirical) + ggtitle("Ceteris Paribus Oscillations", "Expectation over empirical distribution")

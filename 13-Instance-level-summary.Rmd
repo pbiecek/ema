@@ -97,17 +97,16 @@ library("gbm")
 library("e1071")
 library("rms")
 library("DALEX")
-library("ingredients")
 load("models/models_titanic.rda")
 load("models/explain_rf_v6.rda")
 explain_titanic_rf <- explain_rf_v6
 load("models/johny_d.rda")
 
 set.seed(1313)
-sp_rf_johny <- shap(explain_titanic_rf, johny_d)
-sp_gbm_johny <- shap(explain_titanic_gbm, johny_d)
-sp_svm_johny <- shap(explain_titanic_svm, johny_d)
-sp_lmr_johny <- shap(explain_titanic_lmr, johny_d)
+sp_rf_johny <- variable_attribution(explain_titanic_rf, johny_d, type = "shap")
+sp_gbm_johny <- variable_attribution(explain_titanic_gbm, johny_d, type = "shap")
+sp_svm_johny <- variable_attribution(explain_titanic_svm, johny_d, type = "shap")
+sp_lmr_johny <- variable_attribution(explain_titanic_lmr, johny_d, type = "shap")
 
 library(patchwork)
 scale_y <- scale_y_continuous("", limits = c(-0.16, 0.32))
@@ -115,6 +114,7 @@ scale_y <- scale_y_continuous("", limits = c(-0.16, 0.32))
   (plot(sp_svm_johny) + scale_y | plot(sp_lmr_johny) + scale_y) +
   plot_annotation(title = "Shap values for johny_d", 
                   theme = DALEX::theme_drwhy())
+
 ```
 
 
@@ -126,10 +126,10 @@ Each of these models obviously has a different estimate for the chances of survi
 
 ```{r championChallengerBD, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap="Break Down plots for four different models for the Titanic data.", out.width = '100%', fig.align='center'}
 set.seed(1)
-bd_rf_johny <- break_down(explain_titanic_rf, johny_d, interactions = TRUE)
-bd_gbm_johny <- break_down(explain_titanic_gbm, johny_d, interactions = TRUE)
-bd_svm_johny <- break_down(explain_titanic_svm, johny_d, interactions = TRUE)
-bd_lmr_johny <- break_down(explain_titanic_lmr, johny_d, interactions = TRUE)
+bd_rf_johny <- variable_attribution(explain_titanic_rf, johny_d, type = "break_down_interactions")
+bd_gbm_johny <- variable_attribution(explain_titanic_gbm, johny_d, type = "break_down_interactions")
+bd_svm_johny <- variable_attribution(explain_titanic_svm, johny_d, type = "break_down_interactions")
+bd_lmr_johny <- variable_attribution(explain_titanic_lmr, johny_d, type = "break_down_interactions")
 
 library(patchwork)
 scale_y <- scale_y_continuous("", limits = c(0,1))
@@ -146,15 +146,17 @@ The logistic regression and GBM models behave in a similar way. Random forest an
 ```{r championChallengerCP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap="Ceteris Paribus profiles for four different models for the Titanic data.", out.width = '100%', fig.align='center'}
 splits <- list(age = seq(0,70,0.1), fare = seq(0,100,0.2))
 
-cp_rf_johny <- ceteris_paribus(explain_titanic_rf, johny_d, variable_splits = splits)
-cp_gbm_johny <- ceteris_paribus(explain_titanic_gbm, johny_d, variable_splits = splits)
-cp_svm_johny <- ceteris_paribus(explain_titanic_svm, johny_d, variable_splits = splits)
-cp_lmr_johny <- ceteris_paribus(explain_titanic_lmr, johny_d, variable_splits = splits)
+cp_rf_johny <- individual_profile(explain_titanic_rf, johny_d, 
+                                  variable_splits = splits)
+cp_gbm_johny <- individual_profile(explain_titanic_gbm, johny_d, 
+                                   variable_splits = splits)
+cp_svm_johny <- individual_profile(explain_titanic_svm, johny_d, 
+                                   variable_splits = splits)
+cp_lmr_johny <- individual_profile(explain_titanic_lmr, johny_d, 
+                                   variable_splits = splits)
 
-plot(cp_rf_johny, cp_gbm_johny, cp_svm_johny, cp_lmr_johny, 
+plot(cp_rf_johny, cp_gbm_johny, cp_svm_johny, cp_lmr_johny, variables = c("age", "fare"),
      color = "_label_") +
-  show_observations(cp_rf_johny, cp_gbm_johny, cp_svm_johny, cp_lmr_johny, 
-                    variables = c("age", "fare"), size = 3) +
   guides(col = guide_legend(nrow = 1)) + scale_color_discrete("Model:") +
   ggtitle("Ceteris Paribus profile for johny_d")
 ```
