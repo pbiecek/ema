@@ -65,9 +65,9 @@ library("dplyr")
 
 Consider the random forest model for the Titanic data (see Section \@ref(model-titanic-rf)). Recall that the goal is to predict survival probability of passengers based on their sex, age, cityplace of embarkment, class in which they travelled, fare, and the number of persons they travelled with. 
 
-Figure \@ref(fig:TitanicRFFeatImp) shows the values of $L^{*,-j}$ after permuting, in turn, each of the variables included in the model. [TOMASZ: WHICH LOSS FUNCTION? WHY COUNTRY IS INCLUDED IN THE PLOT?] Additionally, the plot indicates the value of $L$ by the vertical dashed line at the left-hand-side of the plot.
+Figure \@ref(fig:TitanicRFFeatImp) shows the values of $L^{*,-j}$ after permuting, in turn, each of the variables included in the model. Additionally, the plot indicates the value of $L$ by the vertical dashed line at the left-hand-side of the plot.
   
-```{r titanic3, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=2.5, fig.cap="(fig:TitanicRFFeatImp) Variable importance. Each interval presents the difference between the loss function for the original data (vertical dashed line at the left) and for the data with permuted observation for a particular variable."}
+```{r TitanicRFFeatImp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=2.5, fig.cap="Variable importance. Each interval presents the difference between the loss function for the original data (vertical dashed line at the left) and for the data with permuted observation for a particular variable."}
 library("ingredients")
 fi_rf <- feature_importance(explain_titanic_rf, loss_function = loss_one_minus_auc, B = 1) 
 plot(fi_rf[-2,], show_boxplots = FALSE) + 
@@ -77,21 +77,21 @@ plot(fi_rf[-2,], show_boxplots = FALSE) +
 
 The plot in Figure \@ref(fig:TitanicRFFeatImp) suggests that the most important variable in the model is gender. This agrees with the conclusions drawn in the exploratory analysis presented in Section \@ref(exploration-titanic). The next three important variables are class of the travel (first-class patients had a higher chance of survival), age (children had a higher chance of survival), and fare (owners of more expensive tickets had a higher chance of survival).
 
-To take into account the uncertainty related to the use of permutations, we can consider computing the average values of $L^{*,-j}$ over a set of, say, 10 permutations. The plot in Figure \@ref(fig:TitanicRFFeatImp10) presents the average values. [TOMASZ: IT WOULD BE GOOD TO GET THE SAME X-AXIS IN BOTH PLOTS.] The only remarkable difference, as compared to Figure \@ref(fig:TitanicRFFeatImp), is the change in the ordering of the `sibsp` and `parch` variables.
+To take into account the uncertainty related to the use of permutations, we can consider computing the average values of $L^{*,-j}$ over a set of, say, 10 permutations. The plot in Figure \@ref(fig:TitanicRFFeatImp10) presents the average values.  The only remarkable difference, as compared to Figure \@ref(fig:TitanicRFFeatImp), is the change in the ordering of the `sibsp` and `parch` variables.
 
-```{r titanic4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=2.5, fig.cap="(fig:TitanicRFFeatImp10) Average variable importance based on 10 permutations."}
+```{r TitanicRFFeatImp10, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=2.5, fig.cap="Average variable importance based on 10 permutations."}
 fi_rf <- feature_importance(explain_titanic_rf, loss_function = loss_one_minus_auc, B = 10) 
 plot(fi_rf[-2,]) + 
   ggtitle("Permutation-based variable-importance", "For the random forest model for Titanic data") + 
   ylab("Loss function: 1-AUC")
 ```
 
-The plots similar to those presented in Figures Figure \@ref(fig:TitanicRFFeatImp) and Figure \@ref(fig:TitanicRFFeatImp10) are useful for comparisons of variable importance for different models. 
-Figure \@ref(fig:TitanicFeatImp) presents the single-permutation [TOMASZ: CORRECT?] results for the random forest, gradient boosting (see Section \@ref(model-titanic-gbm)), and logistic regression (see Section \@ref(model-titanic-lmr)) models. [TOMASZ: WHAT LOSS FUNCTION?] The best result, in terms of the smalles value of the goodness-of-fit function $L$, are obtained for the random forest model. Note, however, that this model includes more variables than the other two. For instance, variable `fare` variable, which is highly correlated with the travel class, is used neither in the gradient boosting nor in the logistic regression model, but is present in the random forest model. [TOMASZ: BUT, IN CHAPTER 4, ALL MODELS WERE BUILT USING THE SAME SET OF VARIABLES. ARE WE USING DIFFERENT MODELS HERE? THIS IS CONFUSING.]
+The plots similar to those presented in Figures  \@ref(fig:TitanicRFFeatImp) and  \@ref(fig:TitanicRFFeatImp10) are useful for comparisons of variable importance for different models. 
+Figure \@ref(fig:TitanicFeatImp) presents the single-permutation results for the random forest, gradient boosting (see Section \@ref(model-titanic-gbm)), and logistic regression (see Section \@ref(model-titanic-lmr)) models. The best result, in terms of the smalles value of the goodness-of-fit function $L$, are obtained for the random forest model. Note, however, that this model includes more variables than the other two. For instance, variable `fare` variable, which is highly correlated with the travel class, is used neither in the gradient boosting nor in the logistic regression model, but is present in the random forest model. 
 
 The plots in Figure \@ref(fig:TitanicFeatImp) indicate that `gender` is the most important variable in all three models, followed by `class`.  
 
-```{r titanic5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=6, fig.cap="(fig:TitanicFeatImp) Variable importance for the random forest, gradient boosting, and logistic regression models for the Titanic data."}
+```{r TitanicFeatImp, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=6, fig.cap="Variable importance for the random forest, gradient boosting, and logistic regression models for the Titanic data."}
 fi_rf <- feature_importance(explain_titanic_rf)
 fi_gbm <- feature_importance(explain_titanic_gbm)
 fi_glm <- feature_importance(explain_titanic_lmr)
@@ -135,9 +135,8 @@ loss_root_mean_square(
 Let's calculate feature importance
 
 ```{r, warning=FALSE, message=FALSE}
-explainer_rf <- explain(model_rf, 
-            data = apartmentsTest[,2:6], y = apartmentsTest$m2.price,
-                              colorize = FALSE)
+explainer_rf <- explain(model_rf, data = apartmentsTest[,2:6], 
+            y = apartmentsTest$m2.price, verbose = FALSE)
 vip <- variable_importance(explainer_rf, 
             loss_function = loss_root_mean_square)
 vip
@@ -145,13 +144,13 @@ vip
 
 On a diagnostic plot is useful to present feature importance as an interval that start in a loss and ends in a loss of perturbed data.
 
-```{r, warning=FALSE, message=FALSE}
-plot(vip)
+```{r featureImportanceUnoPlot, fig.cap="Permutational variable importance.",  warning=FALSE, message=FALSE, fig.width=8, fig.height=3}
+library("ggplot2")
+plot(vip) +
+  ggtitle("Permutational variable importance", "For Titanic data and MSE loss function")
 ```
 
 ## More models 
-
-[TOMASZ: WE SHOULD ONLY USE MODELS THAT WERE INTRODUCED EARLIER.]
 
 Much more can be read from feature importance plots if we compare models of a different structure.
 Let's train three predictive models trained on `apartments` dataset from the `DALEX` package. Random Forest model [@R-randomForest] (elastic but biased), Support Vector Machines model [@R-e1071] (large variance on boundaries) and Linear Model (stable but not very elastic). 
@@ -177,23 +176,20 @@ model_svm <- svm(m2.price ~ construction.year + surface + floor +
 For these models we use `DALEX` explainers created with `explain()` function. These explainers wrap models, predict functions and validation data.
 
 ```{r, warning=FALSE, message=FALSE}
-explainer_lm <- explain(model_lm, 
-                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price,
-                              colorize = FALSE)
+explainer_lm <- explain(model_lm, data = apartmentsTest[,2:6], 
+                       y = apartmentsTest$m2.price, verbose = FALSE)
 vip_lm <- variable_importance(explainer_lm, 
             loss_function = loss_root_mean_square)
 vip_lm
 
-explainer_rf <- explain(model_rf, 
-                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price,
-                              colorize = FALSE)
+explainer_rf <- explain(model_rf, data = apartmentsTest[,2:6], 
+                       y = apartmentsTest$m2.price, verbose = FALSE)
 vip_rf <- variable_importance(explainer_rf, 
             loss_function = loss_root_mean_square)
 vip_rf
 
-explainer_svm <- explain(model_svm, 
-                       data = apartmentsTest[,2:6], y = apartmentsTest$m2.price,
-                              colorize = FALSE)
+explainer_svm <- explain(model_svm, data = apartmentsTest[,2:6], 
+                       y = apartmentsTest$m2.price, verbose = FALSE)
 vip_svm <- variable_importance(explainer_svm, 
             loss_function = loss_root_mean_square)
 vip_svm
@@ -205,8 +201,10 @@ Intervals start in a different values, thus we can read that loss for SVM model 
 
 When we compare other features it looks like in all models the `district` is the most important feature followed by `surface` and `floor`. 
 
-```{r, warning=FALSE, message=FALSE}
-plot(vip_rf, vip_svm, vip_lm)
+```{r featureImportanceTriPlot, fig.cap="Permutational variable importance.",  warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+library("ggplot2")
+plot(vip_rf, vip_svm, vip_lm) +
+  ggtitle("Permutational variable importance", "For Titanic data and MSE loss function")
 ```
 
 There is interesting difference between linear model and others in the way how important is the `construction.year`. For linear model this variable is not importance, while for remaining two models there is some importance.
