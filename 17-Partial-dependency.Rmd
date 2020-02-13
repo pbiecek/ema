@@ -25,21 +25,18 @@ Left panel in the figure \@ref(fig:pdpIntuition) shows ceteris paribus profiles 
 
 
 ```{r pdpIntuition, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5,  fig.cap="Left panel: Ceteris Paribus profiles for selected 25 observations. Blue points stand for selected observations while cyan lines stand for ceteris paribus profiles. Right panel: Grey lines stand for Ceteris paribus profiles  as presented in left panel, blue line stands for its average - Partial dependency profile", fig.align='center', out.width='100%'}
-library("ingredients")
-selected_passangers <- select_sample(titanic, n = 25)
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age",
+library("DALEX")
+selected_passangers <- titanic[sample(1:nrow(titanic), 25),]
+cp_rf <- individual_profile(explain_titanic_rf, selected_passangers, variables = "age",
                          variable_splits = list(age = seq(0, 70, 0.1)))
-
-pdp_rf <- partial_dependency(explain_titanic_rf, variables = "age")
-
-pl1 <- plot(cp_rf) +
-  show_observations(cp_rf, variables = "age") + 
-  scale_y_continuous(breaks = seq(0, 1, 0.1)) +
+pl1 <- plot(cp_rf, variables = "age") +  
+  scale_y_continuous(limits=c(0,1)) +
   ggtitle("Ceteris Paribus profiles") 
 
-pl2 <- plot(cp_rf, color = "grey") +
-  show_aggregated_profiles(pdp_rf, size = 3) +
-  scale_y_continuous(breaks = seq(0, 1, 0.1)) +
+
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+pl2 <- plot(pdp_rf, geom = "aggregates_profiles") +
+  scale_y_continuous(limits=c(0,1)) +
   ggtitle("Partial Dependency profile") 
 
 library("gridExtra")
@@ -100,14 +97,12 @@ For clustering one may use standard algorithm like k-means or hierarchical clust
 So for a single model and a single variable we get $k$ profiles average withing clusters. 
 See an example in Figure \@ref(fig:pdpPart4) created for random forest model. It is easier to notice that ceteris paribus profiles can be grouped in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.
 
-```{r pdpPart4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="(fig:pdpPart4) Grey lines stand for ceteris paribus profiles for 100 sample observations. These profiles were clusterd into 3 groups and blue, green and red lines show corresponding averages", fig.align='center', out.width='75%'}
-library("ingredients")
-selected_passangers <- select_sample(titanic, n = 100)
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
-clust_rf <- cluster_profiles(cp_rf, k = 3)
-
-plot(cp_rf, color = "grey") +
-  show_aggregated_profiles(clust_rf, size = 2, color = "_label_") +
+```{r pdpPart4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Grey lines stand for ceteris paribus profiles for 100 sample observations. These profiles were clusterd into 3 groups and blue, green and red lines show corresponding averages", fig.align='center', out.width='75%'}
+library("DALEX")
+pdp_rf <- variable_profile(explain_titanic_rf, 
+                           variables = "age",
+                           k = 3)
+plot(pdp_rf, geom = "aggregates_profiles") +
   ggtitle("Three clusters for 100 CP profiles") 
 ```
 
@@ -122,13 +117,12 @@ See an example in Figure \@ref(fig:pdpPart5). PD profiles are calculated separat
 
 
 ```{r pdpPart5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Grouped profiles with respect to the gender variable", fig.align='center', out.width='75%'}
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers)
-pdp_gender_rf <- aggregate_profiles(cp_rf, variables = "age",
-				groups = "gender")
+pdp_rf <- variable_profile(explain_titanic_rf, 
+                           variables = "age",
+                           groups = "gender")
+plot(pdp_rf, geom = "aggregates_profiles") +
+  ggtitle("Groups of Ceteris Paribus Profiles defined by the variable Sex")
 
-plot(cp_rf, color = "grey", variables = "age") +
-  show_aggregated_profiles(pdp_gender_rf, color = "_label_", size = 2) +
-  ggtitle("Groups of Ceteris Paribus Profiles defined by the variable Sex") 
 ```
 
 
@@ -150,13 +144,10 @@ See an example in Figure \@ref(fig:pdpPart7). Random forest model is compared wi
 #cp_gbm <- partial_dependency(explain_titanic_gbm, selected_passangers)
 #pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")
 
-cp_glm <- ceteris_paribus(explain_titanic_lmr, selected_passangers)
-pdp_glm <- aggregate_profiles(cp_glm, variables = "age")
+pdp_glm <- variable_profile(explain_titanic_lmr, variables = "age")
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
 
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers)
-pdp_rf <- aggregate_profiles(cp_rf, variables = "age")
-
-plot(pdp_rf, pdp_glm, variables = "age", color = "_label_", size = 2) +
+plot(pdp_rf$agr_profiles, pdp_glm$agr_profiles) +
   ggtitle("Partial Dependency Profiles", "For random forest and logistic regression model") 
 ```
 
@@ -173,18 +164,13 @@ It is interesting to see that relation between `surface` and the target variable
 
 
 ```{r pdpApartment1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Ceteris Paribus profiles for 25 sample apartments and the partial dependency profile for the random forest model", fig.align='center', out.width='75%'}
-library("ingredients")
-selected_apartments <- select_sample(apartments, n = 25)
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments,
                                  verbose = FALSE)
 
-cp_rf <- ceteris_paribus(explain_apartments_rf, selected_apartments, variables = c("construction.year", "surface"))
-pd_rf <- partial_dependency(explain_apartments_rf, variables = c("construction.year", "surface"))
+pd_rf <- variable_profile(explain_apartments_rf, variables = c("construction.year", "surface"))
 
-plot(cp_rf) + 
-  show_observations(cp_rf, variables = c("construction.year", "surface")) +
-  show_aggregated_profiles(pd_rf, variables = c("construction.year", "surface"), size = 4) +
+plot(pd_rf, variables = c("construction.year", "surface"), geom = "aggregates_profiles") + 
   ggtitle("Surface and construction year", "How they affect the expected price per square meter") 
 ```
 
@@ -196,10 +182,12 @@ Averages in clusters differ slightly in the size of oscillations, but all three 
 
 
 ```{r pdpApartment1clustered, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="(fig:pdpApartment1clustered) Grey lines stand for ceteris paribus profiles for 25 sample observations. These profiles were clusterd into 3 groups and blue, green and red lines show corresponding averages", fig.align='center', out.width='75%'}
-clust_rf <- cluster_profiles(cp_rf, k = 3)
+pd_rf <- variable_profile(explain_apartments_rf, 
+                          variables = c("construction.year", "surface"),
+                          k = 3)
 
-plot(cp_rf, color = "grey") +
-  show_aggregated_profiles(clust_rf, size = 2, color = "_label_") +
+plot(pd_rf, variables = c("construction.year", "surface"), 
+     geom = "aggregates_profiles")  +
   ggtitle("Three clusters for 100 CP profiles") 
 ```
 
@@ -213,12 +201,13 @@ Figure \@ref(fig:pdpApartment2) shows PD profiles calculated independently for e
 
 
 ```{r pdpApartment2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap="Partial dependency profiles calculated for separate districts.", fig.align='center', out.width='75%'}
-selected_apartments <- select_sample(apartments, n = 100)
-cp_rf <- ceteris_paribus(explain_apartments_rf, selected_apartments, variables = c("construction.year", "surface"))
-pdp_rf <- aggregate_profiles(cp_rf, variables = c("construction.year", "surface"),
-				groups = "district")
-plot(pdp_rf) +
-  ggtitle("Grouped Partial Dependency profile", "Dataset apartments, model apartments_rf_v5") 
+pd_rf <- variable_profile(explain_apartments_rf, 
+                          variables = c("construction.year", "surface"),
+                          groups = "district")
+
+plot(pd_rf, variables = c("construction.year", "surface"), 
+     geom = "aggregates_profiles") +
+  ggtitle("Grouped Partial Dependency profile", "Dataset apartments, model apartments_rf_v5")
 ```
 
 ### Contrastive Partial Dependency profiles
@@ -239,11 +228,14 @@ explain_apartments_lm <- explain(model_apartments_lm,
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments, verbose = FALSE)
 
-pdp_lm <- partial_dependency(explain_apartments_lm, variables = c("construction.year", "surface"))
-pdp_rf <- partial_dependency(explain_apartments_rf, variables = c("construction.year", "surface"))
+pdp_lm <- variable_profile(explain_apartments_lm, 
+                          variables = c("construction.year", "surface"))
+pdp_rf <- variable_profile(explain_apartments_rf, 
+                          variables = c("construction.year", "surface"))
 
-plot(pdp_rf, pdp_lm)+
+plot(pdp_rf$agr_profiles, pdp_lm$agr_profiles) +
   ggtitle("Contrastive Partial Dependency profile","Comparison of random forest model against logistic regression model on apartments data")
+
 ```
 
 
@@ -267,15 +259,15 @@ Yet there are also some disadvantages. They are mostly inherited from ceteris pa
 ## Code snippets for R {#PDPR}
 
 
-Here we show partial dependency profiles calculated with `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `pdp` package [@pdpRPackage], `ALEPlots` package [@ALEPlotRPackage] or `iml` [@imlRPackage] package.
+Here we show partial dependency profiles calculated with `DALEX` package which wrap functions from  `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `pdp` package [@pdpRPackage], `ALEPlots` package [@ALEPlotRPackage] or `iml` [@imlRPackage] package.
 
-The easiest way to calculate PD profiles is to use the function `ingredients::partial_dependency`.
+The easiest way to calculate PD profiles is to use the function `DALEX::variable_profile`.
 The only required argument is the explainer and by default PD profiles are calculated for all variables. 
 
 Below we use `variables` argument to limit list of variables for which PD profiles are calculated. Here we need profiles only for the `age` variable.
 
 ```{r pdpExample1, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial Dependency profile for age.", fig.align='center', out.width='80%'}
-pdp_rf <- partial_dependency(explain_titanic_rf, variables = "age")
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
 plot(pdp_rf) +
   ggtitle("Partial Dependency profile for age") 
 ```
@@ -283,11 +275,8 @@ plot(pdp_rf) +
 PD profiles can be plotted on top of standard CP profiles. This is a very useful feature if we want to know how crude is the averaging and how similar are individual profiles to the average.
 
 ```{r pdpExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Ceteris Paribus and Partial Dependency profiles for age.", fig.align='center', out.width='80%'}
-selected_passangers <- select_sample(titanic, n = 25)
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
-
-plot(cp_rf, variables = "age") +
-  show_aggregated_profiles(pdp_rf, variables = "age", size = 3) +
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+plot(pdp_rf, geom = "aggregates_profiles") +
   ggtitle("Ceteris Paribus and Partial Dependency profiles for age") 
 ```
 
@@ -300,13 +289,8 @@ Then we can use the `cluster_profiles` function, which performs k-means clusteri
 The clustered profiles can be the plotted with the `plot` function.
 
 ```{r pdpExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Clustered Partial Dependency profiles.", fig.align='center', out.width='80%'}
-selected_passangers <- select_sample(titanic, n = 100)
-cp_rf <- ceteris_paribus(explain_titanic_rf, selected_passangers, variables = "age")
-
-clust_rf <- cluster_profiles(cp_rf, k = 3, center = TRUE)
-
-plot(cp_rf, color = "grey") +
-  show_aggregated_profiles(clust_rf, size = 2, color = "_label_") +
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age", k = 3)
+plot(pdp_rf, geom = "aggregates_profiles") +
   ggtitle("Clustered Partial Dependency profiles.") 
 ```
 
@@ -318,13 +302,9 @@ The `partial_dependency` has argument `groups`. It is enough to set this argumen
 In the example below we plot groups separately for each gender.
 
 ```{r pdpExample4, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Grouped Partial Dependency profiles.", fig.align='center', out.width='80%'}
-pdp_sex_rf <- partial_dependency(cp_rf, variables = "age",
-				groups = "gender")
-
-plot(cp_rf, variables = "age") +
-  show_aggregated_profiles(pdp_sex_rf, variables = "age", size = 3) +
-  ggtitle("Grouped Partial Dependency profiles") 
-
+pdp_sex_rf <- variable_profile(explain_titanic_rf, variables = "age", groups = "gender")
+plot(pdp_sex_rf, geom = "aggregates_profiles") +
+  ggtitle("Clustered Partial Dependency profiles.") 
 ```
 
 ### Contrastive Partial Dependency profiles
@@ -334,10 +314,10 @@ As in previous functions, in order to overlay explanations for two or model mode
 In the example below we create PD profiles for `explain_titanic_rf` and `explain_titanic_lmr` models and then they are plotted together in a single plot.
 
 ```{r pdpExample5, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Contrastive Partial Dependency profiles.", fig.align='center', out.width='80%'}
-pdp_rf <- partial_dependency(explain_titanic_rf, variables = "age")
-pdp_lmr <- partial_dependency(explain_titanic_lmr, variables = "age")
+pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+pdp_lmr <- variable_profile(explain_titanic_lmr, variables = "age")
 
-plot(pdp_rf, pdp_lmr) +
+plot(pdp_rf$agr_profiles, pdp_lmr$agr_profiles) +
   ggtitle("Contrastive Partial Dependency profiles") 
 
 ```
