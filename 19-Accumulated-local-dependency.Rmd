@@ -212,21 +212,21 @@ Number of rooms and surface are two correlated variables, moreover both have som
 
 
 ```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Partial Dependency, Conditional Dependency and Accumulated Local profiles for the random forest model and apartments data.", fig.align='center', out.width='75%'}
-library("ingredients")
+library("DALEX")
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments,
                                  verbose = FALSE)
 
-pd_rf <- partial_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
-ac_rf <- accumulated_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
-cd_rf <- conditional_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
+pd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "partial")
+ac_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "accumulated")
+cd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "conditional")
 
-pd_rf$`_label_` <- "RF partial dependency"
-ac_rf$`_label_` <- "RF accumulated dependency"
-ac_rf$`_yhat_`  <- ac_rf$`_yhat_` + max(pd_rf$`_yhat_`)
-cd_rf$`_label_` <- "RF conditional dependency"
+pd_rf$agr_profiles$`_label_` <- "RF partial dependency"
+ac_rf$agr_profiles$`_label_` <- "RF accumulated dependency"
+cd_rf$agr_profiles$`_label_` <- "RF conditional dependency"
 
-plot(pd_rf, ac_rf, cd_rf) + ylab("feature effect") +
+plot(pd_rf$agr_profiles, ac_rf$agr_profiles, cd_rf$agr_profiles) + 
+  ylab("feature effect") +
   ggtitle("Surface and construction year", "How they affect the expected price per square meter") 
 ```
 
@@ -252,12 +252,13 @@ Methods presented in this chapter are useful for extraction information of featu
 
 ## Code snippets for R {#ALPR}
 
-Here we show partial dependency profiles calculated with `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `ALEPlots` package [@ALEPlotRPackage].
+Here we show partial dependency profiles calculated with `DALEX` package that wraps functions from the  `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `ALEPlots` package [@ALEPlotRPackage].
 
+All profile functions can be calculated with the function `DALEX::variable_profile` with specified parameter `type`.
 
-Partial dependency profiles can be calculated with the function `ingredients::partial_dependency`.
-Conditional dependency profiles can be calculated with the function `ingredients::conditional_dependency`.
-Accumulated local profiles can be calculated with the function `ingredients::accumulated_dependency`.
+Partial dependency profiles can be calculated with `type = "partial"`.
+Conditional dependency profiles can be calculated with `type = "conditional"`.
+Accumulated local profiles can be calculated with `type = "accumulated"`.
 
 In all these cases the only required argument is the explainer and by default profiles are calculated for all variables. 
 
@@ -269,24 +270,25 @@ explain_apartments_rf <- explain(model_apartments_rf,
                                  data = apartments,
                                  verbose = FALSE)
 
-pd_rf <- partial_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
-
+pd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"))
 plot(pd_rf) + ylab("Partial dependency") +
   ggtitle("Surface and number of rooms", "Partial dependency for random forest model") 
 ```
 
 ```{r aleExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Accumulated dependency profile for surface and number of rooms", fig.align='center', out.width='80%'}
-ac_rf <- accumulated_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
-
+ac_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"),
+                          type = "accumulated")
 plot(ac_rf) + ylab("Accumulated dependency") +
   ggtitle("Surface and number of rooms", "Accumulated dependency for random forest model") 
+
 ```
 
 ```{r aleExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Conditional dependency profile for surface and number of rooms", fig.align='center', out.width='80%'}
-pd_rf <- conditional_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
-
-plot(pd_rf) + ylab("Conditional dependency") +
+cd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"),
+                          type = "conditional")
+plot(cd_rf) + ylab("Conditional dependency") +
   ggtitle("Surface and number of rooms", "Conditional dependency for random forest model") 
+
 ```
 
 
