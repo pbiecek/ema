@@ -1,33 +1,215 @@
-# Residual Diagnostic {#residualDiagnostic}
+# Residual Diagnostics {#residualDiagnostic}
 
-## Introduction
+## Introduction {#IntroResidualDiagnostic}
 
-In this chapter, we present methods that are useful for the  detailed examination of model residuals. These methods may be used for several purposes.
+In this chapter, we present methods that are useful for detailed examination of both overall and instance-specific model performance. In particular, we focus on graphical methods that use residuals. The methods may be used for several purposes:
 
-* Identification of hard cases; in the Section \@ref(modelPerformance) we discussed measures to globally summarize the model performance, but sometimes we are more interested in cases with the largest mispredictions;
-* Identification of structural problems in a model; for most models we assume that residuals are random. If we find any structure then maybe there is some problem with a model. 
-* Identification of cases for details local-level examination. In the first part of this book we discussed tools for examination of single predictions. For debugging purposes it make sense to first identify largest errors and then use local-methods to understand which factors contributes most to these errors.
+* In the first part of the book, we discussed tools for single-instance examination. Residuals can be used to identify potentially problematic instances. The single-instance explainers can then be used in the problematic cases to understand, for instance, which factors contribute most to the errors in prediction.
 
-## Intuition
+* For most models, residuals should express a random behavior with certain properties (like, e.g., being concentrated around 0). If we find any systematic deviations from the expected behavior, they may signal an issue with a model (like, e.g., an omitted explanatory variable or wrong functional form of a varaible included in the model). 
 
-As it was defined in Section \@ref(modelPerformance), the residual $r_i$ is the difference between model prediction and the true value of target variable
+* In Chapter \@ref(modelPerformance) we discussed measures to evaluate the overall performance of a predictive model. Sometimes, however, we may be more interested in cases with the largest errors of prediction, which can be identified with the help of residuals.
 
-$$
+Residual diagnostics is a classical topic related to statistical modeling. Literature on the topic is vast -- essentially every book on statistical modeling includes some discussion about residuals. Thus, in this chapter, we are not aiming at being exhaustive. Rather, our goal is to present selected concepts that underlie the use of residuals. 
+
+## Intuition {#IntuitionResidualDiagnostic}
+
+As we mentioned in Section \@ref(), we primarily focus on models describing the expected value of the dependent as a function of explanatory variables. In such case, for a perfect predictive model, the predicted value of the dependent variable should be exactly equal to the actual value of the variable for every observation. Perfect prediction is rarely, if ever, expected. In practice, we want the predictions to be reasonably close to the actual values. This suggests that we can use the difference between the predicted and the actual value of the dependent variable to quantify the quality of predictions obtained from a model. The difference is called a residual.
+
+For a single observation, residual will almost always be different from zero. While a large (absolute) value of a residual may indicate a problem with a prediction for a particular observation, it does not mean that the quality of predictions obtained from a model is unsatisfactory in general. To evaluate the quality, we should investigate the ``behavior'' of  residuals for a group of observations. In other words, we should look at the distribution of the values of residuals. 
+
+For a ''good'' model, residuals should deviate from zero randomly, i.e., not systematically. Thus, their distribution should be symmetric around zero, implying that their mean (or median) value should be zero. Also, residuals should be close to zero themselves, i.e., they should show low variability. 
+
+Usually, to verify these properties, graphical methods are used. For instance, a histogram of can be used to check the symmetry and location of the dsitribution of the residuals. For linear regression models, a plot of residuals against a contonous covariate can be checked for absence of any patterns that would suggest any systematic error in the predictions obtained for a specific range of the values of the covariate.
+
+Note that a model may imply a concrete distribution for residuals. For instance, in the case of the classical linear regression model, residuals should be normally distributed with mean zero and a constant variance. In such a case, a the distributional assumption can be verified by using a suitable graphical method like, for instance, a quantile-quantile plot. If the assumption is found to be violated, one might want to be careful regarding to predictions obtained from the model.
+
+[TOMASZ: SHOW A PLOT OF RESIDUALS ILLUSTRATING POTENTIAL PROBLEMS?]
+
+## Method {#MethodResidualDiagnostic}
+
+As it was already mentioned in Chapter \@ref(modelDevelopmentProcess), for a continuous dependent variable (or a count), residual $r_i$ for the $i$-th oservation in a dataset is the difference between the model prediction and the corresponding value of the variable:
+
+\begin{equation}
 r_i = y_i - f(x_i).
+(\#eq:resid)
+\end{equation}
+
+A histogram of the estimated residuals can be used to check the symmetry and location of their dsitribution. An index plot of residuals, i.e., the plot of residuals against the corresponding observation number, may be used to identify observations with large residuals.
+
+Note that residuals $r_i$ are defined on the same scale as the dependent variable $Y_i$. Hence, variability $r_i$ corresponds to the variability of $Y$. As a result, it may be difficult to judge which values of $r_i$ are large. Therefore, often *standardized residuals* are considered, defined as
+
+\begin{equation}
+\tilde{r}_i = \frac{r_i}{\mbox{Var}(Y_i)},
+(\#eq:standresid)
+\end{equation}
+
+where $\mbox{Var}(Y_i)$ is the variance of the dependent variable $Y_i$. In many cases, if the model is correct, the distribution of $\tilde{r}_i$ should be approximately standard normal. Thus, values outside, for instance, the $[-2,2]$ interval would be considered as too extreme. 
+
+Of course, in practice, the variance of $Y_i$ is usually unknown. Hence, in \@ref(eq:standresid), the estimated value of the variance is used. Residuals defined in this way are often called the *Pearson residuals*.
+
+Consider, for example, the classical linear-regression model. According to the model, for the $i$-th observation, the dependent variable $Y_i$ should follow a normal distribution with mean $f(x_i)$ and variance $\sigma^2$. Thus, the standardized residual $\tilde{r}_i = r_i/\sigma$. If the model is correct, $\tilde{r}_i$ should have a standard-normal distirbution. The Pearson residual is defined as $r_i/\widehat{\sigma}$, where $\widehat{\sigma}$ is the estimated value of $\sigma$, and has, approximately, also a standard-normal distribution. 
+
+Definition \@ref(eq:standresid) can also be applied to a binary dependent variable if the model prediction $f(x_i)$ is the probability observing $y_i$ and upon coding the two possible values of the variable as 0 and 1. However, in this case, the range of possible values of $r_i$ is restricted to $(-1,1)$, which limits the usefulness of the residuals. For this reason, more often the Pearson residuals are used. Note that, if the values of the explanatory-variable vectors $x_i$ lead to different predicted values $f(x_i)$ for different observations in a  dataset, the distribution of the Pearson residuals will not be approximated by the standard normal one. Nevertheless, the index plot may still be useful to detect observations with large residuals. The standard-normal approximation is more likely to apply in the situation when vectors $x_i$ split data into (a few, perhaps) groups sharing the same predicted value $f(x_i)$. In that case, one one can consider averaging residuals $r_i$ per group and standardizing them by $\sqrt{f(x_i)\{1-f(x_i)/k\}}$, where $k$ is the number of observations in a particular group. 
+
+For categorical data, residuals can only be defined in terms of residuals of the binary variables indicating the category observed for the $i$-th observation.
+
+[TOMASZ: NOT SURE IF THE BELOW IS WORTH INCLUDING. WE DO NOT SEEM TO LOOK AT QQ PLOTS. PERHAPS WE SHOULD?]
+
+For models implying concrete distributional assumptions one can define a generalization of residuals called *pseudo-residuals* [Zucchini, MacDonald, Langrock "Hidden Markov Models for Time Series. An Introduction Using R. (
+Second Edition)]. Assume that, according to the model, the dependent variable for the $i$-th observation should have a distribution with the cumulative distribution function $F_i(y)$, i.e., $P(Y_i \leq y) = F_i(y)$. In that case, the *uniform pseudo-residual* is defined as follows:
+
+$$
+u_i=F_i(y_i).
 $$
 
-For the perfect model we will expect that all residuals are equal to zero, but perfect models do not exists. 
-For good models we assume that residuals are small, random and symmetric. In fact residuals may violate these assumptions in many different ways. So we need tools for exploration of residuals.
+If the model correctly describes the distribution of the dependent variable, then the pseudo-residual, obtained by transforming the variable by its cumulative distribution function, should have a uniform distribution on the interval $[0,1]$. A histogram of the estimated residals could be used to check the uniform-distribution assumption.
 
+Note that a value of $u_i$ close to 0 or 1 indicates that $y_i$ is located in one of the tails of the model-predicted distribution, i.e., it is unlikely from the point of view of the distribution. Excess of such values would indicate a systematic falure of the model to provide good predictions.  
 
-## Code snippets for R
+However, uniform pseudo-residuals are not very useful for detection of observations for which model fails to yield good predictions. This is because it is difficult to discriminate between values very close to 0 or 1, like 0.975 and 0.999. For this reason, often, *normal pseudo-residuals* are used. They are defined as follows:
+
+$$
+\tilde{u}_i=\Phi^{-1}(u_i),
+$$
+
+where $\Phi()$ denotes the cumulative distribution function of the standard normal distribution. If the model is correct, normal pseudo-residuals should have the standard-normal distribution. A quantile-quantile plot of the estimated residuals could be used to check the normal-distribution assumption. Note that, for $u_i=0.975$ and 0.999, we get clearly distinguishable values of $\tilde{u}_i=1.96$ and 3.09, respectively. 
+
+It is worth noting that the normal pseudo-residual measures, in general, the deviation of the observed value of the dependent variable from the model-predicted median of the corresponding distribution. This is because 
+
+\begin{equation}
+\tilde{u}_i=0 \rightarrow \Phi^{-1}(u_i)=0  \rightarrow u_i=\Phi(0)=\frac{1}{2} \rightarrow F_i(y_i)=\frac{1}{2}.
+(\#eq:pseudomedian)
+\end{equation}
+
+The last equality in \@ref(eq:pseudomedian) implies that $y_i$ is equal to the median of the corresponding distribution of the dependent variable. 
+
+Consider, for example, the classical linear-regression model. In this case, $F_i$ is the cumulative distribution function of a normal distribution with mean $f(x_i)$ and variance $\sigma^2$. It follows that the uniform pseudo-residual is equal to
+
+$$
+u_i=F_i(y_i)=\Phi\left\{\frac{y_i-f(x_i)}{\sigma}\right\}=\Phi\left(\frac{r_i}{\sigma}\right)=\Phi\left(\tilde{r_i}\right).
+$$
+
+If the model correctly captures the distribution of the dependent variable, the standardized residual $\tilde{r}_i$ should follow a standard-normal distribution. Consequently, $u_i$, obtained by transforming $\tilde{r}_i$ by its cumulative distribution function $\Phi()$, should follow a uniform distribution, as required for the uniform pseudo-residual.
+
+On the other hand, the normal pseudo-residual for the linear-regression model is given by
+
+$$
+\tilde{u}_i=\Phi^{-1}\{F_i(y_i)\}=\Phi^{-1}\left\{\Phi\left(\frac{r_i}{\sigma}\right)\right\}=\tilde{r_i}.
+$$
+Thus, in this case, the normal pseudo-residual is simply the standardized residual. Consequently, $\tilde{u}_i$ should follow a standard-normal distribution, as required for the normal pseudo-residual. Moreover, $\tilde{u}_i$ measures the devation of the observed value of the dependent variable from the model-predicted mean (equal to the median) of the corresponding (normal) distribution.
+
+For a discrete dependent variable, e.g., a count, one can define the *uniform pseudo-residual segments* as follows:
+
+$$
+[u^-_i,u^+_i]=[F_i(y^-_i),F_i(y_i)],
+$$
+
+where $y^-_i$ is the largest possible value of the dependent variable smaller than $y_i$. Essentially, the length of the interval $[u^-_i,u^+_i]$ is equal to $P(Y_i=y_i)$, the probability of observing $y_i$. Thus, the uniform pseudo-residual segment provides an information on how rare the observed value of the dependent variable is given the corresponding distribution predicted by the model.   
+
+The *normal pseudo-residual segment* is defined as 
+
+$$
+[\tilde{u}^-_i,\tilde{u}^+_i]=[\Phi^{-1}\{ F_i(y^-_i)\},\Phi^{-1}\{F_i(y_i)\}].
+$$
+
+Essentially, the limits of the interval $[\tilde{u}^-_i,\tilde{u}^+_i]$ are the quantiles of the standard-normal distribution corresponding to $P(Y_i\leq y^-_i)$ and $P(Y_i\leq y_i)$, respectively, so that 
+
+$$
+\Phi(\tilde{u}_i)-\Phi(\tilde{u}^-_i)=P(Y_i\leq y_i)-P(Y_i\leq y^-_i)=P(Y_i= y_i).
+$$
+
+Furthermore, one can define *normal mid-pseudo-residual* as follows:
+
+$$
+\bar{\tilde{u}}_i=\Phi^{-1}\left(\frac{\tilde{u}^-_i+\tilde{u}^+_i}{2}\right).
+$$
+
+The normality of estimated mid-pseudo-residuals can be checked by constructing a histogram or a normal quantile-quantile plot.
+
+## Example: Apartments data {#ExampleResidualDiagnostic}
+
+In this section, we use the linear-regression model `apartments_lm_v5` (Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf_v5` (Section \@ref(model-Apartments-rf)) for the apartment-prices data (Section \@ref(ApartmentDataset)). Recall that the dependent variable of interest, the price per squared-meter, is continuous. Thus, we can use residuals $r_i$, as defined in \@ref(\#eq:resid). It is worth noting that, as it was mentioned in Section \@ref(modelPerformanceApartments), RMSE for both models is very similar. Thus, overall, the two models could be seen as performing similarly.
+
+```{r modelResidualsArchivistRead0, warnings=FALSE, echo=FALSE, message=FALSE}
+library("DALEX")
+library("auditor")
+library("randomForest")
+
+explainer_apartments_lr <- archivist:: aread("pbiecek/models/f49ea")
+explainer_apartments_rf <- archivist:: aread("pbiecek/models/569b0")
+
+mr_lr <- model_residual(explainer_apartments_lr)
+mr_rf <- model_residual(explainer_apartments_rf)
+```
+
+Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) summarize the distribution of residuals for both models. In particular, Figure \@ref(fig:plotResidualDensity1) presents smoothed estimates of the density of the distribution, while Figure \@ref(fig:plotResidualBoxplot1) shows box-and-whisker plots for the absolute value of the residuals. 
+
+Despite the similar value of RMSE, the distribution of residuals for both models is different. In particular, Figure \@ref(fig:plotResidualDensity1) indicates that the distribution for the linear-regression model is, in fact, split into two separate, normal-like parts, which may suggest ommission of a binary explanatory variable in the model. The two components are located around the values of about -200 and 400. As mentioned in the previous chapters, the reason for this behavior of the residuals is the fact that the model does not capture the non-linear relationship between the price and the year of construction. 
+
+As seen from Figure \@ref(fig:plotResidualDensity1), the distribution for the random-forest model is skewed to the right and multimodal. It seems to be centered at a value closer to zero than the  distribution for the linear-regression model, but it shows a larger variation. These conclusions are confirmed by the box-and-whisker plots in Figure \@ref(fig:plotResidualBoxplot1). 
+
+The two plots suggest that the residuals for the random-forest model are more frequently smaller than the residuals for the linear-regression model. However, a fraction of the random-forest-model residuals are very large and these large residuals result in the RMSE being comparable for the two models.
+
+```{r plotResidualDensity1, fig.cap="(fig:plotResidualDensity1) Smoothed density of the distribution of residuals  the linear-regression model `apartments_lm_v5` and the random-forest model `apartments_rf_v5` for the `apartments` data. [TOMASZ: X-AXIS SCLE IS NOT OPTIMAL. IT WOULD BE GOOD TO HAVE MORE VALUES THERE. PERHAPS IN STEPS OF 200 FROM -600 TO 1000?]",  warning=FALSE, message=FALSE, fig.width=7, fig.height=4,  fig.align='center'}
+plot_residual_density(mr_rf, mr_lr)
+```
+
+```{r plotResidualBoxplot1, fig.cap="(fig:plotResidualBoxplot1) Box-and-whisker plots of the absolute values of the residuals of the linear-regression model `apartments_lm_v5` and the random-forest model `apartments_rf_v5` for the `apartments` data. The crosses indicate the average value that corresponds to RMSE. [TOMASZ: X-AXIS SCLE IS NOT OPTIMAL. IT WOULD BE GOOD TO HAVE MORE VALUES THERE. PERHAPS IN STEPS OF 200 FROM 0 TO 1000?]",  warning=FALSE, message=FALSE, fig.width=7, fig.height=2.5,  fig.align='center'}
+# plot_residual_boxplot(mr_rf, mr_lr)
+```
+
+In the remainder of the section, we focus on the random-forest model. 
+
+Figure \@ref(fig:plotResidual1) shows a scatterplot of residuals (y-axis) in function of the observed (x-axis) values of the dependent variable. For a perfect predictive model, we would expect the horizontal line at zero. For a ''good'' model, we would like to see a symmetric scatter of points around the horizontal line at zero, indicating random deviations of predictions from the observed values. The plot in Figure \@ref(fig:plotResidual1) shows that, for the large observed values of the dependent variable, the residuals are positive, while for small values they are negative. Thus, the plot suggests that the predictions are shifted (biased) towards the average. 
+
+```{r plotResidual1, fig.cap="(fig:plotResidual1) Residuals and observed values of the dependent variable for the random-forest model `apartments_rf_v5` for the `apartments` data.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf)
+```
+
+The shift towards the average can also be seen from Figure \@ref(fig:plotPrediction1) that shows a scatterplot of the predicted (y-axis) and observed (x-axis) values of the dependent variable. For a perfect predictive model we would expect a diagonal line (marked in red). The plot shows that, for large observed values of the dependent variable, the predcitions are smaller than the observed values, with an opposite trend for the small observed values of the dependent variable. 
+
+```{r plotPrediction1, fig.cap="(fig:plotPrediction1) Predicted and observed values of the dependent variable for the random-forest model `apartments_rf_v5` for the `apartments` data. Red line is the diagonal.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_prediction(mr_rf, abline = TRUE)
+```
+
+Figure \@ref(fig:plotResidual2) shows an index plot of residuals, i.e., their scatterplot in function of an (aribtrary) id-number of the observation (x-axis). The plot indicates an assymetric distribution of residuals around zero, as there is an excess of large positive (larger than 500) residuals without a corresponding fraction of negative values. This can be linked to the right-skewed distribution seen in Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) for the random-forest model. [TOMASZ: I WOULD RATHER REPLACE IT BY A PLOT OF STANDARDIZED RESIDUALS.]
+
+```{r plotResidual2, fig.cap="(fig:plotResidual2) An index plot of residuals for the random-forest model `apartments_rf_v5` for the `apartments` data. [TOMASZ: I WOULD RATHER REPLACE IT BY A PLOT OF STANDARDIZED RESIDUALS.]",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf, variable = NULL)
+```
+
+Figure \@ref(fig:plotResidual3) shows a scatterplot of residuals (y-axis) in function of the predicted (x-axis) value of the dependent variable. For a ''good'' model, we would like to see a symmetric scatter of points around the horizontal line at zero. The plot in Figure \@ref(fig:plotResidual3), as the one in Figure \@ref(fig:plotResidual1),  the plot suggests that the predictions are shifted (biased) towards the average. 
+
+```{r plotResidual3, fig.cap="(fig:plotResidual3) Residuals and predicted values of the dependent variable for the random-forest model `apartments_rf_v5` for the `apartments` data. [TOMASZ: WHY DOES THE X-SCALE SAY ACTUAL RESPONSE IF THIS IS SUPPOSED TO BE THE PREDICTED VALUE?]",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_residual(mr_rf, variable = "_y_hat_")
+```
+
+Figure \@ref(fig:plotAutocorrelation1) presents an autocorrelation plot of residuals, i.e., the scatterplot of the residual for the $i+1$-th observation in function of the residual for the $i$-th observation. For a ''good'' model, the plot should not exhibit any pattern. The plot in Figure \@ref(fig:plotAutocorrelation1) does show a substantial positive (auto)correlation. [TOMASZ: IS THIS A CORRECT PLOT? THE TEXT INDICATED "NO STRONG AUTOCORRELATION". WHAT ORDERING WAS USED HERE?]
+
+```{r plotAutocorrelation1, fig.cap="(fig:plotAutocorrelation1) Autocorrelation plot of residuals for the random-forest model `apartments_rf_v5` for the `apartments` data. Residual for the (i+1)-th observation (y-axis) plotted in function of residual for the i-th observation. [TOMASZ: IS THIS A CORRECT PLOT? WHAT ORDERING WAS USED HERE?]",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5, fig.align='center'}
+plot_autocorrelation(mr_rf)
+```
+
+The random-forest model, as the linear-regression model, assumes that residuals should be homoscedastic, i.e., that they should have a constant variance. Figure \@ref(fig:plotScaleLocation1) presents the scale-location plot of residuals, i.e., a scatterplot of the square-root of the absolute value of the standardized [TOMASZ: CORRECT? THIS IS WHAT THE Y-AXIS LABEL SAYS.] residuals in function of the predicted values of the dependent variable. The plot includes a smoothed line capturing the average trend. For homoscedastic residuals, we would expect a symmetric scatter around a horizontal line, for which the smoothed trend should be also horizontal. The plot in Figure \@ref(fig:plotScaleLocation1) deviates from the expected pattern and indicates that the variability of the residuals depends on the (predicted) value of the dependent variable.    
+
+```{r plotScaleLocation1, fig.cap="(fig:plotScaleLocation1) The scale-location plot of residuals for the random-forest model `apartments_rf_v5` for the `apartments` data. The square-roots of the absolute values of standardized residuals (y-axis) are plotted in function of the predicted values of the dependent variable (x-axis).  [TOMASZ: WHY DOES THE X-SCALE SAY ACTUAL RESPONSE IF THIS IS SUPPOSED TO BE THE PREDICTED VALUE?]",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+plot_scalelocation(mr_rf, variable = "_y_hat_", smooth = TRUE)
+```
+
+[TOMASZ: INCLUDE QQ PLOTS?]
+
+## Pros and cons {#ProsConsResidualDiagnostic}
+
+[TOMASZ: TO BE POPULATED]
+
+## Code snippets for R {#RcodeResidualDiagnostic}
 
 In this section, we present the key features of the `auditor` R package [@auditor] which is a part of the [DrWhy.AI](http://DrWhy.AI) universe. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. More details and examples can be found at https://modeloriented.github.io/auditor/ or in [@auditorarxiv].
 
+First, we load explainers for the linear-regression model `apartments_lm_v5` and the random-forest model `apartments_rf_v5` created in Section \@ref(ExplainersApartmentsRCode) for the `apartments` data.
 
-First we load explainers for two models created in Section \@ref(ExplainersApartmentsRCode) for the `apartments` data.
-
-```{r modelResidualsArchivistRead, message=FALSE}
+```{r modelResidualsArchivistReadcode, message=FALSE}
 library("DALEX")
 library("auditor")
 library("randomForest")
@@ -36,80 +218,63 @@ explainer_apartments_lr <- archivist:: aread("pbiecek/models/f49ea")
 explainer_apartments_rf <- archivist:: aread("pbiecek/models/569b0")
 ```
 
-For residual diagnostic we need to calculate residuals for both explainers. This can be done with the `model_residual()` function. Now we are ready to explore residuals for both models for apartments dataset.
+For residual diagnostics, we first have to compute residuals for both explainers. This can be done with the `model_residual()` function. The residuals are stored in separate objects that can be used for construction of various plots and summaries.
 
-```{r modelResiduals, message=FALSE}
+```{r modelResidualscode, message=FALSE}
 mr_lr <- model_residual(explainer_apartments_lr)
 mr_rf <- model_residual(explainer_apartments_rf)
 ```
 
-Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) shows distribution of residuals for both models. As we know from the Section \@ref(modelPerformanceApartments) the RMSE for both model is very similar. But when we compare distributions of residuals we see that these models are very different. The linear regression model tends to have residuals around +- 400 while for random forest model the residuals are on average equal to 0 but have large variation.
+Plots of (smoothed) density of residuals can be obtained by using function `plot_residual_density()`. In particular, Figure \@ref(fig:plotResidualDensity1) can be constructed by using the following simple code:
 
-We know from previous chapters that the reason for the behavior of the linear model is that it does not capture the nonlinear relation between the price of apartment and the year of construction. 
-
-From these plots alone we see that random forest model has more frequently smaller residuals than the linear regression model. But for small fraction of observations residuals for random forest are very large and these extremes balance the RMSE.
-
-```{r plotResidualDensity1, fig.cap="(fig:plotResidualDensity1) Density plot for residuals for two models created for apartments dataset. RMSE for both models is very similar, but we see that residuals for linear regression are concentrated around +- 400. For the random forest model residuals are concentrated at 0 but have large variance.",  warning=FALSE, message=FALSE, fig.width=7, fig.height=4,  fig.align='center'}
+```{r plotResidualDensity1code, warning=FALSE, message=FALSE, eval=FALSE}
 plot_residual_density(mr_rf, mr_lr)
 ```
 
-```{r plotResidualBoxplot1, fig.cap="(fig:plotResidualBoxplot1) Boxplot for absolute values of residuals for two models created for apartments dataset. The cross shows the average value which corresponds to RMSE (similar for both models).",  warning=FALSE, message=FALSE, fig.width=7, fig.height=2.5,  fig.align='center'}
+Note that, by including the two objects containing residuals for the linear-regression model and the random-forest model in the function call, we automatically get an overlay of the plots of the smoothed estimates of the density of residuals for the two models. [TOMASZ: HOW ABOUT SWITCHING-OFF SMOOTHING?]
+
+The box-and-whisker plots of the residuals for the two modles, shown in Figure \@ref(fig:plotResidualBoxplot1), can be constructed by using the following simple call to function `plot_residual_boxplot()`. :
+
+```{r plotResidualBoxplot1code,  warning=FALSE, message=FALSE,eval=FALSE}
 plot_residual_boxplot(mr_rf, mr_lr)
 ```
 
+Function `plot_residual()` allows for obtaining various plots of residuals for a single model. For instance, the simple call
 
-Figures \@ref(fig:plotPrediction1) and \@ref(fig:plotPrediction2) show diagnostic plots that link model predictions with other variables. In the first case it's a relation between the true (X axis) and predicted (Y axis) values. For perfect model we would expect a strait line. Here the model is biased towards the average, so we see that for large values of target variables the predictions are shifted towards the average. Same for very low values of target variable.
-
-The second plot shows predictions as a function of the ordering of observations. If observations are randomly collected then we shall not see any relation.
-
-
-```{r plotPrediction1, fig.cap="(fig:plotPrediction1) Predicted versus true values for the random forest model for apartments data. Red line stands for the baseline. One can read that model predictions are biased towards the mean.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
-plot_prediction(mr_rf, abline = TRUE)
-```
-
-
-```{r plotPrediction2, fig.cap="(fig:plotPrediction2) Predicted values versus ordering of observations. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
-plot_prediction(mr_rf, variable = NULL, abline = TRUE)
-```
-
-
-Figures \@ref(fig:plotResidual1) and \@ref(fig:plotResidual2) and \@ref(fig:plotResidual3) are devoted to diagnostics that link residuals with other variables.
-
-Figure \@ref(fig:plotResidual1) shows that for the random forest model residuals are linked with true values of the target variable. We already know that the model is biased it just confirms that predictions are shifted towards the average. Same can be read from the Figure \@ref(fig:plotResidual3). 
-
-Figure \@ref(fig:plotResidual2) investigates the relation between residuals and ordering of observations. In this case there is no relation as shall be expected.
-
-
-```{r plotResidual1, fig.cap="(fig:plotResidual1) Residuals versus true values for the random forest model for apartments data. Random forest model is biased towards the mean so for low values of the target variable we see negative residuals while for large values we see large positive residuals.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+```{r plotResidual1code, warning=FALSE, message=FALSE, eval=FALSE}
 plot_residual(mr_rf)
 ```
 
+produces a scatterplot of residuals (y-axis) in function of the observed (x-axis) values of the dependent variable, as in Figure \@ref(fig:plotResidual1). By using argument `variable`, one can plot residuals in function  of any variable. In particular, the call
 
-```{r plotResidual2, fig.cap="(fig:plotResidual2) Residuals versus order of observations. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+```{r plotResidual2code,  warning=FALSE, message=FALSE, eval=FALSE}
 plot_residual(mr_rf, variable = NULL)
 ```
 
+produces an index plot of residuals, as in \@ref(fig:plotResidual2). On the other hand, specifying `variable="_y_hat_"` leads to a scatterplot of residuals in function of the predicted value of the dependent variable, as in Figure \@ref(fig:plotResidual3): 
 
-```{r plotResidual3, fig.cap="(fig:plotResidual3) Residuals versus predicted values for the random forest model for apartments data. Random forest model is biased towards the mean so for low predictions we see negative residuals while for large predictions we see large positive residuals.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+```{r plotResidual3code, warning=FALSE, message=FALSE, eval=FALSE}
 plot_residual(mr_rf, variable = "_y_hat_")
 ```
 
-Figures presented so far were focused on shifts or biases in model predictions. 
-Figure \@ref(fig:plotScaleLocation1) helps to find problems in the variance of residuals. In many cases we expect that residuals will have constant variance. This can be verified on the scale-location plot. On the X axis there are model predictions while on the Y axis there are square roots from absolute values of residuals. 
+Function `plot_prediction()` allows for obtaining various plots of predicted values of the dependent variable for a single model. For instance, to contruct a scatterplot of the predicted and observed values of the variable, as in  Figure \@ref(fig:plotPrediction1), one can simply use the following syntax: 
 
-Smoothed average correspond to the standard deviation of residuals. Flat constant trend confirms homogeneity of the variance. In this example we see that variance of residuals is larger for extreme model predictions.
-
-
-```{r plotScaleLocation1, fig.cap="(fig:plotScaleLocation1) The scale-location plot for the random forest model for apartments data. On the X axis there are predicted values while on the Y axis there are square roots from absolute values of residuals. Any pattern in the data suggests that variance of residuals is related with predicted variables. It's the case here, since model is biased towards the average and variance of residuals is larger at extremes of the target variable.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5,  fig.align='center'}
-plot_scalelocation(mr_rf, variable = "_y_hat_", smooth = TRUE)
+```{r plotPrediction1code, warning=FALSE, message=FALSE, eval=FALSE}
+plot_prediction(mr_rf, abline = TRUE)
 ```
 
-Another way of checking if there are problems in model structure related to the ordering of observation is the autocorrelation plot. Example of the autocorrelation is presented in Figure \@ref(fig:plotAutocorrelation1). Here we do not see a strong autocorrelation.
+The use of the `abline=TRUE` argument allows including the diagonal ine in the plot.
 
+An autocorrelation plot of residuals, as in Figure \@ref(fig:plotAutocorrelation1), can be obtained by applying to function `plot_autocorrelation()`:
 
-```{r plotAutocorrelation1, fig.cap="(fig:plotAutocorrelation1) The autocorrelation plot for the random forest model for apartments data. On the X axis there are residuals for observation i, while on the Y axis there are residuals for observation i+1. ",  warning=FALSE, message=FALSE, fig.width=5, fig.height=5, fig.align='center'}
+```{r plotAutocorrelation1code, warning=FALSE, message=FALSE, eval=FALSE}
 plot_autocorrelation(mr_rf)
 ```
 
+The scale-location plot of residuals, can be obtained by applying to function `plot_scalelocation()`. The syntax allowing to re-create Figure \@ref(fig:plotScaleLocation1) is as follows:  
 
+```{r plotScaleLocation1code, warning=FALSE, message=FALSE, eval=FALSE}
+plot_scalelocation(mr_rf, variable = "_y_hat_", smooth = TRUE)
+```
 
+The use of the `variable = "_y_hat_"` argument indicates that the predicted values of the dependent variable are to be used on the x-axis of the plot. Argument `smooth = TRUE` includes the smoothed trend in the plot. 
