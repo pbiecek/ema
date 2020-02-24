@@ -3,38 +3,42 @@ source("models/models_titanic.R")
 source("models/models_apartments.R")
 ```
 
-# Partial Dependency Profiles {#partialDependenceProfiles}
+# Partial dependence profiles {#partialDependenceProfiles}
 
 ## Introduction {#PDPIntro}
 
-One of the first and the most popular tools for inspection of black-box models on the global level are Partial Dependence Plots (sometimes called Partial Dependence Profiles). 
+In this chapter we focus on partial dependence (PD) plots, sometimes also called PD profiles. They were introduced by Friedman [@Friedman00greedyfunction] in a paper devoted to Gradient Boosting Machines (GBM). For many years PD profiles went unnoticed in the shadow of GBM. However, in recent years, the profiles have become very popular and are available in many data-science-oriented software packages like `DALEX`, `iml` [@imlRPackage], `pdp` [@pdpRPackage].
 
-PDP were introduced by Friedman in 2000 in his paper devoted to Gradient Boosting Machines (GBM) - new type of complex yet effective models [@Friedman00greedyfunction]. For many years PDP as sleeping beauties stay in the shadow of the boosting method. But this has changed in recent years. PDP are very popular and available in most of data science languages. In this chapter we will introduce key intuitions, explain the math beyond PDP and discuss strengths and weaknesses.
+The general idea underlying the construction of PD profiles is to show how the expected value of model prediction behaves as a function of a selected explanatory variable. For a single model, one can construct an overall PD profile by using all observations from a dataset, or several profiles for sub-groups of the observations. Comparison of sub-group-specific PD profiles may provide important insight into, for instance, stability of the model predictions.  
+PD profiles are also useful for comparisons of different models:
 
-General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in Chapter \@ref(ceterisParibus).
+* *Agreement between profiles for different models is reassuring.* Some models are more flexible than others. If PD profiles for models from the two classes are similar, we can treat it as a evidence that the more flexible model is not over-fitting.
+* *Disagreement between profiles may suggest a way to improve a model.* If a PD profile of a simpler, more interpretable model disagrees with a profile of a flexible model, this may suggest a variable transformation that can be used to improve the interpretable model. For example, if a random-forest model indicates a non-linear relationship between the dependent variable and an explanatory variable, then a suitable transformation of the explanatory variable may improve the fit or performance of a linear regression model.
+* *Evaluation of model performance at boundaries.* Models are known to have a different behavior at the boundaries of dependent variables, i.e., for the largest or the lowest values. For instance, random-forest models are known to shrink predictions towards the average, whereas support-vector machines are known to have larger variance at edges. Comparison of PD profiles may help to understand the differences in models' behavior at boundaries.
+
+<!-- General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in Chapter \@ref(ceterisParibus).
+-->
 
 ## Intuition {#PDPIntuition}
 
-Ceteris paribus profiles intoriduces in the Section \@ref(ceterisParibus) show profile of model response for a single observation.
-Partial dependency profile is an average profile for all observations.
+The general idea underlying the construction of PD profiles is to show how the expected value of model prediction behaves as a function of a selected explanatory variable. Toward this aim, the average of a set of individual Ceteris-paribus (CP) profiles is used. Recall that a CP profile (see Chapter \@ref(ceterisParibus)) shows the dependence of an instance-level prediction for an explanatory variable. A PD profile is estimated by the average of the CP profiles for all instances (observations) from a dataset.
 
-For additive models all ceteris paribus profiles are parallel. Same shape, just shifted up or down. But for complex models these profiles may be different. 
-Still, the average will be some crude summary how (in general) the model respond for changes in a given variable.
+Note that, for additive models, CP profiles are parallel. In particular, they have got the same shape. Consequently, the average retains the shape, while offering a more precise estimate. However, for models that, for instance, include interactions, CP profiles may not be parallel. In that case, the average may not necessarily correspond to the shape of any particular profile. Nevertheless, it can still offer a summary of how (in general) the model predictions depend on changes in a given explanatory variable.
 
-Left panel in the figure \@ref(fig:pdpIntuition) shows ceteris paribus profiles for 25 sample observations for Titanic data for random forest model `titanic_rf_v6`. The right panels show the average over CP profiles - it's an estimate of partial dependency profile
+The left-hand-side panel of Figure \@ref(fig:pdpIntuition) presents CP profiles for the explanatory variable age for the random-forest model `titanic_rf_v6` (see Section \@ref(sec:)) for 25 randomly selected instances (observations) from the Titanic dataset (see Section \@ref(sec:)). Note that the profiles are not parallel, indicating non-additive effects of explanatory variables. The right-hand-side panel show the average of the CP profiles, which offers an estimate of the PD profile. Clearly, the shape of the PD profile does not capture, for instance, the shape of the three CP profiles shown at the top of the panel. Nevertheless, it does seem to reflect the fact that the majority of CP profiles suggest a substantial drop in the predicted probability of survival for the ages between 2 and 18. 
 
-
-```{r pdpIntuition, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5,  fig.cap="Left panel: Ceteris Paribus profiles for selected 25 observations. Blue points stand for selected observations while cyan lines stand for ceteris paribus profiles. Right panel: Grey lines stand for Ceteris paribus profiles  as presented in left panel, blue line stands for its average - Partial dependency profile", fig.align='center', out.width='100%'}
+```{r pdpIntuition, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5,  fig.cap="Ceteris-paribus and partial-dependence profiles for the random-forest model for 25 randomly selected observations from the Titanic dataset. Left: CP profiles for age; blue dots indicate the age and corresponding prediction for the selected observations. Right: CP profiles (grey lines) and the corresponding partial-dependence profile (blue line)", fig.align='center', out.width='100%'}
 library("DALEX")
 selected_passangers <- titanic[sample(1:nrow(titanic), 25),]
-cp_rf <- individual_profile(explain_titanic_rf, selected_passangers, variables = "age",
+cp_rf <- predict_profile(explain_titanic_rf, selected_passangers, variables = "age",
                          variable_splits = list(age = seq(0, 70, 0.1)))
 pl1 <- plot(cp_rf, variables = "age") +  
   scale_y_continuous(limits=c(0,1)) +
   ggtitle("Ceteris Paribus profiles") 
 
-
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
+class(cp_rf) <- c("ceteris_paribus_explainer", "data.frame")
+pdp_rf$cp_profiles <- cp_rf
 pl2 <- plot(pdp_rf, geom = "profiles") +
   scale_y_continuous(limits=c(0,1)) +
   ggtitle("Partial Dependency profile") 
@@ -43,28 +47,27 @@ library("gridExtra")
 grid.arrange(pl1, pl2, ncol = 2)
 ```
 
-
 ## Method {#PDPMethod}
 
-### Partial Dependency Profiles
+### Partial dependence profiles {#PDPs}
 
-Partial Dependency Profile for for a model $f$ and a variable $x^j$ is defined as
+The value of a PD profile for model $f()$ and explanatory variable $X^j$ at $z$ is defined as follows:
 
 \begin{equation}
-g_{PD}^{f, j}(z) = E[f(x^j=z, X^{-j})] = E[f(x|^j=z)].
+g_{PD}^{f, j}(z) = E_{X^{-j}}[f(X^{j|=z})].
 (\#eq:PDPdef0)
 \end{equation}
 
-So it's an expected value for $x^j = z$ over **marginal** distribution $X^{-j}$ or equivalently expected value of $f$ after variable $x^j$ is set to $z$.
+Thus, it is the expected value of the model predictions when $X^j$ is fixed at $z$ over the (marginal) distribution of $X^{-j}$, i.e., over the joint distribution of all explanatory variables other than $X^j$. Or, in other words, it is the expected value of the CP profile \@ref(eq:) for $X^j$ over the (marginal) distribution of $X^{-j}$. 
 
-
-The expectation cannot be calculated directly as we do not know fully neither the distribution of $X^{-j}$ nor the analytical formula of $f$. Yet this value may be estimated by as average from CP profiles.
+Usually, we do not know the true distribution of $X^{-j}$. We can estimate it, however, by the empirical distribution of $N$, say, observations available in a training dataset. This leads to the use of the average of CP profiles for $X^j$ as an estimator of the PD profile:
 
 \begin{equation}
-\hat g_{PD}^{f, j}(z) = \frac 1n \sum_{i=1}^{N} f(x_i^j=z, x^{-j}_i)] = \frac 1n \sum_{i=1}^{N} f(x_i|^j=z).
-(\#eq:PDPprofile)
+\hat g_{PD}^{f, j}(z) =  \frac{1}{N} \sum_{i=1}^{N} f(x_i^{j|=z}).
+(\#eq:PDPest)
 \end{equation}
 
+<!--
 This formula comes from two steps.
 
 1. Calculate ceteris paribus profiles for observations from the dataset.
@@ -79,110 +82,86 @@ So for a single model and a single variable we get a bunch of *what-if* profiles
 
 2. Aggregate Ceteris Paribus into a single Partial Dependency Profile
 
-Simple pointwise average across CP profiles. If number of CP profiles is large, it is enough to sample some number of them to get resonably accurate PD profiles.
+Simple pointwise average across CP profiles. If number of CP profiles is large, it is enough to sample some number of them to get reasonably accurate PD profiles.
 This way we get the formula \@ref(eq:PDPprofile).
+-->
 
+### Clustered partial dependence profiles {#clusteredPDPs}
 
-### Clustered Partial Dependency Profiles
+As it has been already mentioned, the average of CP profiles is a good summary if the profiles are parallel. If they are not parallel, the average may not adequately represent the shape of a subset of profiles. To deal with this issue, one can consider clustering the profiles and calculate the average separately for each cluster. To cluster the CP profiles, one may use standard methods like K-means or hierarchical clustering. The similarities between observations can be calculated based on the Euclidean distance between CP profiles.
 
-Partial pependency profile is a good summary if ceteris paribus profiles have similar shape, i.e. are parallel. But it may happen that the variable of interest is in interaction with some other variable. Not all profiles are parallel because the effect of variable of interest depends on some other variables.
+Figure \@ref(fig:pdpPart4) illustrates an application of that approach to the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) for 100 randomly selected instances (observations) from the Titanic dataset. The CP profiles for age are marked in grey. It can be noted that they could be split into three clusters based on the `hclust` method: one for a group of passengers with a substantial drop in the predicted survival probability for ages below 18 (with the average represented by the red line), one with an almost linear decrease  of the probability over the age (with the average represented by the green line), and one with almost constant predicted probability (with the average represented by the blue line). The plot itself does not allow to identify the variables that may be linked with these clusters, but additional exploratory analysis could be performed for this purpose.
 
-If individual profiles have different shapes then simple average may be misleading.
-To deal with this problem we propose to cluster Ceteris Paribus profiles and calculate average aggregate separately for each cluster.
-
-The most straightforward approach would be to use a method for clustering and see how these cluster of profiles behave.
-For clustering one may use standard algorithm like k-means or hierarchical clustering. Once clusters are established we can aggregate within clusters in the same way as in case of Ppartial dependency plots.
-
-
-So for a single model and a single variable we get $k$ profiles average withing clusters. 
-See an example in Figure \@ref(fig:pdpPart4) created for random forest model. It is easier to notice that ceteris paribus profiles can be grouped in three clusters. Group of passengers with a very large drop in the survival (cluster 1), moderate drop (cluster 2) and almost no drop in survival (cluster 3). Here we do not know what other factors are linked with these clusters, but some additional exploratory analysis can be done to identify these factors.
-
-```{r pdpPart4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Grey lines stand for ceteris paribus profiles for 100 sample observations. These profiles were clusterd into 3 groups and blue, green and red lines show corresponding averages", fig.align='center', out.width='75%'}
+```{r pdpPart4, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Clustered partial-dependence profiles for the random-forest model for 100 randomly selected observations from the Titanic dataset. Grey lines indicate Ceteris-paribus profiles that are clustered into 3 groups with the average profiles indicated by the blue, green, and red lines.", fig.align='center', out.width='75%'}
 library("DALEX")
-pdp_rf <- variable_profile(explain_titanic_rf, 
+pdp_rf <- model_profile(explain_titanic_rf, 
                            variables = "age",
                            k = 3)
 plot(pdp_rf, geom = "profiles") +
   ggtitle("Three clusters for 100 CP profiles") 
 ```
 
-### Grouped Partial Dependency Profiles
+### Grouped partial dependence profiles {#groupedPDPs}
 
-Once we see that variable of interest may be in interaction with some other variable, it is tempting to look for the factor that distinguish clusters.
+It may happen that we can identify an explanatory variable that can influence the shape of CP profiles for the explanatory variable of interest. The most obvious situation is when a model includes an interaction between the variable of interest and another one. In that case, a natural approach is to investigate the PD profiles for the variable of interest corresponding to the groups of observations defined by the variable involved in the interaction. 
+Figure \@ref(fig:pdpPart5) illustrates an application of the approach to the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) for 100 randomly selected instances (observations) from the Titanic dataset. The CP profiles for age are marked in grey. The red and blue lines present the PD profiles for females and males, respectively. The latter have different shapes: the predicted survival probability for females is more stable across different ages, as compared to males. Thus, the PD profiles clearly indicate an interaction between age and gender.
 
-The most straightforward approach is to use some other variable as a grouping variable. 
-Instead of clustering we may aggregate groups of CP profiles defined a a selected variable of itnerest.
-
-See an example in Figure \@ref(fig:pdpPart5). PD profiles are calculated separately for each gender. Clearly there is an interaction between Age and Sex. The survival for woman is more stable, while for man there is more sudden drop in Survival for older passengers.
-
-
-```{r pdpPart5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Grouped profiles with respect to the gender variable", fig.align='center', out.width='75%'}
-pdp_rf <- variable_profile(explain_titanic_rf, 
+```{r pdpPart5, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Partial-dependence profiles for two genders for the random-forest model for 100 randomly selected observations from the Titanic dataset. Grey lines indicate ceteris-paribus profiles for age.", fig.align='center', out.width='75%'}
+pdp_rf <- model_profile(explain_titanic_rf, 
                            variables = "age",
                            groups = "gender")
 plot(pdp_rf, geom = "profiles") +
-  ggtitle("Groups of Ceteris Paribus Profiles defined by the variable Sex")
+  ggtitle("Groups of Ceteris paribus profiles by Sex")
 
 ```
 
+### Contrastive partial dependence profiles {#contrastivePDPs}
 
-### Contrastive Partial Dependency profiles
+Comparison of clustered or grouped PD profiles for a single model may provide important insight into, for instance, stability of the model predictions. PD profiles can also be compared between different models.
 
-In previous sections we compared PD profiles calculated for a single models but in groups either defined via clustering or via some dependent variable. Comparison of such aggregates overlayed in a single plot may be very insightful. 
-Contrastive comparisons of Partial Dependency Plots are useful not only for subgroups of observations but also for comparisons of different models.
+Figure \@ref(fig:pdpPart7) presents PD profiles for age for the random-forest model and the logistic regression model with splines for the Titanic data (see Section \@ref(model-titanic-rf)). The profiles are similar with respect to a general relation between age and the predicted probability of survival (the younger the passenger, the better chance of survival). However, the profile for the random-forest model is flatter. The difference between both models is the largest at the edges of the age scale. This pattern can be treated as expected, because random-forest models, in general, shrink predictions towards the average and they are not very good for extrapolation outside the range of values observed in the training dataset.
 
-Why one would like to compare models? There are at least three reasons for it.
-
-* *Agreement of models will be reassuring.* Some models are known to be more stable other to be more elastic. If profiles for models from these two classes are not far from each other we can be more convinced that elastic model is not over-fitted.
-* *Disagreement of models suggest how to improve one of them.* If simpler interpretable model disagree with an elastic model, this may suggest a feature transformation that can be used to improve the interpretable model. For example if random forest learned non linear relation then it can be captures by a linear model after suitable transformation.
-* *Validation of boundary conditions.* Some models are know to have different behavior on the boundary, for largest or lowest values. Random forest is known to shrink predictions towards the average, while support vector machines are known to have larger variance at edges. Contrastive comparisons may help to understand differences in boundary behavior.
-
-See an example in Figure \@ref(fig:pdpPart7). Random forest model is compared with generalized linear model (logistic regression) with splines. Both models agree when it comes to a general relation between Age and chances of survival (the younger the better) but the curve for random forest is more flat. Difference between both models is largest for lowest values of the variable age. This observation is along out expectations that random forest model in general shrink towards an average and is not so good for interpolation outside the training domain.
-
-```{r pdpPart7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Comparison of two predictive models with different structures traind on the same dataset `titanic`.", fig.align='center', out.width='75%'}
+```{r pdpPart7, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Partial-dependence profiles for age for the random-forest (green line) and logistic-regression (blue line) models for the Titanic dataset.", fig.align='center', out.width='75%'}
 
 #cp_gbm <- partial_dependency(explain_titanic_gbm, selected_passangers)
 #pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")
 
-pdp_glm <- variable_profile(explain_titanic_lmr, variables = "age")
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+pdp_glm <- model_profile(explain_titanic_lmr, variables = "age")
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
 
 plot(pdp_rf$agr_profiles, pdp_glm$agr_profiles) +
-  ggtitle("Partial Dependency Profiles", "For random forest and logistic regression model") 
+  ggtitle("Partial dependence profiles", "") 
 ```
 
 
 ## Example: Apartments data {#PDPExample}
 
-In this section we will use random forest model `apartments_rf_v5` trained on `apartments` data in order to predict the price per square meter of an apartment. See section \@ref(model-Apartments-rf) for more details.
-This example is focused on two dependent variables `surface` and `construction.year`.
+In this section, we use PD profiles to evaluate performance of the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the Apartments dataset (see Section \@ref()). Recall that the goal is to predict the price per squared-meter of an apartment. In our illustration we focus on two explanatory variables, surface and construction year.
 
-### Partial Dependency Profiles
+### Partial dependence profiles
 
-Figure \@ref(fig:pdpApartment1) presents CP profiles for 25 sample apartments along with the average PD profile.
-It is interesting to see that relation between `surface` and the target variable is almost linear while relation between `construction.year` and the target variable is U-shaped. The most expensive are apartments very new or very old. The data is artificial but it was constructed in a way to reassemble effect of lower quality of building materials used in housing construction after II world war.
+Figure \@ref(fig:pdpApartment1) presents CP profiles (green lines) for 25 randomly-selected apartments together with the estimated PD profile (blue line) for surface and construction year.
+
+PD profile for surface suggest an approximately linear relationship between the explanatory variable and the predicted price. On the other hand, PD profile for construction year is U-shaped: the predicted price is the highest for the very new and very old apartments. While the data were simulated, they were generated to reflect the effect of a lower quality of building materials used in housing construction after the II World War.
 
 
-```{r pdpApartment1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Ceteris Paribus profiles for 25 sample apartments and the partial dependency profile for the random forest model", fig.align='center', out.width='75%'}
+```{r pdpApartment1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Ceteris-paribus and partial-dependence profiles for 100 randomly-selected apartments for the random-forest model for the Apartments dataset.", fig.align='center', out.width='75%'}
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments,
                                  verbose = FALSE)
 
-pd_rf <- variable_profile(explain_apartments_rf, variables = c("construction.year", "surface"))
+pd_rf <- model_profile(explain_apartments_rf, variables = c("construction.year", "surface"))
 
 plot(pd_rf, variables = c("construction.year", "surface"), geom = "profiles") + 
   ggtitle("Surface and construction year", "How they affect the expected price per square meter") 
 ```
 
-### Clustered Partial Dependency Profiles
+### Clustered partial dependence profiles
 
-A natural question would be to ask if the U-shape response profile for construction year is typical for all observations. Figure \@ref(fig:pdpApartment1clustered) shows average profiles in three clusters derived from the CP profiles. 
+All CP profiles for construction year, presented in Figure \@ref(fig:pdpApartment1), seem to be U-shaped. The same shape is observed for the PD profile. One might want to confirm that the shape is, indeed, common for all the observations. The left-hand-side panel of Figure \@ref(fig:pdpApartment1clustered) presents clustered PD profiles for construction year for three clusters derived from the CP profiles presented in  Figure \@ref(fig:pdpApartment1). The three PD profiles differ slightly in the size of the oscillations at the edges, but they all are U-shaped. Thus, we could conclude that the overall PD profile adequately captures the shape of the CP profiles. Or, put differently, there is little evidence that there might be any strong interaction between construction year and any other variable in the model. Similar conclusions can be drawn for the CP and PD profiles for surface, presented in the right-hand-side panel of Figure \@ref(fig:pdpApartment1clustered).
 
-Averages in clusters differ slightly in the size of oscillations, but all three shapes are similar. So far we do not have reasons to expect strong interactions in the model.
-
-
-```{r pdpApartment1clustered, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="(fig:pdpApartment1clustered) Grey lines stand for ceteris paribus profiles for 25 sample observations. These profiles were clusterd into 3 groups and blue, green and red lines show corresponding averages", fig.align='center', out.width='75%'}
-pd_rf <- variable_profile(explain_apartments_rf, 
+```{r pdpApartment1clustered, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap="Ceteris-paribus (grey lines) and partial-dependence profiles (red, green and blue lines) for three clusters for 100 randomly-selected apartments for the random-forest model for the Apartments dataset. Left: profiles for construction year. Right: profiles for surface.", fig.align='center', out.width='75%'}
+pd_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"),
                           k = 3)
 
@@ -191,135 +170,112 @@ plot(pd_rf, variables = c("construction.year", "surface"),
   ggtitle("Three clusters for 100 CP profiles") 
 ```
 
+### Grouped partial dependence profiles
 
+One of the categorical explanatory variables in the Apartments dataset is district. We may want to investigate whether the relationship between the model predictions and construction year and surface is similar for all districts. Toward this aim, we can use grouped PD profiles, for groups of apartments defined by districts.
 
-### Grouped Partial Dependency Profiles
+Figure \@ref(fig:pdpApartment2) shows PD profiles for construction year (left-hand-side panel) and surface (right-hand-side panel) for each district. Several observations are worth making. First, profiles for apartments in ''Srodmiescie'' (Downtown) are clearly much higher than for other districts. Second, the profiles are roughly parallel, indicating that the effects of construction year and surface are similar in each district. Third, the profiles appear to form three clusters, i.e., ''Srodmiescie'' (Downtown), three districts close to ''Srodmiescie'' (namely ''Mokotow'', ''Ochota'', and ''Ursynow''), and the six remaining districts.
 
-One of categorical variables in the `apartments` dataset is the `district`. In this subsection we will check if the model behavior is similar for all districts. To to this we will calculate average ceteris paribus profiles for each district separately.
-
-Figure \@ref(fig:pdpApartment2) shows PD profiles calculated independently for each district. There are some interesting things to see. First is that some profiles are higher than others, so for example apartments in `Srodmiescie` (downtown) are more expensive than in other districts. Second observation is that profiles are parallel, thus the effect of surface and construction year are similar in each district. Third is that these profiles constitute three groups of districts, the `Srodmiescie` (downtown), followed by three districts close to `Srodmiescie` (namely `Mokotow`, `Ochota` and `Ursynow`) followed by all other districts.
-
-
-```{r pdpApartment2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap="Partial dependency profiles calculated for separate districts.", fig.align='center', out.width='75%'}
-pd_rf <- variable_profile(explain_apartments_rf, 
+```{r pdpApartment2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap="Partial-dependence profiles for separate districts for the random-forest model for the Apartments dataset. Left: profiles for construction year. Right: profiles for surface.", fig.align='center', out.width='75%'}
+pd_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"),
                           groups = "district")
 
 plot(pd_rf, variables = c("construction.year", "surface"), 
      geom = "profiles") +
-  ggtitle("Grouped Partial Dependency profile", "Dataset apartments, model apartments_rf_v5")
+  ggtitle("Grouped Partial dependence profile", "")
 ```
 
-### Contrastive Partial Dependency profiles
+### Contrastive partial dependence profiles
 
-One of the biggest challenges in modeling for complex model is if the model structure is flexible enough to capture relations present in the data, but not too flexible to avoid over fitting.
+One of the main challenges in predictive modelling is to avoid over-fitting. The issue is particularly important for flexible models, such as random-forest models. 
 
-One approach to investigate this direction is to compare what has been learned by models with different structures. For example, figure \@ref(fig:pdpApartment3) shows PD profiles calculated for linear model and random forest model. 
+Figure \@ref(fig:pdpApartment3) presents PD profiles for construction year (left-hand-side panel) and surface (right-hand-side panel) for the linear regression model (see Section \@ref()) and the random-forest model. Several observations are worth making. The linear model cannot, of course, accommodate the non-monotonic relationship between the construction year and the price per square-meter. However, for surface, both models support a linear relationship, though the slope of the line resulting from the linear regression is steeper. This may be seen as an expected difference, given that random-forest models yield predictions that are shrunk towards the mean.
 
-Here the story is very interesting. The linear model cannot of course capture the non monotonic relation between `construction.year` and the price per square meter. In case of the `surface` variable both models captured linear relation, but the one derived by `lm` model is steeper. It is expected for the random forest model to be biased towards the mean.
+Thus, the profiles in Figure \@ref(fig:pdpApartment3) suggest that both models miss some aspects of the data. In particular, the linear regression model does not capture the U-shaped relationship between the construction year and the apartment price. On the other hand, the effect of the surface on the apartment price seems to be underestimated by the random-forest model. Hence, one could conclude that, by addressing the issues, one could improve either of the models, possibly with an improvement in predictive performance. 
 
-So one may say that both models missed something because of their structure. Linear model missed the U-shaped relation between construction year and apartment price while the random forest model shrink too much the effect of the surface over the apartment price. 
-Both these observations lead to the conclusion that we could build a better model that will capture both these relations.
-
-
-```{r pdpApartment3, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap="(fig:pdpApartment3) Comparison of PD profiles for linear model and random forest model.", fig.align='center', out.width='75%'}
+```{r pdpApartment3, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap="Partial-dependence profiles for the linear regression and random-forest models for the Apartments dataset. Left: profiles for construction year. Right: profiles for surface.", fig.align='center', out.width='75%'}
 explain_apartments_lm <- explain(model_apartments_lm, 
                                  data = apartments, verbose = FALSE)
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments, verbose = FALSE)
 
-pdp_lm <- variable_profile(explain_apartments_lm, 
+pdp_lm <- model_profile(explain_apartments_lm, 
                           variables = c("construction.year", "surface"))
-pdp_rf <- variable_profile(explain_apartments_rf, 
+pdp_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"))
 
 plot(pdp_rf$agr_profiles, pdp_lm$agr_profiles) +
-  ggtitle("Contrastive Partial Dependency profile","Comparison of random forest model against logistic regression model on apartments data")
+  ggtitle("Contrastive Partial dependence profile","")
 
 ```
-
-
 
 ## Pros and cons {#PDPProsCons}
 
-Partial Dependency profiles, as presented in this chapter, offer a simple way to summaries an effect of a particular variable on the model response.
+PD profiles, presented in this chapter, offer a simple way to summarize the effect of a particular explanatory variable on the dependent variable. They are easy to explain and intuitive. They can be obtained for sub-groups of observations and compared across different models. For these reasons, they have gained in popularity and have been implemented in various software packages, including R and Python. 
 
-This method has numerous advantages. Just to name a few
-
-* Partial Dependency profiles are quite popular and are implemented in variety of packages for R, python or other languages
-* Partial Dependency profiles are easy to explain and intuitive,
-* It is easy to extend PD profiles for different models or groups of observations.
-
-Yet there are also some disadvantages. They are mostly inherited from ceteris paribus profiles that are being aggregated.
-
-* For correlated features the rule ,,all other things being constant'' makes no sense. For the dataset `apartments` changes in `surface` should go along with changes in `number of rooms`. This issue will be discussed in the next chapter.
-* For non additive models the average across ceteris paribus profiles may be a crude and misleading simplification.
-
+Given that the PD profiles are averages of CP profiles, they inherit the limitations of the latter. In particular, as CP profiles are problematic for correlated features, PD profiles are also not suitable for that case. (An approach to deal with this issue will be discussed in the next chapter.) For models including interactions, the averages of CP  profiles may offer a crude and potentially misleading summarization.
 
 ## Code snippets for R {#PDPR}
 
-
 Here we show partial dependency profiles calculated with `DALEX` package which wrap functions from  `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `pdp` package [@pdpRPackage], `ALEPlots` package [@ALEPlotRPackage] or `iml` [@imlRPackage] package.
 
-The easiest way to calculate PD profiles is to use the function `DALEX::variable_profile`.
-The only required argument is the explainer and by default PD profiles are calculated for all variables. 
+The easiest way to calculate PD profiles is to use the function `DALEX::model_profile`.
+The only required argument is the explainer and by default PD profiles are calculated for all variables.  The only required argument is the model explainer. By default, PD profiles are calculated for all explanatory variables. In the code below we use the `variables` argument to limit the list of variables for which PD profiles are calculated. We store the computed PD profile in object `pdp_rf`. Subsequently, we apply the `plot()` function to the object to generate the plot of the PD profile.
 
+For illustration purposes, we use the random-forest model `titanic_rf_v6` (see Section \@ref(model-HR-rf)) for the Titanic data. Recall that it is developed to predict the probability of survival from sinking of Titanic. 
 Below we use `variables` argument to limit list of variables for which PD profiles are calculated. Here we need profiles only for the `age` variable.
 
-```{r pdpExample1, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial Dependency profile for age.", fig.align='center', out.width='80%'}
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+
+```{r pdpExample1, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial dependence profile for age.", fig.align='center', out.width='80%'}
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
 plot(pdp_rf) +
-  ggtitle("Partial Dependency profile for age") 
+  ggtitle("Partial dependence profile for age") 
 ```
 
-PD profiles can be plotted on top of standard CP profiles. This is a very useful feature if we want to know how crude is the averaging and how similar are individual profiles to the average.
+PD profiles can be plotted on top of CP profiles. This is a very useful feature if we want to learn how similar are the CP profiles to the average. Toward this aim, we first have got to compute and store the CP profiles with the help of the `model_profile()` function. The argument `N` set the number of randomly-selected instances used for calculation of partial dependence. By default its 100. 
 
-```{r pdpExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Ceteris Paribus and Partial Dependency profiles for age.", fig.align='center', out.width='80%'}
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
+The argument `geom = "profiles"` in the `plot()` function results in Partial dependence profile plotted on top of Ceteris paribus profiles. In the example below we only select the profiles for age. 
+
+```{r pdpExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Ceteris-paribus and partial-dependence profiles for age.", fig.align='center', out.width='80%'}
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
 plot(pdp_rf, geom = "profiles") +
-  ggtitle("Ceteris Paribus and Partial Dependency profiles for age") 
+  ggtitle("Ceteris Paribus and Partial dependence profiles for age") 
 ```
 
-### Clustered Partial Dependency profiles
+### Clustered partial dependence profiles
 
-In order to calculate clustered profiles we need to first calculate CP profiles with the `ceteris_paribus` function.
+To calculate clustered PD profiles, first we have to calculate and store the CP profiles and the use the `hclust` clustering to the profiles.
+This can be done with the `model_profile()` function. The number of clusters is specified with the help of argument `k`. Additional arguments of the function include `center` (a logical argument indicating if the profiles should be centered before calculation of distances between them) and `variables` (a list with the names of the explanatory variables for which the profiles are to be clustered, with the default value `NULL` indicating all the available variables). 
 
-Then we can use the `cluster_profiles` function, which performs k-means clustering in ceteris paribus profiles.
+The clustered PD profiles can be plotted on top of the CP profiles by setting the `geom = "profiles"` argument to the `plot()` function. Note that in the R code below we perform the calculations only for a randomly-selected set of 100 observations from the `titanic` data frame. Also, we only select the plots for the profiles for `age`. 
 
-The clustered profiles can be the plotted with the `plot` function.
-
-```{r pdpExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Clustered Partial Dependency profiles.", fig.align='center', out.width='80%'}
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age", k = 3)
+```{r pdpExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Clustered Partial dependence profiles.", fig.align='center', out.width='80%'}
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age", k = 3)
 plot(pdp_rf, geom = "profiles") +
-  ggtitle("Clustered Partial Dependency profiles.") 
+  ggtitle("Clustered Partial dependence profiles") 
 ```
 
+### Grouped partial dependence profiles
 
-### Grouped Partial Dependency profiles
+The `model_profile()` function admits the `groups` argument. If the argument is set to the name of a categorical explanatory variable, PD profiles are constructed for the groups of observations defined by the levels of the variable. In the example below, the argument is applied to obtain PD profiles for `age` grouped by `gender`. Subsequently, the profiles are plotted on top of the CP profiles for 100 randomly-selected observations from the `titanic` data frame (stored in object `pdp_sex_rf`).
 
-The `partial_dependency` has argument `groups`. It is enough to set this argument to some categorical variable to calculate and plot Grouped Partial Dependency profiles.
-
-In the example below we plot groups separately for each gender.
-
-```{r pdpExample4, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Grouped Partial Dependency profiles.", fig.align='center', out.width='80%'}
-pdp_sex_rf <- variable_profile(explain_titanic_rf, variables = "age", groups = "gender")
+```{r pdpExample4, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Grouped Partial dependence profiles.", fig.align='center', out.width='80%'}
+pdp_sex_rf <- model_profile(explain_titanic_rf, variables = "age", groups = "gender")
 plot(pdp_sex_rf, geom = "profiles") +
-  ggtitle("Clustered Partial Dependency profiles.") 
+  ggtitle("Grouped Partial dependence profiles") 
 ```
 
-### Contrastive Partial Dependency profiles
+### Contrastive partial dependence profiles
 
-As in previous functions, in order to overlay explanations for two or model models in a single plot one can use the generic `plot()` function.
+To overlay PD profiles for two or more models in a single plot, one can use the generic `plot()` function. In the code below, we create PD profiles for `age` for the random-forest (see Section \@ref(sec:)) and logistic regression (see Section \@ref(sec:)) models, stored in the explainer-objects `explain_titanic_rf` and `explain_titanic_lmr`, respectively. Subsequently, we apply the `plot()` function to plot the two PD profiles together in a single plot.
 
-In the example below we create PD profiles for `explain_titanic_rf` and `explain_titanic_lmr` models and then they are plotted together in a single plot.
-
-```{r pdpExample5, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Contrastive Partial Dependency profiles.", fig.align='center', out.width='80%'}
-pdp_rf <- variable_profile(explain_titanic_rf, variables = "age")
-pdp_lmr <- variable_profile(explain_titanic_lmr, variables = "age")
+```{r pdpExample5, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Contrastive Partial dependence profiles.", fig.align='center', out.width='80%'}
+pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
+pdp_lmr <- model_profile(explain_titanic_lmr, variables = "age")
 
 plot(pdp_rf$agr_profiles, pdp_lmr$agr_profiles) +
-  ggtitle("Contrastive Partial Dependency profiles") 
+  ggtitle("Contrastive Partial dependence profiles") 
 
 ```
-
 
