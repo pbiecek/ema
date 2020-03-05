@@ -3,292 +3,333 @@ source("models/models_titanic.R")
 source("models/models_apartments.R")
 ```
 
-# Accumulated Local Profiles {#accumulatedLocalProfiles}
+# Local-dependence and Accumulated Local Profiles {#accumulatedLocalProfiles}
 
 ## Introduction {#ALPIntro}
 
-One of the largest advantages of the Partial Dependency Profiles is that they are easy to explain, as they are just an average across Ceteris Paribus profiles. But one of the largest disadvantages lies in expectation over marginal distribution which implies that $x^j$ is independent from $x^{-j}$. In many applications this assumption is violated. For example, for the `apartments` dataset one can expect that features like `surface` and `number.of.rooms` are strongly correlated as apartments with larger number of rooms usually have larger surface. It may makes no sense to consider an apartment with 10 rooms and 20 square meters, so it may be misleading to change $x^{surface}$ independently from $x^{number.of.rooms}$. In the `titanic` dataset we shall expect correlation between `fare` and `passenger class` as tickets in the 1st class are the most expensive. 
+Partial-dependence (PD) profiles, introduced in the previous chapter, are easy to explain and interpret, especially given their estimation as an average of Ceteris-paribus (CP) profiles. However, as it was mentioned in Section \@ref(PDPProsCons), the profiles may be misleading if the explanatory variables are correlated. In many applications, this is the case. For example, in the Apartments dataset (see Section \@ref(ApartmentDataset)), one can expect that variables ''surface'' and ''number of rooms'' may be positively correlated, because apartments with larger number of rooms usually also have a larger surface. Thus, it is not realistic to consider, for instance, an apartment with 5 rooms and 20 squared meters. Similarly, in the Titanic dataset, a positive correlation can be expected for the values of variables ''fare'' and ''passenger class'', as tickets in the higher classes are more expensive than in the lower classes. 
 
-There are several attempts to fix this problem. In this chapter we present two of them. Local Dependency Profiles and Accumulated Local Profiles, both introduces in the  [@ALEPlotRPackage].
-The general idea behind Local Dependency Profiles is to use conditional distribution instead of marginal distribution to accommodate for the dependency between $x^j$ and $x^{-j}$.
-The general idea behind Accumulated Local Profiles is to accumulate local changes in model response affected by single feature $x^j$.
-
-
+In this chapter, we present accumulated local (AL) profiles that address this issue. As they are related to local-dependence (LD) profiles, we introduce the latter first. Both approaches were proposed in [@ALEPlotRPackage].
 
 
 ## Intuition {#ALPIntuition}
 
-Intuition behind Partial Dependency profiles and their extensions is presented in Figure \@ref(fig:accumulatedLocalEffects).
+<!--
+The general idea behind LD profiles is to use the conditional distribution of the instead of marginal distribution to accommodate for the dependency between $x^j$ and $x^{-j}$.
+The general idea behind Accumulated Local Profiles is to accumulate local changes in model response affected by single feature $x^j$.
 
-First, let's consider a simple model 
+Intuition behind Partial Dependency profiles and their extensions is presented in Figure \@ref(fig:accumulatedLocalEffects).
+-->
+
+Let us consider the following, simple nonlinear model with for two explanatory variables: 
 
 \begin{equation}
-f(x_1, x_2) = x_1 * x_2 + x_2
+f(x_1, x_2) = (x_1 + 1)\cdot x_2.
 (\#eq:trickyModel)
 \end{equation}
 
-Moreover, let's assume that variables $x_1$ and $x_2$ have uniform distribution $x_1, x_2 \sim U[-1,1]$ and are perfectly correlated, i.e. $x_2 = x_1$.
-
-For this example, suppose that we have dataset with 8 points.
+Moreover, assume that explanatory variables $X^1$ and $X^2$ are uniformly distributed over the interval $[-1,1]$ and perfectly correlated, i.e., $X^2 = X^1$. Suppose that we have got the following dataset with 8 observations:
 
 
 | i     | 1  |     2 |     3 |     4 |     5 |     6 |     7 |  8  |
 |-------|----|-------|-------|-------|-------|-------|-------|-----|
-| $x_1$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
-| $x_2$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
+| $X^1$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
+| $X^2$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
+| $y$   | 0  | -0.2059 | -0.2451 | -0.1204 |  0.1596 |  0.6149 |  1.2141 |  2  |
 
+Note that, for both $X^1$ and $X^2$, the sum of all observed values is equal to 0. 
 
-Panel A in Figure \@ref(fig:accumulatedLocalEffects) shows ceteris paribus profiles calculated for selected 8 points.
+The top part of Panel A of Figure \@ref(fig:accumulatedLocalEffects) shows CP profiles for $X^1$ for model \@ref(eq:trickyModel) calculated for the eight observations. The bottom part of the panel presents the corresponding estimate of the PD profile for $X^1$, i.e., the average of the CP profiles. The profile suggests no effect of variable $X^1$, which is clearly a misleading conclusion.
 
-Bottom part of the panel B shows Partial Dependency profile. It's an average from all ceteris paribus profiles (as shown in the top panel). 
+To understand the reason, let us explicitly express the CP profile for $X^1$ for model \@ref(eq:trickyModel):
 
-The idea behind extensions of partial dependency profiles is to use not all profiles, but only parts that are relevant (as shown in the top panels). 
-Local Dependency Profiles (panel C) are calculated as averages from these selected relevant parts of ceteris paribus profiles.
-Accumulated Local Profiles (panel D) are calculated as accumulated changes from these selected relevant parts of ceteris paribus profiles.
+\begin{equation}
+h^{(x_1 + 1) \cdot x_2 , 1}_{x_1,x_2}(z) = f(z,x_2) = (z+1)\cdot x_2.
+(\#eq:CPtrickyModel)
+\end{equation}
 
+By allowing $z$ to take any value in the interval $[-1,1]$, we get the CP profiles as straight lines with the slope equal to the value of variable $X^2$. Hence, for instance, the CP profile for observation $(-1,-1)$ is a straight line with the slope equal to -1. 
 
-```{r accumulatedLocalEffects, echo=FALSE, fig.cap="(fig:accumulatedLocalEffects) Differences between Partial Dependency, Marginal and Accumulated Local Effects profiles. Panel A) shows Ceteris Paribus Profiles for 8 points. Panel B) shows Partial Dependency profiles, i.e. an average out of these profiles. Panel C shows Marginal profiles, i.e. an average from profiles similar to the point that is being explained. Panel D shows Accumulated Local Effects, i.e. effect curve that takes into account only changes in the Ceteris Paribus Profiles.", out.width = '90%', fig.align='center'}
-knitr::include_graphics("figure/CP_ALL.png")
-```
+Recall that the PD profile for $X^j$, defined in equation \@ref(eq:PDPdef0), is the expected value, over the joint distribution of all explanatory variables other than $X^j$, of the model predictions when $X^j$ is set to $z$. This leads to the estimation of the profile by taking the average of CP profiles for $X^j$ (see equation \@ref(eq:PDPest)). 
+ 
+In our case, this implies that the PD profile for $X^1$ is the expected value of the model predictions over the distribution of $X^2$, i.e., over the uniform distribution on the interval $[-1,1]$. Thus, the PD profile is estimated by taking the average of the CP profiles (see \@ref(eq:CPtrickyModel)) at each value of $z$ in $[-1,1]$:
 
+\begin{equation}
+\hat g_{PD}^{(x_1 + 1)\cdot x_2, 1}(z) =  \frac{1}{8} \sum_{i=1}^{8} (z+1)\cdot x_{2,i} = \frac{z+1}{8}  \sum_{i=1}^{8} x_{2,i} = 0.
+(\#eq:PDtrickyModel)
+\end{equation}
 
+As a result, the PD profile for $X^1$ is estimated as a horizontal line at 0, as seen in the bottom part of Panel A of Figure \@ref(fig:accumulatedLocalEffects). 
+
+The calculations in equation \@ref(eq:PDtrickyModel) ignore the fact that, given our assumptions, one cannot change $z$  *freely* for a particular value of $X^2$, because $X^1$ and $X^2$ are assumed to be perfectly correlated. In fact, in this case, the CP profile for the $i$-th observation should actually be undefined for any values of $z$ different from $x^2_i$. As a consequence, the sum used in the calculation of the PD profile in equation \@ref(eq:PDtrickyModel) would involve undefined terms for any $z$.
+
+Thus, the issue is related to the fact of using the marginal distribution of $X^2$, which disregards the value of $X^1$, in the definition of the PD profile. This observation suggests a modification: instead of the marginal distribution, one might consider the conditional distribution of $X^2 | X^1$. The modification leads to the definition of the LD profile. 
+
+For in our example, the conditional distribution of $X^2$, given $X^1=z$, is just a probability mass of 1 at $z$. Consequently, the Local-dependence (LD) profile, for any $z \in [-1,1]$, is given by 
+\begin{equation}
+g_{LD}^{(x_1 + 1)\cdot x_2, 1}(z) =  z \cdot (z+1).
+(\#eq:LDtrickyModel)
+\end{equation}
+
+It turns out, however, that the modification does not fully address the issue of correlated explanatory variables. 
+
+<!-- Profile LD  -->
+
+Looking at equation \@ref(eq:trickyModel) one can see that from the perspective of $X^1$ the effect of the variable $x_1$ is similar to the function $f(x_1) = -x_1 -1$ for values close to $(x_1, x_2) = (-1,-1)$ and similar to the function $f(x_1) = x_1 +1$ for values close to $(x_1, x_2) = (1,1)$. So  first it decreases at the same rate as it increases later. The function in equation \@ref(eq:LDtrickyModel) does not show this. 
+
+In the [@ALEPlotRPackage], author proposed Accumulated Local Effects (AL) profiles, where the effect of the $X^1$ variable is defined as the cumulative sum of local derivatives due to the $X^1$ variable
+
+\begin{equation}
+g_{AL}^{(x_1 + 1)\cdot x_2, 1}(z) = 
+\int_{-1}^z E \left[\frac{\partial f(x_1, x_2)}{\partial x_1} | X^1 = v \right] dv = 
+\int_{-1}^z E \left[X^2 | X^1 = v \right] dv = 
+\int_{-1}^z v dv =
+(z^2 - 1)/2.
+(\#eq:ALtrickyModel)
+\end{equation}
+
+This formula better reflects the behavior of function $f(x_1,x_2)$ due to $X^1$ removing the effect of changes in variable $X^2$.
+
+<!--
 For example, for the `apartments` dataset one can expect that features like `surface` and `number.of.rooms` are correlated but we can also imagine that each of these variables affect the apartment price somehow. Partial Dependency Profiles show how the average price changes as a function of surface, keeping all other variables unchanged. Conditional Dependency Profiles show how the average price changes as a function of surface adjusting all other variables to the current value of the surface. Accumulated Local Profiles show how the average price changes as a function of surface adjusting all other variables to the current value of the surface but extracting changes caused by these other features. 
-
+-->
 
 
 ## Method {#ALPMethod}
 
+### Local-dependence profile 
 
-### Partial Dependency Profile
-
-Partial Dependency Profile is defined as an expected value from Ceteris Paribus Profiles.
-
-\begin{equation}
-g^{PD}_i(z) = E_{X_{-i}}[ f(x|^i = z, x^{-i}) ].
-(\#eq:PDPdef)
-\end{equation}
-
-And can be estimated as average from CP profiles.
+LD profile for model $f(x)$ and variable $X^j$ is defined as follows:
 
 \begin{equation}
-\hat g^{PD}_i(z) = \frac{1}{n} \sum_{j=1}^{n} f(x|^i = z, x_j^{-i}).
-(\#eq:PDPest)
+g_{LD}^{f, j}(z) = E_{X^{-j}|X^j=z}\left[f\left(X^{j|=z}\right)\right].
+(\#eq:LDPdef)
 \end{equation}
 
-As it is shown in Figure \@ref(fig:accumulatedLocalEffects) panel B, PD profiles are averages from all CP profiles.
+Thus, it is the expected value of the model predictions over the conditional distribution of $X^{-j}$ given $X^j=z$, i.e., over the joint distribution of all explanatory variables other than $X^j$ conditional on the value of the latter variable set to $z$. Or, in other words, it is the expected value of the CP profiles in equation \@ref(eq:CPPdef) for $X^j$ over the conditional distribution of $X^{-j} | X^j$.   
 
-### Conditional Dependency Profile 
-
-As it was said, if there is some dependency between $X_i$ and $X_{-i}$ it makes no sense to average CP profiles over marginal $X_{-i}$ bacuse ,,all other things kep unchanges'' is not a reliable approach. 
-Instead, an intuitive approach would to use a conditional distribution $X_{-i}|X_i=x_i$ (which is of course unknown). 
-
-Conditional Dependency Profile for a model $f$ and a variable $x^j$ is defined as
-
-\begin{equation}
-g^{CD}_{f, i}(z) = E_{X_{-i}|X_i=x_i}[ f(x|^i = z, x^{-i}) ].
-(\#eq:CDPdef)
-\end{equation}
-
-So it's an expected value over **conditional** distribution $(X^j,X^{-j})|X^j=z$.
-
+<!--
 For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case $g^{CD}_{f, 1}(z) = 2*z$.
+-->
 
+For example, consider $X=(X^1,X^2)$ with $X^1$ uniformly distributed over $[-1,1]$ and $X^2=X^1$. Then the conditional distribution of $X^{-1} \equiv X^2$, given $X^1=z$, is the point mass of 1 at $z$. Consequently, for model \@ref(eq:trickyModel) and variable $X^1$, we get
 
-The natural estimator for Conditional Dependency Profiles introduced in [@ALEPlotRPackage] is
+$$
+g_{LD}^{(x_1+1)\cdot x_2,1}(z) = E_{X^2|X^1=z}[f(z,X^2)] = E_{X^2|X^1=z}[(z+1)\cdot X^2] = (z+1)\cdot E_{X^2|X^1=z}(X^2) = (z+1)\cdot z,
+$$
+as given in \@ref(eq:LDtrickyModel).
+
+As proposed in [@ALEPlotRPackage], LD profile can be estimated as follows: 
 
 \begin{equation}
-\hat g^{CD}_i(z) = \frac{1}{|N_i|} \sum_{j\in N_i} f(x|^i = z, x_j^{-i}). 
-(\#eq:CDPest)
+\hat g_{LD}^{f,j}(z) = \frac{1}{|N_j|} \sum_{k\in N_j} f\left(x_k^{j| = z}\right), 
+(\#eq:LDPest)
 \end{equation}
 
-where $N_i$ is the set of observations with $x_i$ close to $z$. This set will be used to estimate distribution $X_{-i}|X_i=x_i$.
+where $N_j$ is the set of observations with the value of $X^j$ ''close'' to $z$ that is used to estimate the conditional distribution of $X^{-j}|X^j=z$.
 
+<!--
 In Figure \@ref(fig:accumulatedLocalEffects) panel C the range of variable $x_i$ is divided into 4 separable intervals. The set $N_i$ contains all observations that fall into the same interval as observation $x_i$. The final CD profile is an average from closest pieces of CP profiles.
+-->
 
-
-
-Note that in general the $\hat g^{CD}_i(z)$ is neither smooth, nor continuous in boundaries between $N_i$ subsets. Thus here we propose another smooth estimator for $g_i^{CD}$
+Note that, in general, the estimator given in formula \@ref(eq:LDPest) is neither smooth nor continuous at boundaries between  subsets $N_i$. A smooth estimator for $g_{LD}^{f,j}(z)$ can be defined as follows: 
 
 \begin{equation}
-\tilde g^{CD}_i(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{j = 1}^n w_j(z) f(x|^i = z, x_j^{-i}) . 
-(\#eq:CDPest2)
+\tilde g_{LD}^{f,j}(z) = \frac{1}{\sum_k w_{k}(z)} \sum_{i = 1}^N w_i(z) f(x_i^{j| = z}), 
+(\#eq:LDPest2)
 \end{equation}
 
+where weights $w_i(z)$ capture the distance between $z$ and $x_i^j$. In particular, for a categorical variable, we may just use the indicator function $w_i(z) = 1_{z = x^j_i}$, while for a continuous variable we may use the Gaussian kernel:
 
-Weights $w_j(z)$ correspond to the distance between $z$ and observation $x_j$. For categorical variables we may use simple indicator function $w_j(z) := 1_{z == x^i_j}$ while for continuous variables we may use Gaussian kernel
+\begin{equation}
+w_i(z) = \phi(z - x_i^j, 0, s),
+(\#eq:Gkernel)
+\end{equation}
+
+where $\phi(y,0,s)$ is the density of a normal distribution with mean 0 and standard deviation $s$. Note that $s$ plays the role of a smoothing factor.
+
+As argued by [@ALEPlot2], if an explanatory variable is correlated with some other variables, the LD profile for the variable will capture the effect of all of the variables. This is because the profile is obtained by marginalizing (in fact, ignoring) over the remaining variables in the model. Thus, in this respect, LD profiles share the same limitation as PD profiles. To address the limitation, AD profiles can be used. We present them in the next section. 
+
+### Accumulated local profile
+
+Consider model $f(x)$ and define 
+
 $$
-w_j(z) = \phi(z - x_j^i; 0; s),
+h^j(u)=\left[ \frac{\partial f(x)}{\partial x^j} \right]_{x=u}.
 $$
-where $s$ is a smoothing factor.
-
-
-
-### Accumulated Local Profile
-
-Accumulated Local Profile for a model $f$ and a variable $x^j$ is defined as
+The AL profile for model $f(x)$ and variable $X^j$ is defined as follows:
 
 \begin{equation}
-g^{ALE}_{f, j}(z) = \int_{z_0}^z E\left[\frac{\partial f(X^j, X^{-j})}{\partial x_j}|X^j = v\right] dv + c,
-(\#eq:ALEdef)
+g_{AL}^{f, j}(z) = \int_{z_0}^z \left\{E_{X^{-j}|X^j=u}\left[ h^j(X^{j|=u}) \right]\right\} du + c,
+(\#eq:ALPdef)
 \end{equation}
 
-where $z_0$ if the lower boundary  of $x^j$. The profile $g^{ALE}_{f, j}(z)$ is calculated up to some constant $c$. Usually the constant $c$ is selected to set average $g^{ALE}_{f, j}$ equal to 0 or an average of $f(x)$.
+where $z_0$ is a value close to the lower bound of the effective support of the distribution of $X^j$ and $c$ is a constant, usually selected so that $E_{X^j}\left[g_{AL}^{f,j}(X^j)\right] = E_X f(x)$.
 
-The equation may be a bit complex, but the intuition is not that complicated. Instead of averaging Ceteris Paribus profiles we just look locally how quickly local CP profiles are changing. And ALE profile is reconstructed from such local partial changes as cumulative derivative over changes.
+To interpret equation \@ref(eq:ALPdef) note that $h^j(u)$ describes the local effect (change) of the model due to $X^j$. Or, to put it in other words, $h^j(u)$ describes how much the CP profile for $X^j$ changes at $u$. This effect (change) is averaged over the ''relevant'' (according to the conditional distribution of $X^{-j}|X^j$) values of $X^{-j}$ and, subsequently, accumulated (integrated) over values of $u$ up to $z$. As argued by [@ALEPlot2], the averaging of the local effects allows avoiding the issue, present in the PD and LD profiles, of capturing the effect of other variables in the profile for a particular variable. To see this, one can consider the approximation 
 
-So it's a cumulated  expected change of the model response along where the expected values are calculated  over **conditional** distribution $(X^j,X^{-j})|X^j=z$.
+$$
+f(u^{j|=u+du})-f(u^{j|=u})  \approx h^j(u)du,
+$$
+and note that the difference $f(u^{j|=u+du})-f(u^{j|=u})$, for a model without interaction, effectively removes the effect of all variables other than $X^j$. For example, consider model $f(x_1, x_2) = x_1 + x_2$, with $f_1(x_1,x_2)=1$. Then 
 
-For example, let $f(x_1, x_2) = x_1 + x_2$ and distribution  of $(x_1, x_2)$ is given by $x_1 \sim U[0,1]$ and $x_2=x_1$. In this case  $g^{ALE}_{f, 1}(z) = z$.
+$$
+f(u+du,x_2)-f(u,x_2)  = (u + du + x_2) - (u + x_2) = du = f_1(u,x_2) du.
+$$
+As another example, consider model \@ref(eq:trickyModel). In this case, $f_1(x_1,x_2)=x_2$ and the effect of variable $X^2$ will still be present in the AL profile for $X^1$.
 
-
-The natural estimator for Accumulated Local Profiles introduced in [@ALEPlotRPackage] is
+Continuing with model in formula \@ref(eq:trickyModel), assume that $X=(X^1,X^2)$ with $X^1$ uniformly distributed over $[-1,1]$ and $X^2=X^1$. In this case, the conditional distribution of $X^2 | X^1=z$ is the point mass of 1 at $z$. Then
 
 \begin{equation}
-\hat g^{ALE}_i(z) = \sum_{k=1}^{k_i(z)} \frac{1}{|N_i(k)|} \sum_{j \in N_i} \left[ f(x|^i = z_k) - f(x|^i = z_{k-1}) \right] + c
-(\#eq:ALEPest)
+g_{AL}^{(x_1+1)\cdot x_2,1}(z) = \int_{-1}^z \left[E_{X^2|X^1=u}\left( X^2 \right)\right] du + c = \int_{-1}^z u du + c = \frac{z^2-1}{2}+c.
+(\#eq:ALtrickyModel)
 \end{equation}
 
-where $k_i(z)$ is the index of interval with point $z$, $N_i$ is the set of observations with $x_i$ in this interval. The difference $f(x|^i = z_k) - f(x|^i = z_{k-1})$ correspond to the difference of CP profiles in interval $k$, and this difference is averaged and accumulated.
+Since $E_{X^1}\left[(X^1)^2\right] = 1/3$, then, upon taking $c=-1/3$, we get $E_{X^1}\left[g_{AL}^{(x_1+1) \cdot x_2,1}(X^1)\right] = 0$.
 
+To estimate AL profile, one replaces the integral in equation \@ref(eq:ALPdef) by a summation and the derivative with a finite difference [@ALEPlotRPackage]. In particular, consider a partition of the range of observed values $x_{i}^j$ of variable $X^j$ into $K$ intervals $N_j(k)=(z_{k-1}^j,z_k^j]$ ($k=1,\ldots,K$).  Note that $z_0^j$ can be chosen just below $\min(x_1^j,\ldots,x_N^j)$ and $z_K^j=\max(x_1^j,\ldots,x_N^j)$. Let $n_j(k)$ denote the number of observations $x_i^j$ falling into $N_j(k)$, with $\sum_{k=1}^K n_j(k)=N$. An estimator of AL profile for variable $X^j$ can then be constructed as follows: 
+
+\begin{equation}
+\widehat{g}_{AL}^{f,j}(z) = \sum_{k=1}^{k_j(z)} \frac{1}{n_j(k)} \sum_{i: x_i^j \in N_j(k)} \left[ f(x_i^{j| = z_k^j}) - f(x_i^{j| = z_{k-1}^j}) \right] - \hat{c},
+(\#eq:ALPest)
+\end{equation}
+
+where $k_j(z)$ is the index of interval $N_j(k)$ in which $z$ falls, i.e., $z \in N_j[k_j(z)]$, and $\hat{c}$ is selected so that $\sum_{i=1}^n \widehat{g}_{AL}^{f,j}(x_i^j)=0$. To interpret formula \@ref(eq:ALPest) note that difference $f\left(x_i^{j| = z_k^j}\right) - f\left(x_i^{j| = z_{k-1}^j}\right)$ corresponds to the difference of the CP profile for the $i$-th observation at the limits of interval $N_j(k)$. This differences for are then averaged across all observations falling into the interval and accumulated.
+
+<!--
 In Figure \@ref(fig:accumulatedLocalEffects) panel D the range of variable $x_i$ is divided into 4 separable intervals. The set $N_i$ contains all observations that fall into the same interval as observation $x_i$. The final ALE profile is constructed from accumulated differences of local CP profiles.
+-->
 
-
-Note that in general the $\hat g^{CD}_i(z)$ is not smooth in boundaries between $N_i$ subsets. Thus here we propose another smooth estimator for $g_i^{ALE}$
+Note that, in general, $\widehat{g}_{AL}^{f,j}(z)$ is not smooth at the boundaries of intervals $N_j(k)$. A smooth estimate can obtained as follows:
 
 \begin{equation}
-\tilde g^{ALE}_i(z) = \sum_{k \in {z_0, ..., z}} \frac{1}{\sum_{j} w_{j}(k)} \sum_{j=1}^n w_{j}(k) \left[f(x|^i = z_k) - f(x|^i = z_k - \Delta)\right] + c
-(\#eq:ALEPest2)
+\widetilde{g}_{AL}^{f,j}(z) = \sum_{k=1}^K \frac{1}{\sum_{l} w_l(z_k)} \sum_{i=1}^N w_{i}(z_k) \left[f(x_i^{j| = z_k}) - f(x_i^{j| = z_k - \Delta})\right] - c,
+(\#eq:ALPest2)
 \end{equation}
 
-The set ${z_0, ..., z}$ is a uniform grid of points between $z_0$ and $z$ with the step $\Delta$.
-Weights $w_i(k)$ correspond to the distance between point $k$ and observation $x_i$. For categorical variables we may use simple indicator function $w_j(k) := 1_{k == x_j^i}$ while for continuous variables we may use Gaussian kernel
-$$
-w_j(k) = \phi(k - x_j^i; 0; s),
-$$
-where $s$ is a smoothing factor.
+where points $z_k$ ($k=0, \ldots, K$) form a uniform grid covering the interval $(z_0,z)$ with step $\Delta = (z-z_0)/K$, and weight $w_i(z_k)$ captures the distance between point $z_k$ and observation $x_i^j$. In particular, we may use similar weights as in case of equation \@ref(eq:LDPest2).
 
+### An illustrative example {#summaryFeatureEffects}
 
+Let us consider model \@ref(eq:trickyModel) and explanatory-variable vector $X=(X^1,X^2)$ with $X^1$ uniformly distributed over $[-1,1]$ and $X^2=X^1$. Hence, $X^2$ is perfectly correlated with $X^1$. Moreover, consider the eight observations for $X$ from Section \@ref(ALPIntuition).
 
-### Comparison of Explainers for Feature Effects {#summaryFeatureEffects}
-
-In previous sections we introduced different was to calculate model level explainers for feature effects. 
-A natural question is how these approaches are different and which one should we choose.
-
-An example that illustrate differences between these approaches is presented in Figure \@ref(fig:accumulatedLocalEffects).
-Here we have a model $f(x_1, x_2) = x_1*x_2 + x_2$ and what is important features are correlated $x_1 \sim U[-1,1]$ and $x_2 = x_1$.
-
-
-Panel A) shows Ceteris Paribus for 8 data points, the feature $x_1$ is on the OX axis while $f$ is on the OY. 
-Panel B) shows Partial Dependency Profiles calculated as an average from CP profiles.
+The top part of Panel A of Figure \@ref(fig:accumulatedLocalEffects) shows CP profiles for $X^1$ for the eight observations, as computed in formula \@ref(eq:CPtrickyModel). The bottom part of the panel shows the estimated PD profile obtained by using the average of the CP profiles. As indicated by formula  \@ref(eq:PDtrickyModel), the PD profile is estimated at 0. The estimate is correct, as 
 
 $$
-g^{PD}_{f,1}(z) = E[z*x^2 + x^2] = 0
+g_{PD}^{(x_1+1)\cdot x_2,1}(z) = E_{X^2}[(z+ 1)\cdot X^2] = (z+1)\cdot E_{X^2}(X^2) = 0,
+$$
+given that $X^2$ is uniformly-distributed over $[-1,1]$. It is, however, misleading, as there clearly is an effect of $X^1$.  
+
+```{r accumulatedLocalEffects, echo=FALSE, fig.cap="Partial-dependence, local-dependence, and accumulated local profiles. Panel A: Ceteris-paribus profiles (top plot) and the corresponding partial-dependence profile. Panel B: local-dependence profile. Panel C: accumulated local profile. ", out.width = '90%', fig.align='center'}
+knitr::include_graphics("figure/CP_ALL.png")
+```
+
+The LD profile for model \@ref(eq:trickyModel), as computed in \@ref(eq:LDtrickyModel), is
+
+$$
+g_{LD}^{(x_1+1)\cdot x_2,1}(z) =  (z+1)\cdot z.
+$$
+By using estimator \@ref(eq:LDPest), with the data split into four intervals each containing two observations, we obtain the estimated LD profile shown at the bottom of Panel B of Figure \@ref(fig:accumulatedLocalEffects).
+
+As shown in \@ref(eq:ALtrickyModel), the AL profile for model presented in formula \@ref(eq:trickyModel) is up to the constant equal
+$$
+g_{AL}^{(x_1+1)\cdot x_2,1}(z) =  \frac{z^2-1}{2} + c.
 $$
 
-Panel C) shows Conditional Dependency Profiles calculated as an average from conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
-
-$$
-g^{CD}_{f,1}(z) = E[X^1*X^2 + X^2 | X^1 = z] = z^2+z
-$$
-
-Panel D) shows Accumulated Local Effects calculated as accumulated changes in conditional CP profiles. In the figure the conditioning is calculated in four bins, but knowing the formula for $f$ we can calculated it directly as.
-
-$$
-g^{AL}_{f,1}(z) = \int_{z_0}^z E\left[\frac{\partial (X^1*X^2 + X^2)}{\partial x_1}|X^1 = v\right] dv  = \int_{z_0}^z E\left[X^2|X^1 = v\right] dv  = \frac{z^2 -1 }{2},
-$$
-
-
+By using estimator \@ref(eq:ALPest), with the data split into four intervals each containing two observations, we obtain the estimated AL profile shown at the bottom of Panel C of Figure \@ref(fig:accumulatedLocalEffects).
 
 ## Example: Apartments data {#CDPExample}
 
+In this section, we use PD, LD, and AL profiles to evaluate performance of the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the Apartments dataset (see Section \@ref(ApartmentDataset)). Recall that the goal is to predict the price per squared-meter of an apartment. In our illustration we focus on two explanatory variables, surface and the number of rooms, as they are correlated (see Figure \ref(fig:appartmentsSurfaceNorooms)). 
 
-In this section we will use random forest model `apartments_rf_v5` trained on `apartments` data in order to predict the price per square meter of an apartment. See section \@ref(model-Apartments-rf) for more details.
-This example is focused on two dependent variables `surface` and `no.rooms`. What is more important is that these two variables are correlated.
+Figure \@ref(fig:featureEffectsApartment) shows the three types of profiles for both variables estimated according to formulas \@ref(eq:PDPest), \@ref(eq:LDPest2) and \@ref(eq:ALPest2). 
+
+Number of rooms and surface are two correlated variables, moreover both have some effect on the price per square meter. As we see profiles calculated with different methods are different.
+
+The green curve corresponds to the PD profile, which is the ordinary average of CP profiles. The red curve corresponds to the LD profile. It is steeper because the effect of the `surface` variable is additionally overlapped by the effects of variables correlated with `surface`, e.g. number of rooms.
+The blue curve corresponds to the AL profile. The estimator for AL profiles eliminates the effect of correlated variables. Since the AL and PD profiles are parallel to each other, it suggests that the model is additive for these two variables. In other words the effect of the `surface` variable in the model does not depend on the value of other variables.
 
 
-Figure \@ref(fig:featureEffectsApartment) shows Partial Dependency, Conditional Dependency and Accumulated Local profiles for the random forest model. 
-
-Number of rooms and surface are two correlated variables, moreover both have some effect on the price per square meter. As we see profiles calculated with different methods are different. One we take into account the correlation between variables, the feature effects are less steep.
-
-
-```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Partial Dependency, Conditional Dependency and Accumulated Local profiles for the random forest model and apartments data.", fig.align='center', out.width='75%'}
-library("DALEX")
+```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap="Partial dependence, local dependence, and accumulated local profiles for the random forest model for the  Apartments dataset.", fig.align='center', out.width='75%'}
+library("ingredients")
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments,
                                  verbose = FALSE)
 
-pd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "partial")
-ac_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "accumulated")
-cd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"), type = "conditional")
+pd_rf <- partial_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
+ac_rf <- accumulated_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
+cd_rf <- conditional_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
 
-pd_rf$agr_profiles$`_label_` <- "RF partial dependency"
-ac_rf$agr_profiles$`_label_` <- "RF accumulated dependency"
-cd_rf$agr_profiles$`_label_` <- "RF conditional dependency"
+pd_rf$`_label_` <- "partial dependence"
+ac_rf$`_label_` <- "accumulated local"
+ac_rf$`_yhat_`  <- ac_rf$`_yhat_` + max(pd_rf$`_yhat_`)
+cd_rf$`_label_` <- "local dependence"
 
-plot(pd_rf$agr_profiles, ac_rf$agr_profiles, cd_rf$agr_profiles) + 
-  ylab("feature effect") +
-  ggtitle("Surface and construction year", "How they affect the expected price per square meter") 
+plot(pd_rf, ac_rf, cd_rf) + ylab("Predicted price") +
+  ggtitle("Number of rooms and surface", "The effect on the predicted price per squared-meter") 
 ```
-
-
-
-
-
-
 
 ## Pros and cons {#ALPProsCons}
 
-In this chapter we introduced tools for extraction of the information between model response and individual model inputs. These tools are useful to summarize how ,,in general'' model responds to the input of interest. All presented approaches are based on Ceteris Paribus Profiles introduced in Chapter \@ref(ceterisParibus) but they differ in a way how individual profiles are merged into a global model response.
+In this chapter we introduced tools for exploration of the relation between model response and model inputs. These tools are useful to summarize how ,,in general'' model responds to the input of interest. All presented approaches are based on Ceteris-paribus profiles introduced in Chapter \@ref(ceterisParibus) but they differ in a way how individual profiles are merged into a global model response.
 
-We use the term ,,feature effect'' to refer to global model response as a function of single or small number of model features. 
-Methods presented in this chapter are useful for extraction information of feature effect, i.e. how a feature is linked with model response. There are many possible applications of such methods, for example:
+When the variables in the data are independent and there are no interactions in the model, the Ceteris-paribus profiles are parallel and their average, i.e. Partial Dependence, summarizes them all well.
 
-* Feature effect may be used for feature engineering. The crude approach to modeling is to fit some elastic model on raw data and then use feature effects to understand the relation between a raw feature and model output and then to transform model input to better fit the model output. Such procedure is called surrogate training. In this procedure an elastic model is trained to learn about link between a feature and the target. Then a new feature is created in a way to better utilized the feature in a simpler model [@SAFE-arxiv]. In the next chapters we will show how feature effects can be used to transform a continuous variable in to a categorical one in order to improve the model behavior.
-* Feature effect may be used for model validation.  Understanding how a model utilizes a feature  may be used as a validation of a model against domain knowledge. For example if we expect monotonic relation or linear relation then such expectations can be verified. Also if we expect smooth relation between model and its inputs then the smoothness can be visually examined. In the next chapters we will show how feature effects can be used to warn a model developer that model is unstable and should be regularized.
-*  In new domains an understanding of a link between model output and the feature of interest may increase our domain knowledge. It may give quick insights related to the strength or character of the relation between a feature of interest and the model output. 
-* The comparison of feature effects between different models may help to understand how different models handle particular features. In the next chapters we will show how feature effects can be used learn limitations of particular classes of models.
+When there are interactions in the model, the Ceteris-paribus profiles are not parallel. Additionally, if variables in the data are correlated, averaging entire Ceteris-paribus profiles may distort the relationship described by the model.
 
+Comparison of PD, LD and AL profiles allows to identify if there are any interactions in the model and if data are significantly correlated. When there are interactions, it may be helpful to explore these relations with generalization of PD profiles for two or more dependent variables.
 
 
 ## Code snippets for R {#ALPR}
 
-Here we show partial dependency profiles calculated with `DALEX` package that wraps functions from the  `ingredients` package [@ingredientsRPackage]. You will also find similar functions in the `ALEPlots` package [@ALEPlotRPackage].
+In this section, we present key features of R package `DALEX`  which is a wrapper over  package `ingredients` [@ingredientsRPackage]. Similar functionalities can be found in package `ALEPlots` [@ALEPlotRPackage] or `iml` [@imlRPackage].
 
-All profile functions can be calculated with the function `DALEX::variable_profile` with specified parameter `type`.
+For illustration purposes, we use the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the Apartments dataset (see Section \@ref()). Recall that the goal is to predict the price per squared-meter of an apartment. In our illustration we focus on two explanatory variables, surface and the number of rooms.
 
-Partial dependency profiles can be calculated with `type = "partial"`.
-Conditional dependency profiles can be calculated with `type = "conditional"`.
-Accumulated local profiles can be calculated with `type = "accumulated"`.
-
-In all these cases the only required argument is the explainer and by default profiles are calculated for all variables. 
-
-Below we use `variables` argument to limit list of variables for which profiles are calculated. Here we need profiles only for the `no.rooms` and `surface` variables.
+LD profiles are calculated by applying function `DALEX::variable_profile` to the model-explainer object. By default, profiles are calculated for all explanatory variables. To limit the calculation to selected variables, one can pass the names of the variables to the `variables` argument. A plot of the calculated profiles can be obtained by applying the generic `plot()` function, as shown in the code below. The resulting profiles correspond to those shown in Figure \@ref(fig:featureEffectsApartment).
 
 
-```{r aleExample1, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial Dependency profile for surface and number of rooms", fig.align='center', out.width='80%'}
+```{r aleExample1, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial Dependence profile for surface and number of rooms", fig.align='center', out.width='80%'}
 explain_apartments_rf <- explain(model_apartments_rf, 
                                  data = apartments,
                                  verbose = FALSE)
 
-pd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"))
-plot(pd_rf) + ylab("Partial dependency") +
-  ggtitle("Surface and number of rooms", "Partial dependency for random forest model") 
+pd_rf <- variable_profile(explain_apartments_rf, 
+                           type = "partial",
+                          variables = c("no.rooms", "surface"))
+plot(pd_rf) +
+  ggtitle("Partial dependence for surface and number of rooms") 
 ```
 
-```{r aleExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Accumulated dependency profile for surface and number of rooms", fig.align='center', out.width='80%'}
-ac_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"),
-                          type = "accumulated")
-plot(ac_rf) + ylab("Accumulated dependency") +
-  ggtitle("Surface and number of rooms", "Accumulated dependency for random forest model") 
+LD profiles are calculated by applying function `DALEX::variable_profile` with additional argument `type = "conditional"`.
+
+```{r aleExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Local dependence profiles for the number of rooms and surface", fig.align='center', out.width='80%'}
+cd_rf <- variable_profile(explain_apartments_rf,
+                          type = "conditional",
+                          variables = c("no.rooms", "surface"))
+plot(cd_rf) +
+  ggtitle("Local dependence for surface and number of rooms") 
 
 ```
 
-```{r aleExample3, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Conditional dependency profile for surface and number of rooms", fig.align='center', out.width='80%'}
-cd_rf <- variable_profile(explain_apartments_rf, variables = c("no.rooms", "surface"),
-                          type = "conditional")
-plot(cd_rf) + ylab("Conditional dependency") +
-  ggtitle("Surface and number of rooms", "Conditional dependency for random forest model") 
+LD profiles are calculated by applying function `DALEX::variable_profile` with additional argument `type = "accumulated"`.
 
+```{r aleExample2, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Accumulated local profiles for the number of rooms and surface", fig.align='center', out.width='80%'}
+ac_rf <- variable_profile(explain_apartments_rf,
+                          type = "accumulated",
+                          variables = c("no.rooms", "surface"))
+plot(ac_rf) +
+  ggtitle("Accumulated local profiles for surface and number of rooms") 
+
+```
+
+One can also use the `plot()` function to juxtapose different types of profiles in a single plot.
+
+```{r aleExample5, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Different types of profiles for the number of rooms and surface", fig.align='center', out.width='80%'}
+pd_rf$agr_profiles$`_label_` = "Partial Dependence"
+cd_rf$agr_profiles$`_label_` = "Local Dependence"
+ac_rf$agr_profiles$`_label_` = "Accumulated Local"
+plot(pd_rf$agr_profiles, cd_rf$agr_profiles, ac_rf$agr_profiles) 
 ```
 
 
