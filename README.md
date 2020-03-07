@@ -1,4 +1,4 @@
-<img width="300" align="right" src="figure/front.png">
+<img width="300" align="right" src="figure/front4.png">
 
 # Explanatory Model Analysis
 
