@@ -15,7 +15,7 @@ In this chapter, we provide a short description of each of the datasets, togethe
 
 Sinking of the RMS Titanic is one of the deadliest maritime disasters in history (during peacetime). Over 1500 people died as a consequence of collision with an iceberg. Projects like *Encyclopedia titanica* `https://www.encyclopedia-titanica.org/` are a source of rich and precise data about Titanic's passengers. 
 The `stablelearner` package includes a data frame with some passenger characteristics. 
-The dataset, after some data cleaning and variable transformations, is also avaliable in the `DALEX` package. In particular, the `titanic' data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
+The dataset, after some data cleaning and variable transformations, is also available in the `DALEX` package. In particular, the `titanic` data frame contains 2207 observations (for 1317 passengers and 890 crew members) and nine variables:
 
 * *gender*, person's (passenger's or crew member's) gender, a factor (categorical variable) with two levels (categories) `male` (78%) and `female` (22%);
 * *age*, person's age in years, a numerical variable; the age is given in (integer) years, range 0 -- 74 years; 
@@ -70,7 +70,9 @@ titanic$sibsp[is.na(titanic$sibsp)] = 0
 titanic$parch[is.na(titanic$parch)] = 0
 ```
 
-After imputing the missing values, we investigate the association between survival status and other variables. Figures \@ref(fig:titanicExplorationGenderAge)-\@ref(fig:titanicExplorationCountry) present graphically the proportion non- and survivors for different levels of the other variables with the use of mosaic plots. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
+After imputing the missing values, we investigate the association between survival status and other variables. Most variables in the Titanic dataset are categorical, except Age and Fare. In order to keep the exploration uniform we first transformed them into categorical variables. Figure \@ref(fig:titanicExplorationHistograms) shows histograms for both variables. Age is discretized into 5 categories with cutoffs 5, 10, 20 and 30 while Fare is discretized with cutoffs 1, 10, 25, and 50.
+
+Figures \@ref(fig:titanicExplorationGenderAge)-\@ref(fig:titanicExplorationCountry) present graphically the proportion non- and survivors for different levels of the other variables with the use of mosaic plots. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. Note that, to construct the graphs for *age* and *fare*, we categorized the range of the observed values.
 
 Figure \@ref(fig:titanicExplorationGenderAge) indicates that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. The principle can, perhaps, partially explain the trend seen in Figure \@ref(fig:titanicExplorationParch), i.e., a higher proportion of survivors among those with 1-3 parents/children and 1-2 siblings/spouses aboard. Figure \@ref(fig:titanicExplorationClass) indicates that passengers travelling in the first and second class had a higher chance of survival, perhaps due to the proximity of the location of their cabins to the deck. Interestingly, the proportion of survivors among crew deck was similar to the proportion of the first-class passengers. It also shows that the proportion of survivors increased with the fare, which is consistent with the fact that the proportion was higher for passengers travelling in the first and second class. Finally, Figure \@ref(fig:titanicExplorationCountry) does not suggest any noteworthy trends.        
 
@@ -158,12 +160,12 @@ titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class + sibsp +
 titanic_lmr_v6
 ```
 
-Note that our prime interest is not in the assessment of model performance, but rather in the understanding of model behavior. This is why we do not split the data int train/test subsets. The model is trained and will be explained on the whole dataset.
+Note that our prime interest is not in the assessment of model performance, but rather in the understanding of model behavior. This is why we do not split the data into train/test subsets. The model is trained and will be explained on the whole dataset.
 
 
 ### Random forest model {#model-titanic-rf}
 
-As a challanger to the logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-order variable interactions, and is quite stable [@randomForestBreiman]. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
+As a challenger to the logistic regression model, we consider a random forest model. Random forest is known for good predictive performance, is able to grasp low-order variable interactions, and is quite stable [@randomForestBreiman]. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 
 In the first instance, we fit a model with the same set of explanatory variables as the logistic regression model. The results of the model are stored in model-object `titanic_rf_v6`.
 
@@ -184,7 +186,7 @@ titanic_rf_v3
    
 ### Gradient boosting model {#model-titanic-gbm}
 
-Finally, we consider yet another challanger -- the gradient-boosting model [@Friedman00greedyfunction]. The tree based boosting models are known for being able to accomodate higher-order interactions between variables. We use the same set of six explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
+Finally, we consider yet another challenger -- the gradient-boosting model [@Friedman00greedyfunction]. The tree based boosting models are known for being able to accommodate higher-order interactions between variables. We use the same set of six explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
 ```{r titanicGBM01, warning=FALSE, message=FALSE}
 library("gbm")
@@ -198,7 +200,7 @@ titanic_gbm_v6
 
 Let us now compare predictions that are obtained from the three different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 1-st class with no parents nor siblings and with a ticket costing 72 pounds. 
 
-First, we create a data frame `johny_d` that contains the data describing the passenger.
+First, we create a dataframe `johny_d` that contains the data describing the passenger.
 
 ```{r titanicPred01, warning=FALSE, message=FALSE}
 johny_d <- data.frame(
@@ -257,7 +259,7 @@ Model-objects created with different machine learning libraries may have differe
 * `predict_function`, a function that returns prediction scores; if not specified, then a default `predict()` function is used;
 * `label`, an unique name of the model; if not specified, then it is extracted from the `class(model)`. 
 
-Each adapter containes all elements needed to create a model explanation, i.e., a suitable `predict()` function, validation data set, and the model object. Thus, in subsequent chapters we will use the explainers instead of the model objects to keep code snippets more concise. 
+Each adapter contains all elements needed to create a model explanation, i.e., a suitable `predict()` function, validation data set, and the model object. Thus, in subsequent chapters we will use the explainers instead of the model objects to keep code snippets more concise. 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, 
@@ -330,12 +332,12 @@ In this book, we will work with an interesting variant of this problem. The `apa
 
 The dataset is available in the `DALEX` package [@DALEX]. It contains 1000 observations (apartments) and six variables:
 
-* *m2.price*, apatments price per meter-squared (in EUR), a numerical variable range 1607 -- 6595;
+* *m2.price*, apartments price per meter-squared (in EUR), a numerical variable range 1607 -- 6595;
 * *construction.year*, the year of construction of the block of flats in which the apartment is located, a numerical variable range 1920 -- 2010;
-* *surface*, apartment's total surface in squared meters, a numerical variable range 20 -- 150;
+* *surface*, apartment's total surface in square meters, a numerical variable range 20 -- 150;
 * *floor*, the floor at which the apartment is located (ground floor taken to be the first floor), a numerical integer variable with values from 1 to 10;
 * *no.rooms*, the total number of rooms, a numerical  variable with values from 1 to 6;
-* *distric*, a factor with 10 levels indicating tha distric of Warszawa where the apartment is located.
+* *district*, a factor with 10 levels indicating the district of Warsaw where the apartment is located.
 
 The R code below provides more info about the contents of the dataset, values of the variables, etc.
 
@@ -360,22 +362,22 @@ The variable of interest is *m2.price*, the price per meter-squared. The histogr
 ```{r appartmentsExplorationMi2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Distribution of the price per meter-squared in the apartments data."}
 ggplot(data = apartments) +
    geom_histogram(aes(m2.price), binwidth = 100, color = "white") +
-   labs(x="Price per meter-squared", title='Histogram for appartments prices per m2') + theme_drwhy() + theme(legend.position = "none") 
+   labs(x="Price per meter-squared", title='Histogram for apartments prices per m2') + theme_drwhy() + theme(legend.position = "none") 
 ```
 
 Figure  \@ref(fig:appartmentsMi2Construction) suggests (possibly) a nonlinear relation between *construction.year* and *m2.price* and a linear relation between *surface* and *m2.price*.
 
 
-```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Left panel shows appartment price per m2 vs. year of construction, right panel shows price  vs. square footage", out.width = '100%', fig.align='center'}
+```{r appartmentsMi2Construction, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=6, fig.cap="Left panel shows apartment price per m2 vs. year of construction, right panel shows price  vs. square footage", out.width = '100%', fig.align='center'}
 pa1 <- ggplot(data = apartments, aes(construction.year, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Construction year", title='Appartment price per m2 vs. contruction year') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Construction year", title='Apartment price per m2 vs. construction year') + theme_drwhy() + theme(legend.position = "none") 
 
 pa2 <- ggplot(data = apartments, aes(surface, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Surface (meter-squared)", title='Appartment price per m2 vs. surface') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Surface (meter-squared)", title='Apartment price per m2 vs. surface') + theme_drwhy() + theme(legend.position = "none") 
 
 pa1 + pa2
 ```
@@ -388,12 +390,12 @@ pa3 <- ggplot(data = apartments, aes(floor, m2.price)) +
     geom_boxplot(aes(group = floor), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
     geom_jitter(size = 0.3, width = 0.15, height = 0) +
 #    geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-    labs(y="Price per meter-squared", x = "Floor", title='Appartment price per m2 vs. floor') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:10)
+    labs(y="Price per meter-squared", x = "Floor", title='Apartment price per m2 vs. floor') + theme_drwhy() + theme(legend.position = "none")  + scale_x_continuous(breaks = 1:10)
 
 pa4 <- ggplot(data = apartments, aes(no.rooms, m2.price, group = no.rooms)) +
     geom_boxplot(aes(group = no.rooms), se = FALSE, size=0.5, fill = "#371ea3", color = "white", alpha=0.3) +
    geom_jitter(size = 0.3, width = 0.15, height = 0) +
-   labs(y="Price per meter-squared", x = "Number of rooms", title='Appartment price per m2 vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") + scale_x_continuous(breaks = 1:6)
+   labs(y="Price per meter-squared", x = "Number of rooms", title='Apartment price per m2 vs. number of rooms') + theme_drwhy() + theme(legend.position = "none") + scale_x_continuous(breaks = 1:6)
 
 pa3 + pa4
 ```
@@ -417,7 +419,7 @@ pa5 + pa6
 
 ### Linear regression model {#model-Apartments-lr}
 
-The dependent variable of interest, *m2.price*, is continuous. Thus, a natural choice to build a predictive model is the linear regression. We treat all the other variables in the `apartments` data frame as explanatory and include them in the model. The results of the model are stored in model-object `apartments_lm_v5`.
+The dependent variable of interest, *m2.price*, is continuous. Thus, a natural choice to build a predictive model is the linear regression. We treat all the other variables in the `apartments` dataframe as explanatory and include them in the model. The results of the model are stored in model-object `apartments_lm_v5`.
 
 ```{r, warning=FALSE, message=FALSE}
 apartments_lm_v5 <- lm(m2.price ~ ., data = apartments)
@@ -426,7 +428,7 @@ anova(apartments_lm_v5)
 
 ### Random forest model {#model-Apartments-rf}
 
-As a challanger to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
+As a challenger to linear regression, we consider a random forest model. To fit the model, we apply the `randomForest()` function, with default settings, from the package with the same name [@randomForestRNews].  
 The results of the model are stored in model-object `apartments_rf_v5`. 
 
 ```{r, warning=FALSE, message=FALSE, eval = FALSE}
@@ -444,7 +446,7 @@ apartments_rf_v5
 
 ### Support vector model {#model-Apartments-rf}
 
-As an another challanger to the linear regression model, we consider a Support Vector Machines model. To fit the model, we use the `svm()` function, with default settings, from the package `e1071` [@R-e1071].  
+As an another challenger to the linear regression model, we consider a Support Vector Machines model. To fit the model, we use the `svm()` function, with default settings, from the package `e1071` [@R-e1071].  
 The results of the model are stored in model-object `apartments_svm_v5`. 
 
 ```{r, warning=FALSE, message=FALSE, eval = FALSE}
@@ -460,6 +462,7 @@ The `predict()` function calculates predictions for a specific model. In the exa
 
 ```{r, warning=FALSE, message=FALSE}
 predict(apartments_lm_v5, apartments_test[1:6, ])
+predict(apartments_rf_v5, apartments_test[1:6, ])
 ```
 
 In the example below we calculate predictive performance for `apartments_lm_v5` and `apartments_rf_v5` as the square root of the average of squared errors (RMSE). 
@@ -533,3 +536,4 @@ if (!file.exists(link_to_data_models)) {
   save(apartments_lm_v5, file = "models/apartments_lm_v5.rda")
 }
 ```
+
