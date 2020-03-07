@@ -186,7 +186,7 @@ titanic_rf_v3
    
 ### Gradient boosting model {#model-titanic-gbm}
 
-Finally, we consider yet another challenger -- the gradient-boosting model [@Friedman00greedyfunction]. The tree based boosting models are known for being able to accommodate higher-order interactions between variables. We use the same set of six explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
+Let's consider an another challenger -- the gradient-boosting model [@Friedman00greedyfunction]. The tree based boosting models are known for being able to accommodate higher-order interactions between variables. We use the same set of six explanatory variables as for the logistic regression model. To fit the gradient-boosting model, we use function `gbm()` from the `gbm` package [@gbm]. The results of the model are stored in model-object `titanic_gbm_v6`.
 
 ```{r titanicGBM01, warning=FALSE, message=FALSE}
 library("gbm")
@@ -194,6 +194,20 @@ set.seed(1313)
 titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
                       data = titanic, n.trees = 15000, distribution = "bernoulli")
 titanic_gbm_v6
+```
+
+   
+### Support Vector Machine model {#model-titanic-svm}
+
+Finally, we consider also Support Vector Machine model [@svm95vapnik]. We use the C-classification mode. To fit the Support Vector Machine model, we use function `svm()` from the `e1071` package [@e1071]. The results of the model are stored in model-object `titanic_svm_v6`.
+
+```{r titanicGBM01, warning=FALSE, message=FALSE}
+library("gbm")
+set.seed(1313)
+titanic_svm_v6 <- svm(survived == "yes" ~ class + gender + age + sibsp +
+                             parch + fare + embarked, data = titanic, 
+                           type = "C-classification", probability = TRUE)
+titanic_svm_v6
 ```
 
 ### Model predictions {#predictions-titanic}
@@ -265,34 +279,51 @@ Each adapter contains all elements needed to create a model explanation, i.e., a
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
-                                 label = "Logistic Regression v6")
+                                 label = "Logistic Regression")
 explain_titanic_rf_v6 <- explain(model = titanic_rf_v6, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
-                                 label = "Random Forest v6")
+                                 label = "Random Forest")
 explain_titanic_rf_v3 <- explain(model = titanic_rf_v3, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
-                                 label = "Random Forest v3")
+                                 label = "Random Forest small")
 explain_titanic_gbm_v6 <- explain(model = titanic_gbm_v6, 
                                  data = titanic[, -9],
                                  y = titanic$survived == "yes", 
-                                 label = "Generalized Boosted Regression v6")
+                                 label = "Generalized Boosted Regression")
+explain_titanic_svm_v6 <- explain(model = titanic_svm_v6, 
+                                 data = titanic[, -9],
+                                 y = titanic$survived == "yes", 
+                                 label = "Support Vector Machine")
 ```
 
 ```{r eval=FALSE, echo=FALSE}
+# saveToLocalRepo(model_titanic_lmr, repoDir = "models")
+# "56d8a46955e91f0472243e1af8021b96"
 # saveToLocalRepo(explain_titanic_lmr_v6, repoDir = "models")
-# "51c501dfaaeeb6ca2b0ba17ec62ab8dd"
-# OLD [1] "4bd4ddc366001ed91a8031f8af74b193"
+# "34e1919c02771be1b54b452641d28a6c"
+
+# saveToLocalRepo(titanic_rf_v6, repoDir = "models")
+# "31570ec57a3b72d3ec83a5f9b22cbaaa"
 # saveToLocalRepo(explain_titanic_rf_v6, repoDir = "models")
-# "42d51a9390bb2a3f1e91ae914932bb38"
-# OLD [1] "1f9385151553a962323fab80c7735e90"
+# "6ed54968790fbbe291acceb7dd6bc2ad"
+
+# saveToLocalRepo(titanic_rf_v3, repoDir = "models")
+# "855c117e1d08e793b820da14ccfdc7a5"
 # saveToLocalRepo(explain_titanic_rf_v3, repoDir = "models")
-# "0e5d2c16d9b546394ae4c2f7bc10a162"
-# OLD [1] "927541e3d971be3386538254b9f521d1"
+# "5b32a9ed8ce5a1d63833706dbe38e221"
+
+# saveToLocalRepo(titanic_gbm_v6, repoDir = "models")
+# "0854469e60467cb25c3b7c48da5fd3dd"
 # saveToLocalRepo(explain_titanic_gbm_v6, repoDir = "models")
-# "3d514f11b8ca30884ed4203992eb71e7"
-# OLD [1] "84d5fc71166402c5a2a9245ef562690b"
+# "87271254388a263c90ef3fa3a7a806ee"
+
+# saveToLocalRepo(titanic_svm_v6, repoDir = "models")
+# "be26e200fd6453088f5db791ac07471c"
+# saveToLocalRepo(explain_titanic_svm_v6, repoDir = "models")
+# "21966045bff86bba565814e8f1a18384"
+
 ```
 
 ### List of objects for the `titanic` example  {#ListOfModelsTitanic}
@@ -305,10 +336,11 @@ Table: (\#tab:archivistHooksOfModelsTitanic) Predictive models created for the `
 
 | Model name   | Model generator | Variables  | Archivist hooks |
 |--------------|-----------------|------------|-----------------|
-| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  Get the model: `archivist:: aread("pbiecek/models/ceb40")`. Get the explainer: `archivist:: aread("pbiecek/models/51c50")` |
-| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/1f938")`. Get the explainer: `archivist:: aread("pbiecek/models/42d51")` |
-| `titanic_rf_v3`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class  | Get the model:  `archivist:: aread("pbiecek/models/855c1")`. Get the explainer: `archivist:: aread("pbiecek/models/0e5d2")` |
-| `titanic_gbm_v6`  | `gbm:: gbm`  v.2.1.5 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/24e72")`. Get the explainer: `archivist:: aread("pbiecek/models/3d514")` |
+| `titanic_lmr_v6`  | `rms:: lmr` v.5.1.3  | gender, age, class, sibsp, parch, fare, embarked |  Get the model: `archivist:: aread("pbiecek/models/56d8a")`. Get the explainer: `archivist:: aread("pbiecek/models/34e19")` |
+| `titanic_rf_v6`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/31570")`. Get the explainer: `archivist:: aread("pbiecek/models/6ed54")` |
+| `titanic_rf_v3`  | `randomForest:: randomForest`  v.4.6.14 | gender, age, class  | Get the model:  `archivist:: aread("pbiecek/models/855c1")`. Get the explainer: `archivist:: aread("pbiecek/models/5b32a")` |
+| `titanic_gbm_v6`  | `gbm:: gbm`  v.2.1.5 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/08544")`. Get the explainer: `archivist:: aread("pbiecek/models/87271")` |
+| `titanic_svm_v6`  | `e1071:: svm`  1.7-2 | gender, age, class, sibsp, parch, fare, embarked | Get the model:  `archivist:: aread("pbiecek/models/be26e")`. Get the explainer: `archivist:: aread("pbiecek/models/21966")` |
 
 Table \@ref(tab:archivistHooksOfDataFramesTitanic) summarizes the data frames that will be used in examples in the subsequent chapters.
 
@@ -444,7 +476,7 @@ load("models/apartments_rf_v5.rda")
 apartments_rf_v5
 ```
 
-### Support vector model {#model-Apartments-rf}
+### Support vector model {#model-Apartments-svm}
 
 As an another challenger to the linear regression model, we consider a Support Vector Machines model. To fit the model, we use the `svm()` function, with default settings, from the package `e1071` [@R-e1071].  
 The results of the model are stored in model-object `apartments_svm_v5`. 
@@ -523,17 +555,4 @@ Table: (\#tab:archivistHooksOfModelsApartments) Predictive models created for th
 |  `apartments_rf_v5` | `randomForest:: randomForest` v.4.6.14 | construction .year, surface, floor, no.rooms, district  | Get the model: `archivist:: aread("pbiecek/models/fe7a5")`. Get the explainer: `archivist:: aread("pbiecek/models/569b0")` |
 |  `apartments_svm_v5` | `e1071:: svm` v.1.7-2 | construction .year, surface, floor, no.rooms, district  | Get the model: `archivist:: aread("pbiecek/models/")`. Get the explainer: `archivist:: aread("pbiecek/models/")` |
 
-
-```{r save_models, warning=FALSE, message=FALSE, echo=FALSE}
-link_to_data_models <- "models/titanic_lmr_v6.rda"
-if (!file.exists(link_to_data_models)) {
-  save(titanic, file = "models/titanic.rda")
-  save(titanic_lmr_v6, file = "models/titanic_lmr_v6.rda")
-  save(titanic_rf_v6, file = "models/titanic_rf_v6.rda")
-  save(titanic_rf_v3, file = "models/titanic_rf_v3.rda")
-  save(titanic_gbm_v6, file = "models/titanic_gbm_v6.rda")
-  
-  save(apartments_lm_v5, file = "models/apartments_lm_v5.rda")
-}
-```
 
