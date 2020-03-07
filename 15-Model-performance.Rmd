@@ -185,35 +185,35 @@ An alternative approach is to sum the appropriate counts from the confusion tabl
 (\#eq:precmicro)
 \end{equation}
 
-In machine-learning world, this approach is often termed ''micro-averaging'' (hence subscript $\mu$ for ''micro'' in $Precision_{\mu}$ in \@ref(eq:precmicro)). Note that, for accuracy, this computation still leads to \@ref(eq:accmacro). The measures computed in that way favor classes with larger numbers of observations.
+In machine-learning world, this approach is often termed ''micro-averaging'' (hence subscript $\mu$ for ''micro'' in Equation $Precision_{\mu}$ in \@ref(eq:precmicro)). Note that, for accuracy, this computation still leads to Equation \@ref(eq:accmacro). The measures computed in that way favor classes with larger numbers of observations.
 
 ### Count dependent variable {#modelPerformanceMethodCount}
 
-In case of counts, one could consider using any of the measures for a continuous dependent variable mentioned in Section \@ref(modelPerformanceMethodCont). However, a particular feature of a count dependent variable is that, often, its variance depends on the mean value. Consequently, weighing all contributions to MSE equally, as in \@ref(eq:MSE), is not appropriate, because the same residual value $r_i$ indicates a larger discrepancy for a smaller  count $y_i$ than for a larger one. Therefore, a popular measure is of performance of a predictive model for counts is Pearson's statistic: 
+In case of counts, one could consider using any of the measures for a continuous dependent variable mentioned in Section \@ref(modelPerformanceMethodCont). However, a particular feature of a count dependent variable is that, often, its variance depends on the mean value. Consequently, weighing all contributions to MSE equally, as in Equation \@ref(eq:MSE), is not appropriate, because the same residual value $r_i$ indicates a larger discrepancy for a smaller  count $y_i$ than for a larger one. Therefore, a popular measure is of performance of a predictive model for counts is Pearson's statistic: 
 
 \begin{equation}
 \chi^2(f,X,y) = \sum_{i}^{n} \left\{\frac{f(x_i) - y_i}{\sqrt{f(x_i)}}\right\}^2 = \sum_{i}^{n} \left\{\frac{r_i}{\sqrt{f(x_i)}}\right\}^2.
 (\#eq:Pearson)
 \end{equation}
 
-From \@ref(eq:Pearson) it is clear that, if the same residual value is obtained for two different observed counts, it is assigned a larger weight for the count for which the predicted value is smaller. 
+From Equation \@ref(eq:Pearson) it is clear that, if the same residual value is obtained for two different observed counts, it is assigned a larger weight for the count for which the predicted value is smaller. 
 
 ## Example
 
 ### Apartment prices {#modelPerformanceApartments}
 
-Let us consider the linear regression model `apartments_lm_v5` (see Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the data on the apartment prices  (see Section \@ref(ApartmentDataset)). Recall that, for these data, the dependent variable, the price, is continuous. Hence, we can use the performance measures presented in Section \@ref(modelPerformanceMethodCont). In particular, we consider MSE and MAE. The values of the two measures for the two models are presented below. 
+Let us consider the linear regression model `apartments_lm_v5` (see Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the data on the apartment prices  (see Section \@ref(ApartmentDataset)). Recall that, for these data, the dependent variable, the price, is continuous. Hence, we can use the performance measures presented in Section \@ref(modelPerformanceMethodCont). In particular, we consider MSE and RMSE The values of the two measures for the two models are presented below. 
 
 ```
 ## Model label:  Linear Regression v5 
 ##          score name
-## mse 78023.1235  mse
-## mae   260.0254  mae
+## mse  80137.98   mse
+## rmse 283.0865  rmse
 
 ## Model label:  Random Forest v5 
 ##          score name
-## mse 36669.1954  mse
-## mae   144.0888  mae
+## mse  80061.77   mse
+## rmse   282.952 rmse
 ```
 
 Both MSE and MAE indicate that, overall, the random-forest model performs better than the linear regression model.
@@ -222,15 +222,8 @@ Both MSE and MAE indicate that, overall, the random-forest model performs better
 library("DALEX")
 library("randomForest")
 
-explainer_apartments_lr <- archivist:: aread("pbiecek/models/f49ea")
-explainer_apartments_lr <- explain(explainer_apartments_lr$model,
-                                   data = explainer_apartments_lr$data,
-                                   y = explainer_apartments_lr$y)
-
-explainer_apartments_rf <- archivist:: aread("pbiecek/models/569b0")
-explainer_apartments_rf <- explain(explainer_apartments_rf$model,
-                                   data = explainer_apartments_rf$data,
-                                   y = explainer_apartments_rf$y)
+explainer_apartments_lr <- archivist:: aread("pbiecek/models/78d4e")
+explainer_apartments_rf <- archivist:: aread("pbiecek/models/b1739")
 
 DALEX::model_performance(explainer_apartments_lr)
 ## Model label:  Linear Regression v5 
@@ -272,53 +265,33 @@ Overall, the random-forest model is performing better, as indicated by the large
 library("DALEX")
 library("randomForest")
 
-explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
-explainer_titanic_rf <- explain(explainer_titanic_rf$model,
-                               data = explainer_titanic_rf$data,
-                               y = explainer_titanic_rf$y,
-                               type = "classification")
-
-explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
-explainer_titanic_lr <- explain(explainer_titanic_lr$model,
-                               data = explainer_titanic_lr$data,
-                               y = explainer_titanic_lr$y,
-                               type = "classification")
+explainer_titanic_rf <- archivist:: aread("pbiecek/models/6ed54")
+explain_titanic_lmr <- archivist:: aread("pbiecek/models/ff1cd")
 
 DALEX::model_performance(explainer_titanic_rf)
-DALEX::model_performance(explainer_titanic_lr)
+DALEX::model_performance(explain_titanic_lmr)
 ```
 
 Figure \@ref(fig:titanicROC) presents ROC curves for both models. The curve for the random-forest model lies above the one for the logistic regression model for the majority of the cut-offs $C$, except for the very high values.
 
-```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="ROC curves for the  random-forest model and the logistic regression model for the Titanic dataset."}
+```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="ROC curves for the  random-forest model and the logistic regression model for the Titanic dataset.", fig.align='center'}
 library("DALEX")
 library("randomForest")
 
 # plot results
-explain_titanic_rf <- explain(explain_titanic_rf$model, 
-                              explain_titanic_rf$data, 
-                              y = explain_titanic_rf$y, 
-                              type = "classification",
-                              verbose = FALSE)
-explain_titanic_lr <- explain(explain_titanic_lmr$model,
-                              explain_titanic_lmr$data, 
-                              y = explain_titanic_lmr$y, 
-                              type = "classification",
-                              verbose = FALSE)
-
 eva_rf <- DALEX::model_performance(explain_titanic_rf)
-eva_lr <- DALEX::model_performance(explain_titanic_lr)
+eva_lr <- DALEX::model_performance(explain_titanic_lmr)
 plot(eva_rf, eva_lr, geom = "roc")
 ```
 
-Figure \@ref(fig:titanicLift) presents lift curves for both models. Also in this case the curve for the random-forest suggests a better performance than for the logistic regression model, except for the very high values of cut-ff $C$.
+Figure \@ref(fig:titanicLift) presents lift curves for both models. Also in this case the curve for the random-forest suggests a better performance than for the logistic regression model, except for the very high values of cut-off $C$.
 
 
-```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Lift curves for the  random-forest model and the logistic regression model for the Titanic dataset."}
+```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Lift curves for the  random-forest model and the logistic regression model for the Titanic dataset.", fig.align='center'}
 plot(eva_rf, eva_lr, geom = "lift")
 ```
 
-```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Cumulative gain chart for the  random-forest model and the logistic regression model for the Titanic dataset."}
+```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, fig.cap="Cumulative gain chart for the  random-forest model and the logistic regression model for the Titanic dataset.", fig.align='center'}
 plot(eva_rf, eva_lr, geom = "gain")
 ```
 
@@ -341,20 +314,11 @@ To illustrate the use of the functions, we first load explainers for both models
 library("DALEX")
 library("randomForest")
 
-explainer_titanic_rf <- archivist:: aread("pbiecek/models/51c50")
-explainer_titanic_rf <- explain(explainer_titanic_rf$model,
-                               data = explainer_titanic_rf$data,
-                               y = explainer_titanic_rf$y,
-                               type = "classification")
-
-explainer_titanic_lr <- archivist:: aread("pbiecek/models/42d51")
-explainer_titanic_lr <- explain(explainer_titanic_lr$model,
-                               data = explainer_titanic_lr$data,
-                               y = explainer_titanic_lr$y,
-                               type = "classification")
+explainer_titanic_rf <- archivist:: aread("pbiecek/models/6ed54")
+explain_titanic_lmr <- archivist:: aread("pbiecek/models/ff1cd")
 
 DALEX::model_performance(explainer_titanic_rf)
-DALEX::model_performance(explainer_titanic_lr)
+DALEX::model_performance(explain_titanic_lmr)
 ```
 
 Function `DALEX::model_performance()` calculates selected model performance measures. By default a set of selected performance measures are calculated. The argument `type` in the `explain()` function is used to determine if we deal with classification or regression model. 
@@ -362,23 +326,26 @@ Function `DALEX::model_performance()` calculates selected model performance meas
 
 ```{r modelPerformanceMeasure, message=FALSE}
 model_performance(explain_titanic_rf)
-model_performance(explain_titanic_lr)
+model_performance(explain_titanic_lmr)
 ```
 
 ROC or lift curves can be constructed with the `plot()` function. The argument `geom` specifies what type of visual model performance summary shall be plotted. Use `geom = "lift"` for lift charts, `geom = "roc"` for ROC charts, `geom = "histogram"` for historam of residuals.
 In all cases the plot functions return `ggplot2` objects and can take one or more explainer objects as arguments. In the latter case, the profiles for each explainer are superimposed on one plot. 
 
-```{r titanicMEexamples, warning=FALSE, message=FALSE, fig.width=5, fig.height=5}
-eva_rf <- model_performance(explain_titanic_rf)
-eva_lr <- model_performance(explain_titanic_lr)
+```{r titanicMEexamples, warning=FALSE, message=FALSE, fig.width=9, fig.height=5, fig.align='center'}
+eva_rf <- DALEX::model_performance(explain_titanic_rf)
+eva_lr <- DALEX::model_performance(explain_titanic_lmr)
 
-plot(eva_rf, eva_lr, geom = "roc")
-plot(eva_rf, eva_lr, geom = "lift")
+p1 <- plot(eva_rf, eva_lr, geom = "roc")
+p2 <- plot(eva_rf, eva_lr, geom = "lift")
+
+library("patchwork")
+p1 + p2
 ```
 
 The resulting plots are shown in Figures \@ref(fig:titanicROC) and \@ref(fig:titanicLift). Both plots can be supplemented with boxplots for residuals. Toward this end, the residuals have got to be computed and added to the explainer object with the help of the `model_performance()` function. Subsequently, the `plot()` can be applied to the resulting object.   
 
-```{r titanicBoxplots, fig.cap="Boxplots for residuals for two models on Titanic dataset.",  warning=FALSE, message=FALSE, fig.width=5, fig.height=3}
+```{r titanicBoxplots, fig.cap="Boxplots for residuals for two models on Titanic dataset.",  warning=FALSE, message=FALSE, fig.width=7, fig.height=3, fig.align='center'}
 plot(eva_rf, eva_lr, geom = "boxplot")
 ```
 
