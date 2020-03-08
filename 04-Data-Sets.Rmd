@@ -155,8 +155,8 @@ The dependent variable of interest, *survival*, is binary. Thus, a natural choic
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
 set.seed(1313)
-titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class + sibsp +
-                   parch + fare + embarked, titanic)
+titanic_lmr_v6 <- lrm(survived == "yes" ~ gender + rcs(age) + class +
+         sibsp + parch + fare + embarked, titanic)
 titanic_lmr_v6
 ```
 
@@ -172,15 +172,16 @@ In the first instance, we fit a model with the same set of explanatory variables
 ```{r titanicRandomForest01, warning=FALSE, message=FALSE}
 library("randomForest")
 set.seed(1313)
-titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, 
-                           data = titanic)
+titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + 
+         parch + fare + embarked, data = titanic)
 titanic_rf_v6
 ```
 
 For comparison purposes, we also consider a model with only three explanatory variables: *class*, *gender*, and *age*. The results of the model are stored in model-object `titanic_rf_v3`.
 
 ```{r titanicRandomForest02, warning=FALSE, message=FALSE}
-titanic_rf_v3 <- randomForest(survived ~ class + gender + age, data = titanic)
+titanic_rf_v3 <- randomForest(survived ~ class + gender + age, 
+         data = titanic)
 titanic_rf_v3
 ```
    
@@ -191,8 +192,9 @@ Let's consider an another challenger -- the gradient-boosting model [@Friedman00
 ```{r titanicGBM01, warning=FALSE, message=FALSE}
 library("gbm")
 set.seed(1313)
-titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + parch + fare + embarked, 
-                      data = titanic, n.trees = 15000, distribution = "bernoulli")
+titanic_gbm_v6 <- gbm(survived == "yes" ~ class + gender + age + sibsp + 
+         parch + fare + embarked, data = titanic, n.trees = 15000, 
+         distribution = "bernoulli")
 titanic_gbm_v6
 ```
 
@@ -205,8 +207,8 @@ Finally, we consider also Support Vector Machine model [@svm95vapnik]. We use th
 library("e1071")
 set.seed(1313)
 titanic_svm_v6 <- svm(survived == "yes" ~ class + gender + age + sibsp +
-                             parch + fare + embarked, data = titanic, 
-                           type = "C-classification", probability = TRUE)
+            parch + fare + embarked, data = titanic, 
+            type = "C-classification", probability = TRUE)
 titanic_svm_v6
 ```
 
@@ -218,13 +220,15 @@ First, we create a dataframe `johny_d` that contains the data describing the pas
 
 ```{r titanicPred01, warning=FALSE, message=FALSE}
 johny_d <- data.frame(
-            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
+            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew",
+                        "engineering crew", "restaurant staff", "victualling crew")),
             gender = factor("male", levels = c("female", "male")),
             age = 8,
             sibsp = 0,
             parch = 0,
             fare = 72,
-            embarked = factor("Southampton", levels = c("Belfast","Cherbourg","Queenstown","Southampton"))
+            embarked = factor("Southampton", levels = c("Belfast",
+                        "Cherbourg","Queenstown","Southampton"))
 )
 ```
 
@@ -250,13 +254,15 @@ Note that for some examples we will use another observation (instance) with lowe
 
 ```{r, warning=FALSE, message=FALSE}
 henry <- data.frame(
-            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", "restaurant staff", "victualling crew")),
-            gender = factor("male", levels = c("female", "male")),
-            age = 47,
-            sibsp = 0,
-            parch = 0,
-            fare = 25,
-            embarked = factor("Cherbourg", levels = c("Belfast","Cherbourg","Queenstown","Southampton"))
+         class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", 
+                     "engineering crew", "restaurant staff", "victualling crew")),
+         gender = factor("male", levels = c("female", "male")),
+         age = 47,
+         sibsp = 0,
+         parch = 0,
+         fare = 25,
+         embarked = factor("Cherbourg", levels = c("Belfast",
+                           "Cherbourg","Queenstown","Southampton"))
 )
 predict(titanic_lmr_v6, henry, type = "fitted")
 predict(titanic_rf_v6, henry, type = "prob")
@@ -394,7 +400,8 @@ The variable of interest is *m2.price*, the price per meter-squared. The histogr
 ```{r appartmentsExplorationMi2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap="Distribution of the price per meter-squared in the apartments data."}
 ggplot(data = apartments) +
    geom_histogram(aes(m2.price), binwidth = 100, color = "white") +
-   labs(x="Price per meter-squared", title='Histogram for apartments prices per m2') + theme_drwhy() + theme(legend.position = "none") 
+   labs(x="Price per meter-squared", title='Histogram for apartments prices') + 
+   theme_drwhy() + theme(legend.position = "none") 
 ```
 
 Figure  \@ref(fig:appartmentsMi2Construction) suggests (possibly) a nonlinear relation between *construction.year* and *m2.price* and a linear relation between *surface* and *m2.price*.
@@ -404,12 +411,16 @@ Figure  \@ref(fig:appartmentsMi2Construction) suggests (possibly) a nonlinear re
 pa1 <- ggplot(data = apartments, aes(construction.year, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Construction year", title='Apartment price per m2 vs. construction year') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Construction year", 
+   title='Apartment price per m2 vs. construction year') + theme_drwhy() +
+   theme(legend.position = "none") 
 
 pa2 <- ggplot(data = apartments, aes(surface, m2.price)) +
    geom_point(size = 0.3) +
   geom_smooth(se = FALSE, size=1, color = "#371ea3") +
-   labs(y="Price per meter-squared", x = "Surface (meter-squared)", title='Apartment price per m2 vs. surface') + theme_drwhy() + theme(legend.position = "none") 
+   labs(y="Price per meter-squared", x = "Surface (meter-squared)", 
+        title='Apartment price per m2 vs. surface') + theme_drwhy() + 
+   theme(legend.position = "none") 
 
 pa1 + pa2
 ```
@@ -484,7 +495,7 @@ The results of the model are stored in model-object `apartments_svm_v5`.
 ```{r, warning=FALSE, message=FALSE, eval = FALSE}
 library("e1071")
 apartments_svm_v5 <- svm(m2.price ~ construction.year + surface + floor + 
-                         no.rooms + district, data = apartments)
+         no.rooms + district, data = apartments)
 apartments_svm_v5
 ```
 
@@ -519,17 +530,14 @@ In similar spirit to the Section \@ref(ExplainersTitanicRCode) we will use expla
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 explain_apartments_lm_v5 <- explain(model = apartments_lm_v5, 
-                                 data = apartments_test,
-                                 y = apartments_test$m2.price,
-                                 label = "Linear Regression")
+         data = apartments_test, y = apartments_test$m2.price,
+         label = "Linear Regression")
 explain_apartments_rf_v5 <- explain(model = apartments_rf_v5, 
-                                 data = apartments_test,
-                                 y = apartments_test$m2.price,
-                                 label = "Random Forest")
+         data = apartments_test, y = apartments_test$m2.price,
+         label = "Random Forest")
 explain_apartments_svm_v5 <- explain(model = apartments_svm_v5, 
-                                 data = apartments_test,
-                                 y = apartments_test$m2.price,
-                                 label = "Support Vector Machines")
+         data = apartments_test, y = apartments_test$m2.price,
+         label = "Support Vector Machines")
 ```
 
 ```{r eval=FALSE, echo=FALSE}
