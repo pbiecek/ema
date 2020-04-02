@@ -2,143 +2,203 @@
 
 ## Introduction {#MDPIntro}
 
-In this book we present methods that can be used for exploration and explanation of predictive models. But before we can explore a model, first we need to train one.
+Predictive models are created for various purposes. For instance, a team of data scientists may spend months on developing a single model that will be used for scoring risks of transactions in a large financial company. In that case, every aspect of the model is important, as the model will be used on a large scale and will have important long-term consequences for the company. Hence, the model-development process may be lengthy and tedious. On the other hand, if a small pizza-delivery chain may want to develop a simple model to roughly predict the demand for deliveries, the development process may be much shorter and less complicated. In that case, the model may be quickly updated or even discarded, without major consequences. 
 
-In this part of the book we overview the process of model development and introduce steps that lead to a model creation. It is not a comprehensive manual ,,how to train a model in 5 steps''. The goal of this chapter is to show what needs to be performed before we can do any diagnostic or exploration of a trained model.
+Irrespectively of the model goals, model-development process involves similar steps. In this chapter, we briefly discuss these steps. 
 
-Predictive models are created for different purposes. Sometimes it is a team of data scientists that spend months on a single model that will be used for model scoring in a big financial company. Every detail is important for models that operate on large scale and have long-term consequences. Another time it is an in-house model trained for prediction of a demand for pizza. The model is developed by a single person in few hours. If model will not perform well it will be updated, replaced or removed.
+## Model-development process {#MDPprocess}
 
-Whatever it is a large model or small one, similar steps are to be taken during model development.
+Several approaches have been proposed to describe the process of model development. On of the most known general approaches is the Cross-industry Standard Process for Data Mining (CRISP-DM) [@crisp1999; @crisp2019wiki]. Methodologies specific for predictive models have been introduced by @r4ds2019, @misconceptions2019, and @mdp2019.  
 
+The common goal of the approaches is to standardize the process. Standardization can help to plan resources needed to develop and maintain a model, and to make sure that no important steps are missed when developing the model.
 
-## The Process {#MDPprocess}
+CRISP-DM is a tool-agnostic procedure. It breaks the model-development process into six phases: business understanding, data understanding, data preparation, modelling, evaluation, and deployment. The phases can be iterated. Note that iterative phases are also considered by @r4ds2019 and @misconceptions2019.
 
-Several approaches are proposed in order to describe the process of model development. Their main goal is to standardize the process. And the standardisation is important because it helps to plan resources needed to develop and maintain the model and also to not miss any important step.
+Figure \@ref(fig:MDPwashmachine) presents a variant of the iterative process, divided into five steps. Data collection and preparation is needed prior to any modelling. One cannot hope for building a model with a good performance if the data are not of good quality. Once data have been collected, they have to be explored to understand their structure. Subsequently, a model can be selected and fitted to the data. The constructed model should be validated. The three steps: data understanding, model assembly, and model audit [TOMASZ: MODEL CONSTRUCTION, MODEL VALIDATION?], are often iterated to arrive at a point when, for instance, a model with a best predictive performance is obtained. Once the "best" model is obtained, it can be "delivered," i.e., implemented in practice aftering performing tests and accompanied with the necessary documentation.
 
-The most known methodology for data science projects is CRISP-DM [@crisp1999], [@crisp2019wiki] which is a tool agnostic procedure. The key component of CRISP-DM is the break down of the whole process into six phases, that are iterated: business understanding, data understanding, data preparation, modeling, evaluation and deployment. CRISP-DM is general, it was designed for any data science project. For predictive models some methodologies are introduced in ,,R for Data Science'' [@r4ds2019] and ,,On XAI Misconceptions'' [@misconceptions2019].Both are focused on iterative repetitions of some phases. 
-Figure \@ref(fig:MDPwashmachine) presents a variant of iterative process divided into five steps. Data preparation is needed prior to any modeling. Better data is needed for better models. On the other hand, garbage-in garbage-out. Once the data is gathered, steps that are usually highlighted are Data understanding, Model assembly and Model audit. This is the common thinking about model development. Repeat these steps until some convergence, e.g. repeat until best model is identified.
-
-```{r MDPwashmachine, echo=FALSE, fig.cap="Lifecycle of predictive model can be decomposed into five tasks. First we need data that is poured into the model development cycle. The model development is highly iterative, learn something new about the data, assemble a new model based on current understanding, and validate the new model. Repeat these steps as long as needed to be satisfied with model performance. Once the model is created we can deliver the model to the production along with required tests and documentation.", out.width = '60%', fig.align='center'}
+```{r MDPwashmachine, echo=FALSE, fig.cap="Lifecycle of a predictive model [TOMASZ: DESIGN OF EXPERIMENT A PART OF DATA PREPARATION? IF SO, CHANGE TO Design of experiment. ML LANGUAGE USED. MODIFY TO, E.G., FEATURE/VARIABLE SELECTION, PARAMETER ESTIMATION/TRAINING ETC. ]. ", out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/MDP_washmachine.png")
 ```
 
+The Model-development Process (MDP), proposed by @mdp2019, has been motivated by Rational Unified Process for Software Development [@rup1998; @usdp1999; @spiral1988]. MDP can be seen as an extension of the scheme presented  in Figure \@ref(fig:MDPwashmachine). MDP recognizes that fact that consecutive iterations are not identical, because the knowledge increases during the process and consecutive iterations are performed with different goals in mind. This is why MDP is presented in Figure \@ref(fig:mdpGeneral) as an untangled version of Figure \@ref(fig:MDPwashmachine). The five phases, present in CRIPSP-DM, are shown in the rows. A single bar in each row represents an amount of resources (for instance, a week-worth workload) that can be devoted to the project at a specific time point (indicated on the horizontal axis). For a particular phase, resources can be used in different amounts depending on the current stage of the process, as indicated by the height of the bars. The stages are indicated at the top of the diagram in Figure \@ref(fig:mdpGeneral): problem formulation, crisp modelling, fine tuning, and maintenance and decomissioning. Problem formulation aims at defining the needs for the model, defining datasets that will be used for training and validation, and deciding which performance measures will be used for the evaluation of the performance of the final model. Crisp modelling focuses on creation of first versions of the model that may provide an idea about, for instance, how complex the model may have to be to yield the desired solution? Fine tuning focuses on improving the initial version(s) of the model and selecting the best one according to the pre-defined metrics. Finally, maintainance and decommissioning aims at monitoring the performance of the model after its implementation. Note that, unlike in CRISP-DM, the diagram in Figure \@ref(fig:mdpGeneral) indicates that the process may start with some resources being spent not on the data-preparation phase, but on the model-audit one. This is because, at the problem formulation stage, we may have to spent some time on defining the goals and model-performance metrics (that will be used in model benchmarking) before an attempt to collect the data.       
 
-In this book we use *Model Development Process* [@mdp2019]. It is motivated by Rational Unified Process for Software Development [@rup1998], [@usdp1999], [@spiral1988]. One can think about MDP as an extension of process introduced in Figure \@ref(fig:MDPwashmachine). What is important is to notice that consecutive iterations are not identical. Our knowledge increases during the process and consecutive iterations are performed with different goals in mind.  
+Figure \@ref(fig:mdpGeneral) also indicates that there may be several iterations of the different phases within each stage, as indicated at the bottom of the diagram. For instance, in the crisp-modelling stage, several versions of a model may be prepared in subsequent iterations.  
 
-This is why MDP is build as an untangled version of Figure \@ref(fig:MDPwashmachine). The MDP process is shown in Figure \@ref(fig:mdpGeneral). Each vertical stripe is a single run of the cycle. 
+<!---
 First iterations are usually focused on *formulation of the problem*. Sometimes the problem is well stated, however it's a rare situation valid maybe only for kaggle competitions. In most real-life problems the problem formulation requires lots of discussions and experiments. Once the problem is defined we can start building first prototypes, first *crisp versions of models*. These initial versions of models are needed to verify if the problem can be solved and how far we are form the solution. Usually we gather more information and go for the next phase, the *fine tuning*. We repeat these iterations until a final version of a model is developed. Then we move to the last phase *maintenance and* (one day) *decommissioning*.  
+--->
 
-(ref:mdpGeneralCaption) Overview of the Model Development Process. Horizontal axis show how time passes from the problem formulation to the model decommissioning. Vertical axis shows tasks are performed in a given phase. Each vertical strip is a next iteration of cycle presented in Figure \@ref(fig:MDPwashmachine)
+(ref:mdpGeneralCaption) Overview of the Model-development Process. The process is split into five different phases (rows) and four stages (indicated at the top of the diagram). Horizontal axis presents the time from the problem formulation to putting the model into practice (decommissioning). For a particular phase, resources can be used in different amounts depending on the current stage of the process, as indicated by the height of the bars. There may be several iterations of different phases withhin each stage, as indicated at the bottom of the diagram. [TOMASZ: MODEL BENCHMARKING AS FIRST. CHANGE SENTENCE STYLE. CHANGE TO MODEL MAINTENANCE AND RELEASE? ALIGN TASKS WITH CRISP-DM. USE MODELLING WITH DOUBLE L.]
 
 ```{r mdpGeneral, echo=FALSE, fig.cap='(ref:mdpGeneralCaption)', out.width = '99%', fig.align='center'}
 knitr::include_graphics("figure/mdp_general.png")
 ```
 
-Having in mind the map of model development we can point places where one can use methods presented in this book.
+Methods presented in this book can be used to get a better understanding the data and the application domain (*exploration*), obtaining insight into model-based predictions (*explanation*), and evaluation of model's performance (*examination*). Thus, refering to MDP in Figure \@ref(fig:mdpGeneral), the methods are suitable for data understanding, model assembly, and model audit phases.
 
-As suggested in the title of this book, three primary applications are: exploration, explanation and debugging. *Exploration* refers to situations in which we better understand the data and the domain. Presented techniques can be used to speed up the variable engineering or variable selection. *Explanation* refers to situations in which we are interested in decision paths beyond particular predictions. *Debugging* refers to situations in which we want to understand weak points of a model and correct them. These applications target phases Data understanding, Model assembly and Model audit.
+<!----
+[TOMASZ: MOVED TO THE NEXT CHAPTER]
+In this book we present various examples based on three use cases. Two introduced in Chapter \@ref(dataSetsIntro) (binary classification in surviving Titanic sinking and regression in apartments pricing) and one in Chapter \@ref(UseCaseFIFA) (estimation of soccer player value based on its skills). Due to space limitation we do not show the full life cycle of these problems, but we are focused on phases Crisp modelling and Fine tuning.
+----> 
 
-In this book we present various examples based on three use cases. Two introduced in Chapter \@ref(dataSetsIntro) (binary classification in surviving Titanic sinking and regression in apartments pricing) and one in Chapter \@ref(UseCaseFIFA) (estimation of soccer player value based on its skills). Due to space limitation we do not show the full life cycle of these problems, but we are focused on phases Crisp modeling and Fine tuning.
-
-Rest of this chapter is focused on a brief overview of the notation and commonly used methods for data exploration, model training and model validation. 
+In the remainder of the chapter we provide a brief overview of the notation that will be used in the book, and the  methods commonly used for data exploration, model fitting, and model validation. 
 
 
 ## Notation {#notation}
 
-Methods described in this book were developed by different authors, who used different mathematical notations. 
-We try to keep the mathematical notation consistent throughout the entire book. In some cases this may result in formulas with a fairly complex system of indices.
+Methods described in this book have been developed by different authors, who used different mathematical notations. 
+We have made an attempt at keeping the mathematical notation consistent throughout the entire book. In some cases this may result in formulas with a fairly complex system of indices.
 
 In this section, we provide a general overview of the notation we use. Whenever necessary, parts of the notation will be explained again in subsequent chapters.
 
-We assume that the data consist $n$ observations/instances. Each observation is described by $p$ explanatory variables. Thus data is described as a set of points on a $p$-dimensional input space $\mathcal X \equiv \mathcal R^p$. By $x \in \mathcal X$ we will refer to a single point in this input space.
-By $x_i$ we refer to the $i$-th observation in this dataset. Of course, $x_i \in \mathcal X$. By $X$ we denote a matrix $n\times p$ with rows corresponding to consecutive observations.
+We will use capital letters like $X$ or $Y$ to denote (scalar) random variables. Observed values of these variables will be denoted by lower-case letters like $x$ or $y$. Vectors and matrices will be distinguished by underlining the letter. Thus, $\underline{X}$ and $\underline{x}$ denote matrix $X$ and (column) vector $x$, respectively. Transposition will be indicated by the prime, i.e., $\underline{x}'$ is the row vector resulting from transposition of a column vector $\underline{x}$. 
 
-Some methods of model exploration are constructed around an observation of interest which will be denoted by $x_{*}$. The observation may not necessarily belong to the analyzed dataset; hence, the use of the asterisk in the index. Of course, $x_* \in \mathcal X$.
+We assume that the data available for modelling consist of $n$ observations/instances. For the $i$-th observation, we have got an observed value $y_i$ of a dependent (random) variable $Y$. We will assume that $Y$ is a scalar, i.e., a single number. In case of dependent categorical variable, we will usually consider $Y$ to be a binary indicator of observing a particular category. 
 
-Points in $\mathcal X$ are $p$ dimensional vectors. We refer to the $j$-th coordinate by using $j$ in superscript. Thus, $x^j_i$ denotes the $j$-th coordinate of the $i$-th observation from the analyzed dataset. If $\mathcal J$ denotes a subset of indices, then $x^{\mathcal J}$ denotes the elements of vector $x$ corresponding to the indices included in $\mathcal J$. 
+Additionally, each observation from a dataset is described by $p$ explanatory variables. We will refer to the (column) vector of the explanatory variables describing the $i$-th observation by $\underline{x}_i$. We can thus consider observations as points in a $p$ dimensional space $\mathcal X \equiv \mathcal R^p$, with $\underline{x}_i \in \mathcal X$. We will often collect all eplanatory-variable data in the $n\times p$ matrix $\underline{X}$ that contains, in the $i$-th row, vector $\underline{x}'_i$ of explanatory variables for the $i$-th observation.
 
-We will use the notation $x^{-j}$ to refer to a vector that results from removing the $j$-th coordinate from vector $x$. By **$x^{j|=z}$**, we denote a vector with the values at all coordinates equal to the values in $x$, except of the $j$-th coordinate, which is set equal to $z$. So, if $w=x^{j|=z}$, then $w^j = z$ and $\forall_{k\neq j} w^k = x^k$. In other words $x^{j|=z} = (x^1, ..., x^{j-1}, z, x^{j+1}, ..., x^p)$.
+When introducing some of the model-exploration methods we will often consider "an observation of interest," for which the vector of explanatory variables will be denoted by $x_{*}$. As the observation may not necessarily belong to the analyzed dataset, we use of the asterisk in the subscript. Clearly, $\underline{x}_{*} \in \mathcal X$.
 
-By $x^{*j}$ we denote a matrix with the values as in $x$ except the $j$th column which is permuted.
+We refer to the $j$-th coordinate of vector $\underline{x}$ by using $j$ in superscript. Thus, $\underline{x}^j_i$ denotes the $j$-th coordinate of vector $\underline{x}_i$ for the $i$-th observation from the analyzed dataset. If $\mathcal J$ denotes a subset of indices, then $\underline{x}^{\mathcal J}$ denotes the vector formed by the coordinates of $\underline{x}$ corresponding to the indices included in $\mathcal J$. 
 
-In this book, a model is a function $f:\mathcal X \rightarrow \mathcal R$ that transforms a point from $\mathcal X$ into a real number. In most cases, the presented methods can be used directly for multivariate dependent variables; however, we use examples with uni-variate responses to simplify the notation.
-Typically, during the model development, we create many competing models. Formally we shall index models to refer to a specific version of a trained model. But for the sake of simplicity we omit these indexes where they are not important.
+We will use the notation $\underline{x}^{-j}$ to refer to a vector that results from removing the $j$-th coordinate from vector $\underline{x}$. By $\underline{x}^{j|=z}$, we denote a vector in which all coordinates are equal to  their values in $\underline{x}$, except of the $j$-th coordinate, which values is set equal to $z$. Thus,  $\underline{x}^{j|=z} = (\underline{x}^1, ..., \underline{x}^{j-1}, z, \underline{x}^{j+1}, ..., \underline{x}^p)$.
 
+Notation $\underline{X}^{*j}$ will be used to denote a matrix with the values as in $\underline{X}$ except of the $j$-th column, for which elements arepermuted.
 
-Later in this book we will use the term **model residual** as the the difference between the observed value of the dependent variable $Y$ for the $i$-th observation from a particular dataset and the model prediction for the observation
+In this book, a model is a function $f:\mathcal X \rightarrow \mathcal R$ that transforms a point from $\mathcal X$ into a real number. In most cases, the presented methods can be used directly for multi-variate dependent variables; however, we use examples with uni-variate responses to simplify the notation.
+
+Typically, during the model development, we create many competing models. Formally, we shall index models to refer to a specific version fitted to a dataset. However, for the sake of simplicity, we will omit the index when it is not important.
+
+We will use the term  "model residual" to indicate the difference between the observed value of the dependent variable $Y$ for the $i$-th observation from a particular dataset and the model prediction for the observation:
 
 \begin{equation}
-r_i = y_i - f(x_i) = y_i - \hat y_i.
+r_i = y_i - f(x_i) = y_i - \hat y_i,
 (\#eq:modelResiduals)
 \end{equation}
 
+where $\hat y_i$ denotes the predicted (or fitted) value of $y_i$. More information about residuals will be provided in Chapter \@ref(residualDiagnostic).
 
-## Data exploration 
+## Data understanding {#dataunderstanding}
 
-Before we start the modeling we need to understand the data.
-Visual, tabular and statistical tools for data exploration are used depending on the character of variables.
+As indicated in Figures \@ref(fig:MDPwashmachine) and \@ref(fig:mdpGeneral), before starting construction of any models, we have got to understand the data. Toward this aim, tools for data exploration such as visualization techniques, tabular summaries, and statistical methods can be used. The choice of the tools depend on the character of variables included in a dataset.
 
-The most know introduction to data exploration is the famous book by John Tukey [@tukey1977]. It introduces new tools for data exploration, like for example boxplots or stem-and-leaf plots. Availability of computational tools makes the process of data exploration easier and more interactive. Find a good overview of techniques for data exploration in ,,Data Science in R'' [@Nolan2015] or ,,R for Data Science'' [@Wickham2017].
+The most know introduction to data exploration is the famous book by @tukey1977. It introduces the (now classical) tools like, for example, box-and-whisker plots or stem-and-leaf plots. Good overviews of techniques for data exploration can also be found in books by @Nolan2015 and @Wickham2017.
 
+In this book, we rely on five visualization techniques for data exploration, schematically presented in Figure \@ref(fig:UMEPEDA). Three of them (histogram, empirical cumulative-distribution (ECD) plot, and box plot) are used to summarize  the distribution of a random (explanatory or dependent) variable; the remaining two (mosaic plot, box plot, and scatter plot) are used to explore relationship between pairs of variables. Note that histogram can be used to explore the distribution of a continuous or a categorical variable, while the ECD plot and box plot are suitable for continuous variables. Mosaic plot is useful for exploring relationship between two categorical variables, while  scatterplot can be applied for two continuous variables. It is worth noting that boxplots can also be used for evaluating a relation between a categorical variable and a continuous one, as illustrated in Figure \@ref(fig:UMEPEDA). 
 
-In this book we will rely on five visual methods for data exploration presented in Figure \@ref(fig:UMEPEDA). Two of them are used to present distribution of explanatory or target variables; three others are used to explore pairwise relations between variables.
-
-```{r UMEPEDA, echo=FALSE, fig.cap="Basic methods for visual exploration. Histogram for distribution of continuous or categorical variables, empirical cumulative distribution for continuous variables. Mosaic plot for relation between two categorical variables, boxplots for relation between continuous and categorical variables or scatterplot for relation between two continuous variables.", out.width = '75%', fig.align='center'}
+```{r UMEPEDA, echo=FALSE, fig.cap="Methods for visual exploration applied in the book.", out.width = '75%', fig.align='center'}
 knitr::include_graphics("figure/UMEPEDA.png")
 ```
 
-Distribution of categorical variable is summarized with a barplot, distribution of numerical variable is summarized with a histogram or empirical cumulative distribution function.
+Exploration of data for the dependent variable usually focuses on the question related to the distribution of the variable. For instance, for a continuous variable, questions like approximate normality or symmetry of the distribution are most often of interest, because of the availability of many powerful methods and models that use the normality assumption. In case of asymmetry (skewness), a possibility of a transformation that could make the distirbution approximately symmetric or normal is usually investigated. For a categorical dependent variable, an important question is whether the proportion of observations in different categories is balanced or not. This is because, for instance, some methods related to the classification problem do not work well with if there is a substanital imbalance between the categories.
 
-Primary goal for exploration of target variable is to decide if some variable transformation is needed (e.g. if the variable is skewed or with fat tails) or to verify if target variable is balanced (because some methods are not working well with unbalanced data). Exploration of dependent variables is performed mainly to decide if any variable transformation is needed.
+Exploration of data for explanatory variables may also include investigation of their distribution. This is because  the results may reveal, for instance, that there is little variability in the observed values of a variable. As a consequence, the variable might be deemed not interesting from a model-construction point of view. Usually, however, the exploration focuses on relationship between explanatory variables themselves on one hand, and their relationship with the dependent variable on the other hand. The results may have important consequences for the model construction. For instance, if an explanatory variable does not appear to be related to the dependent variable, it may be dropped from a model (variable selection/filtering). The exploration results  may also suggest, for instance, a need for a transformation of an explanatory variable to make its relationship with the dependent variable linear (variable engineering). Detection of pairs of strongly-correlated explanatory variables is also of interest, as it may help in resolving issues with, for instance, instability of optimization algorithms used for fitting of a model.    
 
-Relations between two variables, mostly between a single dependent variable and target variable, are visualized with mosaic plots (for two categorical variables), boxplots (for numerical and categorical variable) and scatter plots (for two numerical variables). Such exploration may provide some insights for variable selection/filtering (if the variable is not related with the target then variable may be removed from the model) or variable engineering (if from the exploration we gain information how a variable may be transformed).
+## Model assembly (fitting) {#fitting}
 
+In predictive modelling, we are interested in the distribution of a dependent variable $Y$ given $\underline{x}$, the vector of values of explanatory variables. In the ideal world, we would like to know the entire conditional distribution. In practical applications, however, we usually do not predict the entire distribution, but just some of its characteristics, like the expected (mean) value, a quantile, or variance. Without loss of generality we will assume that we model the conditional expected value of $Y$, i.e., $E(Y | \underline{x})$.
 
-## Model training {#notationTraining}
+Assume that we have got model $f()$, for which $f(\underline{x})$ is an approximation of $E(Y | \underline{x})$, i.e., $E(Y |\underline{x}) \approx f(\underline{x})$. Note that we do not assume that it is a "good" model, nor that the approximation is precise. We simply assume that we have a model that is used to estimate the conditional expected value and to form predictions of the values of the dependent variable. Our interest lies in the evaluation of the quality of the predictions. If the model offers a "good" approximation of the conditional expected value, it should be reflected in its satisfactory predictive performance. 
 
-In predictive modeling, we are interested in a distribution of a dependent variable $Y$ given vector $x_*$. The latter contains values of explanatory variables. In the ideal world, we would like to know the conditional distribution of $Y$ given $x_*$. In practical applications, however, we usually do not predict the entire distribution, but just some of its characteristics like the expected (mean) value, a quantile, or variance. Without loss of generality we will assume that we model the conditional expected value $E_Y(Y | x_*)$.
+Usually, When building a model, the available data are split into two parts. One part, often called a "training set" or "learning data," is used for estimation of the model coefficients. The other part, called a "testing set" or "validation data," is used for model validation. The splitting may be done repeatedly, as in k-fold cross- validation. We leave the topic of model validation for Chapter \@ref(modelPerformance).
 
-Assume that we have got model $f()$, for which $f(x_*)$ is an approximation of $E_Y(Y | x_*)$, i.e., $E_Y(Y | x_*) \approx f(x_*)$. Note that we do not assume that it is a "good" model, nor that the approximation is precise. We simply assume that we have a model that is used to estimate the conditional expected value and to form predictions of the values of the dependent variable. Our interest lies in the evaluation of the quality of the predictions. If the model offers a "good" approximation of the conditional expected value, it should be reflected in its satisfactory predictive performance. 
-
-Usually the available data is split into two parts. One will be used for model training (estimation of model parameters), second will be used for model validation. The splitting may be repeated as in k-fold cross validation or repeated k-fold cross validation (see for example ,,Applied predictive modeling'' [@Kuhn2013]). We leave the topic of model validation for Chapter \@ref(modelPerformance).
-
-Training procedures are different for different models, but most of them can be written as an optimization problem. Let $\Theta$ be a space for possible model parameters. Model training is a procedure of selection a $\theta \in \Theta$ that maximize some loss function $L(y, f_\theta(X))$. For models with large parameter spaces it is common to add additional term $\lambda(\theta)$ that control the model complexity.
+The process of estimation of model coefficients based on the training data, i.e., "fitting" of the model, differs for different models. In most cases, however, it can be seen as an optimization problem. Let $\Theta$ be the space of all possible values of model coefficients. Model fitting (or training) is a procedure of selecting a value $\hat{\underline{\theta}} \in \Theta$ that minimizes some loss function $L()$:
 
 \begin{equation}
-\hat\theta = \arg \min_{\theta \in \Theta}  L (y, f_\theta(X)) + \lambda(\theta). 
+\hat{\underline{\theta}} = \arg \min_{\underline{\theta} \in \Theta}  L\{\underline{y}, f(\underline{\theta};\underline{X})\}, 
+(\#eq:modelTrainingEq0)
+\end{equation}
+
+where $\underline{y}$ is the vector of observed values of the dependent variable and $f(\underline{\theta}; \underline{X})\}$ is the corresponding vector of model predictions. For statistical models it is common to assume some family of probability distributions for the conditional distribution of $Y$ given $\underline{x}$. In such cas, the loss function $L()$ may be defined as a minus logartihm of the likelihood function, where likelihood is the probability of observing $\underline{y}$, given $\underline{X}$, treated as a function of $\underline{\theta}$.
+ 
+For models with a large number of coefficients, it is common to include an additional term $\lambda(\underline{\theta})$ in the loss function that "penalizes" for the use of more complex models:
+
+\begin{equation}
+\tilde{\underline{\theta}} = \arg \min_{\underline{\theta} \in \Theta} \left[L\{\underline{y}, f(\underline{\theta};\underline{X})\} + \lambda(\underline{\theta})\right]. 
 (\#eq:modelTrainingEq1)
 \end{equation}
 
-For statistical models it is common to assume some family of probability distributions for $y|x$. In such case the loss function $L$ may be defined as a minus log-likelihood function for $\theta$. Likelihood is probability of observing $y|x$ as a function of parameter $\theta$.
-
-For example, in linear regression we assume that that observed vector of values $y$ follow a multidimensional Gaussian distribution 
+For example, in linear regression we assume that the observed vector $\underline{y}$ follows a multi-variate Gaussian distribution  
 $$
-y \sim \mathcal N(X \beta, I\sigma^2),
+\underline{y} \sim \mathcal N(\underline{X}' \underline{\beta}, \sigma^2\underline{I}_n),
 $$
-where $\theta = (\beta, \sigma^2)$. In this case equation \@ref(eq:modelTrainingEq1) become
+where $\underline{\theta}' = (\underline{\beta}', \sigma^2)$ and $\underline{I}_n$ denotes the $n \times n$ identity matrix. In this case, equation \@ref(eq:modelTrainingEq1) becomes
 
 \begin{equation}
-\hat\theta = \arg \min_{\theta \in \Theta}  ||y - X \beta||_{2} + \lambda(\beta). 
+\tilde{\underline{\theta}} = \arg \min_{\underline{\theta} \in \Theta}\left\{  \frac{1}{n}||\underline{y} - \underline{X}' \underline{\beta}||_{2} + \lambda(\underline{\beta}) \right\}= \arg \min_{\underline{\theta} \in \Theta} \left\{  \frac{1}{n}\sum_{i=1}^n (y_i-\underline{x}'_i\underline{\beta})^2+ \lambda(\underline{\beta}) \right\}. 
 (\#eq:modelTrainingEq2)
 \end{equation}
 
-For linear regression, the penalty term $\lambda(\beta)$ is equal to $0$, and optimal parameters $\beta$ in equation \@ref(eq:modelTrainingEq2) have close analytical solution $\hat \beta = (X^TX)^{-1}X^Ty$. In ridge regression the penalty  $\lambda(\beta) = \lambda ||\beta||_2$ and also  \@ref(eq:modelTrainingEq2) have analytical solution $\hat \beta = (X^TX + \lambda I)^{-1}X^Ty$. For LASSO regression the penalty  $\lambda(\beta) = \lambda ||\beta||_1$ and $\beta$ are estimated through a numerical optimization.
+For the classcal linear regression, the penalty term $\lambda(\underline{\beta})$ is equal to $0$. In that case,  the optimal parameters $\hat{\underline{\beta}}$ and $\hat{\sigma}^2$, obtained from equation \@ref(eq:modelTrainingEq0), can be expressed in closed-form:
 
-For classification, the natural choice for distribution of $y$ is a Binomial distribution. This leads to logistic regression and logistic loss function. For multi label classification frequent choice is the cross-entropy loss function. 
+\begin{eqnarray*}
+\hat{\underline{\beta}} &=& (\underline{X}'\underline{X})^{-1}\underline{X}'\underline{y},\\
+\hat{\sigma}^2 &=& \frac{1}{n}||\underline{y} - \underline{X}' \hat{\underline{\beta}}||_{2} = \frac{1}{n}\sum_{i=1}^n (y_i-\underline{x}'_i\hat{\underline{\beta}})^2= \frac{1}{n}\sum_{i=1}^n (y_i-\hat{y}_i)^2.
+\end{eqnarray*}
 
-Apart from linear models for $y$ there is a large variety of predictive models. Find a good overview of different techniques for model development in ,,Modern Applied Statistics with S'' [@MASSbook] or ,,Applied predictive modeling'' [@Kuhn2013].
+On the other hand, in ridge regression, the penalty function is defined as follows:
+
+$$\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p \beta_k ^2.$$ 
+
+In that case, the optimal parameters $\tilde{\underline{\beta}}$ and $\tilde{\sigma}^2$, obtained from equation \@ref(eq:modelTrainingEq1), can also be expressed in closed-form:
+
+\begin{eqnarray*}
+\tilde{\underline{\beta}} &=&  (\underline{X}'\underline{X} + \lambda  \underline{I}_n)^{-1}\underline{X}'\underline{y},\\
+\tilde{\sigma}^2 &=& \frac{1}{n}||\underline{y} - \underline{X}' \tilde{\underline{\beta}}||_{2}.
+\end{eqnarray*}
+
+Another possible form of penalty, used in the Least Absolute Shrinkage and Selection Operator (LASSO) regression, is given by 
+
+$$\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p |\beta_k|.$$ 
+
+In that case, $\tilde{\underline{\beta}}$ and $\tilde{\sigma}^2$ have to be estimated by using a numerical optimization procedure.
+
+For a binary dependent variable, i.e., a classification problem, the natural choice for the distribution of $Y$ is the Bernoulli distribution. The resulting loss function, based on the logarithm of the Bernoulli likelihood, is
+
+\begin{equation}
+L(\underline{y},\underline{p})=-\frac{1}{n}\sum_{i=1}^n \{y_i\ln{p_i}+(1-y_i)\ln{(1-p_i)}\},
+(\#eq:modelTrainingBernoulli)
+\end{equation}
+
+where $y_i$ is equal to 0 or 1 in case of "no response" and "response" (or "failure" and "success"), and $p_i$ is the probability of $y_i$ being equal to 1. Function \@ref(eq:modelTrainingBernoulli) is often called  "log-loss" or "binary cross-entropy" in machine-learning literature. 
+
+A popular model for binary data is logistic regression, for which
+
+$$
+\ln{\frac{p_i}{1-p_i}}=\underline{x}_i'\underline{\beta}.
+$$
+In that case, the loss function in \@ref(eq:modelTrainingBernoulli) becomes equal to
+
+\begin{equation}
+L\{\underline{y},f(\underline{\beta},\underline{X})\}=-\frac{1}{n}\sum_{i=1}^n [y_i\underline{x}_i'\underline{\beta}-\ln\{1+\exp(\underline{x}_i'\underline{\beta})\}].
+(\#eq:modelTrainingLogistic)
+\end{equation}
+
+Optimal parameters $\hat{\underline{\beta}}$, resulting from equation \@ref(eq:modelTrainingEq0), have to be found by numerical optimization algorithms.
+
+For a categorical dependent variable, i.e., a multi-label classification problem, the natural choice for the distribution of $Y$  is the multi-nomial distribution. The resulting loss function, in case of $K$ categories, is given by
+
+\begin{equation}
+L(\underline{Y},\underline{P})=-\frac{1}{n}\sum_{i=1}^n\sum_{k=1}^K y_{ik}\ln{p_{ik}},
+(\#eq:modelTrainingMultinomial)
+\end{equation}
+
+where $y_{ik}=1$ if the $k$-th category was noted for the $i$-th observation and 0 otherwise, and $p_{ik}$ is the probability of $y_{ik}$ being equal to 1. Function \@ref(eq:modelTrainingMultinomial) is often called "categorical cross-entropy" in machine-learning literature. Also in this case, optimal parameters $\hat{\underline{\beta}}$, resulting from equation \@ref(eq:modelTrainingEq0), have to be found by numerical optimization algorithms.
 
 
+<!---Apart from linear models for $y$ there is a large variety of predictive models. Find a good overview of different techniques for model development in ,,Modern Applied Statistics with S" [@MASSbook] or ,,Applied predictive modelling" [@Kuhn2013].
+--->
 
-## Model understanding
 
-Usually the model development starts with some crisp early versions that are refined in consecutive iterations. In order to train a final model we need to try numerous candidate models that will be explored, examined and diagnosed. In this book we will introduce techniques that: 
+## Model audit {#validation}
 
-* summarise how good is the current version of a model. Section \@ref(modelPerformance) overviews measures for model performance. These measures are usually used to trace the progress in model development.
-* assess the feature importance. Section \@ref(featureImportance) shows how to assess influence of a single variable on model performance. Features that are not important are usually removed from a model during the model refinement. 
-* shows how a single feature affects the model response. Sections \@ref(partialDependenceProfiles) -- \@ref(accumulatedLocalProfiles) present Partial Dependence Profiles, Accumulated Local Effects and Marginal Profiles. All these techniques help to understand how model consumes particular features. 
-* identifies potential problems with a model. Section \@ref(residualDiagnostic) shows techniques for exploration of model residuals. Looking closer on residuals often help to improve the model. This is possible with tools for local model exploration which are presented in the fist part of the book.
-* performs sensitivity analysis for a model. Section \@ref(ceterisParibus) introduces Ceteris Paribus profiles that helps in a what-if analysis for a model.
-* validated local fit for a model. Section \@ref(localDiagnostics) introduces techniques for assessment if for a single observation the model support its prediction.
-* decompose model predictions into pieces that can be attributed to particular variables.  Sections \@ref(breakDown) -- \@ref(LIME) show different techniques like SHAP, LIME or Break Down for local exploration of a model.
+As indicated in Figure \@ref(fig:mdpGeneral), the modelling process starts with some crisp early versions that are fine-tuned in consecutive iterations. To arrive at a final model, we usually have got to evaluate (audit) numerous candidate models that. In this book, we introduce techniques that allow: 
 
+* decomposing model predictions into components that can be attributed to particular explanatory variables (Chapters \@ref(breakDown) -- \@ref(LIME));
+* conducting sensitivity analysis for model predictions (Chapter \@ref(ceterisParibus)--\@ref(localDiagnostics));
+* summarizing the predictive performance of a model (Chapter \@ref(modelPerformance)). In particular, the presented measures are usually used to trace the progress in model development.
+* assessing the importance of an explanatory variable (Chapter \@ref(featureImportance)). The techniques can be helpful in reducing the set of explanatory variables to be included in a model in the fine-tuning stage. 
+* evaluating the effect of an explanatory variable on model predictions (Chapters \@ref(partialDependenceProfiles) -- \@ref(accumulatedLocalProfiles)). 
+* detailed examination of both overall and instance-specific model performance (Chapter \@ref(residualDiagnostic)).  These are residual-diagnostic tools that can help in identifying potential causes that may lead to issues with model's performance.  
+
+All those techniques can be used to evaluate the current version of a model and to get suggestions for possible improvements. The improvements may be developed and evaluated in the next crisp-modelling or fine-tuning phase.
