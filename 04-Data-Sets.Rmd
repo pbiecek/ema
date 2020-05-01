@@ -212,7 +212,7 @@ titanic_svm_v6
 
 ### Model predictions {#predictions-titanic}
 
-Let us now compare predictions that are obtained from the different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Belfast and travelled in the 1st class with no parents nor siblings, and with a ticket costing 72 pounds. 
+Let us now compare predictions that are obtained from the different models. In particular, we will compute the predicted probability of survival for an 8-year-old boy who embarked in Southampton and travelled in the 1st class with no parents nor siblings, and with a ticket costing 72 pounds. 
 
 First, we create a dataframe `johny_d` that contains the data describing the passenger.
 
@@ -237,7 +237,7 @@ Subsequently, we use the generic function `predict()` to obtain the predicted pr
 ```
 The predicted probability is equal to `r round(pred_lmr, 2)`.
 
-We do the same for the random-forest and gradient-boosting models. [TOMASZ: WHAT ABOUT SVM?]
+We do the same for the random-forest and gradient-boosting models. [TOMASZ: WHAT ABOUT SVM? IT WILL BE USEFUL IN THE SUMMARY CHAPTER OF THE INSTANCE-LEVEL PART.]
 
 ```{r, warning=FALSE, message=FALSE}
 (pred_rf <- predict(titanic_rf_v6, johny_d, type = "prob"))
@@ -267,17 +267,18 @@ predict(titanic_rf_v6, henry, type = "prob")
 predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000)
 ```
 
-### Model adapters {#ExplainersTitanicRCode}
+### Model explainers {#ExplainersTitanicRCode}
 
-Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create an adapter that provides an uniform interface for differnet models. Toward this end, we use the `explain()` function from the `DALEX` package [@DALEX]. The function requires five arguments: 
+Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create an "explainer" that provides an uniform interface for different models. Toward this end, we use the `explain()` function from the `DALEX` package [@DALEX]. The function requires six arguments: 
 
 * `model`, a model-object;
 * `data`, a data frame or matrix used to fit the model; note that the data object should not contain the dependent variable;     
 * `y`, observed values of the dependent variable; 
 * `predict_function`, a function that returns prediction scores; if not specified, then a default `predict()` function is used;
+* `residual_function`, a function that returns model residuals; if not specified, then model residuals defined in equation \@ref(eq:modelResiduals) are calculated;
 * `label`, an unique name of the model; if not specified, then it is extracted from the `class(model)`. 
 
-Each adapter contains all elements needed to create a model explanation, i.e., a suitable `predict()` function, the data, and the model object. Thus, to keep code snippets more concise, in subsequent chapters we will use the explainers instead of the model objects. 
+Each explainer contains all elements needed to create a model explanation, i.e., a suitable `predict()` function, the data, and the model object. Thus, to keep code snippets more concise, in subsequent chapters we will use the explainers instead of the model objects. 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, 

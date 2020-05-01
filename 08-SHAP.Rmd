@@ -94,10 +94,12 @@ Let's translate this problem to the context of model predictions. Explanatory va
 The idea of using Shapley values for evaluation of local variable-importance was introduced by @imeJLMR. We will define the values here using the notation introduced in Section \@ref(BDMethodGen).
 
 Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model prediction $f(\underline{x}_*)$ for a particular instance of interest $\underline{x}_*$. The Shapley value is defined as follows:
+
 \begin{equation}
 \varphi(\underline{x}_*,j) = \frac{1}{p!} \sum_{J} \Delta^{j|\pi(J,j)}(\underline{x}_*),  
 (\#eq:SHAP)
 \end{equation}
+
 where the sum is taken over all $p!$ possible permutations (orderings of explanatory variables) and the variable-importance measure $\Delta^{j|J}(\underline{x}_*)$ was defined in equation \@ref(eq:lcondJBD) in Section \@ref(BDMethodGen). Essentially, $\varphi(\underline{x}_*,j)$ is the average of the variable-importance measures across all possible orderings of explanatory variables.  
 
 It is worth noting that the value of $\Delta^{j|\pi(J,j)}(\underline{x}_*)$ is constant for all permutations $J$ that share the same subset $\pi(J,j)$. It follows that equation \@ref(eq:SHAP) can be expressed in an alternative form:
@@ -114,6 +116,7 @@ S \subseteq \{1,\ldots,p\}\setminus \{j\} \\ |S|=s
 }}  \left\{{{p-1}\choose{s}}^{-1} \Delta^{j|S}(\underline{x}_*)\right\},
 (\#eq:SHAP1)
 \end{eqnarray}
+
 where $|S|$ denotes the cardinal number (size) of set $S$ and the second sum is taken over all subsets $S$ of explanatory variables, excluding the $j$-th one, of size $s$. 
 
 Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p}-1$, i.e., it is much smaller than number of all permutations $p!$. Nevertheless, for a large $p$, it may be feasible to compute Shapley values neither using  \@ref(eq:SHAP) nor \@ref(eq:SHAP1). In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced by @Strumbelj2014. An efficient implementation of computations of Shapley values was used in package SHAP [@SHAP]. 
@@ -256,11 +259,11 @@ The model prediction for Henry is obtained  with the help of the `predict()' fun
 predict(explain_rf_v6, henry)
 ```
 
-To compute Shapley values for Henry, we apply function `variable_attribution()` to the explainer `explain_rf_v6`, created with the `explain()` function from the `DALEX` package, and the data frame for the instance of interest, i.e., `henry`. By specifying the `type="shap"` argument we indicate that we want to compute Shapley values. Additionally, the `B=25` argument indicates that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. 
+To compute Shapley values for Henry, we apply function `variable_attribution()` (see Section \@ref(BDR)) to the explainer `explain_rf_v6`, created with the `explain()` function from the `DALEX` package, and the data frame for the instance of interest, i.e., `henry`. By specifying the `type="shap"` argument we indicate that we want to compute Shapley values. Additionally, the `B=25` argument indicates that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. 
 
 ```{r, warning=FALSE, message=FALSE}
-shap_henry <- variable_attribution(explain_rf_v6, 
-                                   henry, 
+shap_henry <- variable_attribution(explainer = explain_rf_v6, 
+                                   new_observation = henry, 
                                    type = "shap",
                                    B = 25)
 ```
