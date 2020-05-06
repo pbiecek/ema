@@ -151,11 +151,11 @@ Note that function `individual_diagnostics()` has got to compute residuals. Thus
 ```{r residualDistributionFidelityPlot, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
 id_rf_v6 <- individual_diagnostics(explainer = explain_rf_v6,
                                    new_observation = henry,
-                                   neighbours = 100)
+                                   neighbors = 100)
 id_rf_v6
 ```
 
-The resulting object is of class `predict_diagnostics`. It is a list of several components that includes, among others, histograms summarizing the distribution of residuals for the entire training dataset and for the neighbors and the result of the Kolmogorov-Smirnov test comparing the two distributions. The test result is given by default when the object is printed out. In our case, it suggests a statistically significant difference between the two distributions. We can use `plot()` function to compare the distributions graphically. The resulting graph is shown in Figure \@ref(fig:localFidelityPlotResHenry). The plot suggests that the distribution of the residuals for Henry's neighbors might be slgihtly shifted towards positive values, as compared to the overall distribution.  
+The resulting object is of class `predict_diagnostics`. It is a list of several components that includes, among others, histograms summarizing the distribution of residuals for the entire training dataset and for the neighbors and the result of the Kolmogorov-Smirnov test comparing the two distributions. The test result is given by default when the object is printed out. In our case, it suggests a statistically significant difference between the two distributions. We can use `plot()` function to compare the distributions graphically. The resulting graph is shown in Figure \@ref(fig:localFidelityPlotResHenry). The plot suggests that the distribution of the residuals for Henry's neighbors might be slightly shifted towards positive values, as compared to the overall distribution.  
 
 (ref:localFidelityPlotResHenryDesc) The local-fidelity plot for `titanic_rf_v6` random-forest model for the Titanic data and passenger Henry with 100 neighbors.
 
@@ -163,10 +163,7 @@ The resulting object is of class `predict_diagnostics`. It is a list of several 
 plot(id_rf_v6)
 ```
 
-
-[TOMASZ: DISCUSSION OF THE PLOTS BELOW IS NOT FINISHED, AS THERE IS SOMETHING WRONG WITH THE FUNCTION. THE PLOTS DO NOT REFLECT THE SELECTED NUMBER OF NEIGHBORS. AND ARE NOT OF THE FORM SHOWN ERALIER FOR THE CATEGORICAL VARIABLE.]
-
-Function `individual_diagnostics()` can be also used to construct local-stability plots. Toward this aim, we have got to select the explanatory variable, for which we want to create the plot. We can do it by passing the name of the variable to the `variables` argument of the function. In the code below, we first calculate CP profiles and residuals for *age* and 10 neighbors of Henry. [TOMASZ: SOMETHING IS WRONG WITH THE CODE. THE PLOT STILL GIVES MORE THAN 10 NEIGHBORS.]
+Function `individual_diagnostics()` can be also used to construct local-stability plots. Toward this aim, we have got to select the explanatory variable, for which we want to create the plot. We can do it by passing the name of the variable to the `variables` argument of the function. In the code below, we first calculate CP profiles and residuals for *age* and 10 neighbors of Henry. 
 
 <!---
 Toward this aim, we use the `y` argument in the `individual_profile()` function. The argument takes numerical values. Our binary dependent variable `survived` assumes values `yes/no`; to convert them to numerical values, we use the `survived == "yes"` expression.
@@ -175,33 +172,31 @@ Toward this aim, we use the `y` argument in the `individual_profile()` function.
 ```{r localStabilityAgeHenry, warning=FALSE, message=FALSE}
 id_rf_v6_age <- individual_diagnostics(explain_rf_v6,
                           henry, 
-                       neighbours = 10,
+                       neighbors = 10,
                        variables = "age")
 id_rf_v6_age
 ```
 
-By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotAgeHenry). 
+By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotAgeHenry). The profiles are relatively close to each other, suggesting stability of predictions. There are more negative than positive residuals, which may be seen as a signal of a (local) positive bias of the predictions. 
 
-(ref:localStabilityPlotAgeHenryDesc) The local-stability plot for *age* in the `titanic_rf_v6` random-forest model for the Titanic data and passenger Henry with 10 neighbors. [TOMASZ: SOMETHING IS WRONG WITH THE CODE. THE PLOT STILL GIVES MORE THAN 10 NEIGHBORS.]
+(ref:localStabilityPlotAgeHenryDesc) The local-stability plot for *age* in the `titanic_rf_v6` random-forest model for the Titanic data and passenger Henry with 10 neighbors. [TOMASZ: WHY ARE THERE ONLY 7 RESIDUALS?]
 
 ```{r localStabilityPlotAgeHenry, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, fig.cap='(ref:localStabilityPlotAgeHenryDesc)', out.width = '70%', fig.align='center'}
 plot(id_rf_v6_age)
 ```
 
-In the code below, we conduct the necessary calculations for th categorical variable *class* and 10 neighbors of Henry. [TOMASZ: SOMETHING IS WRONG WITH THE CODE. THE PLOT STILL GIVES MORE THAN 10 NEIGHBORS.]
-
+In the code below, we conduct the necessary calculations for th categorical variable *class* and 10 neighbors of Henry. 
 
 ```{r localStabilityClassHenry, warning=FALSE, message=FALSE}
 id_rf_v6_class <- individual_diagnostics(explain_rf_v6,
                           henry, 
-                       neighbours = 10,
+                       neighbors = 10,
                        variables = "class")
 id_rf_v6_class
 ```
 
-By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotClassHenry). 
-
-(ref:localStabilityPlotClassHenryDesc) The local-stability plot for *class* in the `titanic_rf_v6` random-forest model for the Titanic data and passenger Henry with 10 neighbors.  [TOMASZ: SOMETHING IS WRONG WITH THE CODE. THE PLOT STILL GIVES MORE THAN 10 NEIGHBORS. AND IT DOES NOT HAVE THE FORM SHOWN IN Figure \@ref(fig:localStabilityPlotClass).]
+By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotClassHenry).  The profiles are not parallel, indicating non-aditivity of the effect. However, they are relatively close to each other, suggesting stability of predictions. 
+(ref:localStabilityPlotClassHenryDesc) The local-stability plot for *class* in the `titanic_rf_v6` random-forest model for the Titanic data and passenger Henry with 10 neighbors.  [TOMASZ: WHY JUST 2 RESIDUALS? THE PLOT DOES NOT HAVE THE FORM SHOWN IN Figure \@ref(fig:localStabilityPlotClass).]
 
 ```{r localStabilityPlotClassHenry, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, fig.cap='(ref:localStabilityPlotClassHenryDesc)', out.width = '70%', fig.align='center'}
 plot(id_rf_v6_class)
