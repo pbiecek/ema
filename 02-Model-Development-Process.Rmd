@@ -2,6 +2,10 @@
 
 ## Introduction {#MDPIntro}
 
+In general, we can distinguish between two types of statistical modelling: *explanatory* and *predictive* [@Shmueli2010]. In *explanatory  modelling*, models are applied for inferential purposes, i.e., to test hypotheses resulting from some theoretical considerations related to the investigated phenomenon (for instance, related to the effect of a particular clinical factor on a probability of a disease).  In *predictive  modelling*, models are used for the purpose of predicting the value of a new or future observation (for instance, whether a person has got or will develop a disease). It is important to know what is the intended purpose of modelling, because it has got important consequences for the methods used in the model development process. 
+
+In this book, we focus on predictive modelling. Thus, we present mainly the methods relevant for predictive models. Nevertheless, we also show selected methods used in case of explanatory models, in order to discuss, if relevant,  substantive differences between the methods used for the two types of models. 
+
 Predictive models are created for various purposes. For instance, a team of data scientists may spend months on developing a single model that will be used for scoring risks of transactions in a large financial company. In that case, every aspect of the model is important, as the model will be used on a large scale and will have important long-term consequences for the company. Hence, the model-development process may be lengthy and tedious. On the other hand, if a small pizza-delivery chain may want to develop a simple model to roughly predict the demand for deliveries, the development process may be much shorter and less complicated. In that case, the model may be quickly updated or even discarded, without major consequences. 
 
 Irrespectively of the model goals, model-development process involves similar steps. In this chapter, we briefly discuss these steps. 
@@ -53,6 +57,8 @@ In this section, we provide a general overview of the notation we use. Whenever 
 
 We will use capital letters like $X$ or $Y$ to denote (scalar) random variables. Observed values of these variables will be denoted by lower-case letters like $x$ or $y$. Vectors and matrices will be distinguished by underlining the letter. Thus, $\underline{X}$ and $\underline{x}$ denote matrix $X$ and (column) vector $x$, respectively. Note, however, that in some situations $\underline{X}$ may indicae a vector of (scalar) random variables. We will explicitly mention this when needed. Transposition will be indicated by the prime, i.e., $\underline{x}'$ is the row vector resulting from transposition of a column vector $\underline{x}$. 
 
+We will use notation $E(Y)$ and $Var(Y)$ to denote the expected (mean) value and variance of random variable $Y$. If needed, we will use a subscript to indicate the distribution use to compute the parameters. Thus, for instance, $E_{Y|X=x}(Y)$ or $E_{Y|x}(Y)$ will be used to indicate the conditional mean of $Y$ given that random variable $X$ assumes the value of $x$.     
+
 We assume that the data available for modelling consist of $n$ observations/instances. For the $i$-th observation, we have got an observed value $y_i$ of a dependent (random) variable $Y$. We will assume that $Y$ is a scalar, i.e., a single number. In case of dependent categorical variable, we will usually consider $Y$ to be a binary indicator of observing a particular category. 
 
 Additionally, each observation from a dataset is described by $p$ explanatory variables. We will refer to the (column) vector of the explanatory variables describing the $i$-th observation by $\underline{x}_i$. We can thus consider observations as points in a $p$ dimensional space $\mathcal X \equiv \mathcal R^p$, with $\underline{x}_i \in \mathcal X$. We will often collect all eplanatory-variable data in the $n\times p$ matrix $\underline{X}$ that contains, in the $i$-th row, vector $\underline{x}'_i$ of explanatory variables for the $i$-th observation.
@@ -98,11 +104,11 @@ Exploration of data for explanatory variables may also include investigation of 
 
 ## Model assembly (fitting) {#fitting}
 
-In predictive modelling, we are interested in the distribution of a dependent variable $Y$ given $\underline{x}$, the vector of values of explanatory variables. In the ideal world, we would like to know the entire conditional distribution. In practical applications, however, we usually do not predict the entire distribution, but just some of its characteristics, like the expected (mean) value, a quantile, or variance. Without loss of generality we will assume that we model the conditional expected value of $Y$, i.e., $E(Y | \underline{x})$.
+In statistical modelling, we are interested in the distribution of a dependent variable $Y$ given $\underline{x}$, the vector of values of explanatory variables. In the ideal world, we would like to know the entire conditional distribution. In practical applications, however, we usually do not evaluate the entire distribution, but just some of its characteristics, like the expected (mean) value, a quantile, or variance. Without loss of generality we will assume that we model the conditional expected value of $Y$, i.e., $E_{Y | \underline{x}}(Y)$.
 
-Assume that we have got model $f()$, for which $f(\underline{x})$ is an approximation of $E(Y | \underline{x})$, i.e., $E(Y |\underline{x}) \approx f(\underline{x})$. Note that we do not assume that it is a "good" model, nor that the approximation is precise. We simply assume that we have a model that is used to estimate the conditional expected value and to form predictions of the values of the dependent variable. Our interest lies in the evaluation of the quality of the predictions. If the model offers a "good" approximation of the conditional expected value, it should be reflected in its satisfactory predictive performance. 
+Assume that we have got model $f()$, for which $f(\underline{x})$ is an approximation of $E_{Y | \underline{x}}(Y)$, i.e., $E_{Y | \underline{x}}(Y) \approx f(\underline{x})$. Note that, in our book, we do not assume that it is a "good" model, nor that the approximation is precise. We simply assume that we have a model that is used to estimate the conditional expected value and to form predictions of the values of the dependent variable. Our interest lies in the evaluation of the quality of the predictions. If the model offers a "good" approximation of the conditional expected value, it should be reflected in its satisfactory predictive performance. 
 
-Usually, When building a model, the available data are split into two parts. One part, often called a "training set" or "learning data," is used for estimation of the model coefficients. The other part, called a "testing set" or "validation data," is used for model validation. The splitting may be done repeatedly, as in k-fold cross- validation. We leave the topic of model validation for Chapter \@ref(modelPerformance).
+Usually, when building a model, the available data are split into two parts. One part, often called a "training set" or "learning data," is used for estimation of the model coefficients. The other part, called a "testing set" or "validation data," is used for model validation. The splitting may be done repeatedly, as in k-fold cross- validation. We leave the topic of model validation for Chapter \@ref(modelPerformance).
 
 The process of estimation of model coefficients based on the training data, i.e., "fitting" of the model, differs for different models. In most cases, however, it can be seen as an optimization problem. Let $\Theta$ be the space of all possible values of model coefficients. Model fitting (or training) is a procedure of selecting a value $\hat{\underline{\theta}} \in \Theta$ that minimizes some loss function $L()$:
 
@@ -111,9 +117,27 @@ The process of estimation of model coefficients based on the training data, i.e.
 (\#eq:modelTrainingEq0)
 \end{equation}
 
-where $\underline{y}$ is the vector of observed values of the dependent variable and $f(\underline{\theta}; \underline{X})\}$ is the corresponding vector of model predictions. For statistical models it is common to assume some family of probability distributions for the conditional distribution of $Y$ given $\underline{x}$. In such cas, the loss function $L()$ may be defined as a minus logartihm of the likelihood function, where likelihood is the probability of observing $\underline{y}$, given $\underline{X}$, treated as a function of $\underline{\theta}$.
- 
-For models with a large number of coefficients, it is common to include an additional term $\lambda(\underline{\theta})$ in the loss function that "penalizes" for the use of more complex models:
+where $\underline{y}$ is the vector of observed values of the dependent variable and $f(\underline{\theta}; \underline{X})\}$ is the corresponding vector of model predictions computed for model coefficients  $\underline{\theta}$ and matrix $\underline{X}$ of values of explanatory variables for the observations from the training dataset. Denote the estimated form of the model by $f(\hat{\underline{\theta}};\underline{X})$.
+
+Consider predcition of a new observation for which the vector of explanatory variables assumes the value of $\underline{x}_0$, i.e., $f(\hat{\underline{\theta}};\underline{x}_0)$. Assume that $E_{Y | \underline{x}_0}(Y) = f(\underline{\theta};\underline{x}_0)$. It can be shown [@Hastie2009; @Shmueli2010] that the expected squared-error of prediction can be expressed as follows:   
+
+\begin{equation}
+E_{(Y,\hat{\underline{\theta}})|\underline{x}_0}\{Y-f(\hat{\underline{\theta}};\underline{x}_0)\}^2=
+\phantom{E_{Y|\underline{x}_0}\{Y-f(\underline{\theta};\underline{x}_0)\}^2 + [f(\underline{\theta};\underline{x}_0)-E_{\underline{y}|\underline{x}_0}\{{f}(\hat{\underline{\theta}};\underline{x}_0)\}]^2 + E_{\underline{y}|\underline{x}_0}[{f}(\hat{\underline{\theta}};\underline{x}_0)-E_{\underline{y}|\underline{x}_0}\{{f}(\hat{\underline{\theta}};\underline{x}_0)\}]^2 }
+\end{equation}
+\begin{eqnarray}
+&=&E_{Y|\underline{x}_0}\{Y-f(\underline{\theta};\underline{x}_0)\}^2 + [f(\underline{\theta};\underline{x}_0)-E_{\hat{\underline{\theta}}|\underline{x}_0}\{{f}(\hat{\underline{\theta}};\underline{x}_0)\}]^2 + E_{\hat{\underline{\theta}}|\underline{x}_0}[{f}(\hat{\underline{\theta}};\underline{x}_0)-E_{\hat{\underline{\theta}}|\underline{x}_0}\{{f}(\hat{\underline{\theta}};\underline{x}_0)\}]^2\\
+&=& Var_{Y|\underline{x}_0}(Y)+Bias^2+Var_{\hat{\underline{\theta}}|\underline{x}_0}\{\hat{f}(\underline{x}_0)\}.   (\#eq:EPE) 
+\end{eqnarray}
+
+The first term on the right-hand-side of \@ref(eq:EPE) is the variability of $Y$ around its mean value $f(\underline{\theta};\underline{x}_0)$. In general, it cannot be reduced. The second term is the squared 
+difference between the mean value and its estimate, i.e., the squared bias. Bias results from misspecifying the model, e.g., by using a more parsimonious or a simpler model. The third term is the variance of the estimate, due to the fact that we use training data to estimate the model. 
+
+The decomposition presented in \@ref(eq:EPE) underlines an important difference between the explanatory and predictive modelling. In the explanatory modelling, the goal is to minimize the bias, as we are interested in obtaining the most accurate representation of the investigated phenomenon and the related theory. In the predictive modelling, the focus is on minimization of the sum of the bias and the estimation variance, because we are interested in minimization of the prediction error. Thus, sometimes we can accept a certain amount of bias, if it leads to a substantial gain in precision of estimation and, consequently, in a smaller prediction error [@Shmueli2010].
+
+It follows that the choice of the loss function $L()$ in \@ref(eq:modelTrainingEq0) may differ for explanatory and predictive modelling. For the former, it is common to assume some family of probability distributions for the conditional distribution of $Y$ given $\underline{x}$. In such case, the loss function $L()$ may be defined as a minus logarithm of the likelihood function, where likelihood is the probability of observing $\underline{y}$, given $\underline{X}$, treated as a function of $\underline{\theta}$. The resulting estimate of $\underline{\theta}$ is usually denoted by $\hat{\underline{\theta}}$.
+
+In predictive modelling, it is common to add term $\lambda(\underline{\theta})$ to the loss function that "penalizes" for the use of more complex models:
 
 \begin{equation}
 \tilde{\underline{\theta}} = \arg \min_{\underline{\theta} \in \Theta} \left[L\{\underline{y}, f(\underline{\theta};\underline{X})\} + \lambda(\underline{\theta})\right]. 
@@ -140,7 +164,10 @@ For the classcal linear regression, the penalty term $\lambda(\underline{\beta})
 
 On the other hand, in ridge regression, the penalty function is defined as follows:
 
-$$\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p (\beta^k) ^2.$$ 
+\begin{equation}
+\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p (\beta^k) ^2.
+(\#eq:ridgePenalty)
+\end{equation}
 
 In that case, the optimal parameters $\tilde{\underline{\beta}}$ and $\tilde{\sigma}^2$, obtained from equation \@ref(eq:modelTrainingEq1), can also be expressed in closed-form:
 
@@ -149,9 +176,14 @@ In that case, the optimal parameters $\tilde{\underline{\beta}}$ and $\tilde{\si
 \tilde{\sigma}^2 &=& \frac{1}{n}||\underline{y} - \underline{X}' \tilde{\underline{\beta}}||_{2}.
 \end{eqnarray*}
 
+Note that ridge regression leads to non-zero squared-bias in \@ref(eq:EPE), but at the benefit of a reduced estimation variance [@Hastie2009].
+
 Another possible form of penalty, used in the Least Absolute Shrinkage and Selection Operator (LASSO) regression, is given by 
 
-$$\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p |\beta^k|.$$ 
+\begin{equation}
+\lambda(\underline{\beta}) = \lambda \cdot ||\underline{\beta}||_2 = \lambda \sum_{k=1}^p |\beta^k|.
+(\#eq:lassoPenalty)
+\end{equation}
 
 In that case, $\tilde{\underline{\beta}}$ and $\tilde{\sigma}^2$ have to be estimated by using a numerical optimization procedure.
 
@@ -177,6 +209,8 @@ L\{\underline{y},f(\underline{\beta},\underline{X})\}=-\frac{1}{n}\sum_{i=1}^n [
 \end{equation}
 
 Optimal values of parameters $\hat{\underline{\beta}}$, resulting from equation \@ref(eq:modelTrainingEq0), have to be found by numerical optimization algorithms.
+
+Of course, one can combine the loss functions in \@ref(eq:modelTrainingBernoulli) and \@ref(eq:modelTrainingLogistic) with penalties \@ref(eq:Ridge) or \@ref(eq:lassoPenalty) .
 
 For a categorical dependent variable, i.e., a multi-label classification problem, the natural choice for the distribution of $Y$  is the multi-nomial distribution. The resulting loss function, in case of $K$ categories, is given by
 
