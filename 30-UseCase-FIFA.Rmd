@@ -3,13 +3,13 @@
 
 ## Introduction {#FIFAintro}
 
-In the previous chapters, we introduced a range of methods for exploration of predictive models. Different methods were discussed in separate chapters, and while illustrated, they were not directly compared. Thus, in this chapter, we apply the methods to one dataset in order to present their relative merits. In particular, we present an example   of a full process of a model development along the lines introduced in Chapter \@ref(modelDevelopmentProcess). This will allow use to show how one can combine results from the different methods.
+In the previous chapters, we introduced a range of methods for exploration of predictive models. Different methods were discussed in separate chapters, and while illustrated, they were not directly compared. Thus, in this chapter, we apply the methods to one dataset in order to present their relative merits. In particular, we present an example   of a full process of a model development along the lines introduced in Chapter \@ref(modelDevelopmentProcess). [TOMASZ: GETTING CHAPTER 1 HERE. SHOULD BE 2. CHECK REFERENCING.] This will allow use to show how one can combine results from the different methods.
 
 <!----
 The main goal of this chapter is to show how different techniques complement each other. Some phases, like data preparation, are simplified in order to leave space for the method for visual exploration and explanation of predictive models.
 ---->
 
-The Fédération Internationale de Football Association (FIFA) is a governing body of football (sometimes, especially in the US, called soccer). FIFA ratings of football players can be found at `https://sofifa.com/`. Data from this website were scrapped and made available at the Kaggle webpage `https://www.kaggle.com/karangadiya/fifa19`.
+The Fédération Internationale de Football Association (FIFA) is a governing body of football (sometimes, especially in the USA, called soccer). FIFA ratings of football players can be found at `https://sofifa.com/`. Data from this website for 2019 were scrapped and made available at the Kaggle webpage `https://www.kaggle.com/karangadiya/fifa19`.
 
 We will use the data to build a predictive model for evaluation of a player's value. Subsequently, we will use the model exploration and explanation methods to better understand the model's performance, as well as which variables  and how influence a player's value.
 
@@ -41,7 +41,7 @@ load("misc/fifa19small.rda")
 rownames(fifa19small) <- fifa19small$Name
 ```
 
-The dataset contains 89 variables that describe 16,924 players. The variables include information such us age, nationality, club, wage, etc. In what follows we focus on 45 variables that are included in data frame `fifa19small`. The variables are listed below.  
+The dataset contains 89 variables that describe 16,924 players. The variables include information such as age, nationality, club, wage, etc. In what follows, we focus on 45 variables that are included in data frame `fifa19small`. The variables are listed below.  
 
 ```{r warning=FALSE, message=FALSE, echo=TRUE}
 colnames(fifa19small)
@@ -58,7 +58,7 @@ summary(fifa19small$Value.EUR)
 
 Thus, in our analyses we will consider a logarithmically-transformed player's value. Figure \@ref(fig:distFIFA19Value) presents the empirical cumulative-distribution function and histogram for the transformed value. They indicate that the transformation makes the distribution less skewed.
 
-(ref:distFIFA19ValueDesc) The empirical cumulative-distribution function and histogram for the log$_{10}$-transformed players' values."
+(ref:distFIFA19ValueDesc) The empirical cumulative-distribution function and histogram for the log$_{10}$-transformed players' values.
 
 ```{r distFIFA19Value, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=4.5, fig.cap='(ref:distFIFA19ValueDesc)', out.width = '90%', fig.align='center'}
 library("scales")
@@ -80,14 +80,14 @@ pl2 <- ggplot(fifa19small, aes(Value.EUR)) +
 pl1 + pl2
 ```
 
-Additionally, we take a closer look at four characteristics that will be considered as explanatory variables later in this chapter. These are: `Age`, `Reactions` (a movement skill), `BallControl` (a general skill), and `ShortPassing` (an attacking skill).
+Additionally, we take a closer look at four characteristics that will be considered as explanatory variables later in this chapter. These are: `Age`, `Reactions` (a movement skill), `BallControl` (a general skill), and `Dribbling` (a general skill).
 
-Figure \@ref(fig:distFIFA19histograms) presents histograms of the values of the four variables. From the plot for  `Age` we can conclude that most of the players are between 20 and 30 years of age (median age: 25). Variable `Reactions` has an approximately symmetric distribution, with quartiles equal to 56, 62, and 68. Histograms of `BallControl` and `ShortPassing` indicate, interestingly, bimodal distributions. The smaller modes are due to goalkeepers. 
+Figure \@ref(fig:distFIFA19histograms) presents histograms of the values of the four variables. From the plot for  `Age` we can conclude that most of the players are between 20 and 30 years of age (median age: 25). Variable `Reactions` has an approximately symmetric distribution, with quartiles equal to 56, 62, and 68. Histograms of `BallControl` and `Dribbling` indicate, interestingly, bimodal distributions. The smaller modes are due to goalkeepers. 
 
 (ref:distFIFA19histogramsDesc) Histograms for selected characteristics of players.
 
 ```{r distFIFA19histograms, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap='(ref:distFIFA19histogramsDesc)', out.width = '90%', fig.align='center'}
-fifa19small4 <- fifa19small[,c("Age", "Reactions", "BallControl", "ShortPassing")]
+fifa19small4 <- fifa19small[,c("Age", "Reactions", "BallControl", "Dribbling")]
 
 library("tidyr")
 fifa19small4long <- gather(fifa19small4, variable, value)
@@ -98,18 +98,18 @@ ggplot(fifa19small4long, aes(value)) +
 
 ## Data understanding {#FIFAdataunderst}
 
-We will investigate the relationship between the four selected characteristics and the (logarithmically-transformed) player's value. Toward this aim we use the scatterplots shown in Figure \@ref(fig:distFIFA19scatter). Each plot includes a smoothed curve capturing the trend. 
+We will investigate the relationship between the four selected characteristics and the (logarithmically-transformed) player's value. Toward this aim, we use the scatter plots shown in Figure \@ref(fig:distFIFA19scatter). Each plot includes a smoothed curve capturing the trend. 
 
 For `Age`, the relationship is not monotonic. There seems to be an optimal age, between 25 and 30 years, at which player's value reaches the maximum. On the other hand, the value of youngest and oldest players is about 10 times lower, as compared to the maximum. 
 
-For variables `BallControl` and `ShortPassing`, the relationship is not monotonic. In general, the larger value of these coefficients, the large value of a player. However, there are "local" maxima for players with low scores for  `BallControl` and `ShortPassing`. As it was suggested earlier, these are probably goalkeepers.
+For variables `BallControl` and `Dribbling`, the relationship is not monotonic. In general, the larger value of these coefficients, the large value of a player. However, there are "local" maxima for players with low scores for  `BallControl` and `Dribbling`. As it was suggested earlier, these are probably goalkeepers.
 
 For `Reactions`, the association with player's value is monotonic, with increasing values of the variable leading to increasing values of players.
 
-(ref:distFIFA19scatterDesc) Scatterplots illustrating the relationship between the (logarithmically-transformed) player's value and selected characteristics.
+(ref:distFIFA19scatterDesc) Scatter plots illustrating the relationship between the (logarithmically-transformed) player's value and selected characteristics.
 
 ```{r distFIFA19scatter, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap='(ref:distFIFA19scatterDesc)', out.width = '90%', fig.align='center'}
-fifa19small4v <- fifa19small[,c("Value.EUR","Age", "Reactions", "BallControl", "ShortPassing")]
+fifa19small4v <- fifa19small[,c("Value.EUR","Age", "Reactions", "BallControl", "Dribbling")]
 
 fifa19small4long <- gather(fifa19small4v, variable, value, -Value.EUR)
 
@@ -123,9 +123,9 @@ ggplot(fifa19small4long, aes(value, Value.EUR)) +
 
 ```
 
-Figure \@ref(fig:distFIFA19scatter2) presents the scatterplot matrix for the four selected variables. It indicates that all variables are positively correlated, though with a different strength. In particular, `BallControl` and `ShortPassing` are strongly correlated, with the estimated correlation coefficient equal to about 0.9 . `Reactions` is moderately correlated with the other three variables. Finally, there is a moderate correlation between `Age` and `Reactions`, but not much correlation with `BallControl` and `ShortPassing`.   
+Figure \@ref(fig:distFIFA19scatter2) presents the scatter-plot matrix for the four selected variables. It indicates that all variables are positively correlated, though with a different strength. In particular, `BallControl` and `Dribbling` are strongly correlated, with the estimated correlation coefficient larger than 0.9. `Reactions` is moderately correlated with the other three variables. Finally, there is a moderate correlation between `Age` and `Reactions`, but not much correlation with `BallControl` and `Dribbling`.   
 
-(ref:distFIFA19scatter2Desc) Scatterplot matrix illustrating the relationship between selected characteristics of players.
+(ref:distFIFA19scatter2Desc) Scatter-plot matrix illustrating the relationship between selected characteristics of players.
 
 ```{r distFIFA19scatter2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=9, fig.cap='(ref:distFIFA19scatter2Desc)', out.width = '90%', fig.align='center'}
 library("GGally")
@@ -272,7 +272,7 @@ The resulting plot is shown in Figure \@ref(fig:modelPerformanceScatterplot). It
 
 ## Model understanding (dataset-level explanation) {#FIFAmodelunderst}
 
-All four developed models involve many explanatory variables. It is of interest to understand which of them exercises  the largest influence of models' predictions. Towards this aim we can apply the permutation-based variable-importance measure discussed in Chapter \@ref(featureImportance). It can be computed by applying function `model_parts()` from the `DALEX`package (see Section \@ref(featureImportanceR)).
+All four developed models involve many explanatory variables. It is of interest to understand which of them exercises  the largest influence of models' predictions. Toward this aim, we can apply the permutation-based variable-importance measure discussed in Chapter \@ref(featureImportance). It can be computed by applying function `model_parts()` from the `DALEX`package (see Section \@ref(featureImportanceR)).
 
 ```{r featureImportance, warning=FALSE, message=FALSE, echo=TRUE}
 
@@ -296,7 +296,7 @@ The resulting plot is shown in Figure \@ref(fig:featureImportancePlot). The bars
 
 Figure \@ref(fig:featureImportancePlot) indicates that, for the gradient-booting and random-forest models, the two explanatory variables with the largest values of the importance measure are `Reactions` or `BallControl`. The importance of other variables varies depending on the model. Interestingly, in the linear-regression model, the highest importance is given to goal-keeping skills.   
 
-We may also want to take a look at the patrial-dependence (PD) profiles discussed in Chapter \@ref(partialDependenceProfiles). Recall that they illustrate how the expected value of model prediction behaves as a function of an explanatory variable. To create the profiles, we apply function `model_profile()` from the `DALEX`package (see Section \@ref(PDPR)). We focus on variables `Reactions`, `BallControl`, and `Dribbling` that were important in the random-forest model (see Figure \@ref(fig:featureImportancePlot)). We also consider `Age`, as it had some effect in the gradient-boosting models. 
+We may also want to take a look at the partial-dependence (PD) profiles discussed in Chapter \@ref(partialDependenceProfiles). Recall that they illustrate how the expected value of model predictions behaves as a function of an explanatory variable. To create the profiles, we apply function `model_profile()` from the `DALEX`package (see Section \@ref(PDPR)). We focus on variables `Reactions`, `BallControl`, and `Dribbling` that were important in the random-forest model (see Figure \@ref(fig:featureImportancePlot)). We also consider `Age`, as it had some effect in the gradient-boosting models. 
 
 ```{r usecaseFIFApd, warning=FALSE, message=FALSE, echo=TRUE}
 
@@ -324,9 +324,9 @@ plot(fifa19_pd_shallow, fifa19_pd_deep, fifa19_pd_rf, fifa19_pd_rm) +
 
 The resulting plot is shown in Figure \@ref(fig:usecaseFIFApdPlot). For `Reactions`, `BallControl`, and `Dribbling` the shape of the profiles is, in general, similar for all the models and implies an increasing predicted player's value for an increasing (at least, after passing some threshold) value of the explanatory variable. However, for `Age`, the shape is different and suggests a decreasing player's value after the age of about 25 years. It is worth noting that the range of expected model predictions is, in general, the smallest for the random-forest model. Also, the three tree-based models tend to stabilize the predictions at the ends of the explanatory-variable ranges.
 
-The most interesting difference between the conclusions drawn from Figure \@ref(fig:distFIFA19scatter) and those obtained from Figure \@ref(fig:usecaseFIFApdPlot) is observed for variable `Age`. In particular, Figure \@ref(fig:distFIFA19scatter) suggest that the relationship between the variable and player's value is non-monotonic, while Figure \@ref(fig:usecaseFIFApdPlot) suggests a non-increasing one. How can we explain this difference? A possible explanation is as follows. The youngest players have lower values not because of their age, but because of their lower skills, which are correlated (as seen from the scatterplot matrix in Figure \@ref(fig:distFIFA19scatter2)) with young age. The simple data exploration analysis, presented in the upper-left panel of Figure \@ref(fig:distFIFA19scatter), cannot separate the effects of age and skills. As a result, the analysis suggests a decrease of player's value for the youngest players. In models, however, the effect of age is estimated while adjusting for the effect of skills. After this adjustment, the effect takes the form of a non-increasing pattern, as shown by the PD profiles for `Age` in Figure \@ref(fig:usecaseFIFApdPlot). 
+The most interesting difference between the conclusions drawn from Figure \@ref(fig:distFIFA19scatter) and those obtained from Figure \@ref(fig:usecaseFIFApdPlot) is observed for variable `Age`. In particular, Figure \@ref(fig:distFIFA19scatter) suggests that the relationship between player's age and value is non-monotonic, while Figure \@ref(fig:usecaseFIFApdPlot) suggests a non-increasing relationship. How can we explain this difference? A possible explanation is as follows. The youngest players have lower values not because of their age, but because of their lower skills, which are correlated (as seen from the scatter-plot matrix in Figure \@ref(fig:distFIFA19scatter2)) with young age. The simple data exploration analysis, presented in the upper-left panel of Figure \@ref(fig:distFIFA19scatter), cannot separate the effects of age and skills. As a result, the analysis suggests a decrease of player's value for the youngest players. In models, however, the effect of age is estimated while adjusting for the effect of skills. After this adjustment, the effect takes the form of a non-increasing pattern, as shown by the PD profiles for `Age` in Figure \@ref(fig:usecaseFIFApdPlot). 
 
-This example indicates that *exploration of models may provide more insight than exploration of raw data*. In exploratory data analysis, the effect of variable `Age` was confounded by the effect of skill-related variables. By using a model, the confounding can be removed. 
+This example indicates that *exploration of models may provide more insight than exploration of raw data*. In exploratory data analysis, the effect of variable `Age` was confounded by the effect of skill-related variables. By using a model, the confounding has been removed. 
 
 ## Instance-level explanation {#FIFAinstanceunderst}
 
@@ -334,7 +334,7 @@ After evaluation of the models at the dataset-level, we may want to focus on par
 
 ### Robert Lewandowski {#FIFALewy}
 
-As an example, we take a look at the value of *Robert Lewandowski*, for an obvious reason. Below we list his characteristics, as included in the analyzed dataset. Robert Lewandowski is a striker.
+As a first example, we take a look at the value of *Robert Lewandowski*, for an obvious reason. Below we list his characteristics, as included in the analyzed dataset. Robert Lewandowski is a striker.
 
 ```{r RobertLewandowski}
 fifa19small_red["R. Lewandowski",]
@@ -358,7 +358,6 @@ pl1 <- plot(fifa_bd_rf) +
   scale_y_continuous("Predicted value in Euro", 
                       labels = dollar_format(suffix = "€", prefix = "")) + 
   ggtitle("Break-down plot for Robert Lewandowski")
-
 pl1
 ```
 <!----
@@ -372,17 +371,17 @@ pl1 + pl2
 
 The resulting plot is shown in Figure \@ref(fig:usecaseFIFAbreakDownPlot). It suggests that the explanatory variables with the largest effect are `Composure`, `Volleys`, `LongShots`, and `Stamina`. However, in Chapter \@ref(breakDown) it was mentioned that variable attributions may depend on the order of explanatory covariates that is used in calculations. Thus, in Chapter \@ref(shapley) we introduced Shapley values, based on the idea of averaging the attributions over many orderings. Shapley values are implemented in function `variable_attribution()` in the `DALEX` package (see Section \@ref(BDR)). We apply the function to the explainer-object for the random-forest model while specifying argument `type = "shap"`. Note that Shapley values are computed by using 25 random orderings (see Section \@ref(SHAPRcode)).
 
-```{r usecaseFIFAshap, warning=FALSE, message=FALSE, echo=FALSE}
+```{r usecaseFIFAshap, warning=FALSE, message=FALSE, echo=TRUE}
 set.seed(1990)
-fifa_shap_rf <- variable_attribution(fifa_rf_exp, new_observation = fifa19small_red["R. Lewandowski",],
-                         type = "shap")
+fifa_shap_rf <- variable_attribution(fifa_rf_exp, 
+   new_observation = fifa19small_red["R. Lewandowski",], type = "shap")
 ```
 
 Subsequently, we create the plot illustrating the computed values. 
 
 (ref:usecaseFIFAshapPlotDesc) Shapley values for Robert Lewandowski for the random-forest model.
 
-```{r usecaseFIFAshapPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=7, fig.height=5.5, fig.cap='(ref:usecaseFIFAshapPlotDesc)', out.width = '60%', fig.align='center'}
+```{r usecaseFIFAshapPlot, warning=FALSE, message=FALSE, echo=TRUE, fig.width=7, fig.height=5.5, fig.cap='(ref:usecaseFIFAshapPlotDesc)', out.width = '60%', fig.align='center'}
 
 plot(fifa_shap_rf, show_boxplots = FALSE) +
   scale_y_continuous("Estimated value in Euro", 
@@ -401,7 +400,7 @@ plot(fifa_pg, show_boxplots = FALSE) +
 The resulting plot is presented in Figure \@ref(fig:usecaseFIFAshapPlot). It indicates that the five explanatory variables with the largest Shapley values are `BallControl`, `Dribbling`, `Reactions`, `ShortPassing`, and `Positioning`. This makes sense, as Robert Lewandowski is a striker.
 
 In Chapter \@ref(ceterisParibus), we introduced ceteris-paribus (CP) profiles. They capture the effect of a selected explanatory variable in terms of changes of the model prediction induced by changes in the variable's values. 
-The profiles can be obtained with the help of function `individual_profile()` in the `DALEX` package (see Section \@ref(CPR)). We first have got to compute and store the values of the profiles for the selected variables. In the code below we use argument `variable_splits` to provide the values, at which the profiles are to be copmuted. 
+The profiles can be obtained with the help of function `individual_profile()` in the `DALEX` package (see Section \@ref(CPR)). We first have got to compute and store the values of the profiles for the selected variables. In the code below we use argument `variable_splits` to provide the values, at which the profiles are to be computed. 
 <!---
 fifa_cp_shallow <- predict_profile(fifa_gbm_exp_shallow,
                            new_observation = fifa19small_red["R. Lewandowski",], variables = selected_variables,
@@ -449,12 +448,11 @@ The resulting plot is shown in Figure \@ref(fig:usecaseFIFAceterisParibusPlot). 
 As it was argued in Chapter \@ref(localDiagnostics), it is worthwhile to check how the model behaves for observations similar to the instance of interest. Towards this aim, we may want to compare the distribution of residuals for "neighbors" of Robert Lewandowski. Function `individual_diagnostics()` from the `DALEX` package provides the necessary functionality. First, we use it to select 30 closest neighbors and conduct the necessary computations for them. 
 
 ```{r usecaseFIFAceterisParibusNeighbours, warning=FALSE, message=FALSE, echo=TRUE}
-id_rf_v6 <- individual_diagnostics(fifa_rf_exp,
-                          fifa19small_red["R. Lewandowski",],
+id_rf_v6 <- individual_diagnostics(fifa_rf_exp, fifa19small_red["R. Lewandowski",],
                           neighbors = 30)
 ```
 
-Subsequently, we construct a plot that shows the histrogram of residuals for all data and the 50 neighbors.
+Subsequently, we construct a plot that shows the histrogram of residuals for all data and the 30 neighbors.
 
 (ref:usecaseFIFAceterisParibusNeighboursPlotDesc) Distribution of residuals for all players and neighbors of Robert Lewandowski. [TOMASZ: IMPROVE  X LABELS, OVERLAP.]
 
@@ -467,10 +465,8 @@ The resulting plot is presented in Figure \@ref(fig:usecaseFIFAceterisParibusNei
 We can also look at the local-stability plot, i.e., the plot that includes CP profiles for the nearest neighbors and the corresponding residuals (see Chapter \@ref(localDiagnostics)). We will limit ourselves to the plot for `Age`. Thus, we use argument `variables = "Age"` in the call to function `individual_diagnostics()`.   
 
 ```{r usecaseFIFAceterisParibusNeighboursAgeGBM, warning=FALSE, message=FALSE, echo=TRUE}
-id_rf_v6_age <- individual_diagnostics(fifa_rf_exp,
-                          fifa19small_red["R. Lewandowski",],
-                          neighbors = 50,
-                           variables = "Age")
+id_rf_v6_age <- individual_diagnostics(fifa_rf_exp, fifa19small_red["R. Lewandowski",],
+                          neighbors = 30, variables = "Age")
 ```
 
 Then we apply function `plot()` to obtain the desired plot.
@@ -488,7 +484,7 @@ The resulting local-stability plot is presented in Figure \@ref(fig:usecaseFIFAc
 
 ### CR7 {#FIFACR7}
 
-In this section, we present explanations for the random-forest-model prediction for *Cristiano Ronaldo* (CR7). Below we list his characteristics, as included in the analyzed dataset. Note that Cristiano Ronaldo, as Robert Lewandowski, is also a striker. It might be thus of interest to compare the characteristics contributing to the model's predictions for the two players.
+As a second example, we present explanations for the random-forest-model prediction for *Cristiano Ronaldo* (CR7). Below we list his characteristics, as included in the analyzed dataset. Note that Cristiano Ronaldo, as Robert Lewandowski, is also a striker. It might be thus of interest to compare the characteristics contributing to the model's predictions for the two players.
 
 ```{r CR7}
 fifa19small_red["Cristiano Ronaldo",]
@@ -529,7 +525,6 @@ Finally, Figure \@ref(fig:usecaseFIFAceterisParibusCR7Plot) presents CP profiles
 ```{r usecaseFIFAceterisParibusCR7Plot, warning=FALSE, message=FALSE, echo=TRUE, fig.width=8, fig.height=6.5, fig.cap='(ref:usecaseFIFAceterisParibusCR7PlotDesc)', out.width = '90%', fig.align='center'}
 selected_splits <- list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), 
                         BallControl = seq(20,100,0.1), Dribbling = seq(20,100,0.1))
-
 fifa_cp_rf <- individual_profile(fifa_rf_exp,
                            new_observation = fifa19small_red["Cristiano Ronaldo",], 
                                  variables = selected_variables,
