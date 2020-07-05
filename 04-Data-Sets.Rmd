@@ -1,6 +1,6 @@
 # Datasets and models {#dataSetsIntro}
 
-We will illustrate the methods presented in this book by using two datasets relate to: 
+We will illustrate the methods presented in this book by using two datasets related to: 
    
 * predicting probability of survival for passengers of the *RMS Titanic*; 
 * predicting prices of *apartments in Warsaw*.
@@ -95,7 +95,7 @@ pl01 + pl02
 ```
 
 
-Figures \@ref(fig:titanicExplorationGenderAge)--\@ref(fig:titanicExplorationCountryHarbor) present graphically the proportion of non- and survivors for different levels of the other variables with the use of mosaic plots. The height of the bars (on the y-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the width of the bars (on the x-axis) provides the information about the proportion of non- and survivors. The graphs for *age* and *fare* were constructed by using the categorized versions of the variables.
+Figures \@ref(fig:titanicExplorationGenderAge)--\@ref(fig:titanicExplorationCountryHarbor) present graphically the proportion of non- and survivors for different levels of the other variables with the use of mosaic plots. The width of the bars (on the x-axis) reflects the marginal distribution (proportions) of the observed levels of the variable. On the other hand, the height of the bars (on the y-axis) provides the information about the proportion of non- and survivors. The graphs for *age* and *fare* were constructed by using the categorized versions of the variables.
 
 Figure \@ref(fig:titanicExplorationGenderAge) indicates that the proportion of survivors was larger for females and children below 5 years of age. This is most likely the result of the "women and children first" principle that is often evoked in situations that require evacuation of persons whose life is in danger. 
 
@@ -165,7 +165,7 @@ pl7 + pl8
 
 ### Logistic-regression model {#model-titanic-lmr}
 
-The dependent variable of interest, *survived*, is binary. Thus, a natural choice is to start the predictive modelling with a logistic-regression model. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. We also do not expect linear relation for the *fare* variable, but because of its skewness (see Figure \@ref(fig:titanicExplorationHistograms)), we do not use splines for this variable. The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. [TOMASZ: IS SET.SEED NEEDED HERE? ]
+The dependent variable of interest, *survived*, is binary. Thus, a natural choice is to start the predictive modelling with a logistic-regression model. As there is no reason to expect a linear relationship between age and odds of survival, we use linear tail-restricted cubic splines, available in the `rcs()` function of the `rms` package [@rms], to model the effect of age. We also do not expect linear relation for the *fare* variable, but because of its skewness (see Figure \@ref(fig:titanicExplorationHistograms)), we do not use splines for this variable. The results of the model are stored in model-object `titanic_lmr_v6`, which will be used in subsequent chapters. 
  
 ```{r, warning=FALSE, message=FALSE}
 library("rms")
@@ -185,8 +185,8 @@ In the first instance, we fit a model with the same set of explanatory variables
 ```{r titanicRandomForest01, warning=FALSE, message=FALSE}
 library("randomForest")
 set.seed(1313)
-titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + 
-         parch + fare + embarked, data = titanic)
+titanic_rf_v6 <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked,
+   data = titanic)
 titanic_rf_v6
 ```
 
@@ -194,8 +194,7 @@ For comparison purposes, we also consider a model with only three explanatory va
 
 ```{r titanicRandomForest02, warning=FALSE, message=FALSE}
 set.seed(1313)
-titanic_rf_v3 <- randomForest(survived ~ class + gender + age, 
-         data = titanic)
+titanic_rf_v3 <- randomForest(survived ~ class + gender + age, data = titanic)
 titanic_rf_v3
 ```
    
@@ -214,7 +213,7 @@ titanic_gbm_v6
 
 ### Support-vector-machine model {#model-titanic-svm}
 
-Finally, we also consider a support-vector-machine model [@svm95vapnik]. We use the C-classification mode. Again, we fit a model with the same set of explanatory variables as the logistic-regression model (see Section \@ref(model-titanic-lmr)) To fit the model, we use function `svm()` from the `e1071` package [@e1071]. The results of the model are stored in model-object `titanic_svm_v6`.
+Finally, we also consider a support-vector-machine model [@svm95vapnik]. We use the C-classification mode. Again, we fit a model with the same set of explanatory variables as in the logistic-regression model (see Section \@ref(model-titanic-lmr)) To fit the model, we use function `svm()` from the `e1071` package [@e1071]. The results of the model are stored in model-object `titanic_svm_v6`.
 
 ```{r titanicSVM01, warning=FALSE, message=FALSE}
 library("e1071")
@@ -224,7 +223,7 @@ titanic_svm_v6 <- svm(survived == "yes" ~ class + gender + age + sibsp +
 titanic_svm_v6
 ```
 
-### Model predictions {#predictions-titanic}
+### Models' predictions {#predictions-titanic}
 
 Let us now compare predictions that are obtained from the different models. In particular, we compute the predicted probability of survival for Johnny D, an 8-year-old boy who embarked in Southampton and travelled in the first class with no parents nor siblings, and with a ticket costing 72 pounds. 
 
@@ -281,7 +280,7 @@ predict(titanic_gbm_v6, henry, type = "response", n.trees = 15000)
 attr(predict(titanic_svm_v6, henry, probability = TRUE),"probabilities")[,2]
 ```
 
-### Model explainers {#ExplainersTitanicRCode}
+### Models' explainers {#ExplainersTitanicRCode}
 
 Model-objects created with different libraries may have different internal structures. Thus, first, we have got to create an "explainer," i.e., an object that provides an uniform interface for different models. Toward this end, we use the `explain()` function from the `DALEX` package [@DALEX]. As it was mentioned in Section \@ref(infoDALEX), there is only one argument that is required by the function, i.e., `model`. The argument is used to specify the model-object with the fitted form of the model. However, the function allows additional arguments that extend its functionalities. In particular, the list of arguments includes the following: 
 
@@ -290,7 +289,7 @@ Model-objects created with different libraries may have different internal struc
 * `predict_function`, a function that returns prediction scores; if not specified (`predict_function = NULL` by default), then a default `predict()` function is used (note that this may lead to errors); 
 * `residual_function`, a function that returns model residuals; if not specified (`residual_function = NULL` by default), then model residuals defined in equation \@ref(eq:modelResiduals) are calculated;
 * `verbose`, a logical argument (`verbose = TRUE` by default) indicating whether diagnostic messages are to be printed; 
-* `precalculate`, a logical argument (`precalculate = TRUE` by default) indicating whether predicted values and residuals are to be calculated when the explainer is created. Note that this will also happen if `verbose = TRUE`. Set both `verbose` and `precalculate` to FALSE to skip the calculations.
+* `precalculate`, a logical argument (`precalculate = TRUE` by default) indicating whether predicted values and residuals are to be calculated when the explainer is created. Note that this will also happen if `verbose = TRUE`. To skip the calculations, both `verbose` and `precalculate` should be set to FALSE .
 * `model_info`, a named list (with components "package," "version," and "type") providing information about the model; if not specified (`model_info = NULL` by default), `DALEX` seeks for information on its own;
 * `type`, information about the type of the model, either "classification" (for a binary dependent variable) or "regression" (for a continuous depenent variable); if not specified (`type = NULL` by default), then the value of the argument is extracted from `model_info`;
 * `label`, a unique name of the model; if not specified (`label = NULL` by default), then it is extracted from `class(model)`. 
@@ -302,13 +301,13 @@ Application of function `explain()` provides an object of class "explainer." It 
 * `y`, observed values of the dependet variable corresponding to `data`;
 * `y_hat`, predictions obtained by applying `model` to 'data`;
 * `residuals`, residuals computed based on `y` and `y_hat`;
-* `predict_function`, the function used to obtain model predictions;
+* `predict_function`, the function used to obtain the model's predictions;
 * `residual_function`, the function used to obtain residuals;
 * `class`,  class/classes of the model;
 * `label`, label of the model/explainer;
 * `model_info`, a named list (with components "package," "version," and "type") providing information about the model.
 
-Thus, each explainer object contains all elements needed to create a model explanation. The code below creates explainers for the models (see Sections \@ref(model-titanic-lmr)--\@ref(model-titanic-svm)) fitted to the Titanic data. Note that, in the `data` argument, we indicate the `titanic` data frame without the ninth column, i.e., without the *survived* variable. The variable is used in the `y` argument to explicitly define the binary dependent variable equal to 1 for survivors and 0 for passengers who did not survive.  
+Thus, each explainer-object contains all elements needed to create a model explanation. The code below creates explainers for the models (see Sections \@ref(model-titanic-lmr)--\@ref(model-titanic-svm)) fitted to the Titanic data. Note that, in the `data` argument, we indicate the `titanic` data frame without the ninth column, i.e., without the *survived* variable. The variable is used in the `y` argument to explicitly define the binary dependent variable equal to 1 for survivors and 0 for passengers who did not survive.  
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 explain_titanic_lmr_v6 <- explain(model = titanic_lmr_v6, data = titanic[, -9],
@@ -387,7 +386,7 @@ Predicting house prices is a common exercise used in machine-learning courses. V
 
 In this book, we will work with an interesting variant of this problem. The `apartments` dataset is an artificial dataset created to match key characteristics of real apartments in Warsaw, the capital of Poland. However, the dataset is created in a way that two very different models, namely linear regression and random forest, have almost exactly the same accuracy. The natural question is then: which model should we choose? We will show that the model-explanation tools provide important insight into the key model characteristics and are helpful in model selection.
 
-The dataset is available in the `DALEX` package [@DALEX]. It contains 1,000 observations (apartments) and six variables:
+The dataset is available in the `DALEX` package [@DALEX]. It contains 1000 observations (apartments) and six variables:
 
 * *m2.price*, apartment's price per square meter (in EUR), a numerical variable in the range of 1607--6595;
 * *construction.year*, the year of construction of the block of flats in which the apartment is located, a numerical variable in the range of 1920--2010;
@@ -396,14 +395,14 @@ The dataset is available in the `DALEX` package [@DALEX]. It contains 1,000 obse
 * *no.rooms*, the total number of rooms, a numerical integer variable with values ranging from 1 to 6;
 * *district*, a factor with 10 levels indicating the district of Warsaw where the apartment is located.
 
-The R code below provides more information about the contents of the dataset, values of the variables, etc.
+The R code below provides more information about the contents of the dataset and values of the variables.
 
 ```{r, warning=FALSE, message=FALSE}
 library("DALEX")
 head(apartments, 3)
 ```
 
-Models considered for this dataset will use *m2.price* as the (continuous) dependent variable. Model predictions will be obtained for a set of 9,000 apartments included in data frame `apartments_test`. Below we present the first six observations from the data frame.  
+Models considered for this dataset will use *m2.price* as the (continuous) dependent variable. Models' predictions will be obtained for a set of 9000 apartments included in data frame `apartments_test`. Below we present the first six observations from the data frame.  
 [TOMASZ: APARTMENTS_TEST CONTAINS 9,000 OBSERVATIONS (IN DALEX)! MORE THAN APARTMENTS. SHOULD NOT WE USE APARTMENTS_TEST TO BUILD THE MODEL, AND USE APARTMENTS TO TEST IT?]
 
 ```{r, warning=FALSE, message=FALSE}
@@ -447,7 +446,7 @@ pa2 <- ggplot(data = apartments, aes(surface, m2.price)) +
 pa1 + pa2
 ```
 
-Figure \@ref(fig:apartmentsMi2Floor) indicates that relation between *floor* and *m2.price* is also close to linear, as well as relation between *no.rooms* and *m2.price* .
+Figure \@ref(fig:apartmentsMi2Floor) indicates that the relationship between *floor* and *m2.price* is also close to linear, as well as is the association between *no.rooms* and *m2.price* .
 
 (ref:apartmentsMi2FloorCaption) Apartment-prices data. Price per square meter vs. floor (left-hand-side panel) and vs. number of rooms (right-hand-side panel).
 
@@ -466,7 +465,7 @@ pa4 <- ggplot(data = apartments, aes(no.rooms, m2.price, group = no.rooms)) +
 pa3 + pa4
 ```
 
-Figure \@ref(fig:apartmentsSurfaceNorooms) shows that *surface* and *number of rooms* are correlated and that prices depend on district. In particular, box plots in Figure \@ref(fig:apartmentsSurfaceNorooms) indicate that the highest prices per square meter are observed in Srodmiescie (Downtown).
+Figure \@ref(fig:apartmentsSurfaceNorooms) shows that *surface* and *number of rooms* are positively associatied and that prices depend on district. In particular, box plots in Figure \@ref(fig:apartmentsSurfaceNorooms) indicate that the highest prices per square meter are observed in Srodmiescie (Downtown).
 
 (ref:apartmentsSurfaceNoroomsCaption) Apartment-prices data. Surface vs. number of rooms (left-hand-side panel) and price per square meter for different districts  (right-hand-side panel).
 
@@ -521,7 +520,7 @@ apartments_svm_v5 <- svm(m2.price ~ construction.year + surface + floor +
 apartments_svm_v5
 ```
 
-### Model predictions {#predictionsApartments}
+### Models' predictions {#predictionsApartments}
 
 The `predict()` function calculates predictions for a specific model. In the example below, we use model-objects `apartments_lm_v5`, `apartments_rf_v5`, and `apartments_svm_v5`, to calculate predictions for prices of the apartments from the `apartments_test` data frame. Note that, for brevity sake, we compute the predictions only for the first six observations from the data frame. We also show the actual prices for the observations. 
 [TOMASZ: SOMETHING IS WEIRD REGARDING THE PREDICTIONS FOR SVM. I AM GETTING 
@@ -554,9 +553,9 @@ predicted_apartments_rf <- predict(apartments_rf_v5, apartments_test)
 
 For the random-forest model, RMSE is equal to `r round(rmsd_rf, 1)`. It is almost identical to the RMSE for the linear-regression model, which is equal to `r round(rmsd_lm, 1)`. Thus, the question we may face is: should we choose the more complex, but flexible random-forest model, or the simpler and easier to interpret linear-regression model? In the subsequent chapters we will try to provide an answer to this question. In particular, we will show that a proper model exploration may help to discover weak and strong sides of any of the models and, in consequence, allow creation of a new model, with a better performance than either of the two.
 
-### Model explainers {#ExplainersApartmentsRCode}
+### Models' explainers {#ExplainersApartmentsRCode}
 
-The code below creates explainers for the models (see Sections \@ref(model-Apartments-lr)--\@ref(model-Apartments-svm)) fitted to the apartment-prices data. Note that we use the `apartments_test` data frame without the first column, i.e., the *m2.price* variable, in the `data` argument. This will be the dataset to which the model will be applied (see Section \@ref(ExplainersTitanicRCode). The *m2.price* variable is explicitly specified as the dependent variable in the `y` argument (see Section \@ref(ExplainersTitanicRCode). 
+The code below creates explainers for the models (see Sections \@ref(model-Apartments-lr)--\@ref(model-Apartments-svm)) fitted to the apartment-prices data. Note that we use the `apartments_test` data frame without the first column, i.e., the *m2.price* variable, in the `data` argument. This will be the dataset to which the model will be applied (see Section \@ref(ExplainersTitanicRCode)). The *m2.price* variable is explicitly specified as the dependent variable in the `y` argument (see Section \@ref(ExplainersTitanicRCode)). 
 
 [TOMASZ: Y VARIABLE EXCLUDED FROM DATA. EXPLAINER-OBJECTS MAY REQUIRE AN UDPATE IN THE ARCHIVIST.]
 

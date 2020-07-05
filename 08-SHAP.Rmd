@@ -15,9 +15,9 @@ knitr::include_graphics("figure/shap_10_replicates.png")
 ```
 
 To remove the influence of the ordering of the variables, we can compute the mean value of the attributions. 
-Figure \@ref(fig:shapOrdering) presents the means, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive means. Violet box plots summarize the distribution of the attributions for each explanatory variable across the different orderings. The plot indicates that the most important variables, from the point of view of the prediction for Johnny D, are *age* and *gender*.
+Figure \@ref(fig:shapOrdering) presents the means, calculated over the ten orderings presented in Figure \@ref(fig:shap10orderings). Red and green bars present, respectively, the negative and positive means. Violet box plots summarize the distribution of the attributions for each explanatory variable across the different orderings. The plot indicates that the most important variables, from the point of view of the prediction for Johnny D, are *age* and *class*. [TOMASZ: OR GENDER?]
 
-(ref:shapOrderingDesc) Mean attributions for ten random orderings. Red and green bars present the means. Box plots summarize the distribution of contributions for each explanatory variable across the orderings. [TOMASZ: CORRECT JOHNNY D IN THE TITLE.]
+(ref:shapOrderingDesc) Mean attributions for ten random orderings. Red and green bars present the means. Box plots summarize the distribution of contributions for each explanatory variable across the orderings. [TOMASZ: CORRECT JOHNNY D IN THE TITLE. AND: STATIC FIGURE; CHECK FOR CORRECTNESS.]
 
 ```{r shapOrdering, echo=FALSE, fig.cap='(ref:shapOrderingDesc)', out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/shap_ordering.png")
@@ -95,15 +95,15 @@ knitr::kable(as.data.frame(shap_attributions[shap_attributions$B == 0,c(3,1)]))
 
 ## Method {#SHAPMethod}
 
-SHapley Additive exPlanations (SHAP) are based on "Shapley values" developed by @shapleybook1952 in the cooperative game theory. Note that the notation may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for predictive models. To avoid the confusion, we will use the term "Shapley values."
+SHapley Additive exPlanations (SHAP) are based on "Shapley values" developed by @shapleybook1952 in the cooperative game theory. Note that the terminology may be confusing at the first glance. Shapley values are introduced for cooperative games. SHAP is an acronym for a method designed for predictive models. To avoid the confusion, we will use the term "Shapley values."
 
-Shapley values are a solution to the following problem. A coalition of players cooperates, and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? Shapley values offer one possible fair answer to this question [@shapleybook1952].
+Shapley values are a solution to the following problem. A coalition of players cooperates and obtains a certain overall gain from the cooperation. Players are not identical, and different players may have different importance. Cooperation is beneficial, because it may bring more benefit than individual actions. The problem to solve is how to distribute the generated surplus among the players? Shapley values offer one possible fair answer to this question [@shapleybook1952].
 
-Let's translate this problem to the context of model predictions. Explanatory variables are the players, while model $f()$ plays the role of the coalition. The payoff from the coalition is the model prediction. The problem to solve is how to distribute the model's prediction across particular variables?
+Let's translate this problem to the context of a model's predictions. Explanatory variables are the players, while model $f()$ plays the role of the coalition. The payoff from the coalition is the model's prediction. The problem to solve is how to distribute the model's prediction across particular variables?
 
 The idea of using Shapley values for evaluation of local variable-importance was introduced by @imeJLMR. We will define the values here using the notation introduced in Section \@ref(BDMethodGen).
 
-Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model prediction $f(\underline{x}_*)$ for a particular instance of interest $\underline{x}_*$. The Shapley value is defined as follows:
+Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model's prediction $f(\underline{x}_*)$ for a particular instance of interest $\underline{x}_*$. The Shapley value is defined as follows:
 
 \begin{equation}
 \varphi(\underline{x}_*,j) = \frac{1}{p!} \sum_{J} \Delta^{j|\pi(J,j)}(\underline{x}_*),  
@@ -134,32 +134,26 @@ Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p}-1$, i.e.,
 From the properties of Shapley values for cooperative games it follows that, in the context of predictive models, they enjoy the following properties:
 
 * Symmetry: if two explanatory variables $j$ and $k$ are interchangeable, i.e., for any set of explanatory variables $S \subseteq \{1,\dots,p\}\setminus \{j,k\}$ we have got
-
 $$
 \Delta^{j|S}(\underline{x}_*) = \Delta^{k|S}(\underline{x}_*),
 $$
 then their Shapley values are equal: 
-
 $$
 \varphi(\underline{x}_*,j) = \varphi(\underline{x}_*,k).
 $$
 
 * Dummy feature: if an explanatory variable $j$ does not contribute to any prediction for any set of explanatory variables $S \subseteq \{1,\dots,p\}\setminus \{j\}$, that is, if
-
 $$
 \Delta^{j|S}(\underline{x}_*) = 0,
 $$
-
 then its Shapley value is equal to 0:
-
 $$
 \varphi(\underline{x}_*,j) = 0.
 $$
 
 * Additivity: if model $f()$ is a sum of two other models $g()$ and $h()$, then the Shapley value calculated for model $f()$ is a sum of Shapley values for models $g()$ and $h()$.
 
-* Local accuracy (see Section \@ref(BDMethodGen)): the sum of Shapley values is equal to the model prediction, that is,
-
+* Local accuracy (see Section \@ref(BDMethodGen)): the sum of Shapley values is equal to the model's prediction, that is,
 $$
 f(\underline{x}_*) - E_{\underline{X}}\{f(\underline{X})\} = \sum_{j=1}^p	\varphi(\underline{x}_*,j), 
 $$
@@ -211,7 +205,7 @@ Box plots in Figure \@ref(fig:shappJohny02) present the distribution of the cont
 
 The picture for variables *fare* and *class* is more complex, as their contributions can even change the sign, depending on the ordering. Note that Figure \@ref(fig:shappJohny02) presents Shapley values separately for each of the two variables. However, it is worth recalling that the iBD plot in Figure \@ref(fig:iBreakDownTitanicExamplePlot) indicated an important contribution of an interaction between the two variables. Hence, their contributions should not be separated. Thus, the Shapley values for *fare* and *class*, presented in Figure \@ref(fig:shappJohny02), should be interpreted with caution.
 
-(ref:shappJohny02Desc) Explanatory-variable attributions for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data based on 25 random orderings. Left-hand-side plot: box plots summarize the distribution of the attributions for each explanatory variable across the orderings. Red and green bars present Shapley values. Right-hand-side plot: Shapley alues (mean attributions) without box plots.
+(ref:shappJohny02Desc) Explanatory-variable attributions for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data based on 25 random orderings. Left-hand-side plot: box plots summarize the distribution of the attributions for each explanatory variable across the orderings. Red and green bars present Shapley values. Right-hand-side plot: Shapley values (mean attributions) without box plots.
 
 ```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:shappJohny02Desc)', fig.width=11, fig.height=5.5, out.width = '100%', fig.align='center'}
 library("patchwork")
@@ -238,7 +232,7 @@ Table: (\#tab:shapOrderingTable) Shapley values for the prediction for Johnny D 
 
 ## Pros and cons {#SHAProsCons}
 
-Shapley values provide a uniform approach to decompose model predictions into contributions that can be attributed additively to different explanatory variables. @SHAP shown that the method unifies different approaches to additive variable attributions, like DeepLIFT [@DeepLIFT], Layer-Wise Relevance Propagation [@LWRP], or Local Interpretable Model-agnostic Explanations [@lime]. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.
+Shapley values provide a uniform approach to decompose a model's predictions into contributions that can be attributed additively to different explanatory variables. @SHAP showed that the method unifies different approaches to additive variable attributions, like DeepLIFT [@DeepLIFT], Layer-Wise Relevance Propagation [@LWRP], or Local Interpretable Model-agnostic Explanations [@lime]. The method has got a strong formal foundation derived from the cooperative games theory. It also enjoys an efficient implementation in Python, with ports or re-implementations in R.
 
 An important drawback of Shapley values is that they provide additive contributions (attributions) of explanatory variables. If the model is not additive, then the Shapley values may be misleading. This issue can be seen as arising from the fact that, in the cooperative games, the goal is to distribute the payoff among payers. However, in the predictive modeling context, we want to understand how do the players affect the payoff? Thus, we are not limited to independent payoff-splits for players.
 
@@ -248,7 +242,7 @@ An important practical limitation of the method is that, for large models, the c
  
 ## Code snippets for R {#SHAPRcode}
 
-In this section, we use the `DALEX` package, which is a wrapper for `iBreakDown` R package [@iBreakDownRPackage]. The  package covers all methods presented in this chapter. It is available on CRAN and GitHub. Note that there are also other R packages that offer similar functionalities, like `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage], and `iml` [@imlRPackage].
+In this section, we use the `DALEX` package, which is a wrapper for the `iBreakDown` R package [@iBreakDownRPackage]. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. Note that there are also other R packages that offer similar functionalities, like `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage], and `iml` [@imlRPackage].
 
 For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
@@ -260,7 +254,7 @@ titanic_rf_v6 <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
-Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. The model prediction for Henry is obtained  with the help of the  function. 
+Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. The model's prediction for Henry is obtained  with the help of the  function. 
 
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")

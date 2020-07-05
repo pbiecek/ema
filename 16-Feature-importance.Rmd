@@ -8,8 +8,8 @@ source("models/models_titanic.R")
 
 In this chapter, we present a method that is useful for the evaluation of importance of an explanatory variable. The method may be applied for several purposes.
   
-* Model simplification: variables that do not influence model's predictions may be excluded from the model. 
-* Model exploration: comparison of variables' importance in different models may help in discovering interrelations between the variables. Also, ordering of variables in function of their importance is helpful in deciding in which order we should perform further model exploration. 
+* Model simplification: variables that do not influence a model's predictions may be excluded from the model. 
+* Model exploration: comparison of variables' importance in different models may help in discovering interrelations between the variables. Also, ordering of variables in function of their importance is helpful in deciding in which order should we perform further model exploration. 
 * Domain-knowledge-based model validation: identification of the most important variables may be helpful in assessing the validity of the model based on the domain knowledge. 
 * Knowledge generation: identification of the most important variables may lead to discovery of new factors involved in a particular mechanism.
 
@@ -17,21 +17,21 @@ The methods for assessment of variable importance can be divided, in general, in
 
 For linear models and many other types of models, there are methods of assessing of explanatory variable's importance that exploit particular elements of the structure of the model. These are model-specific methods. For instance, for linear models, one can use the value of the normalized regression coefficient or its corresponding p-value as the variable-importance measure. For tree-based ensembles, such a measure may be based on the use of a particular variable in particular trees (see, for instance, methods implemented in R package `XgboostExplainer` [@xgboostExplainer] for gradient boosting and `RandomForestExplainer` [@randomForestExplainer] for random forest).
 
-In this book, we focus on a model-agnostic method that does not assume anything about the model structure. Therefore, it can be applied to any predictive model or ensemble of models. Moreover, and perhaps even more importantly, it allows comparing an explanatory variable's importance between models with different structures.
+In this book, we focus on a model-agnostic method that does not assume anything about the model structure. Therefore, it can be applied to any predictive model or ensemble of models. Moreover, and perhaps even more importantly, it allows comparing an explanatory-variable's importance between models with different structures.
 
 ## Intuition {#featureImportanceIntuition}
 
-We focus on the method described in more detail by @variableImportancePermutations. The main idea is to measure how much model's performance changes if the effect of a selected explanatory variable, or of a group of variables, is removed. To remove the effect, we use perturbations, like resampling from an empirical distribution or permutation of the values of the variable. 
+We focus on the method described in more detail by @variableImportancePermutations. The main idea is to measure how much does a model's performance change if the effect of a selected explanatory variable, or of a group of variables, is removed? To remove the effect, we use perturbations, like resampling from an empirical distribution or permutation of the values of the variable. 
 
-The idea is borrowed from the variable-importance measure proposed by @randomForestBreiman for random forest. If a variable is important, then we expect that, after permuting the values of the variable, model's performance (as captured by one of the measures discussed in Chapter \@ref(modelPerformance)) will worsen. The larger the change in the performance, the more important is the variable.
+The idea is borrowed from the variable-importance measure proposed by @randomForestBreiman for random forest. If a variable is important, then we expect that, after permuting the values of the variable, the model's performance (as captured by one of the measures discussed in Chapter \@ref(modelPerformance)) will worsen. The larger the change in the performance, the more important is the variable.
 
 Despite the simplicity of the idea, permutation-based-approach to measuring an explanatory-variable's importance is a very powerful model-agnostic tool for model exploration. Variable-importance measures obtained in this way may be compared between different models. This property is discussed in detail in Section \@ref(featureImportanceProsCons).
 
 ## Method {#featureImportanceMethod}
 
-Consider a set of $n$ observations for a set of $p$ explanatory variables and dependent variable $Y$. Let $\underline{X}$ denote the matrix containing, in rows, the (transposed column-vectors of) observed values of the explanatory variables for all observations. Denote by $\underline{y}$ the vector of the observed values of $Y$. Let $\hat{\underline{y}}=(f(\underline{x}_1),\ldots,f(\underline{x}_n))'$ denote the corresponding vector of predictions for $\underline{y}$ for model $f()$. 
+Consider a set of $n$ observations for a set of $p$ explanatory variables and dependent variable $Y$. Let $\underline{X}$ denote the matrix containing, in rows, the (transposed column-vectors of) observed values of the explanatory variables for all observations. Denote by $\underline{y}$ the column vector of the observed values of $Y$. Let $\hat{\underline{y}}=(f(\underline{x}_1),\ldots,f(\underline{x}_n))'$ denote the corresponding vector of predictions for $\underline{y}$ for model $f()$. 
 
-Let $\mathcal L(\hat{\underline{y}}, \underline{y})$ be a loss function that quantifies goodness of fit of model $f()$. For instance, $\mathcal L()$ may be the value of log-likelihood (see Chapter \@ref(modelPerformance)). Consider the following algorithm:
+Let $\mathcal L(\hat{\underline{y}}, \underline{y})$ be a loss function that quantifies goodness-of-fit of model $f()$. For instance, $\mathcal L()$ may be the value of log-likelihood (see Chapter \@ref(modelPerformance)). Consider the following algorithm:
 
 1. Compute $L^0 = \mathcal L(\hat{\underline{y}}, \underline{y})$, i.e., the value of the loss function for the original data. Then, for each explanatory variable $X^j$ included in the model, do steps 2-5.
 2. Create matrix $\underline{X}^{*j}$ by permuting the $j$-th column of $\underline{X}$, i.e., by permuting the vector of observed values of $X^j$.
@@ -96,7 +96,7 @@ plot(fi_rf[-2,]) +
   ylab("Loss function: 1-AUC") + ylim(0.1,0.35)
 ```
 
-Plots similar to those presented in Figures  \@ref(fig:TitanicRFFeatImp) and  \@ref(fig:TitanicRFFeatImp10) are useful for comparisons of a variable's importance for different models. Figure \@ref(fig:TitanicFeatImp) presents single-permutation results for the random-forest, logistic-regression (see Section \@ref(model-titanic-lmr)), and gradient-boosting (see Section \@ref(model-titanic-gbm)) models. The best result, in terms of the smallest value of $L^0$, is obtained for the random-forest model (as indicated by the location of the dashed lines in the plots). Note that the indicated $L^0$ value for the model is different from the one indicated in Figure \@ref(fig:TitanicRFFeatImp). This is due to the difference in the set of (random) permuations used to compute the two values.   
+Plots similar to those presented in Figures  \@ref(fig:TitanicRFFeatImp) and  \@ref(fig:TitanicRFFeatImp10) are useful for comparisons of a variable's importance in different models. Figure \@ref(fig:TitanicFeatImp) presents single-permutation results for the random-forest, logistic-regression (see Section \@ref(model-titanic-lmr)), and gradient-boosting (see Section \@ref(model-titanic-gbm)) models. The best result, in terms of the smallest value of $L^0$, is obtained for the random-forest model (as indicated by the location of the dashed lines in the plots). Note that the indicated $L^0$ value for the model is different from the one indicated in Figure \@ref(fig:TitanicRFFeatImp). This is due to the difference in the set of (random) permuations used to compute the two values.   
 
 (ref:TitanicFeatImpDesc) Single-permutation-based variable-importance measures for the random-forest, gradient-boosting, and logistic-regression models for the Titanic data with 1-AUC as the loss function. [TOMASZ: IS  THE L0 VALUE MUCH DIFFERENT AS COMPARED TO Figure \@ref(fig:TitanicRFFeatImp) DUE TO THE SELECTION OF THE PERMUTATION?]
 
@@ -121,11 +121,11 @@ fi_glm <- feature_importance(explain_titanic_lmr)
 plot(fi_rf, fi_gbm, fi_glm) + ggtitle("Permutation-based variable importance")
 ```
 
-The plots in Figure \@ref(fig:TitanicFeatImp) indicate that *gender* is the most important explanatory variable in all three models, followed by *class* and *age*. Variable *fare*, which is highly correlated with the *class*, is important in the random-forest and SVM models, but not in the logistic-regression model. On the other hand, variable *parch* is, essentially, important neither in the gradient-boosting nor in the logistic-regression model, but it has some importance in the random-forest model. *Country* is important in none of the models. Overall, Figure \@ref(fig:TitanicFeatImp) indicates that, in the random-forest model, all variables (except of *country*) have got some importance, while in the other two models the effect is mainly limited to *gender*, *class*, and *age* (and *fare* for the gradient-boosting model).   
+The plots in Figure \@ref(fig:TitanicFeatImp) indicate that *gender* is the most important explanatory variable in all three models, followed by *class* and *age*. Variable *fare*, which is highly correlated with *class*, is important in the random-forest and SVM models, but not in the logistic-regression model. On the other hand, variable *parch* is, essentially, important neither in the gradient-boosting nor in the logistic-regression model, but it has some importance in the random-forest model. *Country* is not important in any of the models. Overall, Figure \@ref(fig:TitanicFeatImp) indicates that, in the random-forest model, all variables (except of *country*) have got some importance, while in the other two models the effect is mainly limited to *gender*, *class*, and *age* (and *fare* for the gradient-boosting model).   
 
 ## Pros and cons {#featureImportanceProsCons}
 
-Permutation-based variable importance offers several advantages. It is a model-agnostic approach to assessment of the influence of an explanatory variable on model's performance. The plots of variable-importance measures are easy to understand, as they are compact and present the most important variables in a single graph. The measures can be compared between models and may lead to interesting insights. For example, if variables are correlated, then models like random forest are expected to spread importance across many variables, while in regularized-regression models the effect of one variable may dominate the effect of other correlated variables.  
+Permutation-based variable importance offers several advantages. It is a model-agnostic approach to assessment of the influence of an explanatory variable on a model's performance. The plots of variable-importance measures are easy to understand, as they are compact and present the most important variables in a single graph. The measures can be compared between models and may lead to interesting insights. For example, if variables are correlated, then models like random forest are expected to spread importance across many variables, while in regularized-regression models the effect of one variable may dominate the effect of other correlated variables.  
 
 The same approach can be used to measure importance of a single explanatory variable or a group of variables. The latter is useful for "aspects," i.e., groups of variables that are complementary to each other or are related to a similar concept. For example, in the Titanic example, the *fare* and *class* variables are related to the financial status of a passenger. Instead of assessing the importance of each of these variables seprately, we may be interested in their joint importance. Toward this aim, we may compute the permutation-based measure by permuting the values of both variables at the same time.
 
@@ -148,21 +148,21 @@ explainer_rf <- explain(model = apartments_rf, data = apartments_test[,-1],
     y = apartments_test$m2.price, label = "Random Forest", verbose = FALSE)
 ```
 
-A popular loss function is the root-mean-square-error (RMSE) function \@ref(eq:RMSE). It is implemented in the `DALEX` package as the `loss_root_mean_square()` function. The latter requires two arguments: `observed`, which indicates the vector of observed values of the dependent variable, and `predicted`, which specifies the object (either vector or a matrix, as are returned from the model-specific `predict()` function) with the predicted values. The original-testing-data value $L^0$ of RMSE for the random-forest model can be obtained by applying the `loss_root_mean_square()` in the form given below.  
+A popular loss function is the root-mean-square-error (RMSE) function \@ref(eq:RMSE). It is implemented in the `DALEX` package as the `loss_root_mean_square()` function. The latter requires two arguments: `observed`, which indicates the vector of observed values of the dependent variable, and `predicted`, which specifies the object (either vector or a matrix, as returned from the model-specific `predict()` function) with the predicted values. The original-testing-data value $L^0$ of RMSE for the random-forest model can be obtained by applying the `loss_root_mean_square()` in the form given below.  
 
 ```{r, warning=FALSE, message=FALSE}
 loss_root_mean_square(observed = apartments_test$m2.price, 
                      predicted = predict(apartments_rf, apartments_test))
 ```
 
-To compute the permutation-based variable-importance measure, we apply the `model_parts()` function. Note that it is a wrapper for function `feature_importance()` from the `ingredients` package. The only required argument is `explainer`, which indicates the the explainer-object (obtained with the help of the `explain()` function, see Section \@ref(ExplainersTitanicRCode)) for the model to be explained. The other arguments are:
+To compute the permutation-based variable-importance measure, we apply the `model_parts()` function. Note that it is a wrapper for function `feature_importance()` from the `ingredients` package. The only required argument is `explainer`, which indicates the explainer-object (obtained with the help of the `explain()` function, see Section \@ref(ExplainersTitanicRCode)) for the model to be explained. The other arguments are:
 
 * `loss_function`, the loss function to be used (by default, it is the `loss_root_mean_square` function);     
 * `type`, the form of the variable-importance measure, with values "variable_importance" and "raw" resulting in the computation of $\mathcal L()$, "difference" yielding $vip_{Diff}^j$, and "ratio" providing $vip_{Ratio}^j$ (see Section \@ref(featureImportanceMethod));
 * `variables`, a character vector providing the names of the explanatory variables, for which the variable-importance measure is to be computed. By default, `variables = NULL`, in which case computations are performed for all variables in the dataset.
 * `variable_groups`, a list of character vectors of names of explanatory variables. For each vector, a single variable-importance measure is computed for the joint effect of the variables which names are provided in the vector. By default, `variable_groups = NULL`, in which case variable-importance measures are computed separately for all variables indicated in the `variables` argument.
 * `B`, the number of permuations to be used for the purpose of calculation of the (mean) variable-importance measures, with `B = 10` used by default. To get a single-permutation-based measure, use `B = 1`.
-* `n_sample`, the number of observations that are to be sampled from the training data (available in the explainer-object)  for the purpose of calculation of the variable-importance measure; by default, `n_sample = 1000` is used; if `n_sample = NULL`, the entire dataset is used.
+* `n_sample`, the number of observations that are to be sampled from the data available in the explainer-object  for the purpose of calculation of the variable-importance measure; by default, `n_sample = 1000` is used; if `n_sample = NULL`, the entire dataset is used.
 
 To compute a single-permutation-based value of the RMSE for all the explanatory variables included in the random-forest model `apartments_rf_v5`,  we apply the `model_parts()` function to the model's explainer-object as shown below. We use the `set.seed()` function to make the process of random selection of the permutation repeateable.
 
@@ -209,7 +209,7 @@ vip.50 <- model_parts(explainer = explainer_rf,
 vip.50
 ```
 
-To obain a graphical illustration, we apply the `plot()` function to the `vip.50` object. The resulting graph is presented in Figure \@ref(fig:featureImportanceUnoPlot). The bars in the plot indicate the mean values of the variable-importance measures for all explantory variables. Box plots are added to the bars to provide an idea about the distribution of the values of the measure across the permutations. 
+To obain a graphical illustration, we apply the `plot()` function to the `vip.50` object. 
 
 (ref:featureImportanceUnoPlotDesc) Mean variable-importance calculated using 50 permutations and the root-mean- squared-error loss for the random-forest model `apartments_rf_v5` for the apartment-prices data. 
 
@@ -218,6 +218,8 @@ library("ggplot2")
 plot(vip.50) +
   ggtitle("Mean variable-importance over 50 permutations", "")
 ```
+
+The resulting graph is presented in Figure \@ref(fig:featureImportanceUnoPlot). The bars in the plot indicate the mean values of the variable-importance measures for all explantory variables. Box plots are added to the bars to provide an idea about the distribution of the values of the measure across the permutations. 
 
 Variable-importance measures are a very useful tool for model comparison. We will illustrate this application by considering the random-forest model, linear-regression model (Section \@ref(model-Apartments-lr)), and support-vectore-machine (SVM) model (Section \@ref(model-Apartments-svm)) for the appartment prices dataset. The models differ in their flexibility and structure; hence, it may be of interest to compare them. 
 
@@ -237,28 +239,24 @@ Subsequently, we compute mean values of the permutation-based variable-importanc
 
 ```{r, warning=FALSE, message=FALSE}
 set.seed(1980)
-vip_lm <- model_parts(explainer = explainer_lm, 
-            loss_function = loss_root_mean_square,
-            B = 50,
-            n_samples = NULL)
+vip_lm <- model_parts(explainer = explainer_lm, loss_function = loss_root_mean_square,
+            B = 50, n_samples = NULL)
 set.seed(1980)
-vip_rf <- variable_importance(explainer = explainer_rf, 
-            loss_function = loss_root_mean_square,
-            B = 50,
-            n_samples = NULL)
+vip_rf <- variable_importance(explainer = explainer_rf, loss_function = loss_root_mean_square,
+            B = 50, n_samples = NULL)
 set.seed(1980)
-vip_svm <- variable_importance(explainer = explainer_svm, 
-            loss_function = loss_root_mean_square,
-            B = 50,
-            n_samples = NULL)
+vip_svm <- variable_importance(explainer = explainer_svm, loss_function = loss_root_mean_square,
+            B = 50, n_samples = NULL)
 ```
 
-Finally, we apply the `plot()` function to the created objects to obtain a single plot with the variable-importance measures for all three models. The resulting graph is presented in Figure \@ref(fig:featureImportanceTriPlot). The plots suggest that the best result, in terms of the smallest value of $L^0$, is obtained for the SVM model (as indicated by the location of the dashed lines in the plots). The length of bars indicates that *district* is the most important explanatory variable in all three models, followed by *surface* and *floor*. *Construction year* is the fourth most important variable for the random-forest and SVM models, but it is not important in the linear-regression model at all. We will investigate the reason for this difference in the next chapter. 
+Finally, we apply the `plot()` function to the created objects to obtain a single plot with the variable-importance measures for all three models. 
 
-(ref:featureImportanceTriPlotDesc) Mean variable-importance calculated using 50 permutations and the root-mean- squared-error loss for the random-forest, support-vector-machine, and linear-regression model for the apartment prices data. 
+(ref:featureImportanceTriPlotDesc) Mean variable-importance calculated using 50 permutations and the root-mean-squared-error loss for the random-forest, support-vector-machine, and linear-regression models for the apartment-prices data. 
 
 ```{r featureImportanceTriPlot, fig.cap='(ref:featureImportanceTriPlotDesc)',  warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
 library("ggplot2")
 plot(vip_rf, vip_svm, vip_lm) +
   ggtitle("Mean variable-importance over 50 permutations", "")
 ```
+
+The resulting graph is presented in Figure \@ref(fig:featureImportanceTriPlot). The plots suggest that the best result, in terms of the smallest value of $L^0$, is obtained for the SVM model (as indicated by the location of the dashed lines in the plots). The length of bars indicates that *district* is the most important explanatory variable in all three models, followed by *surface* and *floor*. *Construction year* is the fourth most important variable for the random-forest and SVM models, but it is not important in the linear-regression model at all. We will investigate the reason for this difference in the next chapter.
