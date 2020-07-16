@@ -39,47 +39,25 @@ library(reticulate)
 use_python("/Library/Frameworks/Python.framework/Versions/3.6/bin/python3")
 ```
 
+A detailed description of the model exploration will be presented in the next chapters. In general, however, the way of working with the `dalex` library can be described in three steps: 
+1. Construction of the wrapper around the model, 
+2. calculation of the explanation and 
+3. plotting the explanation.
 
 ```{python, eval=FALSE, highlight=TRUE}
-import dalex as dx
+# 1. create an explainer
+exp = dx.Explainer(model, X, y)
 
-import pandas as pd
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import make_column_transformer
-from sklearn.pipeline import make_pipeline
-
-data = dx.datasets.load_titanic()
-
-X = data.drop(columns='survived')
-y = data.survived
-
-preprocess = make_column_transformer(
-    (OneHotEncoder(), ['gender', 'class', 'embarked']), remainder="passthrough")
-
-model = make_pipeline(
-    preprocess,
-    RandomForestClassifier(max_depth=3, random_state=0, n_estimators=500))
-    
-model.fit(X, y)
-
-exp = dx.Explainer(model, X, y, label = "Titanic RF Pipeline")
-
-henry = pd.DataFrame({'gender': ['male'],
-                       'age': [47],
-                       'class': ['1st'],
-                       'embarked': ['Cherbourg'],
-                       'fare': [25],
-                       'sibsp': [0],
-                       'parch': 0},
-                      index = ['Henry'])
-
+# calculate predictions
 exp.predict(henry)
 
-bd_john = exp.predict_parts(henry, type='break_down')
-bd_john
-bd_john.plot()
-```
+# 2. calculate explanation
+obs_bd = exp.predict_parts(obs, type='break_down')
 
+# print explanation
+obs_bd
+
+# 3. plot explanation
+obs_bd.plot()
+```
 
