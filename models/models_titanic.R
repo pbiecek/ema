@@ -76,3 +76,36 @@ if (file.exists(link_to_models)) {
        file = link_to_models)
 }
 
+# #saveToLocalRepo(model_titanic_lmr,repoDir = "models")
+# #saveToLocalRepo(explain_titanic_lmr,repoDir = "models")
+# 
+# model_titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+# explain_titanic_lmr <- archivist::aread("pbiecek/models/1292c")
+# 
+# predict(model_titanic_lmr, henry, type = "fitted")
+# predict(explain_titanic_lmr, henry)
+# #0.4318245 
+# 
+# 
+# saveToLocalRepo(model_titanic_rf,repoDir = "models")
+# #4e0fc310e0cc5f890fe6da3b3140c603
+# saveToLocalRepo(explain_titanic_rf,repoDir = "models")
+# #c8b351715c46c66db56a493fbe6aff52
+# 
+# saveToLocalRepo(model_titanic_rf_small,repoDir = "models")
+# #293e8c95702bba0b290493df6539d46b
+# saveToLocalRepo(explain_titanic_rf_small,repoDir = "models")
+# #45ecc68dda416fca00b0726adaf2959b
+# 
+# saveToLocalRepo(model_titanic_gbm,repoDir = "models")
+# #b70787e5794d9e38f01b5cf81b5ecc7d
+# saveToLocalRepo(explain_titanic_gbm,repoDir = "models")
+# #f75ce68cbecb1ce5c66012ab78986d70
+# 
+# saveToLocalRepo(model_titanic_svm,repoDir = "models")
+# #9c27f48c5ce42e171e7b6de7624bbf22
+# saveToLocalRepo(explain_titanic_svm,repoDir = "models")
+# #e1b7245c21b1e78618909c37732157ac
+
+
+

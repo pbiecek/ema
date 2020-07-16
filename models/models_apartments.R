@@ -40,3 +40,19 @@ model_apartments_lm <- apartments_lm_v5
 model_apartments_rf <- apartments_rf_v5
 model_apartments_svm <- apartments_svm_v5
 
+# 
+#  saveToLocalRepo(apartments_lm_v5,repoDir = "models")
+#  #55f195e5d7589ca3ae3ed56b62650595
+#  saveToLocalRepo(explain_apartments_lm_v5,repoDir = "models")
+#  #3abc57686f1c51a1b5c48a082d301f36
+# 
+#  saveToLocalRepo(apartments_rf_v5,repoDir = "models")
+#  #fe7a5179ad097007930525678173a78c
+#  saveToLocalRepo(explain_apartments_rf_v5,repoDir = "models")
+#  #a85ad0cd77a8eb0c368a9ffcbf5f3e23
+#  
+#  saveToLocalRepo(apartments_svm_v5,repoDir = "models")
+#  #d2ca0d4a18028eb36bdc07008119bd9d
+#  saveToLocalRepo(explain_apartments_svm_v5,repoDir = "models")
+#  #e9be7bf8553d1989b2c362918ca2a624
+#  
