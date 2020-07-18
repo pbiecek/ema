@@ -8,7 +8,7 @@ Visual examination of ceteris-paribus (CP) profiles, as illustrated in the previ
 
 To assign importance to CP profiles, we can use the concept of profile oscillations. It is worth noting that the larger influence of an explanatory variable on prediction at a particular instance, the larger the fluctuations along the corresponding CP profile. For a variable that exercises little or no influence on a model's prediction, the profile will be flat or will barely change. In other words, the values of the CP profile should be close to the value of the model's prediction for the particular instance. Consequently, the sum of differences between the profile and the value of the prediction, taken across all possible values of the explanatory variable, should be close to zero. The sum can be graphically depicted by the area between the profile and the horizontal line representing the instance prediction. On the other hand, for an explanatory variable with a large influence on the prediction, the area should be large.  Figure \@ref(fig:CPVIPprofiles) illustrates the concept. Panel A of the figure corresponds to the CP profiles presented in Figure \@ref(fig:profileV4Rf). The larger the highlighted area in Figure \@ref(fig:CPVIPprofiles), the more important is the variable for the particular prediction.
 
-(ref:CPVIPprofilesDesc) The value of the colored area summarizes the ceteris-paribus (CP) profile oscillations and provides the mean of the absolute deviations between the CP profile and the instance prediction (for Henry). Panel A shows plots for continuous explanatory variables, while panel B shows plots for categorical variables in the `titanic_rf_v6` random-forest model for the Titanic data. [TOMASZ: STATISC FIGURE, CHECK FOR CORRECTNESS.]
+(ref:CPVIPprofilesDesc) The value of the colored area summarizes the ceteris-paribus (CP) profile oscillations and provides the mean of the absolute deviations between the CP profile and the instance prediction (for Henry). Panel A shows plots for continuous explanatory variables, while panel B shows plots for categorical variables in the `titanic_rf` random-forest model for the Titanic data. [TOMASZ: STATISC FIGURE, CHECK FOR CORRECTNESS.]
 
 ```{r CPVIPprofiles, echo=FALSE, fig.cap='(ref:CPVIPprofilesDesc)', out.width = '99%', fig.align='center'}
 knitr::include_graphics("figure/profile_v4_rf2.png")
@@ -55,13 +55,13 @@ where $x_1$ and $x_2$ take values in $[0,1]$. Consider prediction for an observa
 
 ## Example: Titanic data {#CPOscExample}
 
-Figure \@ref(fig:CPVIP1) provides a barplot of variable-importance measures for different continuous explanatory variables for the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) for Henry, a 47-year-old man who travelled in the first class  (see Section \@ref(predictions-titanic)). The measures were computed by using estimator $\widehat{vip}_{CP}^{j,uni}(\underline{x}_*)$, given in \@ref(eq:VIPCPuni), by using an equidistant grid of values for continuous variables.
+Figure \@ref(fig:CPVIP1) provides a barplot of variable-importance measures for different continuous explanatory variables for the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) for Henry, a 47-year-old man who travelled in the first class  (see Section \@ref(predictions-titanic)). The measures were computed by using estimator $\widehat{vip}_{CP}^{j,uni}(\underline{x}_*)$, given in \@ref(eq:VIPCPuni), by using an equidistant grid of values for continuous variables.
 
 The longer the bar, the larger the CP-profile oscillations for a particular explanatory variable. Thus, if one were to select CP profiles to inspect, Figure \@ref(fig:CPVIP1) would indicate that the most important variables for prediction for Henry are *gender* and *sibsp*, followed by *age*. 
 
 Note that, while the variable-importance plot in Figure \@ref(fig:CPVIP1) does indicate which explanatory variables are important, it does not describe how the variables influence the prediction. In that respect, the CP profile for *age* for Henry (see Figure \@ref(fig:profileV4Rf)) suggested that, if Henry were older, this would significantly lower his probability of survival. One the other hand, the CP profile for *sibsp* (see Figure \@ref(fig:profileV4Rf)) indicated that, were Henry not travelling alone, this would increase his chances. Thus, the variable-importance plots should always be accompanied by plots of the relevant CP profiles. 
 
-(ref:CPVIP1Desc) Variable-importance measures based on ceteris-paribus oscillations estimated by using a uniform grid of explanatory-variable values for the `titanic_rf_v6` model and passenger Henry for the Titanic data.
+(ref:CPVIP1Desc) Variable-importance measures based on ceteris-paribus oscillations estimated by using a uniform grid of explanatory-variable values for the `titanic_rf` model and passenger Henry for the Titanic data.
 
 ```{r CPVIP1, warning=FALSE, message=FALSE, echo=FALSE, eval = TRUE, fig.cap='(ref:CPVIP1Desc)', fig.width=6, fig.height=4, fig.cap='(ref:CPoscEmpForHenryDesc)', out.width = '70%', fig.align='center'}
 
@@ -69,17 +69,17 @@ library("ingredients")
 library("ggplot2")
 
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist:: aread("pbiecek/models/4e0fc")
+titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 henry <- archivist::aread("pbiecek/models/a6538")
 
 library("randomForest")
 library("DALEX")
-explain_rf_v6 <- explain(model = titanic_rf_v6,  
+explain_rf <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
                        verbose = FALSE)
-oscillations_equi <- variable_attribution(explain_rf_v6, henry, 
+oscillations_equi <- variable_attribution(explain_rf, henry, 
               variable_splits = list(age = seq(0, 65, 0.1),
                                     fare = seq(0, 200, 0.1),
                                    sibsp = seq(0, 8, 0.1),
@@ -106,13 +106,13 @@ There are several issues related to the use of the CP oscillations, though. For 
 
 In this section, we present key features of the R package `DALEX` which is a part of `DrWhy.AI` universe and covers all methods presented in this chapter. 
 
-For illustration, we use the random-forest model `titanic_rf_v6` (Section \@ref(model-titanic-rf)). The model was developed to predict the probability of survival after sinking of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old male passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
+For illustration, we use the random-forest model `titanic_rf` (Section \@ref(model-titanic-rf)). The model was developed to predict the probability of survival after sinking of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old male passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
-We first retrieve the `titanic_rf_v6` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
+We first retrieve the `titanic_rf` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist:: aread("pbiecek/models/4e0fc")
+titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
@@ -121,24 +121,24 @@ Then we construct the explainer for the model by using function `explain()` from
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")
 library("DALEX")
-explain_rf_v6 <- explain(model = titanic_rf_v6,  
+explain_rf <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
                        verbose = FALSE)
-predict(explain_rf_v6, henry)
+predict(explain_rf, henry)
 ```
 
 
 ### Basic use of the `variable_attribution()` function
 
-To calculate CP-profile oscillations, we apply the `variable_attribution()` function. The function was introduced in Section \@ref(BDR). In particular, we apply it to explainer `explain_rf_v6` for the random-forest model `titanic_rf_v6` and the data frame for the instance of interest, i.e., `henry`. Additionally, we specify the `type="oscillations"` argument to indicate that we want to compute CP-profile oscillations and the estimated value of the variable-importance measure as in \@ref(eq:VIPCPdef). Note that, by default, application of the `type = "oscillations"` argument provides estimator $\widehat{vip}_{CP}^{j,uni}(\underline{x}_*)$, given in \@ref(eq:VIPCPuni), while using all unique values of the explanatory variable as the grid points. By default, the estimator is computed for all explanatory variables.   
+To calculate CP-profile oscillations, we apply the `variable_attribution()` function. The function was introduced in Section \@ref(BDR). In particular, we apply it to explainer `explain_rf` for the random-forest model `titanic_rf` and the data frame for the instance of interest, i.e., `henry`. Additionally, we specify the `type="oscillations"` argument to indicate that we want to compute CP-profile oscillations and the estimated value of the variable-importance measure as in \@ref(eq:VIPCPdef). Note that, by default, application of the `type = "oscillations"` argument provides estimator $\widehat{vip}_{CP}^{j,uni}(\underline{x}_*)$, given in \@ref(eq:VIPCPuni), while using all unique values of the explanatory variable as the grid points. By default, the estimator is computed for all explanatory variables.   
 
 ```{r titanicCeterisProfile02C, warning=FALSE, message=FALSE}
 library("ingredients")
 library("ggplot2")
 
-oscillations_uniform <- variable_attribution(explainer = explain_rf_v6, 
+oscillations_uniform <- variable_attribution(explainer = explain_rf, 
                                           new_observation = henry, 
                                                      type = "oscillations")
 oscillations_uniform
@@ -146,7 +146,7 @@ oscillations_uniform
 
 The resulting object is of class "ceteris_paribus_oscillations," which is a data frame with three variables `_vname_`, `_ids_`, and `oscillations` that provide, respectively, the name of the variable, the value of the identifier of the instance, and the estimated value of the variable-importance measure. Addtionally, the object has also got an overloaded `plot()` function. We can use the latter function to plot the estimated values of the variable-importance measure for the instance of interest. In the code below, before creating the plot, we make the identifier for Henry more explicit. The resulting graph is shown in Figure \@ref(fig:CPoscDefForHenry).
 
-(ref:CPoscDefForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by the default method of the `variable_attribution()` function for the `titanic_rf_v6` model and Henry for the Titanic data.
+(ref:CPoscDefForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by the default method of the `variable_attribution()` function for the `titanic_rf` model and Henry for the Titanic data.
 
 ```{r CPoscDefForHenry, warning=FALSE, message=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.cap='(ref:CPoscDefForHenryDesc)', out.width = '70%', fig.align='center'}
 oscillations_uniform$`_ids_` <- "Henry"
@@ -160,7 +160,7 @@ plot(oscillations_uniform) +
 As mentioned in the previous section, the `variable_attribution()` function provides, by default, estimator $\widehat{vip}_{CP}^{j,uni}(\underline{x}_*)$, as defined in \@ref(eq:VIPCPuni), which uses all unique values of the explanatory variable as the grid points. However, other solutions can also be used. For instance, for a continuous explanatory variable, one could apply the same estimator, but using an equidistant grid of values. Toward this aim, we have got to explicitly specify a dense, uniform grid of values. The `variable_splits` argument can be used for this purpose. Its application is illustrated in the code below.
 
 ```{r titanicCeterisProfile02F, warning=FALSE, message=FALSE, eval=FALSE}
-oscillations_equidist <- variable_attribution(explain_rf_v6, henry, 
+oscillations_equidist <- variable_attribution(explain_rf, henry, 
               variable_splits = list(age = seq(0, 65, 0.1),
                                     fare = seq(0, 200, 0.1),
                                    sibsp = seq(0, 8, 0.1),
@@ -177,7 +177,7 @@ The obtained estimates of the variable-importance measure are slightly different
 We can use the `plot()` function to create a barplot of the estimated values. In the code below, before creating the plot, we make the identifier for Henry more explicit. The resulting graph is shown in Figure \@ref(fig:CPVIP1).
 
 <!---
-(ref:CPoscGridForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by using a uniform grid of explanatory-variable values in the `variable_attribution()` function for the `titanic_rf_v6` model and passenger Henry for the Titanic data.
+(ref:CPoscGridForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by using a uniform grid of explanatory-variable values in the `variable_attribution()` function for the `titanic_rf` model and passenger Henry for the Titanic data.
 --->
 
 ```{r CPoscGridForHenry, warning=FALSE, message=FALSE, eval = FALSE, fig.width=6, fig.height=4, fig.cap='(ref:CPoscGridForHenryDesc)', out.width = '70%', fig.align='center'}
@@ -191,7 +191,7 @@ Another approach is to calculate the expectation \@ref(eq:VIPCPdef) over the emp
 
 ```{r titanicCeterisProfile02H, warning=FALSE, message=FALSE}
 titanic <- na.omit(titanic)
-oscillations_empirical <- variable_attribution(explain_rf_v6, henry, 
+oscillations_empirical <- variable_attribution(explain_rf, henry, 
               variable_splits = list(age = titanic_imputed$age,
                                     fare = titanic_imputed$fare,
                                    sibsp = titanic_imputed$sibsp,
@@ -205,7 +205,7 @@ oscillations_empirical
 
 The obtained estimates of the variable-importance measure for *gender* and *sibsp* are now markedly different from the values obtained by using all unique values of the explanatory variables. The changes result in a different ordering of the variables. By using the `plot()` function, we create a barplot of the estimated variable-importance measures. The resulting graph is shown in Figure \@ref(fig:CPoscEmpForHenry). 
 
-(ref:CPoscEmpForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by using an empirical distribution of explanatory-variable values in the `variable_attribution()` function for the `titanic_rf_v6` model and passenger Henry for the Titanic data.
+(ref:CPoscEmpForHenryDesc) Variable-importance measures based on ceteris-paribus oscillations estimated by using an empirical distribution of explanatory-variable values in the `variable_attribution()` function for the `titanic_rf` model and passenger Henry for the Titanic data.
 
 ```{r CPoscEmpForHenry, warning=FALSE, message=FALSE, eval = TRUE, fig.width=6, fig.height=4, fig.cap='(ref:CPoscEmpForHenryDesc)', out.width = '70%', fig.align='center'}
 oscillations_empirical$`_ids_` <- "Henry"

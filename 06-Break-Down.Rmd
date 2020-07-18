@@ -8,7 +8,7 @@ Probably the most commonly asked question when trying to understand a model's pr
 
 As mentioned in Section \@ref(fitting), we assume that prediction $f(\underline{x})$ is an approximation of the expected value of the dependent variable $Y$ given values of explanatory variables $\underline{x}$. The underlying idea of BD plots is to capture the contribution of an explanatory variable to the model's prediction by computing the shift in the expected value of $Y$, while fixing the values of other variables. 
 
-This idea is illustrated in Figure \@ref(fig:BDPrice4). Consider an example related to the prediction obtained for the random-forest model `model_rf_v6` for the Titanic data (see Section \@ref(model-titanic-rf)). We are interested in the probability of survival for Johnny D, an 8-years-old passenger travelling in the first class (see Section \@ref(predictions-titanic)). Panel A of Figure \@ref(fig:BDPrice4) shows distribution of the model's predictions for observations from the Titanic dataset. In particular, the violin plot in the row marked "all data" summarizes the distrbution of predictions for all 2207 observations from the dataset. The red dot indicates the mean value that can be interpreted as an estimate of the expected value of the model's predictions over the distribution of all explanatory variables. In this example, the mean value is equal to 23.5%.
+This idea is illustrated in Figure \@ref(fig:BDPrice4). Consider an example related to the prediction obtained for the random-forest model `model_rf` for the Titanic data (see Section \@ref(model-titanic-rf)). We are interested in the probability of survival for Johnny D, an 8-years-old passenger travelling in the first class (see Section \@ref(predictions-titanic)). Panel A of Figure \@ref(fig:BDPrice4) shows distribution of the model's predictions for observations from the Titanic dataset. In particular, the violin plot in the row marked "all data" summarizes the distrbution of predictions for all 2207 observations from the dataset. The red dot indicates the mean value that can be interpreted as an estimate of the expected value of the model's predictions over the distribution of all explanatory variables. In this example, the mean value is equal to 23.5%.
 
 To evaluate the contribution of individual explanatory variables to this particular single-instance prediction, we investigate the changes in the model's predictions when fixing the values of consecutive variables. For instance, the violin plot in the row marked  "class=1st" in panel A of Figure \@ref(fig:BDPrice4) summarizes the distribution of the predictions obtained when the *class* variable takes the value "1st class", as for Johnny D. Again, the red dot indicates the mean of the predictions and it can be interpreted as an estimate of the expected value of the predictions over the distribution of all explanatory variables other than *class*. The violin plot in the "age=8" row describes the distribution and the mean value of predictions with the values of variables *class* and *age* set to "1st class" and "8 years", respectively. Subsequent rows contain similar information for other explanatory variables included in the random-forest model. In the last row, all explanatory variables are fixed at the values describing Johnny D. Hence, the last row contains only one point, the red dot, which corresponds to the model's prediction, i.e., survival probability, for Johnny D.
 
@@ -183,11 +183,11 @@ There are two other possible approaches. One consists of identifying the interac
 
 ## Example: Titanic data {#BDExample} 
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and passenger Johnny D (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
+Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and passenger Johnny D (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
 
 The mean of model's predictions for all passengers is equal to $v_0=$ 0.2353095. Table \@ref(tab:titanicBreakDownDeltas) presents the scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ and the expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$. Note that, given \@ref(eq:deltaBreakDownAdditive) and the fact that $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}>v_0$ for all variables, we have got $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}=|\Delta^{j|\emptyset}(\underline{x}_*)|+v_0$. 
 
-Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ and scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ for the random-forest model `titanic_rf_v6` and Johnny D for the Titanic data. The scores are sorted in the decreasing order.
+Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ and scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ for the random-forest model `titanic_rf` and Johnny D for the Titanic data. The scores are sorted in the decreasing order.
 
 |variable $j$ | $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ | $|\Delta^{j|\emptyset}(\underline{x}_*)|$  |
 |:--------|---------:|---------:|
@@ -201,24 +201,24 @@ Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\und
 
 ```{r, echo=FALSE, eval=FALSE}
 library("iBreakDown")
-avg = mean(predict(explain_rf_v6$model, type = "prob")[,2])
+avg = mean(predict(explain_rf$model, type = "prob")[,2])
 
-deltas <- iBreakDown:::calculate_1d_changes(explain_rf_v6$model, 
+deltas <- iBreakDown:::calculate_1d_changes(explain_rf$model, 
                                   johny_d, 
-                                  explain_rf_v6$data[,colnames(johny_d)], 
-                                  predict_function = explain_rf_v6$predict_function)
+                                  explain_rf$data[,colnames(johny_d)], 
+                                  predict_function = explain_rf$predict_function)
 dftmp <- data.frame(variable = names(deltas), E = unlist(deltas) + 0.2356585, delta = unlist(deltas))
 library("dplyr")
 dftmp %>% arrange(-delta) %>% knitr::kable()
 
-tmp <- break_down(explain_rf_v6, johny_d)
+tmp <- break_down(explain_rf, johny_d)
 plot(tmp)
 as.data.frame(tmp)[,c(1,5,2)] %>% knitr::kable()
 ```
 
 Based on the ordering defined by the scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ from Table \@ref(tab:titanicBreakDownDeltas), we can compute the variable-importance measures based on the sequential contributions $\Delta^{j|J}(\underline{x}_*)$. The computed values are presented in Table \@ref(tab:titanicBreakDownDeltasConseq).
 
-Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}(\underline{x}_*)$ for the random-forest model `titanic_rf_v6` and Johnny D for the Titanic data, computed by using the ordering of variables defined in Table \@ref(tab:titanicBreakDownDeltas).
+Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta^{j|\{1,\ldots,j\}}(\underline{x}_*)$ for the random-forest model `titanic_rf` and Johnny D for the Titanic data, computed by using the ordering of variables defined in Table \@ref(tab:titanicBreakDownDeltas).
 
 
 |variable $j$           |  $E_{\underline{X}}\left\{ f(\underline{X}) | \underline{X}^{\{1,\ldots,j\}} = \underline{x}^{\{1,\ldots,j\}}_*\right\}$ |  $\Delta^{j|\{1,\ldots,j\}}(\underline{x}_*)$ |
@@ -236,15 +236,15 @@ Table: (\#tab:titanicBreakDownDeltasConseq) Variable-importance measures $\Delta
 
 Results from Table \@ref(tab:titanicBreakDownDeltasConseq) are presented in Figure \@ref(fig:BDjohnyExample). The plot indicates that the largest positive contributions to the predicted probability of survival for Johnny D come from explanatory variables *age* and *class*. The contributions of the remaining variables are smaller (in absolute values) and negative.
 
-(ref:BDjohnyExampleDesc) Break-down plot for the random-forest model `titanic_rf_v6` and Johnny D for the Titanic data.
+(ref:BDjohnyExampleDesc) Break-down plot for the random-forest model `titanic_rf` and Johnny D for the Titanic data.
 
 ```{r BDjohnyExample, echo=FALSE, warning=FALSE, message=FALSE, fig.cap='(ref:BDjohnyExampleDesc)', out.width = '70%', fig.align='center'}
 library("randomForest")
 library("DALEX")
 library("ggplot2")
-load("models/explain_rf_v6.rda")
+load("models/explain_rf.rda")
 load("models/johny_d.rda")
-bd_rf <- variable_attribution(explain_rf_v6,
+bd_rf <- variable_attribution(explain_rf,
                  new_observation = johny_d,
                  type = "break_down")
 
@@ -264,13 +264,13 @@ To address the issue of dependence of the variable-importance measure on the ord
 
 In this section, we use the `DALEX` package, which is a wrapper for the `iBreakDown` R package [@iBreakDownRPackage]. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
 
-For illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic)).
+For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic)).
 
-We first retrieve the `titanic_rf_v6` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
+We first retrieve the `titanic_rf` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist:: aread("pbiecek/models/4e0fc")
+titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
@@ -279,7 +279,7 @@ Then we construct the explainer for the model by using function `explain()` from
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")
 library("DALEX")
-explain_rf_v6 <- explain(model = titanic_rf_v6,  
+explain_rf <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
@@ -291,7 +291,7 @@ Note that we could have loaded the explainer object by using the `archivist` hoo
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, eval = FALSE}
 library("randomForest")
 library("DALEX")
-load("models/explain_rf_v6.rda")
+load("models/explain_rf.rda")
 load("models/henry.rda")
 henry
 ```
@@ -309,7 +309,7 @@ In the simplest call, the function requires three arguments:
 In the code below, the argument `type = "break_down"` is explicitly used. The code essentially provides the variable-importance values $\Delta^{j|\{1,\ldots,j\}}(\underline{x}_*)$.
 
 ```{r, warning=FALSE, message=FALSE}
-bd_rf <- variable_attribution(explainer = explain_rf_v6,
+bd_rf <- variable_attribution(explainer = explain_rf,
                         new_observation = henry,
                                    type = "break_down")
 bd_rf
@@ -317,7 +317,7 @@ bd_rf
 
 By applying the generic `plot()` function to the object resulting from the application of the `variable_attribution()` function we obtain a BD plot, shown in Figure \@ref(fig:BDhenryExample).
 
-(ref:BDhenryExampleDesc) Break-down plot obtained by the generic `plot()` function for the random-forest model `titanic_rf_v6` and Henry for the Titanic data.
+(ref:BDhenryExampleDesc) Break-down plot obtained by the generic `plot()` function for the random-forest model `titanic_rf` and Henry for the Titanic data.
 
 ```{r BDhenryExample, warning=FALSE, message=FALSE,  fig.cap='(ref:BDhenryExampleDesc)', out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
 plot(bd_rf) 
@@ -336,10 +336,10 @@ In what follows, we illustrate the use of the arguments.
 
 First, we specify the ordering of the explanatory variables. Toward this end, we can use integer indexes or variable names. The latter option is prerferable in most cases because of transparency. Additionally, to reduce clutter in the plot, we set `max_features = 3` argument in the `plot()` function. The resulting plot is presented in Figure \@ref(fig:BDhenryExampleTop). It is worth noting that the attributions for variables *gender* and *fare* do differ from those shown in Figure \@ref(fig:BDhenryExample). This is the result of the change of the ordering of variables used in computation of the attributions.   
 
-(ref:BDhenryExampleTopDesc) Break-down plot for top three variables for the random-forest model `titanic_rf_v6` and  Henry for the Titanic data.
+(ref:BDhenryExampleTopDesc) Break-down plot for top three variables for the random-forest model `titanic_rf` and  Henry for the Titanic data.
 
 ```{r BDhenryExampleTop, warning=FALSE, message=FALSE,  fig.cap='(ref:BDhenryExampleTopDesc)', out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
-bd_rf_order <- variable_attribution(explainer = explain_rf_v6,
+bd_rf_order <- variable_attribution(explainer = explain_rf,
                               new_observation = henry, 
                                          type = "break_down",
                order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"))
@@ -348,10 +348,10 @@ plot(bd_rf_order, max_features = 3)
 
 We can use the `keep_distributions = TRUE` argument to enrich the resulting object with additional information about conditional distributions of predicted values. Subsequently, we can apply the `plot_distributions = TRUE` argument in the `plot()` function to present the distributions as violin plots. 
 
-(ref:BDhenryExampleDistrDesc) Break-down plot with violin plots summarizing distributions of predicted values for a selected order of explanatory variables for the random-forest model `titanic_rf_v6` and Henry for the Titanic data. [TOMASZ: HOW TO REVERSE THE PLOT TO GET A SIMILAR ONE TO PANEL A IN THE INTRODUCTION?]
+(ref:BDhenryExampleDistrDesc) Break-down plot with violin plots summarizing distributions of predicted values for a selected order of explanatory variables for the random-forest model `titanic_rf` and Henry for the Titanic data. [TOMASZ: HOW TO REVERSE THE PLOT TO GET A SIMILAR ONE TO PANEL A IN THE INTRODUCTION?]
 
 ```{r BDhenryExampleDistr, warning=FALSE, message=FALSE,  fig.cap='(ref:BDhenryExampleDistrDesc)', out.width = '70%', fig.align='center', fig.width=8, fig.height=5}
-bd_rf_distr <- variable_attribution(explainer = explain_rf_v6,
+bd_rf_distr <- variable_attribution(explainer = explain_rf,
                               new_observation = henry, 
                                         type = "break_down",
           order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),

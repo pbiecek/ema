@@ -95,11 +95,11 @@ knitr::include_graphics("figure/duck_horse_04.png")
 
 Most examples of the LIME method are related to the text or image data. In this section, we present an example of a binary classification to facilitate comparisons between methods introduced in different chapters.
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and passenger Johnny D (see Section \@ref(predictions-titanic)) as the instance of interest for the Titanic data. 
+Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and passenger Johnny D (see Section \@ref(predictions-titanic)) as the instance of interest for the Titanic data. 
 
 First, we have got to define a lower-dimensional data space. One option would be to gather similar variables into larger constructs corresponding to some concepts. For example *class* and *fare* variables can be combined into "wealth," *age* and *gender* into "demography," and so on. In this example, however, we have got a relatively small number of variables, so we will use a simpler data representation in the form of a binary vector. Toward this aim, each variable is dichotomized into two levels. For example, *age* is transformed into a binary variable with categories "$\leq$ 15" and ">15," *class* is transformed into a binary variable with categores "1st/2nd/deck crew" and "other," and so on. Once the lower-dimension data space is defined, the LIME algorithm is applied to this space. In particular, we first have got to appropriately transform data for Johnny D. Subsequently, we generate a new artifical dataset that will be used for K-LASSO approximations of the random-forest model. In particular, the K-LASSO method with $K=3$ is used to identify the three most influential (binary) variables that will provide an explanation for the prediction for Johnny D. The three variables are: *age*, *gender*, and *class*. This result agress with the conclusions drawn in the previous chapters. Figure \@ref(fig:LIMEexample01) shows the coefficients estimated for the K-LASSO model.
 
-(ref:LIMEexample01Desc) LIME method for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data. Presented values are the coefficients of the K-LASSO model fitted locally to the predictions from the original model. [TOMASZ: WHY AGE <= 15.36, NOT 15? STATIC FIGURE, CHECK FOR CORRECTNESS.]
+(ref:LIMEexample01Desc) LIME method for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data. Presented values are the coefficients of the K-LASSO model fitted locally to the predictions from the original model. [TOMASZ: WHY AGE <= 15.36, NOT 15? STATIC FIGURE, CHECK FOR CORRECTNESS.]
 
 ```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample01Desc)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/LIMEexample01.png")
@@ -136,11 +136,11 @@ LIME and similar methods are implemented in various R and Python packages. For e
 
 Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, `lime` performs global discretization using quartiles, `localModel` performs local discretization using ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)), while `live` and `iml` work directly on continuous variables. Due to these differences, the packages yield different results (explanations).
 
-In what follows, for illustration purposes, we use the `titanic_rf_v6` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for Johnny D, an 8-year-old passenger that travelled in the first class. We first retrieve the `titanic_rf_v6` model-object and the data frame for Johnny D via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
+In what follows, for illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for Johnny D, an 8-year-old passenger that travelled in the first class. We first retrieve the `titanic_rf` model-object and the data frame for Johnny D via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf_v6 <- archivist:: aread("pbiecek/models/4e0fc")
+titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (johnny_d <- archivist:: aread("pbiecek/models/e3596"))
 ```
 
@@ -149,7 +149,7 @@ Then we construct the explainer for the model by using function `explain()` from
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")
 library("DALEX")
-explain_titanic_rf_v6 <- explain(model = titanic_rf_v6,  
+explain_titanic_rf <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
@@ -170,7 +170,7 @@ model_type.randomForest <- function(x, ...) "classification"
 Subsequently, we create an explainer, i.e., an object with all elements needed for calculation of explanations. This can be done by using the `lime()` function with the data frame used for model fitting and the model object as arguments `x` and `model`, respectively.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-lime_rf <- lime(x = titanic_imputed[,colnames(johnny_d)], model = titanic_rf_v6)
+lime_rf <- lime(x = titanic_imputed[,colnames(johnny_d)], model = titanic_rf)
 ```
 
 Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwile to indicate the we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicats the name of the the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. Moreover, we use `n_features=4` argument to indicate that the K-LASSO method should select no more than $K=4$ most important variables. Finally, by using the `n_permutations=1000` argument, we specify that 1000 artifical data points are to be sampled for the local-model approximation. 
@@ -212,7 +212,7 @@ $$
 p = e^{0.489}/(1+e^{0.489}) = 0.620.
 $$ 
 
-For the random-forest model `titanic_rf_v6`, the predicted probability was equal to 0.422, as seen in the `prediction` column (see also Section \@ref(predictions-titanic)). [TOMASZ: A SURPRISINGLY LARGE DIFFERENCE. CHECK?]
+For the random-forest model `titanic_rf`, the predicted probability was equal to 0.422, as seen in the `prediction` column (see also Section \@ref(predictions-titanic)). [TOMASZ: A SURPRISINGLY LARGE DIFFERENCE. CHECK?]
 
 By applying the `plot_features()` function to the object containing the explanation, we obtain a graphical presentation of the results.
 
@@ -222,7 +222,7 @@ plot_features(lime_expl)
 
 The resulting plot (for the exemplary results) is shown in Figure \@ref(fig:limeExplLIMETitanic). The length of the bar indicates the magnitude (absolute value), while the color indicates the sign (red for negative, blue for positive) of the estimated coefficient.
 
-(ref:limeExplLIMETitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `lime` package.
+(ref:limeExplLIMETitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `lime` package.
 
 ```{r limeExplLIMETitanic, echo=FALSE, fig.cap='(ref:limeExplLIMETitanicDesc)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/lime_expl_tomasz.png")
@@ -238,7 +238,7 @@ The main arguments of the `individual_surrogate_model()` function are: `x`, whic
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 library("localModel")
-local_model_rf <- individual_surrogate_model(x = explain_titanic_rf_v6, 
+local_model_rf <- individual_surrogate_model(x = explain_titanic_rf, 
             new_observation= johnny_d, size = 1000, seed = 1313)
 ```
 
@@ -270,7 +270,7 @@ knitr::include_graphics("figure/LIMEexample02.png")
 
 
 ```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width="50%"}
-load("models/explain_rf_v6.rda")
+load("models/explain_rf.rda")
 load("models/titanic.rda")
 load("models/henry.rda")
 library("localModel")
@@ -278,7 +278,7 @@ library("DALEX")
 library("ggplot2")
 library("randomForest")
 
-localModel_lok <- individual_surrogate_model(explain_rf_v6, johnny_d,
+localModel_lok <- individual_surrogate_model(explain_rf, johnny_d,
                                         size = 5000, seed = 1313)
 localModel_lok
 plot(localModel_lok) + facet_null() + ggtitle("localModel explanations for Johny D","Random Forest v6") + theme_drwhy_vertical()
@@ -296,14 +296,14 @@ plot(local_model_rf)
 
 The resulting plot is shown in Figure \@ref(fig:limeExplLocalModelTitanic). The length of the interval indicates the magnitude (absolute value) of the estimated coefficient of the LASSO logistic-regression model. The intervals are placed relative to the value of the mean prediction, 0.235. [TOMASZ: CORRECT?] 
 
-(ref:limeExplLocalModelTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `localModel` package. 
+(ref:limeExplLocalModelTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `localModel` package. 
 
 ```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, fig.cap='(ref:limeExplLocalModelTitanicDesc)', out.width = '60%', fig.align='center'}
 plot(local_model_rf)
 ```
 
 <!---
-(ref:limeExplLocalModelTitanicDesc1) Illustration of the LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `localModel` package.
+(ref:limeExplLocalModelTitanicDesc1) Illustration of the LIME-method results for the prediction for `johny_d` for the random-forest model `titanic_rf` and the Titanic data, generated by the `localModel` package.
 
 ```{r limeExplLocalModelTitanic1, echo=FALSE, fig.cap='(ref:limeExplLocalModelTitanicDesc1)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
@@ -316,7 +316,7 @@ The key tools of the `iml` package are functions `Predictor$new()`, which create
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 library("iml")
-iml_rf <- Predictor$new(model = titanic_rf_v6, data = titanic_imputed[,colnames(johnny_d)])
+iml_rf <- Predictor$new(model = titanic_rf, data = titanic_imputed[,colnames(johnny_d)])
 iml_glass_box <- LocalModel$new(predictor = iml_rf, x.interest = johnny_d, k = 6)
 ```
 
@@ -361,7 +361,7 @@ plot(iml_glass_box)
 
 The resulting plot is shown in Figure \@ref(fig:limeExplIMLTitanic). It shows values of the sets of six  coefficients for both types of predictions (probability of death and survival). 
 
-(ref:limeExplIMLTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf_v6` and the Titanic data, generated by the `iml` package. 
+(ref:limeExplIMLTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `iml` package. 
 
 ```{r limeExplIMLTitanic, echo=FALSE, fig.cap='(ref:limeExplIMLTitanicDesc)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/lime_expl_iml_titanic.png")

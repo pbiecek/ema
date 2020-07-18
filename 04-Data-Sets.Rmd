@@ -353,23 +353,23 @@ Application of function `explain()` provides an object of class `explainer`. It 
 Thus, each explainer-object contains all elements needed to create a model explanation. The code below creates explainers for the models (see Sections \@ref(model-titanic-lmr)--\@ref(model-titanic-svm)) fitted to the Titanic data. Note that, in the `data` argument, we indicate the `titanic` data frame without the ninth column, i.e., without the *survived* variable. The variable is used in the `y` argument to explicitly define the binary dependent variable equal to 1 for survivors and 0 for passengers who did not survive.  
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-explain_titanic_lmr <- explain(model = titanic_lmr, 
+titanic_lmr_exp <- explain(model = titanic_lmr, 
                            data = titanic[, -9],
                            y = titanic$survived == "yes", 
                            label = "Logistic Regression")
-explain_titanic_lmr$model_info$type = "classification"
+titanic_lmr_exp$model_info$type = "classification"
 
-explain_titanic_rf <- explain(model = titanic_rf, 
+titanic_rf_exp <- explain(model = titanic_rf, 
                            data = titanic[, -9],
                            y = titanic$survived == "yes", 
                            label = "Random Forest")
 
-explain_titanic_gbm <- explain(model = titanic_gbm, 
+titanic_gbm_exp <- explain(model = titanic_gbm, 
                            data = titanic[, -9],
                            y = titanic$survived == "yes", 
                            label = "Generalized Boosted Regression")
 
-explain_titanic_svm <- explain(model = titanic_svm, 
+titanic_svm_exp <- explain(model = titanic_svm, 
                            data = titanic[, -9],
                            y = titanic$survived == "yes", 
                            label = "Support Vector Machine")
@@ -467,16 +467,16 @@ preprocess = make_column_transformer(
 
 The dependent variable of interest, *survived*, is binary. Thus, a natural choice is to start the predictive modelling with a logistic-regression model. Here we use the `LogisticRegression` algorithm from `sklearn` library. By default the `sklearn` implementation use ridge regression with $L_2$ penalty for model coefficients. This is whay it was impotant to scale numerical valriables like `age` and `fare`. 
 
-The result is a model  stored in object `model_lr`, which will be used in subsequent chapters. 
+The result is a model  stored in object `titanic_lr`, which will be used in subsequent chapters. 
  
 ```{python, eval=FALSE}
 from sklearn.linear_model import LogisticRegression
 
-model_lr = make_pipeline(
+titanic_lr = make_pipeline(
     preprocess,
     LogisticRegression(penalty='l2'))
     
-model_lr.fit(X, y)
+titanic_lr.fit(X, y)
 ```
 
 Note that we are not very much interested in the assessment of the model's predictive performance, but rather on understanding how does the model yield its predictions. This is why we do not split the data into the training and  testing subsets. Instead, the model is fitted to the entire dataset and will be examined on the same dataset.
@@ -490,11 +490,11 @@ The result is a model  stored in object `model_rf`, which will be used in subseq
 ```{python, eval=FALSE}
 from sklearn.ensemble import RandomForestClassifier
 
-model_rf = make_pipeline(
+titanic_rf = make_pipeline(
     preprocess,
     RandomForestClassifier(max_depth=3, random_state=0, n_estimators=500))
     
-model_rf.fit(X, y)
+titanic_rf.fit(X, y)
 ```
 
 ### Gradient-boosting model {#model-titanic-python-gbm}
@@ -507,11 +507,11 @@ The result is a model  stored in object `model_gbc`, which will be used in subse
 ```{python, eval=FALSE}
 from sklearn.ensemble import GradientBoostingClassifier
 
-model_gbc = make_pipeline(
+titanic_gbc = make_pipeline(
     preprocess,
     GradientBoostingClassifier(n_estimators=100))
 
-model_gbc.fit(X, y)
+titanic_gbc.fit(X, y)
 ```
 
 ### Support Vector Machine model for Classification {#model-titanic-python-svm}
@@ -524,11 +524,11 @@ The result is a model  stored in object `model_svm`, which will be used in subse
 ```{python, eval=FALSE}
 from sklearn.svm import SVC
 
-model_svm = make_pipeline(
+titanic_svm = make_pipeline(
     preprocess,
     SVC(probability=True))
     
-model_svm.fit(X, y)
+titanic_svm.fit(X, y)
 ```
 
 ### Models' predictions {#predictions-titanic-python}
@@ -553,20 +553,20 @@ johnny_d = pd.DataFrame({'gender': ['male'],
 Subsequently, we use the method `predict_proba()` to obtain the predicted probability of survival for the logistic-regression model. 
 
 ```{python, eval=FALSE}
-model_lr.predict_proba(johnny_d)
+titanic_lr.predict_proba(johnny_d)
 # array([[0.35884528, 0.64115472]])
 ```
 
 We do the same for the remaining three models.
 
 ```{python, eval=FALSE}
-model_rf.predict_proba(johnny_d)
+titanic_rf.predict_proba(johnny_d)
 # array([[0.63028556, 0.36971444]])
 
-model_gbc.predict_proba(johnny_d)
+titanic_gbc.predict_proba(johnny_d)
 # array([[0.1567194, 0.8432806]])
 
-model_svm.predict_proba(johnny_d)
+titanic_svm.predict_proba(johnny_d)
 # array([[0.78308146, 0.21691854]])
 ```
 
@@ -582,16 +582,16 @@ henry = pd.DataFrame({'gender': ['male'],
                        'parch': [0]},
                       index = ['Henry'])
 
-model_lr.predict_proba(henry)
+titanic_lr.predict_proba(henry)
 # array([[0.69547744, 0.30452256]])
 
-model_rf.predict_proba(henry)
+titanic_rf.predict_proba(henry)
 # array([[0.73060059, 0.26939941]])
 
-model_gbc.predict_proba(henry)
+titanic_gbc.predict_proba(henry)
 # array([[0.1567194, 0.8432806]])
 
-model_svm.predict(henry)
+titanic_svm.predict(henry)
 # array([[0.82429369, 0.17570631]])
 ```
 
@@ -626,13 +626,13 @@ Application of constructor `Explainer()` provides an object of class "explainer"
 Thus, each explainer-object contains all elements needed to create a model explanation. The code below creates explainers for the models (see Sections \@ref(model-titanic-python-lr)--\@ref(model-titanic-python-svm)) fitted to the Titanic data. 
 
 ```{python, eval=FALSE}
-exp_rf = dx.Explainer(model_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
 
-exp_lr = dx.Explainer(model_lr, X, y, label = "Titanic LR Pipeline")
+titanic_lr_exp = dx.Explainer(titanic_lr, X, y, label = "Titanic LR Pipeline")
 
-exp_gbc = dx.Explainer(model_gbc, X, y, label = "Titanic XGB Pipeline")
+titanic_gbc_exp = dx.Explainer(titanic_gbc, X, y, label = "Titanic XGB Pipeline")
 
-exp_svm = dx.Explainer(model_svm, X, y, label = "Titanic SVM Pipeline")
+titanic_svm_exp = dx.Explainer(titanic_svm, X, y, label = "Titanic SVM Pipeline")
 ```
 
 
@@ -829,17 +829,17 @@ For the random-forest model, RMSE is equal to `r round(rmsd_rf, 1)`. It is almos
 The code below creates explainers for the models (see Sections \@ref(model-Apartments-lr)--\@ref(model-Apartments-svm)) fitted to the apartment-prices data. Note that we use the `apartments_test` data frame without the first column, i.e., the *m2.price* variable, in the `data` argument. This will be the dataset to which the model will be applied (see Section \@ref(ExplainersTitanicRCode)). The *m2.price* variable is explicitly specified as the dependent variable in the `y` argument (see Section \@ref(ExplainersTitanicRCode)). 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
-explain_apartments_lm <- explain(model = apartments_lm, 
+apartments_lm_exp <- explain(model = apartments_lm, 
                              data = apartments_test[,-1], 
                              y = apartments_test$m2.price, 
                              label = "Linear Regression")
 
-explain_apartments_rf <- explain(model = apartments_rf, 
+apartments_rf_exp <- explain(model = apartments_rf, 
                              data = apartments_test[,-1], 
                              y = apartments_test$m2.price, 
                              label = "Random Forest")
 
-explain_apartments_svm <- explain(model = apartments_svm, 
+apartments_svm_exp <- explain(model = apartments_svm, 
                               data = apartments_test[,-1], 
                               y = apartments_test$m2.price, 
                               label = "Support Vector Machine")
@@ -874,9 +874,9 @@ The following instructions load the `apartmets` dataset and split it into the ta
 
 ```{python, eval=FALSE}
 import dalex as dx
-titanic = dx.datasets.load_apartmets()
-X = titanic.drop(columns='m2_price')
-y = titanic.m2_price
+apartmets = dx.datasets.load_apartmets()
+X = apartmets.drop(columns='m2_price')
+y = apartmets.m2_price
 ```
 
 Data `X` contains numeric variables with different ranges (e.g. surface and no.rooms) and categorical variables (i.e. district). Machine Learning algorithms in `sklearn` require the data to be preprocessed into numeric form. Therefore, before modeling, we prepared a pipeline that performs data preprocessing. That is scaling for continuous variables (*construction.year*, *surface*, *floor*, *no.rooms*) and one-hot-encoding for categorical variables (*district*).
@@ -966,10 +966,10 @@ apartments_svm.predict(apartments_test)
 The examples that we show in this chapter are based on the `sklearn` library, which makes it possible to work with models in a uniform way. But often we also want to work with models built in other libraries. To make it easier to work models with different structures, the `dalex` library wraps models in the objects of the class `Explainer`, that have all the necessary functions of the model available in a uniform way. More detailed description is given in Section \@ref(ExplainersTitanicPythonCode).
 
 ```{python, eval=FALSE}
-exp_apa_lr = dx.Explainer(apartments_lr, X, y, label = "Apartments LR Pipeline")
+apartments_lr_exp = dx.Explainer(apartments_lr, X, y, label = "Apartments LR Pipeline")
 
-exp_apa_rf = dx.Explainer(apartments_rf, X, y, label = "Apartments RF Pipeline")
+apartments_rf_exp = dx.Explainer(apartments_rf, X, y, label = "Apartments RF Pipeline")
 
-exp_apa_svm = dx.Explainer(apartments_svm, X, y, label = "Apartments SVM Pipeline")
+apartments_svm_exp = dx.Explainer(apartments_svm, X, y, label = "Apartments SVM Pipeline")
 ```
 
