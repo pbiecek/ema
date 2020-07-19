@@ -1,0 +1,236 @@
+---
+title: "Code snippets for R"
+subtitle: "Explanatory Model Analysis"
+author: "Przemysław Biecek"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    df_print: paged
+date: "`r Sys.Date()`"
+---
+
+```{r UMEPpiramide, echo=FALSE, fig.align='center'}
+knitr::include_graphics("../figure/UMEPpiramide.png")
+```
+
+
+# Chapter 5: Datasets and models {#dataSetsIntro}
+
+Read datasets and models
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+library("patchwork")
+library("ggplot2")
+set.seed(1313)
+
+titanic_rf <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, data = titanic_imputed)
+
+henry <- data.frame(
+         class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", 
+                     "engineering crew", "restaurant staff", "victualling crew")),
+         gender = factor("male", levels = c("female", "male")),
+         age = 47,
+         sibsp = 0,
+         parch = 0,
+         fare = 25,
+         embarked = factor("Cherbourg", levels = c("Belfast",
+                           "Cherbourg","Queenstown","Southampton"))
+)
+henry
+
+johnny_d <- data.frame(
+            class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew",
+                        "engineering crew", "restaurant staff", "victualling crew")),
+            gender = factor("male", levels = c("female", "male")),
+            age = 8,
+            sibsp = 0,
+            parch = 0,
+            fare = 72,
+            embarked = factor("Southampton", levels = c("Belfast",
+                        "Cherbourg","Queenstown","Southampton"))
+)
+johnny_d
+```
+
+```{r, warning=FALSE, message=FALSE}
+titanic_rf_exp <- DALEX::explain(model = titanic_rf,  
+                          data = titanic_imputed[, -9],
+                             y = titanic_imputed$survived, 
+                         label = "Random Forest")
+
+titanic_rf_exp$model_info$type = "classification"
+```
+
+# Chapter 7: Break-down Plots for Additive Attributions {#breakDown}
+
+### Examples
+
+```{r, warning=FALSE, message=FALSE}
+bd_rf <- predict_parts(explainer = titanic_rf_exp,
+                 new_observation = johnny_d,
+              keep_distributions = TRUE,
+                  order = c("class","age","gender","fare","parch","sibsp","embarked"),
+                            type = "break_down")
+bd_rf
+```
+
+Plot the break down plots
+
+```{r, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=5}
+plot(bd_rf) 
+plot(bd_rf, plot_distributions = TRUE) 
+```
+
+### Basic use of the `perdict_parts()` function
+
+```{r, warning=FALSE, message=FALSE}
+bd_rf <- predict_parts(explainer = titanic_rf_exp,
+                 new_observation = henry,
+                            type = "break_down")
+bd_rf
+```
+
+Plot the break down plots
+
+```{r BDhenryExample, warning=FALSE, message=FALSE,fig.align='center', fig.width=8, fig.height=5}
+plot(bd_rf) 
+```
+
+
+### Advanced use of the `predict_parts()` function
+
+```{r BDhenryExampleTop, warning=FALSE, message=FALSE,  fig.align='center', fig.width=8, fig.height=5}
+bd_rf_order <- predict_parts(explainer = titanic_rf_exp,
+                              new_observation = henry, 
+                                         type = "break_down",
+               order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"))
+plot(bd_rf_order, max_features = 3) 
+```
+
+
+```{r BDhenryExampleDistr, warning=FALSE, message=FALSE,  fig.align='center', fig.width=8, fig.height=5}
+bd_rf_distr <- predict_parts(explainer = titanic_rf_exp,
+                              new_observation = henry, 
+                                        type = "break_down",
+          order = c("class", "age", "gender", "fare", "parch", "sibsp", "embarked"),
+                          keep_distributions = TRUE)
+plot(bd_rf_distr, plot_distributions = TRUE) 
+```
+
+
+
+
+# Chapter 8: Break-down Plots for Interactions (iBreak-down Plots) {#iBreakDown}
+
+## Examples
+
+```{r, warning=FALSE, message=FALSE}
+bd_rf <- predict_parts(explainer = titanic_rf_exp,
+                        new_observation = johnny_d,
+                                   type = "break_down_interactions")
+bd_rf
+```
+
+```{r, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=4}
+plot(bd_rf) 
+```
+
+
+## Code snippets for R {#iBDRcode}
+
+```{r, warning=FALSE, message=FALSE}
+bd_rf <- predict_parts(explainer = titanic_rf_exp,
+                        new_observation = henry,
+                                   type = "break_down_interactions")
+bd_rf
+```
+
+```{r iBDforHenry, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=4}
+plot(bd_rf) 
+```
+
+# Chapter 9: Shapley Additive Explanations (SHAP) and Average Variable Attributions {#shapley}
+
+```{r, message=FALSE, warning=FALSE, fig.width=12, fig.height=15}
+set.seed(13)
+
+rsample <- lapply(1:10, function(i){
+  new_order <- sample(1:7)
+  bd <- predict_parts(titanic_rf_exp, johnny_d, order = new_order)
+  bd$variable <- as.character(bd$variable)
+  bd$variable[bd$variable == "embarked = Southampton"] = "embarked = S"
+  bd$label = paste("random order no.", i)
+  plot(bd) + scale_y_continuous(limits = c(0.1, 0.6), name = "", breaks = seq(0.1, 0.6, 0.1))
+})
+
+rsample[[1]] +
+rsample[[2]] +
+rsample[[3]] +
+rsample[[4]] + 
+rsample[[5]] + 
+rsample[[6]] + 
+rsample[[7]] + 
+rsample[[8]] + 
+rsample[[9]] + 
+rsample[[10]] + plot_layout(ncol = 2)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+shap_johnny <- predict_parts(titanic_rf_exp,
+                 new_observation = johnny_d,
+                 B = 25,
+                 type = "shap")
+```
+
+## Example: Titanic data {#SHAPExample}
+
+```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=5.5, fig.align='center'}
+library("patchwork")
+
+pl1 <- plot(shap_johnny) + ggtitle("Mean attributions for Johnny D")
+pl2 <- plot(shap_johnny, show_boxplots = FALSE) + ggtitle("Mean attributions for Johnny D")
+pl1 + pl2
+```
+
+## Code snippets for R {#SHAPRcode}
+
+```{r, warning=FALSE, message=FALSE}
+predict(titanic_rf_exp, henry)
+```
+
+```{r, warning=FALSE, message=FALSE}
+shap_henry <- predict_parts(explainer = titanic_rf_exp, 
+                             new_observation = henry, 
+                                        type = "shap",
+                                           B = 25)
+```
+
+```{r, warning=FALSE, message=FALSE}
+shap_henry
+```
+
+```{r ShapforHenry, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=4}
+plot(shap_henry) 
+```
+
+```{r ShapOnlyforHenry, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=4}
+plot(shap_henry, show_boxplots = FALSE) 
+```
+
+
+
+
+
+
+
+
+# Session info
+
+```{r}
+sessionInfo()
+```
+
