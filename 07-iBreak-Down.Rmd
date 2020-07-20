@@ -1,6 +1,6 @@
 #  Break-down Plots for Interactions (iBreak-down Plots) {#iBreakDown}
 
-In Chapter \@ref(breakDown), we presented a model-agnostic approach to evaluation of the importance of an explanatory variable for a model's predictions. However, for some models, like models with interactions, the estimated value of the variable-importance measure introduced in Chapter \@ref(breakDown) depends on the ordering of the explanatory variables that is used in computations. 
+In Chapter \@ref(breakDown), we presented a model-agnostic approach to calculate of the attribution of an explanatory variable for a model's predictions. However, for some models, like models with interactions, the procedure introduced in Chapter \@ref(breakDown) depends on the ordering of the explanatory variables that is used in computations. 
 
 In this chapter, we present an algorithm that addresses the issue. In particular, the algorithm identifies interactions between pairs of variables and takes them into account when constructing break-down (BD) plots. In our presentation, we focus on pairwise interactions that involve pairs of explanatory variables, but the algorithm can be easily extended to interactions involving a larger number of variables.
 
@@ -8,11 +8,15 @@ In this chapter, we present an algorithm that addresses the issue. In particular
 
 Interaction (deviation from additivity) means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we use the Titanic dataset (see Section \@ref(TitanicDataset)). For the sake of simplicity, we consider only two variables, *age* and *class*. *Age* is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, for *class*, we will consider just "2nd class" and "other."
 
-Table \@ref(tab:titanicMaleSurvival) shows percentages of survivors for boys and adult men travelling in the second class and other classes on Titanic. Overall, the proportion of survivors among males is 20.5%. However, among boys in the second class, the proportion is 91.7%. How do *age* and *class* contribute to this higher survival probability? Let us consider the following two decompositions.
+Table \@ref(tab:titanicMaleSurvival) shows percentages of survivors for boys and adult men travelling in the second class and other classes on Titanic. Overall, the proportion of survivors among males is 20.5%. However, among boys in the second class, the proportion is 91.7%. How do *age* and *class* contribute to this higher survival probability? Let us consider the following two explanations.
 
-**Decomposition 1:** The overall probability of survival for males is 20.5%, but for the male passengers from the second class the probability is even lower, i.e., 13.5%. Thus, the effect of the travel class is negative, as it decreases the probability of survival by 7 percentage points. Now, if, for male passengers of the second class, we consider their age, we see that the survival probability for boys increases by 78.2 percentage points, from 13.5% (for a male in the second class) to 91.7%. Thus, by considering first the effect of *class*, and then the effect of *age*, we can conclude the effect of -7 percentage points for *class* and +78.2 percentage points for *age* (being a boy).
+**Explanation 1:** 
 
-**Decomposition 2:** The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of *age* (being a boy) is positive, as it increases the survival probability by 20.2 pecentage points. On the other hand, for boys, travelling in the second class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of *age*, and then the effect of *class*, we can conclude the effect of +20.2 percentage points for *age* (being a boy) and +51 percentage points for *class*.
+The overall probability of survival for males is 20.5%, but for the male passengers from the second class the probability is even lower, i.e., 13.5%. Thus, the effect of the travel class is negative, as it decreases the probability of survival by 7 percentage points. Now, if, for male passengers of the second class, we consider their age, we see that the survival probability for boys increases by 78.2 percentage points, from 13.5% (for a male in the second class) to 91.7%. Thus, by considering first the effect of *class*, and then the effect of *age*, we can conclude the effect of -7 percentage points for *class* and +78.2 percentage points for *age* (being a boy).
+
+**Explanation 2:** 
+
+The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of *age* (being a boy) is positive, as it increases the survival probability by 20.2 pecentage points. On the other hand, for boys, travelling in the second class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of *age*, and then the effect of *class*, we can conclude the effect of +20.2 percentage points for *age* (being a boy) and +51 percentage points for *class*.
 
 Table: (\#tab:titanicMaleSurvival) Proportion of survivors for men on Titanic.
 
@@ -43,8 +47,8 @@ The example illustrates that interactions complicate the evaluation of the impor
 
 Identification of interactions in the model is performed in three steps [@iBreakDownRPackage]:
 
-1. For each explanatory variable, compute $\Delta^{j|\emptyset}(\underline{x}_*)$ (see equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen)). The measure quantifies the additive contribution of each variable to the instance prediction.
-2. For each pair of explanatory variables, compute $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ (see equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen)) and then  
+1. For each explanatory variable, compute $\Delta^{j|\emptyset}(\underline{x}_*)$ as in equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen). The measure quantifies the additive contribution of each variable to the instance prediction.
+2. For each pair of explanatory variables, compute $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ as in equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen) and then the ,,net effect'' of the interaction 
 \begin{equation}
 \Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(\underline{x}_*)-\Delta^{i|\emptyset}(\underline{x}_*)-\Delta^{j|\emptyset}(\underline{x}_*).
 (\#eq:deltaBreakDownInteractions)
@@ -206,7 +210,7 @@ Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $v(j,\underli
 $E_{\underline{X}}\left\{f(\underline{X}) | X^{\{1,\ldots,j\}} = \underline{x}^{\{1,\ldots,j\}}_*\right\}$
 --->
 
-Figure \@ref(fig:iBreakDownTitanicExamplePlot) presents the interaction-break-down (iBD) plot corresponding to the results shown in Table \@ref(tab:titanicIBreakDownList2). The interaction between *fare* and *class* variables is included in the plot as a single bar. As the effects of these two variables cannot be disentangled, the plot uses  just that single bar to represent the contribution of both variables. Table \@ref(tab:titanicIBreakDownList) indicates that *class* alone would increase the mean prediction by 0.185, while *fare* would increase the mean prediction by 0.143. However, taken together, they increase the average prediction only by 0.098. This is because the ticket fare of 72 is a high value on average, but it is below the median when the first-class passengers are considered. Consequently, the combination of the ticket fare of 72 and the first travel-class indicates a "cheaper" version of the first-class ticket. Hence, in this instance, the contribution of the combination to the model's prediction is smaller than the contribution of *class* and *fare*  separately. [TOMASZ: I DO NOT FOLLOW THIS REASONING. WHAT HAS THE CHEAPER VERSION TO DO WITH SURIVAL PROBABILITY? WHERE IS THE PROBABILITY SHOWING IN THIS REASONING?]
+Figure \@ref(fig:iBreakDownTitanicExamplePlot) presents the interaction-break-down (iBD) plot corresponding to the results shown in Table \@ref(tab:titanicIBreakDownList2). The interaction between *fare* and *class* variables is included in the plot as a single bar. As the effects of these two variables cannot be disentangled, the plot uses  just that single bar to represent the contribution of both variables. Table \@ref(tab:titanicIBreakDownList) indicates that *class* alone would increase the mean prediction by 0.185, while *fare* would increase the mean prediction by 0.143. However, taken together, they increase the average prediction only by 0.098.  A possible explanation of this negative interaction could be that, while the ticket fare of 72 is high on average, it is actually below the median when the first-class passengers are considered. Thus, if first-class passengers with "cheaper" tickets, as Johnny D, were, for instance, placed in cabins that made it more difficult to reach a lifeboat, this could lead to lower chances of survival as compared to other passengers from the same class (though the chances could be still higher as compared to passengers from other, lower travel classes).
 
 (ref:iBreakDownTitanicExamplePlotDesc) Break-down plot with interactions for the `titanic_rf` model and Johnny D for the Titanic data.
 
@@ -331,7 +335,7 @@ It is also worth noting that the presented procedure of identification of intera
 
 ## Code snippets for R {#iBDRcode}
 
-In this section, we use the `DALEX()` package, which is a wrapper for `iBreakDown` R package [@iBreakDownRPackage]. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
+In this section, we use the `DALEX` package, which is a wrapper for `iBreakDown` R package. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
 
 For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic)).
 
@@ -355,18 +359,18 @@ explain_rf <- DALEX::explain(model = titanic_rf,
                        verbose = FALSE)
 ```
 
-The key function to construct iBD plots is the `DALEX::variable_attribution()` function. The use of the function has already been explained in Section \@ref(BDR). In order to perform calcuations that allow obtaining iBD plots, the required argument is `type = "break_down_interactions"`.
+The key function to construct iBD plots is the `DALEX::predict_parts()` function. The use of the function has already been explained in Section \@ref(BDR). In order to perform calcuations that allow obtaining iBD plots, the required argument is `type = "break_down_interactions"`.
 
 ```{r, warning=FALSE, message=FALSE}
-bd_rf <- variable_attribution(explainer = explain_rf,
-                        new_observation = henry,
-                                   type = "break_down_interactions")
+bd_rf <- predict_parts(explainer = explain_rf,
+                 new_observation = henry,
+                            type = "break_down_interactions")
 bd_rf
 ```
 
-We can compare the obtained variable-importance measures to those reported for Johnny D in Table \@ref(tab:titanicIBreakDownList2). For Henry, the most important positive contribution comes from *class*, while for Johnny D it is *age*. Interestingly, for Henry, a positive contribution of the interaction between *embarked*  harbor and *fare* is found. For Johnny D, a different interaction was identifed: for *fare* and *class*. In case of Henry, the ticket fare was equal to 25 and it was much lower than the fare of 72 for Johnny D. As a result, for Henry, the contribution of *class* is not modified by *fare*. [TOMASZ: I AM NOT GETTING THE ARGUMENT.]
+We can compare the obtained variable-importance measures to those reported for Johnny D in Table \@ref(tab:titanicIBreakDownList2). For Henry, the most important positive contribution comes from *class*, while for Johnny D it is *age*. Interestingly, for Henry, a positive contribution of the interaction between *embarked*  harbor and *fare* is found. For Johnny D, a different interaction was identified: for *fare* and *class*. Finding an explanation for this difference is not straightforward. In any case, in those two instances, contribution of fare appears to be modified by effects of other variable(s), i.e., its effect is not purely additive.
 
-By applying the generic `plot()` function to the object created by the `DALEX::variable_attribution()` function we obtain the iBD plot. 
+By applying the generic `plot()` function to the object created by the `DALEX::predict_parts()` function we obtain the iBD plot. 
 
 (ref:iBDforHenryDesc) Break-down plot with interactions obtained by applying the generic `plot()` function for the `titanic_rf` model and Henry for the Titanic data.
 
@@ -375,3 +379,41 @@ plot(bd_rf)
 ```
 
 The resulting iBD plot for Henry is shown in Figure \@ref(fig:iBDforHenry). It can be compared to the iBD plot for Johnny D that is presented in Figure  \@ref(fig:iBreakDownTitanicExamplePlot). 
+
+
+
+## Code snippets for Python {#iBDPythonCode}
+
+In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on pip and GitHub. 
+
+For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
+
+In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
+
+```{python,  eval = FALSE}
+import pandas as pd
+henry = pd.DataFrame({'gender': ['male'],
+                       'age': [47],
+                       'class': ['1st'],
+                       'embarked': ['Southampton'],
+                       'fare': [25],
+                       'sibsp': [0],
+                       'parch': [0]},
+                      index = ['Henry'])
+
+import dalex as dx
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+```
+
+To calculate the attributions with the break down method with interactions one can use the `predict_parts` method with `type='break_down_interactions'` argument. The first argument is the observation for which the attributions are to be calculated. 
+
+Interactions are often weak and their net effects are not greater than the contributions of individual variables. If we would like to increase our preference for interactions we can increase the value of the `interaction_preference` argument. The default value of $1$ means no preferences.
+
+```{python,  eval = FALSE}
+bd_henry = exp_rf.predict_parts(henry, type='break_down_interactions', interaction_preference = 5)
+bd_henry.plot()
+```
+
+```{r ibdPython2, echo=FALSE, out.width = '80%', fig.align='center'}
+knitr::include_graphics("figure/ibd_python_1.png")
+```
