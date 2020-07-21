@@ -4,15 +4,16 @@
 
 Break-down (BD) plots and Shapley values, introduced in Chapters \@ref(breakDown) and \@ref(shapley), respectively, are most suitable for models with a small or moderate number of explanatory variables. 
 
-None of those approaches is well-suited for models with a very large number of explanatory variables. However, in domains like, for instance, genomics or image recognition, models with hundreds of thousands, or even millions, of explanatory (input) variables are not uncommon. In such cases, sparse explainers with a small number of variables offer a useful alternative. The most popular example of such sparse explainers are Local Interpretable Model-agnostic Explanations (LIME) and their modifications.
+None of those approaches is well-suited for models with a very large number of explanatory variables because they usually determine non-zero attributions for each variable in the model. However, in domains like, for instance, genomics or image recognition, models with hundreds of thousands, or even millions, of explanatory (input) variables are not uncommon. In such cases, sparse explainations with a small number of variables offer a useful alternative. The most popular example of such sparse explainers is the method Local Interpretable Model-agnostic Explanations (LIME) and its modifications.
 
 The LIME method was originally proposed by @lime. The key idea behind this method is to locally approximate a black-box model by a simpler glass-box model, which is easier to interpret. In this chapter, we describe this approach.  
 
 ## Intuition {#LIMEIntuition}
 
-The intuition behind the LIME method is explained in Figure \@ref(fig:limeIntroduction). We want to understand factors that influence a complex black-box model around a single instance of interest. The colored areas presented in Figure \@ref(fig:limeIntroduction) correspond to decision regions for a binary classifier, i.e., they pertain to a prediction of a value of a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas indicate combinations of values of the two variables for which the model classifies the observation to one of the two classes. The instance of interest is marked with the black cross. Dots correspond to generated artificial data; the size of the dots corresponds to proximity to the instance of interest. We can fit a simpler glass-box model to the  artificial data so that it will locally approximate the predictions of the black-box model. In Figure \@ref(fig:limeIntroduction), a simple linear model (indicated by the dashed line) is used to construct the local approximation. The simpler model serves as a "local explainer" for the more complex model.
+The intuition behind the LIME method is explained in Figure \@ref(fig:limeIntroduction). We want to understand factors that influence a complex black-box model around a single instance of interest (black cross). The colored areas presented in Figure \@ref(fig:limeIntroduction) correspond to decision regions for a binary classifier, i.e., they pertain to a prediction of a value of a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas indicate combinations of values of the two variables for which the model classifies the observation to one of the two classes. To understand the behavior of complex models locally around the point of interest, we will generate an artificial data set to which we will fit an glass-box model.
+Dots correspond to generated artificial data; the size of the dots corresponds to proximity to the instance of interest. We can fit a simpler glass-box model to the  artificial data so that it will locally approximate the predictions of the black-box model. In Figure \@ref(fig:limeIntroduction), a simple linear model (indicated by the dashed line) is used to construct the local approximation. The simpler model serves as a "local explainer" for the more complex model.
 
-We may select different classes of glass-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. The important point is to limit the complexity of the models, so that they are easier to explain. 
+We may select different classes of glass-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. Both lead to sparse models that are easier to understand. The important point is to limit the complexity of the models, so that they are easier to explain. 
 
 (ref:limeIntroductionDesc) The idea behind the LIME approximation with a local glass-box model. The colored areas correspond to decision regions for a complex binary classification model. The black cross indicates to the instance (observation) of interest. Dots correspond to aritifical data around the instance of interest. The dashed line presents a simple linear model fitted to the artificial data. The simple model "explains" local behavior of the black-box model around the instance of interest.
 
@@ -28,9 +29,9 @@ $$
 \hat g = \arg \min_{g \in \mathcal{G}} L\{f, g, \nu(\underline{x}_*)\} + \Omega (g), 
 $$
 
-where model $g()$ belongs to class $\mathcal{G}$, $\nu(\underline{x}_*)$ defines a neighborhood of $\underline{x}_*$ in which approximation is sought, $L()$ is a function measuring the discrepancy between models $f()$ and $g()$, and $\Omega(g)$ is a penalty for the complexity of model $g()$. The penalty is used to select simple models from class $\mathcal{G}$. 
+where model $g()$ belongs to class $\mathcal{G}$, $\nu(\underline{x}_*)$ defines a neighborhood of $\underline{x}_*$ in which approximation is sought, $L()$ is a function measuring the discrepancy between models $f()$ and $g()$ in the neighborhood $\nu(\underline{x}_*)$, and $\Omega(g)$ is a penalty for the complexity of model $g()$. The penalty is used to favour simpler models from class $\mathcal{G}$. Very often in applications, this criterion is simplified by limiting class $G$ to models with the same complexity, i.e. the same number of parameters. In such a situation, the part $\Omega(g)$ is the same for each model $g$, so it can be omitted in optimization.
 
-Note that models $f()$ and $g()$ may operate on different data spaces. The black-box model (function) $f(\underline{x}):\mathcal X \rightarrow \mathcal R$ is defined on the large, $p$-dimensional space $\mathcal X$ corresponding to the $p$ explanatory variables used in the model. The glass-box model (function) $g(\underline{x}):\tilde{ \mathcal X} \rightarrow \mathcal R$ is defined on a $q$-dimensional space $\tilde{ \mathcal X}$ with $q << p$. We will present some examples of $\tilde{ \mathcal X}$ in the next section. For now we will just assume that some function $h()$ transforms $\mathcal X$ into $\tilde{ \mathcal X}$.
+Note that models $f()$ and $g()$ may operate on different data spaces. The black-box model (function) $f(\underline{x}):\mathcal X \rightarrow \mathcal R$ is defined on the large, $p$-dimensional space $\mathcal X$ corresponding to the $p$ explanatory variables used in the model. The glass-box model (function) $g(\underline{x}):\tilde{ \mathcal X} \rightarrow \mathcal R$ is defined on a $q$-dimensional space $\tilde{ \mathcal X}$, so called space for  interpretable representation, usually with $q << p$. We will present some examples of $\tilde{ \mathcal X}$ in the next section. For now we will just assume that some function $h()$ transforms $\mathcal X$ into $\tilde{ \mathcal X}$.
 
 If we limit class $\mathcal{G}$ to linear models with a limited number, say $K$, of non-zero coefficients, then the following algorithm may be used to find an interpretable glass-box model $g()$ that includes $K$ most important, interpretable, explanatory variables: 
 
@@ -54,9 +55,9 @@ Practical implementation of this idea involves three important steps, which are 
 
 ### Interpretable data representation {#LIMErepr}
 
-As it has been mentioned, the black-box model $f()$ and the glass-box model $g()$ operate on different data spaces. For example, let us consider a VGG16 neural network [@Simonyan15] trained on ImageNet data [@ImageNet]. The model uses an image of the size of 244 $\times$ 244 pixels as input and predicts to which of 1000 potential categories does the image belong to. The original space $\mathcal X$ is of dimension 3 $\times$ 244 $\times$ 244 (three single-color channels (*red, green, blue*) for a single pixel $\times$ 244 $\times$ 244 pixels), i.e., the input space is 178,608-dimensional. Explaining predictions in such a high-dimensional space is difficult. Instead, the space can be transformed into superpixels, which are treated as binary features that can be turned on or off. Figure \@ref(fig:duckHorse06) (right-hand-side panel) presents an example of 100 superpixels created for an ambiguous picture. Thus, in this case the black-box model $f()$ operates on space $\mathcal X=R^{178608}$, while the glass-box model $g()$ applies to  space $\tilde{ \mathcal X} = \{0,1\}^{100}$.
+As it has been mentioned, the black-box model $f()$ and the glass-box model $g()$ operate on different data spaces. For example, let us consider a VGG16 neural network [@Simonyan15] trained on ImageNet data [@ImageNet]. The model uses an image of the size of 244 $\times$ 244 pixels as input and predicts to which of 1000 potential categories does the image belong to. The original space $\mathcal X$ is of dimension 3 $\times$ 244 $\times$ 244 (three single-color channels (*red, green, blue*) for a single pixel $\times$ 244 $\times$ 244 pixels), i.e., the input space is 178,608-dimensional. Explaining predictions in such a high-dimensional space is difficult. Instead, from the perspective of a single instance of interest, the space can be transformed into superpixels, which are treated as binary features that can be turned on or off. Figure \@ref(fig:duckHorse06) (right-hand-side panel) presents an example of 100 superpixels created for an ambiguous picture. Thus, in this case the black-box model $f()$ operates on space $\mathcal X=R^{178608}$, while the glass-box model $g()$ applies to  space $\tilde{ \mathcal X} = \{0,1\}^{100}$.
 
-It is worth noting that superpixels are frequent choices for image data. For text data, words are frequently used as interpretable variables. To reduce to complexity of the data space, continuous variables are often discretized to obtain interpretable tabular data. In case of categorical variables, combination of categories is often used. We will present examples in the next section.
+It is worth noting that superpixels, based on image segmentation, are frequent choices for image data. For text data, groups of words are frequently used as interpretable variables. For tabular data, continuous variables are often discretized to obtain interpretable categorical data. In case of categorical variables, combination of categories is often used. We will present examples in the next section.
 
 (ref:duckHorse06Desc) The left-hand-side panel shows an ambiguous picture, half-horse and half-duck. The right-hand-side panel shows 100 superpixels identified for this figure. Source: https://twitter.com/finmaddison/status/352128550704398338.
 
@@ -66,24 +67,24 @@ knitr::include_graphics("figure/duck_horse_06.png")
 
 ### Sampling around the instance of interest {#LIMEsample}
 
-To develop a local-approximation glass-box model, we need new data points in the low-dimensional space around the instance of interest. One could consider sampling the data points from the original dataset. However, there may not be enough points to sample from, because in high-dimensional datasets the data are usually very sparse and data points are "far" from each other. Thus, we may need new, artificial data points. For this reason, the data for the development of the glass-box model are often created by using perturbations of the instance of interest. 
+To develop a local-approximation glass-box model, we need new data points in the low-dimensional interpretable data space around the instance of interest. One could consider sampling the data points from the original dataset. However, there may not be enough points to sample from, because in high-dimensional datasets the data are usually very sparse and data points are "far" from each other. Thus, we need new, artificial data points. For this reason, the data for the development of the glass-box model are often created by using perturbations of the instance of interest. 
 
 For binary variables in the low-dimensional space, the common choice is to switch (from 0 to 1 or from 1 to 0) the value of a randomly-selected number of variables describing the instance of interest. 
 
 For continuous variables, various proposals have been formulated in different papers. For example, @imlRPackage and @molnar2019 suggest adding Gaussian noise to continuous variables. @limePackage propose to discretize continuous variables by using quintiles and then perturbing the discretized versions of the variables. @localModelPackage discretize continuous variables based on segmentation of local ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)). 
 
-In the example of the duck-horse image in Figure \@ref(fig:duckHorse06), the perturbations of the image could be created by randomly including or excluding some of the superpixels. An illustration of this process is shown in  Figure \@ref(fig:duckHorseProcess).
+In the example of the duck-horse image in Figure \@ref(fig:duckHorse06), the perturbations of the image could be created by randomly excluding some of the superpixels. An illustration of this process is shown in  Figure \@ref(fig:duckHorseProcess).
 
 ```{r duckHorseProcess, echo=FALSE, fig.cap="The original image (left-hand-side panel) is transformed into a lower-dimensional data space by defining 100 super pixels (panel in the middle). The artificial data are created by using subsets of superpixels (right-hand-side panel).", out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/duck_horse_process.png")
 ```
 
 
-### Developing the glass-box model {#LIMEglas}
+### Fitting the glass-box model {#LIMEglas}
 
-Once the aritifical data around the instance of interest have been created, we may attempt to develop an interpretable glass-box model $g()$ from class $\mathcal{G}$. 
+Once the aritifical data around the instance of interest have been created, we may attempt to train an interpretable glass-box model $g()$ from class $\mathcal{G}$. 
 
-The most common choices for class $\mathcal{G}$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO [@Tibshirani94regressionshrinkage] or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the K-LASSO method has been mentioned. An alternative choice are classification-and-regression trees [@CARTtree].
+The most common choices for class $\mathcal{G}$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO (east absolute shrinkage and selection operator) [@Tibshirani94regressionshrinkage] or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the K-LASSO method with K non zero coefficients has been mentioned. An alternative choice are CART (classification-and-regression trees) models [@CARTtree].
 
 For the example of the duck-horse image in Figure \@ref(fig:duckHorse06), the VGG16 network provides 1000 probabilities that the image belongs to one of the 1000 classes used for training the network. It appears that the two most likely classes for the image are *'standard poodle'* (probability of 0.18) and *'goose'* (probability of 0.15). Figure \@ref(fig:duckHorse04) presents LIME explanations for these two predictions. The explanations were obtained with the K-LASSO method which selected $K=15$ superpixels that were the most influential from a model-prediction point of view. For each of the selected two classes, the $K$ superpixels with non-zero coefficients are highlighted. It is interesting to observe that the superpixel which contains the beak is influential for the *'goose'* prediction, while superpixels linked with the white colour are influential for the *'standard poodle'* prediction. At least for the former, the influential feature of the plot does correspond to the intended content of the image. Thus, the results of the explanation increase confidence in the model's predictions.
 
@@ -93,13 +94,13 @@ knitr::include_graphics("figure/duck_horse_04.png")
 
 ## Example: Titanic data {#LIMEExample}
 
-Most examples of the LIME method are related to the text or image data. In this section, we present an example of a binary classification to facilitate comparisons between methods introduced in different chapters.
+Most examples of the LIME method are related to the text or image data. In this section, we present an example of a binary classification for tabular data to facilitate comparisons between methods introduced in different chapters.
 
 Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and passenger Johnny D (see Section \@ref(predictions-titanic)) as the instance of interest for the Titanic data. 
 
-First, we have got to define a lower-dimensional data space. One option would be to gather similar variables into larger constructs corresponding to some concepts. For example *class* and *fare* variables can be combined into "wealth," *age* and *gender* into "demography," and so on. In this example, however, we have got a relatively small number of variables, so we will use a simpler data representation in the form of a binary vector. Toward this aim, each variable is dichotomized into two levels. For example, *age* is transformed into a binary variable with categories "$\leq$ 15" and ">15," *class* is transformed into a binary variable with categores "1st/2nd/deck crew" and "other," and so on. Once the lower-dimension data space is defined, the LIME algorithm is applied to this space. In particular, we first have got to appropriately transform data for Johnny D. Subsequently, we generate a new artifical dataset that will be used for K-LASSO approximations of the random-forest model. In particular, the K-LASSO method with $K=3$ is used to identify the three most influential (binary) variables that will provide an explanation for the prediction for Johnny D. The three variables are: *age*, *gender*, and *class*. This result agress with the conclusions drawn in the previous chapters. Figure \@ref(fig:LIMEexample01) shows the coefficients estimated for the K-LASSO model.
+First, we have got to define an interpretable data space. One option would be to gather similar variables into larger constructs corresponding to some concepts. For example *class* and *fare* variables can be combined into "wealth," *age* and *gender* into "demography," and so on. In this example, however, we have got a relatively small number of variables, so we will use a simpler data representation in the form of a binary vector. Toward this aim, each variable is dichotomized into two levels. For example, *age* is transformed into a binary variable with categories "$\leq$ 15" and ">15," *class* is transformed into a binary variable with categores "1st/2nd/deck crew" and "other," and so on. Once the lower-dimension data space is defined, the LIME algorithm is applied to this space. In particular, we first have got to appropriately transform data for Johnny D. Subsequently, we generate a new artifical dataset that will be used for K-LASSO approximations of the random-forest model. In particular, the K-LASSO method with $K=3$ is used to identify the three most influential (binary) variables that will provide an explanation for the prediction for Johnny D. The three variables are: *age*, *gender*, and *class*. This result agress with the conclusions drawn in the previous chapters. Figure \@ref(fig:LIMEexample01) shows the coefficients estimated for the K-LASSO model.
 
-(ref:LIMEexample01Desc) LIME method for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data. Presented values are the coefficients of the K-LASSO model fitted locally to the predictions from the original model. [TOMASZ: WHY AGE <= 15.36, NOT 15? STATIC FIGURE, CHECK FOR CORRECTNESS.]
+(ref:LIMEexample01Desc) LIME method for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data. Presented values are the coefficients of the K-LASSO model fitted locally to the predictions from the original model. 
 
 ```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample01Desc)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/LIMEexample01.png")
@@ -122,7 +123,7 @@ As mentioned by @lime, the LIME method
 
 The method has been widely adopted in the text and image analysis, partly due to the interpretable data representation. In that case, the explanations are delivered in the form of fragments of an image/text and users can easily find  justification of such explanations. The underlying intuition for the method is easy to understand: a simpler model is used to approximate a more complex one. By using a simpler model, with a smaller number of interpretable explanatory variables, predictions are easier to explain. The LIME method can be applied to complex, high-dimensional models.
 
-There are several important limitations, however. For instance, as mentioned in Section \@ref(LIMEsample), there have been various proposals for finding interpretable representations for continuous and categorical explanatory variables. The issue has not been solved yet. This leads to different implementations of LIME, which use different variable-transformation methods and, consequently, that can lead to different results. 
+There are several important limitations, however. For instance, as mentioned in Section \@ref(LIMEsample), for tabular data there have been various proposals for finding interpretable representations for continuous and categorical explanatory variables. The issue has not been solved yet. This leads to different implementations of LIME, which use different variable-transformation methods and, consequently, that can lead to different results. 
 
 Another important point is that, because the glass-box model is selected to approximate the black-box model, and not the data themselves, the method does not control the quality of the local fit of the glass-box model to the data. Thus, the latter model may be misleading.
 
@@ -132,9 +133,9 @@ To summarize, the most useful applications of LIME are limited to high-dimension
 
 ## Code snippets for R {#LIMERcode}
 
-LIME and similar methods are implemented in various R and Python packages. For example, `lime` [@limePackage] is a port of the LIME Python library [@shapPackage], while `live` [@R-live], `localModel` [@localModelPackage], and `iml` [@imlRPackage] are separate packages that implement this method entirely in R. 
+LIME and its variants are implemented in various R and Python packages. For example, `lime` [@limePackage] started as a port of the LIME Python library [@shapPackage], while `localModel` [@localModelPackage], and `iml` [@imlRPackage] are separate packages that implement a version of this method entirely in R. 
 
-Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, `lime` performs global discretization using quartiles, `localModel` performs local discretization using ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)), while `live` and `iml` work directly on continuous variables. Due to these differences, the packages yield different results (explanations).
+Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, `lime` performs global discretization using quartiles, `localModel` performs local discretization using ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)), while `iml` works directly on continuous variables. Due to these differences, the packages yield different results (explanations).
 
 In what follows, for illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for Johnny D, an 8-year-old passenger that travelled in the first class. We first retrieve the `titanic_rf` model-object and the data frame for Johnny D via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
@@ -149,7 +150,7 @@ Then we construct the explainer for the model by using function `explain()` from
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")
 library("DALEX")
-explain_titanic_rf <- DALEX::explain(model = titanic_rf,  
+titanic_rf_exp <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
@@ -158,29 +159,36 @@ explain_titanic_rf <- DALEX::explain(model = titanic_rf,
 
 ### The `lime` package
 
-The key tools of the `lime` package are function `lime()`, which creates an explainer, and `explain()`, which evaluates explanations. 
+The key functions in the `lime` package are `lime()`, which creates an explaination, and `explain()`, which evaluates explanations.   However, the use of these functions is different from the functions discussed in the previous chapters. Therefore, we will use the `predict_surrogate` method of the `localModel` which is a simply to use interface to the `lime` library.
 
-First, we have got to specify that we work with a model for classification. 
+The `predict_surrogate` function expects an DALEX explainer and the observation of interest. The argument `type = "lime"` ensures the implementation from the `lime` package will be used to determine the explanations. In this package one can specify two additional arguments: `n_features=3` argument to indicate that the K-LASSO method should select no more than $K=3$ most important variables, and  `n_permutations=1000` argument specifies that 1000 artifical data points are to be sampled for the local-model approximation. 
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+set.seed(1)
 library("lime")
-model_type.randomForest <- function(x, ...) "classification"
+library("localModel")
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  johnny_d, 
+                  n_features = 3, 
+                  n_permutations = 1000,
+                  type = "lime")
 ```
 
-Subsequently, we create an explainer, i.e., an object with all elements needed for calculation of explanations. This can be done by using the `lime()` function with the data frame used for model fitting and the model object as arguments `x` and `model`, respectively.
+<!-- Subsequently, we create an explainer, i.e., an object with all elements needed for calculation of explanations. This can be done by using the `lime()` function with the data frame used for model fitting and the model object as arguments `x` and `model`, respectively.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 lime_rf <- lime(x = titanic_imputed[,colnames(johnny_d)], model = titanic_rf)
 ```
 
-Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwile to indicate the we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicats the name of the the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. Moreover, we use `n_features=4` argument to indicate that the K-LASSO method should select no more than $K=4$ most important variables. Finally, by using the `n_permutations=1000` argument, we specify that 1000 artifical data points are to be sampled for the local-model approximation. 
+Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwile to indicate the we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicats the name of the the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. -->
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-lime_expl <- lime::explain(x = johnny_d, explainer = lime_rf, labels = "yes", 
-                           n_features = 4, n_permutations = 1000)
+The resulting object is a data frame with 11 variables. Note that it contains results based on a random set of artificial data points. Hence, in the output below, we present an exemplary set of results.
+
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+as.data.frame(lime_johnny)
 ```
 
-The resulting object is a data frame with 13 variables. Note that it contains results based on a random set of artificial data points. Currently, function `lime::explain()` does not include any argument that would allow fixing the settings of the random-permutation algorithm to obtain a repeateable execution. Hence, in the output below, we present an exemplary set of results. Note that, to get all the details, it is advisable to print the object, obtained from the apllication of the `lime::explain()` function, as a data frame. 
+<!-- Currently, function `lime::explain()` does not include any argument that would allow fixing the settings of the random-permutation algorithm to obtain a repeateable execution. Hence, in the output below, we present an exemplary set of results. Note that, to get all the details, it is advisable to print the object, obtained from the apllication of the `lime::explain()` function, as a data frame. 
 
 [TOMASZ: CHANGED THE PRINTOUT TO ALIGN WITH THE RFOREST MODEL.]
 
@@ -198,56 +206,53 @@ print(as.data.frame(lime_expl))
 #3             1     0.15175337   class = 1st 1, 2, 8, 0, 0, 72, 4 0.578, 0.422
 #4            72     0.04251332  21.00 < fare 1, 2, 8, 0, 0, 72, 4 0.578, 0.422
 ```
+-->
 
-The output includes column `case` that provides indices of observations for which the explanations are calculated. In our case there is only one index equal to 1, because we asked for an explanation for only one observation, Johnny D. The `feature` column indicates which explanatory variables were given non-zero coefficients in the K-LASSO method. The `feature_value` column provides an information about the values of the original explanatory variables for the observations for which the explanations are calculated. On the other hand, the `feature_description` column indicates how the original explanatory variable was transformed. Note that the applied implementation of the LIME method dichotomizes continuous variables by using quartiles. Hence, for instance, *age* for Johnny D was transformed into a binary variable `age <= 22`. 
+The output includes column `case` that provides indices of observations for which the explanations are calculated. In our case there is only one index equal to 1, because we asked for an explanation for only one observation, Johnny D. The `feature` column indicates which explanatory variables were given non-zero coefficients in the K-LASSO method. The `feature_value` column provides an information about the values of the original explanatory variables for the observations for which the explanations are calculated. On the other hand, the `feature_desc` column indicates how the original explanatory variable was transformed. Note that the applied implementation of the LIME method dichotomizes continuous variables by using quartiles. Hence, for instance, *age* for Johnny D was transformed into a binary variable `age <= 22`. 
 
 Column `feature_weight` provides the estimated coefficients for the variables selected by the K-LASSO method for the explanation. The `model_intercept` column provides of the value of the intercept. Thus, the linear combination of the transformed explanatory variables used in the glass-box model approximating the random-forest model around the instance of interest, Johnny D, is given by the following equation (see Section \@ref(fitting)):
 
 $$
-\ln{\frac{p}{1-p}} = 0.548 - 0.396 \cdot 1_{male} + 0.143 \cdot 1_{age <= 22}  + 0.152 \cdot 1_{class = 1st} + 0.042 \cdot 1_{fare > 21}  = 0.489,
+\hat p_{surrogate} = 0.5541115 - 0.4038175 \cdot 1_{male} + 0.1636630 \cdot 1_{age <= 22}  + 0.1645234 \cdot 1_{class = 1st} = 0.4784804,
 $$ 
-where $1_A$ denotes the indicator variable for condition $A$. Note that the computed value corresponds to the number given in the column `model_prediction` in the printed output. Consequently, the predicted survival probability for the glass-box model is equal to 
+where $1_A$ denotes the indicator variable for condition $A$. Note that the computed value corresponds to the number given in the column `model_prediction` in the printed output. 
+
+<!-- Consequently, the predicted survival probability for the glass-box model is equal to 
 
 $$ 
 p = e^{0.489}/(1+e^{0.489}) = 0.620.
 $$ 
 
-For the random-forest model `titanic_rf`, the predicted probability was equal to 0.422, as seen in the `prediction` column (see also Section \@ref(predictions-titanic)). [TOMASZ: A SURPRISINGLY LARGE DIFFERENCE. CHECK?]
+For the random-forest model `titanic_rf`, the predicted probability was equal to 0.422, as seen in the `prediction` column (see also Section \@ref(predictions-titanic)). [TOMASZ: A SURPRISINGLY LARGE DIFFERENCE. CHECK?]-->
 
-By applying the `plot_features()` function to the object containing the explanation, we obtain a graphical presentation of the results.
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-plot_features(lime_expl)
-```
-
+By applying the `plot()` function to the object containing the explanation, we obtain a graphical presentation of the results.
 The resulting plot (for the exemplary results) is shown in Figure \@ref(fig:limeExplLIMETitanic). The length of the bar indicates the magnitude (absolute value), while the color indicates the sign (red for negative, blue for positive) of the estimated coefficient.
 
 (ref:limeExplLIMETitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `lime` package.
 
-```{r limeExplLIMETitanic, echo=FALSE, fig.cap='(ref:limeExplLIMETitanicDesc)', out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/lime_expl_tomasz.png")
+```{r limeExplLIMETitanic, echo=TRUE, fig.cap='(ref:limeExplLIMETitanicDesc)', out.width = '80%', fig.width=6, fig.height=3.5, fig.align='center'}
+plot(lime_johnny)
 ```
 
 ### The `localModel` package
 
-The key tool of the `localModel` package is the `individual_surrogate_model()` function that fits the local glass-box model. The function is applied to the explainer-object obtained with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)).
+The key tool of the `localModel` package is the `individual_surrogate_model()` function that fits the local glass-box model. The function is applied to the explainer-object obtained with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)). Below we will use the `predict_surrogate` method which is a wrapper for `individual_surrogate_model()` with simplified interface.
 
-The main arguments of the `individual_surrogate_model()` function are: `x`, which specifies the explainer object; `new_observation`, which indicates the data frame with the data for the instance(s) of interest; and `size`, the number of artificial data points to be sampled for the local model approximation. We also set `seed` for a repeateable execution.
-
-[TOMASZ: CHANGED THE CODE TO EXECUTABLE.]
+The main arguments of the `predict_surrogate()` function are: `x`, which specifies the explainer object; `new_observation`, which indicates the data frame with the data for the instance(s) of interest. The `localModel` implementation uses also two additional arguments, `size` i.e., the number of artificial data points to be sampled for the local model approximation and `seed` for setting a seed for random number ganeratiot for a repeateable execution.
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 library("localModel")
-local_model_rf <- individual_surrogate_model(x = explain_titanic_rf, 
-            new_observation= johnny_d, size = 1000, seed = 1313)
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  new_observation = johnny_d, 
+                  size = 1000, 
+                  seed = 1,
+                  type = "localModel")
 ```
 
 The resulting object is a data frame with seven variables (columns). For brevity, we only print out the first three variables. 
 
-[TOMASZ: CHANGED THE CODE TO EXECUTABLE.]
-
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
-local_model_rf[,1:3]
+lime_johnny[,1:3]
 ```
 
 <!----
@@ -260,46 +265,32 @@ local_model_rf[,1:3]
 #6 0.02338929                fare > 31.05 0.6521442    
 ---->
 
-The printed output includes column `estimated` that provides the estimated coefficients of the LASSO regression model approximating the random-forest model results. Column `variable` provides the information about the corresponding variable. The implemented version of LIME dichotomizes continuous variables by using ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)). The profile for variable *age* for Johnny D is presented in Figure \@ref(fig:LIMEexample02). The profile indicates that the largest drop in the predicted probability of survival is observed when the value of *age* increases beyond about 17 years. Hence, in the output of the  `individual_surrogate_model()` function, we see a binary variable `age < 17`, as Johnny D was 8-year old.   
+The printed output includes column `estimated` that provides the estimated coefficients of the LASSO regression model approximating the random-forest model results. Column `variable` provides the information about the corresponding variable. The implemented version of LIME dichotomizes continuous variables by using ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)). 
 
-(ref:LIMEexample02Desc) Discretization of the age variable for Johnny D based on the ceteris-paribus profile. The optimal change-point is around 17 years of age. 
+The profile for variable *age* for Johnny D is presented in Figure \@ref(fig:LIMEexample02). The profile indicates that the largest drop in the predicted probability of survival is observed when the value of *age* increases beyond about 15 years. Hence, in the output of the  `individual_surrogate_model()` function, we see a binary variable `age < 15.36`, as Johnny D was 8-year old.   
 
-```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample02Desc)', out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/LIMEexample02.png")
+(ref:LIMEexample02Desc) Discretization of the age variable for Johnny D based on the ceteris-paribus profile. The optimal change-point is around 15 years of age. 
+
+```{r, eval=FALSE}
+plot_interpretable_feature(lime_johnny, "age")
 ```
-
-
-```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width="50%"}
-load("models/explain_rf.rda")
-load("models/titanic.rda")
-load("models/henry.rda")
-library("localModel")
-library("DALEX")
-library("ggplot2")
-library("randomForest")
-
-localModel_lok <- individual_surrogate_model(explain_rf, johnny_d,
-                                        size = 5000, seed = 1313)
-localModel_lok
-plot(localModel_lok) + facet_null() + ggtitle("localModel explanations for Johny D","Random Forest v6") + theme_drwhy_vertical()
-plot_interpretable_feature(localModel_lok, "age") + ggtitle("Interpretable representation for age","Random Forest v6" ) + xlab("age") + ylab("model response")
-
+```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample02Desc)', out.width = '70%', fig.width=7, fig.height=5, fig.align='center'}
+plot_interpretable_feature(lime_johnny, "age") + ggtitle("Interpretable representation for age","" ) + 
+  xlab("age") + ylab("model response")
 ```
 
 By applying the generic `plot()` function to the object containing the explanation we obtain a graphical presentation of the results.
-
-[TOMASZ: CHANGED THE CODE TO EXECUTABLE.]
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-plot(local_model_rf)
-```
-
-The resulting plot is shown in Figure \@ref(fig:limeExplLocalModelTitanic). The length of the interval indicates the magnitude (absolute value) of the estimated coefficient of the LASSO logistic-regression model. The intervals are placed relative to the value of the mean prediction, 0.235. [TOMASZ: CORRECT?] 
+The resulting plot is shown in Figure \@ref(fig:limeExplLocalModelTitanic). The length of the bar indicates the magnitude (absolute value) of the estimated coefficient of the LASSO logistic-regression model. The bar are placed relative to the value of the mean prediction, 0.235.
 
 (ref:limeExplLocalModelTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `localModel` package. 
 
-```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, fig.cap='(ref:limeExplLocalModelTitanicDesc)', out.width = '60%', fig.align='center'}
-plot(local_model_rf)
+```{r, eval=FALSE}
+plot(lime_johnny)
+```
+```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, fig.cap='(ref:limeExplLocalModelTitanicDesc)', out.width = '70%', fig.align='center', fig.width=6, fig.height=3.5}
+plot(lime_johnny) + 
+  facet_null() + 
+  ggtitle("localModel explanations for Johny D","") + theme_drwhy_vertical()
 ```
 
 <!---
@@ -312,20 +303,24 @@ knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
 
 ### The `iml` package
 
-The key tools of the `iml` package are functions `Predictor$new()`, which creates an explainer, and `LocalModel$new()`, which develops the local glass-box model. The main arguments of the `Predictor$new()` function are `model`, which specifies the model-object, and `data`, the data frame used for fitting the model. The main arguments of the  `LocalModel$new()` function are: `predictor`, which specifies the explainer-object; `x.interest`, the data frame with the data for the instance of interest; and `k`, used to specify the number of variables included in the local-approximation model.   
+The key functions of the `iml` package are `Predictor$new()`, which creates an explainer, and `LocalModel$new()`, which develops the local glass-box model. The main arguments of the `Predictor$new()` function are `model`, which specifies the model-object, and `data`, the data frame used for fitting the model. 
 
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+But to keep examples consistent with previous sections we will use the `predict_surrogate` function which is a simply to use interface to the `iml` library.
+The `predict_surrogate` function expects an DALEX explainer and the observation of interest. The argument `type = "iml"` ensures the implementation from the `lime` package will be used to determine the explanations. In this package one can specify also argument `k` to specify the number of variables included in the local-approximation model.   
+
+```{r, warning=FALSE, message=FALSE}
 library("iml")
-iml_rf <- Predictor$new(model = titanic_rf, data = titanic_imputed[,colnames(johnny_d)])
-iml_glass_box <- LocalModel$new(predictor = iml_rf, x.interest = johnny_d, k = 6)
+library("localModel")
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  new_observation = johnny_d, 
+                  k = 3, 
+                  type = "iml")
 ```
 
 The resulting object includes data frame `results` with seven variables that provides results of the LASSO logistic-regression model approximating the random-forest model. For brevity, we print out selected variables.  
 
-[TOMASZ: CHANGED THE CODE TO EXECUTABLE.]
-
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
-iml_glass_box$results[,c(1:5,7)]
+```{r, warning=FALSE, message=FALSE}
+lime_johnny$results[,c(1:5,7)]
 ```
 
 The printed output includes column `beta` that provides the estimated coefficients of the local-approximation model. Note that two sets of six coefficients (12 in total) are given, corresponding to the prediction of the probability of death (column `.class` assuming value `no`, corresponding to the value of the `survived` dependent variable) and survival (`.class` asuming value `yes`). Column `x.recoded` contains the information about the value of the corresponding transformed (interpretable) variable. The value of the original explanatory variable is given in column `x.original`, with column `feature` providing the information about the corresponding variable. Note that the implemented version of LIME does not transform continuous variables. Categorical variables are dichotomized, with the resulting binary variable assuming the value of 1 for the category observed for the instance of interest and 0 for other categories.  
@@ -354,16 +349,13 @@ Interestingly, unlike in the case of the results obtained for the `lime` and `lo
 --->
 
 By applying the generic `plot()` function to the object containing the explanation, we obtain a graphical presentation of the results.
-
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
-plot(iml_glass_box) 
-```
-
 The resulting plot is shown in Figure \@ref(fig:limeExplIMLTitanic). It shows values of the sets of six  coefficients for both types of predictions (probability of death and survival). 
 
 (ref:limeExplIMLTitanicDesc) Illustration of the LIME-method results for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data, generated by the `iml` package. 
 
-```{r limeExplIMLTitanic, echo=FALSE, fig.cap='(ref:limeExplIMLTitanicDesc)', out.width = '60%', fig.align='center'}
-knitr::include_graphics("figure/lime_expl_iml_titanic.png")
+```{r limeExplIMLTitanic, echo=TRUE, fig.cap='(ref:limeExplIMLTitanicDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=3}
+plot(lime_johnny) 
 ```
 
+
+Note that `age`, `gender` and `class` are three correlated variables. Among the crew are only adults and mainly men. This is probably the reason why each of these three packages for LIME explanations generate a slightly different explanation for the model prediction for Johnny D.
