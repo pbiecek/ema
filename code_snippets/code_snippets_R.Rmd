@@ -221,8 +221,76 @@ plot(shap_henry)
 plot(shap_henry, show_boxplots = FALSE) 
 ```
 
+# Chapter 10: Local Interpretable Model-agnostic Explanations (LIME)
+
+## The `lime` package
+
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+set.seed(1)
+library("lime")
+library("localModel")
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  johnny_d, 
+                  n_features = 3, 
+                  n_permutations = 1000,
+                  type = "lime")
+```
+
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+as.data.frame(lime_johnny)
+```
+
+```{r limeExplLIMETitanic, echo=TRUE, out.width = '80%', fig.width=6, fig.height=3.5, fig.align='center'}
+plot(lime_johnny)
+```
+
+### The `localModel` package
 
 
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+library("localModel")
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  new_observation = johnny_d, 
+                  size = 1000, 
+                  seed = 1,
+                  type = "localModel")
+```
+
+```{r, warning=FALSE, message=FALSE, eval=TRUE}
+lime_johnny[,1:3]
+```
+
+```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, out.width = '70%', fig.width=7, fig.height=5, fig.align='center'}
+plot_interpretable_feature(lime_johnny, "age") + ggtitle("Interpretable representation for age","" ) + 
+  xlab("age") + ylab("model response")
+```
+
+```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, out.width = '70%', fig.align='center', fig.width=6, fig.height=3.5}
+plot(lime_johnny) + 
+  facet_null() + 
+  ggtitle("localModel explanations for Johny D","") + theme_drwhy_vertical()
+```
+
+
+### The `iml` package
+
+```{r, warning=FALSE, message=FALSE}
+library("iml")
+library("localModel")
+lime_johnny <- predict_surrogate(titanic_rf_exp, 
+                  new_observation = johnny_d, 
+                  k = 3, 
+                  type = "iml")
+```
+
+```{r, warning=FALSE, message=FALSE}
+lime_johnny$results
+```
+
+
+```{r limeExplIMLTitanic, echo=TRUE, out.width = '80%', fig.align='center', fig.width=7, fig.height=3}
+plot(lime_johnny) 
+```
 
 
 
