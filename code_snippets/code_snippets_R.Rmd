@@ -28,6 +28,9 @@ set.seed(1313)
 
 titanic_rf <- randomForest(survived ~ class + gender + age + sibsp + parch + fare + embarked, data = titanic_imputed)
 
+library("rms")
+titanic_lrm <- lrm(survived ~ class + gender + rcs(age) + sibsp + parch + fare + embarked, data = titanic_imputed)
+
 henry <- data.frame(
          class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", 
                      "engineering crew", "restaurant staff", "victualling crew")),
@@ -56,6 +59,11 @@ johnny_d
 ```
 
 ```{r, warning=FALSE, message=FALSE}
+titanic_lrm_exp <- DALEX::explain(model = titanic_lrm,  
+                          data = titanic_imputed[, -9],
+                             y = titanic_imputed$survived, 
+                         label = "Logistic Regression")
+
 titanic_rf_exp <- DALEX::explain(model = titanic_rf,  
                           data = titanic_imputed[, -9],
                              y = titanic_imputed$survived, 
@@ -291,6 +299,81 @@ lime_johnny$results
 ```{r limeExplIMLTitanic, echo=TRUE, out.width = '80%', fig.align='center', fig.width=7, fig.height=3}
 plot(lime_johnny) 
 ```
+
+# Chapter 11: Ceteris-paribus Profiles {#ceterisParibus}
+
+## Basic use of the `predict_profile()` function
+
+```{r, warning=FALSE, message=FALSE}
+library("DALEX")
+cp_titanic_rf <- predict_profile(explainer = titanic_rf_exp, 
+                                 new_observation = johnny_d)
+
+cp_titanic_rf
+```
+
+
+```{r titanicCeterisProfile01, warning=FALSE, message=FALSE,  fig.width=7, fig.height=4,  out.width = '70%', fig.align='center'}
+library("ggplot2")
+plot(cp_titanic_rf, variables = c("age", "fare")) 
+```
+
+```{r titanicCeterisProfile01B, warning=FALSE, message=FALSE, fig.width=8.5, fig.height=4, out.width = '80%', fig.align='center'}
+plot(cp_titanic_rf, variables = c("class", "embarked"), variable_type = "categorical") 
+```
+
+
+## Advanced use of the `predict_profile()` function
+
+```{r, warning=FALSE, message=FALSE}
+variable_splits = list(age = seq(0, 70, 0.1), fare = seq(0, 100, 0.1))
+cp_titanic_rf <- predict_profile(explainer = titanic_rf_exp, 
+                                    new_observation = henry,
+                              variable_splits = variable_splits)
+```
+
+```{r titanicCeterisProfile01C, warning=FALSE, message=FALSE, fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
+plot(cp_titanic_rf, variables = c("age", "fare")) + 
+  ylim(0, 1) +
+  ggtitle("Ceteris-paribus Profile", 
+          "For the random-forest model, Titanic dataset, and Henry")
+```
+
+```{r, warning=FALSE, message=FALSE}
+cp_titanic_rf2 <- predict_profile(explainer = titanic_rf_exp, 
+                               new_observation = rbind(henry, johnny_d),
+                               variable_splits = variable_splits)
+```
+
+```{r titanicCeterisProfile01D, warning=FALSE, message=FALSE,  fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
+library(ingredients)
+plot(cp_titanic_rf2, color = "_ids_", variables = c("age", "fare")) + 
+  scale_color_manual(name = "Passenger:", breaks = 1:2, 
+            values = c("#4378bf", "#8bdcbe"), 
+            labels = c("henry" , "johny_d")) + 
+  ggtitle("Ceteris-paribus Profile", 
+            "For the random-forest model, Titanic data, and Henry and Johnny D")
+```
+
+## Comparison of models (challenger-champion analysis)
+
+
+```{r, warning=FALSE, message=FALSE}
+cp_titanic_rf <- predict_profile(titanic_rf_exp, henry, variable_splits = variable_splits)
+cp_titanic_lmr <- predict_profile(titanic_lrm_exp, henry, variable_splits = variable_splits)
+```
+
+```{r titanicCeterisProfile01E, warning=FALSE, message=FALSE, fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
+plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_",  variables = c("age", "fare")) +
+     ggtitle("Ceteris-paribus Profiles for Henry")
+```
+
+
+
+
+
+
+
 
 
 
