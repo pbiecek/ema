@@ -368,6 +368,65 @@ plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_",  variables = c("age", "fa
      ggtitle("Ceteris-paribus Profiles for Henry")
 ```
 
+# Chapter 12: Ceteris-paribus Oscillations {#ceterisParibusOscillations}
+
+## Examples
+
+```{r CPVIP1, warning=FALSE, message=FALSE, fig.width=10, fig.height=5, out.width = '70%', fig.align='center'}
+
+oscillations_equi <- predict_parts(titanic_rf_exp, henry, type = "oscillations_uni")
+oscillations_emp <- predict_parts(titanic_rf_exp, henry, type = "oscillations_emp", N = 1000)
+oscillations_equi$`_ids_` <- "Henry"
+oscillations_emp$`_ids_` <- "Henry"
+
+pl1 <- plot(oscillations_equi) + 
+    ggtitle("CP Oscillations for uniform distribution", "")
+pl2 <- plot(oscillations_emp) + 
+    ggtitle("CP Oscillations for empirical distribution", "")
+
+pl1 + pl2
+```
+
+## Basic use of the `predict_parts()` function
+
+```{r titanicCeterisProfile02C, warning=FALSE, message=FALSE}
+oscillations_uniform <- predict_parts(explainer = titanic_rf_exp, 
+                                new_observation = henry, 
+                                           type = "oscillations_uni")
+oscillations_uniform
+```
+
+```{r CPoscDefForHenry, warning=FALSE, message=FALSE,  fig.width=6, fig.height=4, out.width = '70%', fig.align='center'}
+oscillations_uniform$`_ids_` <- "Henry"
+plot(oscillations_uniform) +
+    ggtitle("Ceteris-paribus Oscillations", 
+            "Expectation over uniform distribution (unique values)")
+```
+
+## Advanced use of the `predict_parts()` function
+
+```{r titanicCeterisProfile02F, warning=FALSE, message=FALSE, eval=FALSE}
+oscillations_equidist <- predict_parts(titanic_rf_exp, henry, 
+              variable_splits = list(age = seq(0, 65, 0.1),
+                                    fare = seq(0, 200, 0.1),
+                                  gender = unique(titanic_imputed$gender),
+                                   class = unique(titanic_imputed$class)), 
+                         type = "oscillations")
+oscillations_equidist
+```
+
+```{r CPoscGridForHenry, warning=FALSE, message=FALSE, eval = FALSE, fig.width=6, fig.height=4, out.width = '70%', fig.align='center'}
+oscillations_equidist$`_ids_` <- "Henry"
+plot(oscillations_equidist) + 
+    ggtitle("Ceteris-paribus Oscillations", 
+            "Expectation over specified grid of points")
+```
+
+
+
+
+
+
 
 
 
