@@ -2,11 +2,11 @@
 
 ## Introduction {#cPLocDiagIntro}
 
-It may happen that, despite the fact that predictive performance of a model is satisfactory overall, the model's predictions for some observations are clearly wrong. In such a situation it is often said that "the model does not cover well some areas of the input space."
+It may happen that, despite the fact that predictive performance of a model is satisfactory overall, the model's predictions for some observations are drastically worse. In such a situation it is often said that "the model does not cover well some areas of the input space".
 
-For example, a model fitted to the data for "typical" patients in a certain hospital may not preform well for exceptionally young patients. Or, a model developed to evalute the risk of spring-holiday consumer-loans may not perform well in the case of autumn-loans for Christmas-holiday gifts. 
+For example, a model fitted to the data for "typical" patients in a certain hospital may not perform well for patients from another hospital with possible different characteristics. Or, a model developed to evalute the risk of spring-holiday consumer-loans may not perform well in the case of autumn-loans for Christmas-holiday gifts. 
 
-For this reason, in case of important decisions, it is worthwhile to check how the model behaves for observations similar to the instance of interest.
+For this reason, in case of important decisions, it is worthwhile to check how the model behaves locally for observations similar to the instance of interest.
 
 In this chapter, we present two local-diagnostics techniques that address this issue. The first one are *local- fidelity plots* that evaluate the local predictive performance of the model around the observation of interest. The second one are *local-stability plots* that assess the (local) stability of predictions around the observation of interest. 
 
@@ -16,19 +16,19 @@ The general idea behind fidelity plots is to select a number of observations ("n
 
 ## Intuition {#cPLocDiagIntuition}
 
-Assume that we have identified a set of observations from the training data similar, in terms of the values of the explanatory variables, to the observation of interest. We will call these similar observations "neighbors." The basic idea behind local-fidelity plots is to compare the distribution of residuals (i.e., differences between the observed and predicted value of the dependent variable; see equation \@ref(eq:modelResiduals)) for the neighbors with the distribution of residuals for the entire trainng dataset. 
+Assume that for the observation of interest we have identified a set of observations from the training data witch similar characteristics. We will call these similar observations "neighbors". The basic idea behind local-fidelity plots is to compare the distribution of residuals (i.e., differences between the observed and predicted value of the dependent variable; see equation \@ref(eq:modelResiduals)) for the neighbors with the distribution of residuals for the entire training dataset. 
 
 Figure \@ref(fig:profileBack2BackHist) presents histograms of residuals for the entire dataset and for a  selected set of 25 neighbors for an instance of interest for the random-forest model for the apartment-prices dataset (Section \@ref(model-Apartments-rf)). The distribution of residuals for the entire dataset is rather symmetric and centered around 0, suggesting a reasonable overall performance of the model. On the other hand, the residuals for the selected neighbors are centered around the value of 500. This suggests that, for the apartments similar to the one of interest, the model is biased towards values smaller than the observed ones (residuals are positive, so on average the observed value of the dependent variable is larger than the predicted value).
 
-(ref:profileBack2BackHistDesc) Histograms of residuals for the `apartments_rf_v5` model for the apartment-prices dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest. [TOMASZ: STATIC FIGURE. CHECK FOR CORRECTNESS.]
+(ref:profileBack2BackHistDesc) Histograms of residuals for the `apartments_rf` model for the apartment-prices dataset. Upper panel: residuals calculated for all observations from the dataset. Bottom panel: residuals calculated for 25 nearest neighbors of the instance of interest.
 
-```{r profileBack2BackHist, echo=FALSE, fig.cap='(ref:profileBack2BackHistDesc)', out.width = '80%', fig.align='center'}
+```{r profileBack2BackHist, echo=FALSE, fig.cap='(ref:profileBack2BackHistDesc)', out.width = '90%', fig.align='center'}
 knitr::include_graphics("figure/bb_hist.png")
 ```
 
-The idea behind local-stability plots is to check whether small changes in the explanatory variables, as represented by the changes within the set of neighbors, have got much influence on the predictions. Figure \@ref(fig:profileWith10NN) presents CP profiles for variable *age* for an instance of interest and its 10 [TOMASZ: 10? I CAN COUNT 5.] nearest neighbors for the random-forest model for the Titanic dataset (Section \@ref(model-titanic-rf)). The profiles are almost parallel and very close to each other. This suggests that the model's predictions are stable around the instance of interest. Of course, CP profiles for different explanatory variables may be very different, so a natural question is  which variables should we examine? The obvious choice is to focus on the variables that are the most important according to a variable-importance measure such as the ones discussed in Chapters \@ref(breakDown), \@ref(shapley), \@ref(LIME), or \@ref(ceterisParibusOscillations).
+The idea behind local-stability plots is to check whether small changes in the explanatory variables, as represented by the changes within the set of neighbors, have got much influence on the predictions. Figure \@ref(fig:profileWith10NN) presents CP profiles for variable *age* for an instance of interest and its 10 nearest neighbors for the random-forest model for the Titanic dataset (Section \@ref(model-titanic-rf)). The profiles are almost parallel and very close to each other. In fact, some of them overlap so that only 5 different ones are visible. This suggests that the model's predictions are stable around the instance of interest. Of course, CP profiles for different explanatory variables may be very different, so a natural question is  which variables should we examine? The obvious choice is to focus on the variables that are the most important according to a variable-importance measure such as the ones discussed in Chapters \@ref(breakDown), \@ref(shapley), \@ref(LIME), or \@ref(ceterisParibusOscillations).
 
-(ref:profileWith10NNDesc) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 [TOMASZ: 10? I CAN COUNT 5.] nearest neighbors (light grey lines) for the `titanic_rf` random-forest model for the Titanic data. The profiles are almost parallel and close to each other what suggests the stability of the model around the selected instance. [TOMASZ: STATIC FIGURE. CHECK FOR CORRECTNESS.]
+(ref:profileWith10NNDesc) Ceteris-paribus profiles for a selected instance (dark violet line) and 10 nearest neighbors (light grey lines) for the `titanic_rf` random-forest model for the Titanic data.  The profiles are almost parallel and close to each other what suggests the stability of the model around the selected instance. In fact, some of them overlap so that only 5 different ones are visible. 
 
 ```{r profileWith10NN, echo=FALSE, fig.cap='(ref:profileWith10NNDesc)', out.width = '50%', fig.align='center'}
 knitr::include_graphics("figure/example_cp.png")
@@ -80,16 +80,11 @@ Once we have decided on the number of neighbors, we can use the chosen metric to
 
 ### Local-fidelity plot {#cPLocDiagLFplot}
 
-Figure \@ref(fig:profileBack2BackHist) summarizes two distributions of residuals, for the entire training dataset and for the neighbors of the observation of interest.
+Figure \@ref(fig:profileBack2BackHist) summarizes two distributions of residuals, i.e. residuals for the neighbors of the observation of interest vs residuals for the entire training dataset except neighbors. 
 
 For a typical observation, these two distributions shall be similar. An alarming situation is if the residuals for the neighbors are shifted towards positive or negative values. 
 
-Apart from visual examination, we may use statistical tests to compare the two distributions. If we do not want to assume any particular parametric form of the distributions (like, e.g., normal), we may choose non-parametric tests like the Wilcoxon test or the Kolmogorov-Smirnov test. 
-
-[TOMASZ: HOW ABOUT THE FACT THE NEIGHBORS ARE ALSO A PART OF THE ENTIRE DISTRIBUTION?]
-
-[TODO: maybe we need a better test for the stochastic dominance, or it is enough to have a test for location parameter?]
-
+Apart from visual examination, we may use statistical tests to compare the two distributions. If we do not want to assume any particular parametric form of the distributions (like, e.g., normal), we may choose non-parametric tests like the Wilcoxon test or the Kolmogorov-Smirnov test. For statistical tests, it is important that the two sets are disjointed.
 
 ### Local-stability plot {#cPLocDiagProfiles}
 
@@ -102,16 +97,17 @@ CP profiles are helpful to assess the model stability. In addition, we can enhan
 
 ## Example: Titanic  {#cPLocDiagExample}
 
-As an example, we will consider the prediction for Henry  (see Section \@ref(predictions-titanic))  for the random-forest model for the Titanic data (see Section \@ref(model-titanic-rf)). 
+As an example, we will consider the prediction for Johnny D  (see Section \@ref(predictions-titanic))  for the random-forest model for the Titanic data (see Section \@ref(model-titanic-rf)). 
 
-Figure \@ref(fig:localStabilityPlotAge) presents a detailed explanation of the elements of a local-stability plot for  *age*, a continuous explanatory variable. The plot includes eight nearest neighbors of Henry (see Section \@ref(predictions-titanic)). [TOMASZ: HENRY? THE PLOT SAYS SOMETIMES HENRY, SOMETIMES JOHNY D. NOTE THAT WE SHOULD WRITE JOHNNY.] The green line shows the CP profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative residuals. For an additive model, CP profiles will be approximately parallel. For a model with stable predictions, the profiles should be close to each other. This is not the case of Figure \@ref(fig:localFidelityPlots), in which profiles are quite apart from each other. Thus, the plot suggests potential instability of the model's predictions. Note that there are positive and negative residuals included in the plot. This indicates that, on average, the instance prediction itself should not be biased.
+Figure \@ref(fig:localStabilityPlotAge) presents a detailed explanation of the elements of a local-stability plot for  *age*, a continuous explanatory variable. The plot includes eight nearest neighbors of Johnny D (see Section \@ref(predictions-titanic)). The green line shows the CP profile for the instance of interest. Profiles of the nearest neighbors are marked with grey lines. The vertical intervals correspond to residuals; the shorter the interval, the smaller the residual and the more accurate prediction of the model. Blue intervals correspond to positive residuals, red intervals to negative residuals. For an additive model, CP profiles will be approximately parallel. For a model with stable predictions, the profiles should be close to each other. This is not the case of Figure \@ref(fig:localStabilityPlotAge), in which profiles are quite apart from each other. Thus, the plot suggests potential instability of the model's predictions. Note that there are positive and negative residuals included in the plot. This indicates that, on average, the instance prediction itself should not be biased.
 
-(ref:localStabilityPlotAgeDesc)  Elements of a local-stability plot for a continuous explanatory variable.  Ceteris-paribus profiles for variable *age* for Henry and 10 nearest neighbors for the `titanic_rf` random-forest model for the Titanic data. [TOMASZ: ONLY 5 PROFILES FOR NEIGHBORS SEEN IN THE PLOT, NOT 10. MODEL RF_V4? IT HAS NOT BEEN SHOWN IN CHAP. 5. HENRY OR JOHNNY D? BOTH MENTIONED IN THE PLOT. PREDICTION TOO HIGH FOR JOHNNY D FOR RF.] 
+(ref:localStabilityPlotAgeDesc)  Elements of a local-stability plot for a continuous explanatory variable.  Ceteris-paribus profiles for variable *age* for Johnny D and 5 nearest neighbors for the random-forest model for the Titanic data.
 
 ```{r localStabilityPlotAge, echo=FALSE, fig.cap='(ref:localStabilityPlotAgeDesc)', out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/localFidelityPlots.png")
 ```
 
+<!--
 Figure \@ref(fig:localStabilityPlotClass) presents a local-stability plot [TOMASZ: THE HEADER SAYS LOCAL-FIDELITY.] for the categorical explanatory variable *class* for Henry and 11 nearest neighbors (identified by appropriate indices on the y-axis). Henry and his neighbors traveled in the first class. The panels in the plot show how the predicted probability of survival would change if the travel class changed. Dots indicate original model's predictions for the neighbors, while the end of the interval corresponds to the model's prediction after changing the class. Color of the interval indicates whether the change of the class increases or decreses the prediction. The top-lef panel indicates that, for the majority of the neighbors, the change from the first to the second class reduces the predicted value of the probability of survival. On the other hand, the top-right panel indicates that changing the class from "1st" to "deck crew" increases the predicted probability.
 
 Local-stability plots similar to the one shown in Figure \@ref(fig:localStabilityPlotClass) can help to detect interactions, if we see that the same change (say, from the first to the third class) results in a different change of the model's prediction for different neighbors.
@@ -121,6 +117,7 @@ Local-stability plots similar to the one shown in Figure \@ref(fig:localStabilit
 ```{r localStabilityPlotClass, echo=FALSE, fig.cap='(ref:localStabilityPlotClassDesc)', out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/cp_fidelity_2.png")
 ```
+-->
 
 ## Pros and cons {#cPLocDiagProsCons}
 
@@ -130,8 +127,8 @@ The disadvantage of both types of plots is that they are quite complex and lack 
 
 ## Code snippets for R {#cPLocDiagR}
 
-In this section, we present key features of the R package `DALEX` [@DALEX], which is a part of `DrWhy.AI` universe, to construct local-fidelity and local-stability plots.
 
+In this section, we present local diagnostic plots as implemented in the `DALEX` package for R. 
 For illustration, we use the random-forest model `titanic_rf` (Section \@ref(model-titanic-rf)). The model was developed to predict the probability of survival after sinking of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old male passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
 We first retrieve the `titanic_rf` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
@@ -155,18 +152,18 @@ explain_rf <- DALEX::explain(model = titanic_rf,
 predict(explain_rf, henry)
 ```
 
-To construct a local-fidelity plot similar to the one shown Figure \@ref(fig:profileBack2BackHist), we have got to select a number of "neighbors" for Henry. Toward this aim we can use the `individual_diagnostics()` function from the `DALEX` package. The main arguments of the function are `explainer`, which specifies the name of the explainer-object for the model to be explained, and `new_observation`, which specifies the name of the data frame for the instance for which prediction is of interest. Additional useful arguments are `neighbors`, which specifies the number of observations similar to the instance of interest to be selected (default is 50), and `distance`, the function used to measure the similarity of the observations (by default, the Gower similarity measure is used).
+To construct a local-fidelity plot similar to the one shown Figure \@ref(fig:profileBack2BackHist), we have got to select a number of "neighbors" for Henry. Toward this aim we can use the `predict_diagnostics()` function from the `DALEX` package. The main arguments of the function are `explainer`, which specifies the name of the explainer-object for the model to be explained, and `new_observation`, which specifies the name of the data frame for the instance for which prediction is of interest. Additional useful arguments are `neighbors`, which specifies the number of observations similar to the instance of interest to be selected (default is 50), and `distance`, the function used to measure the similarity of the observations (by default, the Gower similarity measure is used).
 
-Note that function `individual_diagnostics()` has got to compute residuals. Thus, the explainer-object used in the `explainer` argument should be created by applying the `explain()` function from the `DALEX` package while applying the `y` and `residual_function` arguments (see Section \@ref(ExplainersTitanicRCode)). Note that, in the call to the `explain` function creating the `explain_rf` object,  we used the default `NULL` vaue of the `residual_function` argument. This means that model residuals are calculated as in \@ref(eq:modelResiduals).
+Note that function `predict_diagnostics()` has to compute residuals. Thus, for the explainer we need to specify `y` and `residual_function` arguments (see Section \@ref(ExplainersTitanicRCode)). Note that, in the call to the `explain` function creating the `explain_rf` object,  we used the default `NULL` value of the `residual_function` argument. This means that model residuals are calculated as in \@ref(eq:modelResiduals).
   
 ```{r residualDistributionFidelityPlot, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, out.width = '70%', fig.align='center'}
-id_rf <- individual_diagnostics(explainer = explain_rf,
-                             new_observation = henry,
-                                   neighbors = 100)
+id_rf <- predict_diagnostics(explainer = explain_rf,
+                       new_observation = henry,
+                             neighbors = 100)
 id_rf
 ```
 
-The resulting object is of class "predict_diagnostics." It is a list of several components that includes, among others, histograms summarizing the distribution of residuals for the entire training dataset and for the neighbors, as well as the result of the Kolmogorov-Smirnov test comparing the two distributions. The test result is given by default when the object is printed out. In our case, it suggests a statistically significant difference between the two distributions. We can use the `plot()` function to compare the distributions graphically. The resulting graph is shown in Figure \@ref(fig:localFidelityPlotResHenry). The plot suggests that the distribution of the residuals for Henry's neighbors might be slightly shifted towards positive values, as compared to the overall distribution.  
+The resulting object is of class "predict_diagnostics". It is a list of several components that includes, among others, histograms summarizing the distribution of residuals for the entire training dataset and for the neighbors, as well as the result of the Kolmogorov-Smirnov test comparing the two distributions. The test result is given by default when the object is printed out. In our case, it suggests a statistically significant difference between the two distributions. We can use the `plot()` function to compare the distributions graphically. The resulting graph is shown in Figure \@ref(fig:localFidelityPlotResHenry). The plot suggests that the distribution of the residuals for Henry's neighbors might be slightly shifted towards positive values, as compared to the overall distribution.  
 
 (ref:localFidelityPlotResHenryDesc) The local-fidelity plot for `titanic_rf` random-forest model for the Titanic data and Henry with 100 neighbors.
 
@@ -174,23 +171,22 @@ The resulting object is of class "predict_diagnostics." It is a list of several 
 plot(id_rf)
 ```
 
-Function `individual_diagnostics()` can be also used to construct local-stability plots. Toward this aim, we have got to select the explanatory variable, for which we want to create the plot. We can do it by passing the name of the variable to the `variables` argument of the function. In the code below, we first calculate CP profiles and residuals for *age* and 10 neighbors of Henry. 
+Function `predict_diagnostics()` can be also used to construct local-stability plots. Toward this aim, we have got to select the explanatory variable, for which we want to create the plot. We can do it by passing the name of the variable to the `variables` argument of the function. In the code below, we first calculate CP profiles and residuals for *age* and 10 neighbors of Henry. 
 
 <!---
 Toward this aim, we use the `y` argument in the `individual_profile()` function. The argument takes numerical values. Our binary dependent variable `survived` assumes values `yes/no`; to convert them to numerical values, we use the `survived == "yes"` expression.
 ---->
 
 ```{r localStabilityAgeHenry, warning=FALSE, message=FALSE}
-id_rf_age <- individual_diagnostics(explainer = explain_rf,
-                                 new_observation = henry,
-                                       neighbors = 10,
-                                       variables = "age")
-id_rf_age
+id_rf_age <- predict_diagnostics(explainer = explain_rf,
+                           new_observation = henry,
+                                 neighbors = 10,
+                                 variables = "age")
 ```
 
 By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotAgeHenry). The profiles are relatively close to each other, suggesting stability of predictions. There are more negative than positive residuals, which may be seen as a signal of a (local) positive bias of the predictions. 
 
-(ref:localStabilityPlotAgeHenryDesc) The local-stability plot for variable *age* in the `titanic_rf` random-forest model for the Titanic data and Henry with 10 neighbors. [TOMASZ: WHY ARE THERE ONLY 7 RESIDUALS?]
+(ref:localStabilityPlotAgeHenryDesc) The local-stability plot for variable *age* in the `titanic_rf` random-forest model for the Titanic data and Henry with 10 neighbors. Some profiles may overlap, so the graph shows fewer lines.
 
 ```{r localStabilityPlotAgeHenry, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, fig.cap='(ref:localStabilityPlotAgeHenryDesc)', out.width = '70%', fig.align='center'}
 plot(id_rf_age)
@@ -203,12 +199,11 @@ id_rf_class <- individual_diagnostics(explainer = explain_rf,
                                    new_observation = henry,
                                          neighbors = 10,
                                          variables = "class")
-id_rf_class
 ```
 
 By applying the `plot()` function to the resulting object, we obtain the local-stability plot shown in Figure \@ref(fig:localStabilityPlotClassHenry). The profiles are not parallel, indicating non-aditivity of the effect. However, they are relatively close to each other, suggesting stability of predictions. 
 
-(ref:localStabilityPlotClassHenryDesc) The local-stability plot for variable *class* in the `titanic_rf` random-forest model for the Titanic data and Henry with 10 neighbors.  [TOMASZ: WHY JUST 2 RESIDUALS? THE PLOT DOES NOT HAVE THE FORM SHOWN IN Figure \@ref(fig:localStabilityPlotClass).]
+(ref:localStabilityPlotClassHenryDesc) The local-stability plot for variable *class* in the `titanic_rf` random-forest model for the Titanic data and Henry with 10 neighbors.  
 
 ```{r localStabilityPlotClassHenry, warning=FALSE, message=FALSE, eval=TRUE, fig.width=7, fig.height=4, fig.cap='(ref:localStabilityPlotClassHenryDesc)', out.width = '70%', fig.align='center'}
 plot(id_rf_class)
