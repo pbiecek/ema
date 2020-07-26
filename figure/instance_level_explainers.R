@@ -5,6 +5,38 @@ library("ggplot2")
 load("models/explain_rf_v6.rda")
 load("models/johny_d.rda")
 
+
+
+library("DALEX")
+library("rms")
+library("randomForest")
+
+titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+titanic_lmr_v6 <- archivist::aread("pbiecek/models/58b24")
+titanic_rf_v6 <- archivist::aread("pbiecek/models/4e0fc")
+
+johnny_d <- data.frame(
+  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
+                                   "restaurant staff", "victualling crew")),
+  gender = factor("male", levels = c("female", "male")),
+  age = 8,
+  sibsp = 0,
+  parch = 0,
+  fare = 72,
+  embarked = factor("Southampton", levels = c("Belfast", "Cherbourg", "Queenstown", "Southampton"))
+)
+
+explain_titanic_rf <- DALEX::explain(model = titanic_rf_v6, 
+                                     data = titanic_imputed[,-9],
+                                     y = titanic_imputed$survived == "yes", 
+                                     label = "Random Forest",
+                                     verbose = FALSE)
+
+explain_rf_v6 <- explain_titanic_rf
+johny_d <- johnny_d
+
+
+
 #
 # 6. Break Down
 

@@ -6,8 +6,11 @@ source("models/models_titanic.R")
 
 ## Introduction {#modelPerformanceIntro}
 
+As it was pointed out in chapter \@ref(fitting) we are interested in predictions for the random variable $Y$. Some of this information can be extracted from the observed independent variables $\underline X$, so in modelling we are focused on understanding the conditional distribution of $Y|\underline X$. We're trying to approximates expected value with the class of models $f(\underline\theta; \underline X)$. Based on the observed data, we're constructing the $f(\underline{\hat\theta}; \underline X)$ model. 
+
 In this chapter, we present measures that are useful for the evaluation of the overall performance of a predictive model. 
 
+The quality of prediction can be defined in many ways. Leo Breiman in his fantastic work The Two Cultures [@twoCultures] described two main trends, one related to the accuracy of the $Y|\underline X$ dependency, the other to the effectiveness of prediction.
 We distinguish between evaluating *goodness-of-fit* and *goodness-of-prediction*. In a nutshell, goodness-of-fit (GoF) pertains to the question: how well do the model's predictions explain (fit) dependent-variable values of the observations used for developing the model? On the other hand, goodness-of-prediction (GoP) is related to the question: how well does the model predict a value of the dependent variable for a new observation? For some measures, their interpretation in terms of GoF or GoP depend on whether they are computed by using training or testing data.
 
 The measures may be applied for several purposes, including:
@@ -32,9 +35,14 @@ In the best possible scenario, we can specify a single model-performance measure
 
 ## Method {#modelPerformanceMethod}
 
-Assume that we have got a training dataset with $n$ observations on $p$ explanatory variables and on a dependent variable $Y$. The dataset is used to develop model $f()$. In what follows we will ignore the fact that, in practice, one uses the estimated form of the model, and we will use $f()$ to denote it as well. 
+Assume that we have got a training dataset with $n$ observations on $p$ explanatory variables and on a dependent variable $Y$. The dataset is used to develop model $f(\hat {\underline \theta}; \underline X)$. <!--In what follows we will ignore the fact that, in practice, one uses the estimated form of the model, and we will use $f()$ to denote it as well. -->
 
-Let $\underline{x}_i$ denote the (column) vector of values of the explanatory variables for the $i$-th observation, and $y_i$ the corresponding value of the dependent variable. We will use $\underline{X}=(x'_1,\ldots,x'_n)$ to denote the matrix of explanatory variables for all $n$ observations, and $\underline{y}=(y_1,\ldots,y_n)'$ to denote the (column) vector of the values of the dependent variable. Let $\widehat{y}_i=f(\underline{x}_i)$ indicate model's $f()$ prediction corresponding to $y_i$. We will use $\widehat{y}_{i(-i)}$ to denote the prediction obtained for $y_i$ by excluding the $i$-th observation from the training dataset when fitting the model.
+Let $\underline{x}_i$ denote the (column) vector of values of the explanatory variables for the $i$-th observation, and $y_i$ the corresponding value of the dependent variable. We will use $\underline{X}=(x'_1,\ldots,x'_n)$ to denote the matrix of explanatory variables for all $n$ observations, and $\underline{y}=(y_1,\ldots,y_n)'$ to denote the (column) vector of the values of the dependent variable. Let $\widehat{y}_i=f(\underline{x}_i)$ indicate model's $f(\hat {\underline \theta}; \underline X)$ prediction corresponding to $y_i$. 
+
+Some measures of model evaluation are based on a one-leave-out sample.
+We will use $\widehat{y}_{i(-i)}$ to denote the prediction obtained for $y_i$ by excluding the $i$-th observation from the training dataset when fitting the model ${\widehat {\underline {\theta_{-i}}}}; \underline {X_{-i}}$. 
+
+It's worth noting here that the ${\widehat {\underline {\theta_{-i}}}}; \underline {X_{-i}}$ model is a different model than the $\hat {\underline \theta}; \underline X$ model. But it is often assumed that they are close to each other and conclusions about one can be transferred to another.
 
 In the subsequent sections, we present various model-performance measures by assuming that they are computed based on a training dataset. The measures are applied in essentially the same way if a testing dataset is used. If there is any difference in the interpretation or properties of the measures between the two siutations, we will explicitly mention them. 
 
@@ -57,6 +65,27 @@ Note that MSE is constructed on a different scale than the dependent variable. T
 RMSE(f, \underline{X}, \underline{y}) = \sqrt{MSE(f, \underline{X}, \underline{y})}.
 (\#eq:RMSE)
 \end{equation}
+
+(ref:prepareMPBoxplotDesc) The distribution of the residuals in the Random Forest model for the Titanic data. The red dot indicates RMSE.
+
+```{r prepareMPBoxplot, message=FALSE, warning=FALSE, echo= FALSE, fig.width=8, fig.height=2, fig.cap='(ref:prepareMPBoxplotDesc)', out.width = '80%', fig.align='center'}
+library("DALEX")
+library("randomForest")
+library("ggplot2")
+
+titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+
+explain_rf <- DALEX::explain(model = titanic_rf, 
+                              data = titanic_imputed[,-9],
+                              y = titanic_imputed$survived == "yes", 
+                              label = "Random Forest",
+                              verbose = FALSE)
+
+plot(model_performance(explain_rf), geom = "boxplot") +
+  theme(legend.position = "none")
+```
+
 
 A popular variant of RMSE is its normalized version, $R^2$, defined as
 
@@ -108,7 +137,7 @@ To introduce model-performance measures, we, somewhat arbitrarily, label the two
 
 #### Goodness-of-fit {#modelPerformanceMethodBinGOF}
 
-If we assign the value of 1 to success and 0 to failure, it is possible to use MSE, RMSE, and MAE, as defined in \@ref(eq:MSE), \@ref(eq:RMSE), \@ref(eq:MAD), respectively, as a GoF measure. In fact, the MSE obtained in that way is equivalent to the Brier score, which can be also expressed as 
+If we assign the value of 1 to success and 0 to failure, it is possible to use MSE, RMSE, and MAE, as defined in Equations \@ref(eq:MSE), \@ref(eq:RMSE), \@ref(eq:MAD), respectively, as a GoF measure. In fact, the MSE obtained in that way is equivalent to the Brier score, which can be also expressed as 
 $$
 \sum_{i=1}^{n} [y_i\{1-f(\underline{x}_i)\}^2+(1-y_i)\{f(\underline{x}_i)\}^2]/n.
 $$
@@ -151,13 +180,24 @@ To introduce some of those measures, we assume that, for each observation from t
 
 In machine-learning world, the table is often referred to as the "confusion table" or "confusion matrix." In statistics, it is often called the "decision table." The counts $TP_C$ and $TN_C$ on the diagonal of the table correspond to the cases when the predicted and observed value of the dependent variable $Y$ coincide. $FP_C$ is the number of cases in which failure is predicted as success. These are false-positive, or type I error, cases. On the other hand, $FN_C$ is the count of false-negative, or type II error, cases, in which success is predicted as failure. Marginally, there are $P_C$ predicted successes and $N_C$ predicted failures, with $P_C+N_C=n$. In the testing dataset, there are $S$ observed successes and $F$ observed failures, with $S+N=n$.
 
+Let's illustrate the "confusion table" based on an example of pregnancy detectionwith a very simple pregnancy test - morning sickness. The table below shows a sample population of 1000 women aged 20-30 years. Information about the sensitivity and specificity of the test is taken from [@pregnancyMarkers].
+
+
+|                         |True value: `pregnant`    |True value: `not pregnant`            |     Prevalence: 10\%|
+|-----------------------|-------------------------|---------------------------------|-----------|
+| Morning Sickness         |      39|     150|    Precision: 20.6\%|
+| Lack of Morning Sickness |      61|     850|    NPV:       93.3\%|
+|                  | Recall, Sensitivity: 39.0\%  |     Specificity: 85.0\%  | Accuracy: 80.8\%, F1: 26.9\%|
+
+The effectiveness of such a test can be described by various measures. Let us present some of the most popular examples.
+
 The simplest measure of model performance is *accuracy*, defined as
 
 $$
 ACC_C = \frac{TP_C+TN_C}{n}.
 $$
 
-It is the fraction of correct predictions in the entire testing dataset. Accuracy is of interest if true positives and true negatives are more important than their false counterparts. However, accuracy may not be very informative when one of the binary categories is much more prevalent. For example, if the testing data contain 90\% of successes, a model that would always predict a success would reach accuracy of 0.9, although one could argue that this is not a very useful model.  
+It is the fraction of correct predictions in the entire testing dataset. Accuracy is of interest if true positives and true negatives are more important than their false counterparts. However, accuracy may not be very informative when one of the binary categories is much more prevalent (so called unbalanced labels). For example, if the testing data contain 90\% of successes, a model that would always predict a success would reach accuracy of 0.9, although one could argue that this is not a very useful model.  
 
 There may be situations when false positives and/or false negatives may be of more concern. In that case, one might want to keep their number low. Hence, other measures, focused on the false results, might be of interest.
 
@@ -168,6 +208,7 @@ Precision_C = \frac{TP_C}{TP_C+FP_C} = \frac{TP_C}{P_C}.
 $$
 
 Precision is also referred to as the *positive predictive value*. It is the fraction of correct predictions among the predicted successes. Precision is high if the number of false positives is low. Thus, it is a useful measure when the penalty for committing the type I error (false positive) is high. For instance, consider the use of a genetic test in cancer diagnostics, with a positive result of the test taken as an indication of an increased risk of developing a cancer. A false-positive result of a genetic test might mean that a person would have to unnecessarily cope with emotions and, possibly, medical procedures related to the fact of being evaluated as having a high risk of developing a cancer. We might want to avoid this situation more than the false-negative case. The latter would mean that the genetic test gives a negative result for a person that, actually, might be at an increased risk of developing a cancer. However, an increased risk does not mean that the person will develop cancer. And even so, we could hope that we could detect it in due time. 
+
 
 Recall is defined as
 
@@ -201,15 +242,30 @@ $$
 
 All the measures depend on the choice of cut-off $C$. To assess the form and the strength of dependence, a common approach is to construct the Receiver Operating Characteristic (ROC) curve. The curve plots $Sensitivity_C$ in function of $1-Specificity_C$ for all possible, ordered values of $C$. Figure \@ref(fig:exampleROC) presents the ROC curve for the random-forest model for the Titanic dataset (see Section \@ref(model-titanic-rf)). Note that the curve indicates an inverse relationship between sensitivity and specificity: by increasing one measure, the other is decreased.     
 
-(ref:exampleROCDesc) Receiver Operating Characteristic curve for the random-forest model for the Titanic dataset. The Gini coefficient can be calculated as 2 x area between the ROC curve and the diagonal (this area is highlighted). [TOMASZ: STATIC FIGURE. CHECK IF CORRECT.]
+(ref:exampleROCDesc) Receiver Operating Characteristic curve for the random-forest model for the Titanic dataset. The Gini coefficient can be calculated as 2 x area between the ROC curve and the diagonal (this area is highlighted). The AUC (Area Under Curve) coefficient is defined as an area under the ROC curve.
 
-```{r exampleROC, fig.width=5, fig.height=5, echo=FALSE, fig.cap='(ref:exampleROCDesc)', out.width = '70%', fig.align='center'}
-knitr::include_graphics("figure/ROCcurve.png")
+```{r exampleROC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleROCDesc)', out.width = '50%', fig.align='center'}
+#knitr::include_graphics("figure/ROCcurve.png")
+plot(model_performance(explain_rf), geom = "roc") +
+  geom_ribbon(aes(ymin = tpr, ymax=fpr), fill = "#371ea3") +
+  theme(legend.position = "none")
 ```
+
 
 The ROC curve is very informative. For a model that predicts successes and failures at random, the corresponding curve will be equal to the diagonal line. On the other hand, for a model that yields perfect predictions, the ROC curve reduces to a two intervals that connect points (0,0), (0,1), and (1,1). 
 
 Often, there is a need to summarize the ROC curve and, hence, model's performance. A popular measure that is used toward this aim is the area under the curve (AUC). For a model that predicts successes and failures at random, AUC is the area under the diagonal line, i.e., it is equal to 0.5. For a model that yields perfect predictions, AUC is equal to 1. It appears that, in this case, AUC is equivalent to the c-index (see Section \@ref(modelPerformanceMethodContGOP)).
+
+A variant of ROC curve based on Precison and Recall measures is PRC (Precision Recall Curve). An example of this curve is shown in \@ref(fig:examplePRC).
+
+(ref:examplePRCDesc) Precision Recall Curve for the random-forest model for the Titanic dataset. 
+
+```{r examplePRC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:examplePRCDesc)', out.width = '50%', fig.align='center'}
+#knitr::include_graphics("figure/ROCcurve.png")
+plot(model_performance(explain_rf), geom = "prc") +
+  theme(legend.position = "none")
+```
+
 
 Another ROC-curve-based measure that is often used is the *Gini coefficient* $G$. It is closely related to AUC; in fact, it can be calculated as $G = 2 \times AUC - 1$. For a model that predicts successes and failures at random, $G=0$; for a perfect-prediction model, $G = 1$.
 
@@ -219,7 +275,16 @@ $$
 Lift_C  = \frac{\frac{TP_C}{P_C}}{\frac{S}{n}} = n\frac{Precision_C}{S}.
 $$
 
-Note that $S/n$ can be seen as the estimated probability of a correct prediction of a success for random guessing. On the other hand, $TP_C/P_C$ is the estimated  probability of a correct prediction of a success given that the model predicts a success. Hence, informally speaking, the lift indicates how many more (or less) times does the model do  better in predicting success as compared to random guessing. As other measures, the lift depends on the choice of cut-off $C$. The plot of the lift as a function of $P_C$ is called the *lift chart*.
+Note that $S/n$ can be seen as the estimated probability of a correct prediction of a success for random guessing. On the other hand, $TP_C/P_C$ is the estimated  probability of a correct prediction of a success given that the model predicts a success. Hence, informally speaking, the lift indicates how many more (or less) times does the model do  better in predicting success as compared to random guessing. As other measures, the lift depends on the choice of cut-off $C$. The plot of the lift as a function of $P_C$ is called the *lift chart*. See an example in Figure \@ref(fig:exampleLift).
+
+(ref:exampleLiftDesc) Lift Curve for the random-forest model for the Titanic dataset. 
+
+```{r exampleLift, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleLiftDesc)', out.width = '50%', fig.align='center'}
+#knitr::include_graphics("figure/ROCcurve.png")
+plot(model_performance(explain_rf), geom = "lift") +
+  theme(legend.position = "none")
+```
+
 
 Calibration of predictions can be assessed by a scatter plot of the predicted values of $Y$ in fuction of the true ones. A complicating issue is the fact that the true values are only equal to 0 or 1. Therefore, smoothing techinques or grouping of observations is needed to obtain a meaningful plot [@Steyerberg2010;@Steyerberg2019].
 
@@ -271,11 +336,14 @@ In case of counts, one could consider using MSE or any of the measures for a con
 
 From \@ref(eq:Pearson) it is clear that, if the same residual is obtained for two different observed counts, it is assigned a larger weight for the count for which the predicted value is smaller. 
 
+Of course, there are more measures of model performance as well as types of model responses (e.g. censored data). A complete list, even if it could be created, would be beyond the scope of this book.
+
+
 ## Example
 
 ### Apartment prices {#modelPerformanceApartments}
 
-Let us consider the linear-regression model `apartments_lm_v5` (see Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf_v5` (see Section \@ref(model-Apartments-rf)) for the apartment-prices  data (see Section \@ref(ApartmentDataset)). Recall that, for these data, the dependent variable, the price per square meter, is continuous. Hence, we can use the performance measures presented in Section \@ref(modelPerformanceMethodCont). In particular, we consider MSE and RMSE. The values of the two measures, computed for the `apartments_test` testing dataset (see Section \@ref(predictionsApartments)) for the two models, are presented below. 
+Let us consider the linear-regression model `apartments_lm` (see Section \@ref(model-Apartments-lr)) and the random-forest model `apartments_rf` (see Section \@ref(model-Apartments-rf)) for the apartment-prices  data (see Section \@ref(ApartmentDataset)). Recall that, for these data, the dependent variable, the price per square meter, is continuous. Hence, we can use the performance measures presented in Section \@ref(modelPerformanceMethodCont). In particular, we consider MSE and RMSE. The values of the two measures, computed for the `apartments_test` testing dataset (see Section \@ref(predictionsApartments)) for the two models, are presented below. 
 
 ```
 ## Model label:  Linear Regression v5 
@@ -288,7 +356,9 @@ Let us consider the linear-regression model `apartments_lm_v5` (see Section \@re
 ## mse  80061.77   mse
 ## rmse   282.952 rmse
 ```
-Both MSE and RMSE indicate that, overall, the random-forest model performs better than the linear-regression model.
+
+MSE and its relative RMSE suggest that the random-forest model is slightly better. But is this difference relevant? It should be remembered that the random-forest model has a random component in model construction. It turns out that on the same data when a random forest model is trained with different random seeds several times, the MSE of the forest will be sometimes higher and sometimes lower. So we rather consider that these two models have similar effectiveness and neither of them is clearly better.
+
 
 ```{r prepareExplainersMP, message=FALSE, echo=FALSE, eval=FALSE}
 library("DALEX")
@@ -312,9 +382,37 @@ DALEX::model_performance(explainer_apartments_rf)
 ## mae    214.4939  mae
 ```
 
+(ref:prepareMPBoxplotExDesc) The distribution of the residuals in the Random Forest model and Linear Regression model for the Titanic data. The red dot indicates RMSE, almost equal for both models.
+
+```{r prepareMPBoxplotEx, message=FALSE, warning=FALSE, echo= FALSE, fig.width=8, fig.height=2.5, fig.cap='(ref:prepareMPBoxplotDesc)', out.width = '80%', fig.align='center'}
+library("DALEX")
+library("ggplot2")
+library("randomForest")
+
+apartments_lr <- archivist:: aread("pbiecek/models/55f19")
+apartments_rf <- archivist:: aread("pbiecek/models/fe7a5")
+
+explainer_apartments_lr <- DALEX::explain(apartments_lr, data = apartments_test, y = apartments_test$m2.price, label = "Linear Regression", verbose = FALSE)
+explainer_apartments_rf <- DALEX::explain(apartments_rf, data = apartments_test, y = apartments_test$m2.price, label = "Random Forest", verbose = FALSE)
+
+mp1 <- model_performance(explainer_apartments_lr)
+mp2 <- model_performance(explainer_apartments_rf)
+
+plot(mp1, mp2, geom = "boxplot") +
+  theme(legend.position = "none")
+```
+
+(ref:prepareMPBoxplotDesc2) The histogram of the residuals in the Random Forest model and Linear Regression model for the Titanic data. 
+
+```{r prepareMPBoxplotEx2, message=FALSE, warning=FALSE, echo= FALSE, fig.width=8, fig.height=4, fig.cap='(ref:prepareMPBoxplotDesc2)', out.width = '80%', fig.align='center'}
+plot(mp1, mp2, geom = "histogram") +
+  theme(legend.position = "none")
+```
+
+
 ### Titanic data {#modelPerformanceTitanic}
 
-Let us consider the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and the logistic-regression model `titanic_lmr_v6` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)). Recall that, for these data, the dependent variable is binary, with success defined as survival of the passenger. 
+Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and the logistic-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)). Recall that, for these data, the dependent variable is binary, with success defined as survival of the passenger. 
 
 First, we take a look at the AUC, F1 score, and accuracy for the models.
 
@@ -338,19 +436,19 @@ library("rms")
 library("randomForest")
 
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_lmr_v6 <- archivist::aread("pbiecek/models/58b24")
-titanic_rf_v6 <- archivist::aread("pbiecek/models/4e0fc")
+titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 
-#load("models/titanic_rf_v6.rda")
+#load("models/titanic_rf.rda")
 #load("models/titanic.rda")
 
-explain_titanic_rf <- explain(model = titanic_rf_v6, 
+explain_titanic_rf <- DALEX::explain(model = titanic_rf, 
                               data = titanic_imputed[,-9],
                               y = titanic_imputed$survived == "yes", 
                               label = "Random Forest",
                               verbose = FALSE)
 
-explain_titanic_lmr <- explain(model = titanic_lmr_v6, data = titanic_imputed[, -9],
+explain_titanic_lmr <- DALEX::explain(model = titanic_lmr, data = titanic_imputed[, -9],
     y = titanic_imputed$survived == "yes", label = "Logistic Regression", verbose = FALSE)
 explain_titanic_lmr$model_info$type = "classification"
 
@@ -365,7 +463,7 @@ Figure \@ref(fig:titanicROC) presents ROC curves for both models. The curve for 
 
 (ref:titanicROCDesc) Receiver Operating Characteristic curves for the random-forest and logistic-regression models for the Titanic dataset.
 
-```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '70%', fig.cap='(ref:titanicROCDesc)', fig.align='center'}
+```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap='(ref:titanicROCDesc)', fig.align='center'}
 library("DALEX")
 library("rms")
 library("randomForest")
@@ -380,11 +478,11 @@ Figure \@ref(fig:titanicLift) presents lift charts for both models. Also in this
 
 (ref:titanicLiftDesc) Lift charts for the random-forest and logistic-regression models for the Titanic dataset.
 
-```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '70%', fig.cap='(ref:titanicLiftDesc)', fig.align='center'}
+```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap='(ref:titanicLiftDesc)', fig.align='center'}
 plot(eva_rf, eva_lr, geom = "lift")
 ```
 
-```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width = '70%', fig.cap="Cumulative-gain chart for the random-forest model and the logistic-regression model for the Titanic dataset.", fig.align='center'}
+```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap="Cumulative-gain chart for the random-forest model and the logistic-regression model for the Titanic dataset.", fig.align='center'}
 plot(eva_rf, eva_lr, geom = "gain")
 ```
 
@@ -396,32 +494,55 @@ Given the advantages and disadvantages of various measures, and the fact that ea
 
 ## Code snippets for R {#modelPerformanceR}
 
-In this section, we present the key features of the `DALEX` R package which is a part of the [DrWhy.AI](http://DrWhy.AI) universe. The package covers the most often used measures and methods presented in this chapter. More advanced measures of performance are available in the `auditor` R package [@R-auditor]. Note that there are also other R packages that offer similar functionality. These include, for instance, packages `mlr` [@mlr], `caret` [@caret], `tidymodels` [@tidymodels], and `ROCR` [@ROCR].
+In this section, we present model performance metrics as implemented in the `DALEX` package for R. The package covers the most often used measures and methods presented in this chapter. More advanced measures of performance are available in the `auditor` R package [@R-auditor]. Note that there are also other R packages that offer similar functionality. These include, for instance, packages `mlr` [@mlr], `caret` [@caret], `tidymodels` [@tidymodels], and `ROCR` [@ROCR].
 
-For illustration purposes, we use the random-forest model `titanic_rf_v6` (see Section \@ref(model-titanic-rf)) and the logistic-regression model `titanic_lmr_v6` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)). Consequently, the `DALEX` functions are applied in the context of a binary classification problem. However, the same functions can be used for, for instance, linear-regression models.
+For illustration purposes, we use the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and the logistic-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)) for the Titanic data (see Section \@ref(TitanicDataset)). Consequently, the `DALEX` functions are applied in the context of a binary classification problem. However, the same functions can be used for, for instance, linear-regression models.
 
-To illustrate the use of the functions, we first retrieve the `titanic_lmr_v6` and `titanic_rf_v6` model-objects via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
+To illustrate the use of the functions, we first retrieve the `titanic_lmr` and `titanic_rf` model-objects via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_lmr_v6 <- archivist::aread("pbiecek/models/58b24")
-titanic_rf_v6 <- archivist::aread("pbiecek/models/4e0fc")
+titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 ```
 
 Then we construct the explainers for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `rms` and `randomForest` packages, as the models were fitted by using functions from those packages and it is important to have the corresponding `predict()` functions available. 
 
-```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
+```{r, warning=FALSE, message=FALSE, echo = FALSE, eval = TRUE}
 library("randomForest")
 library("rms")
 library("DALEX")
-explain_lmr <- explain(model = titanic_lmr_v6, data = titanic_imputed[, -9],
-    y = titanic_imputed$survived == "yes", label = "Logistic Regression", verbose = FALSE)
+explain_lmr <- DALEX::explain(model = titanic_lmr, 
+                       data = titanic_imputed[, -9],
+                       y = titanic_imputed$survived == "yes", 
+                       label = "Logistic Regression",
+                      verbose=FALSE)
 explain_lmr$model_info$type = "classification"
-explain_rf <- explain(model = titanic_rf_v6,  data = titanic_imputed[, -9],
-    y = titanic_imputed$survived == "yes", label = "Random Forest", verbose = FALSE)
+explain_rf <- DALEX::explain(model = titanic_rf,  
+                      data = titanic_imputed[, -9],
+                      y = titanic_imputed$survived == "yes", 
+                      label = "Random Forest",
+                      verbose=FALSE)
 ```
 
-Function `DALEX::model_performance()` calculates, by default, a set of selected model-performance measures. These include MSE, RMSE, $R^2$, and MAD for linear-regression models, and recall, precision, F1, accuracy, and AUC for models for a binary dependent variable. The function includes the `cutoff` argument that allows specifying the cut-off value for the measures that require it, i.e., recall, precision, F1 score, and accuracy. By default, the cut-off value is set at 0.5. Note that, by default, all measures are computed for the data that are extracted from the explainer object; these can be training or testing data.  
+```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
+library("randomForest")
+library("rms")
+library("DALEX")
+
+explain_lmr <- explain(model = titanic_lmr, 
+                       data = titanic_imputed[, -9],
+                       y = titanic_imputed$survived == "yes", 
+                       label = "Logistic Regression")
+explain_lmr$model_info$type = "classification"
+
+explain_rf <- explain(model = titanic_rf,  
+                      data = titanic_imputed[, -9],
+                      y = titanic_imputed$survived == "yes", 
+                      label = "Random Forest")
+```
+
+Function `model_performance()` calculates, by default, a set of selected model-performance measures. These include MSE, RMSE, $R^2$, and MAD for linear-regression models, and recall, precision, F1, accuracy, and AUC for models for a binary dependent variable. The function includes the `cutoff` argument that allows specifying the cut-off value for the measures that require it, i.e., recall, precision, F1 score, and accuracy. By default, the cut-off value is set at 0.5. Note that, by default, all measures are computed for the data that are extracted from the explainer object; these can be training or testing data.  
 
 ```{r modelPerformanceMeasureRF, message=FALSE}
 eva_rf <- DALEX::model_performance(explain_rf)
@@ -433,21 +554,19 @@ eva_lr <- DALEX::model_performance(explain_lmr)
 eva_lr
 ```
 
-Application of the `DALEX::model_performance()` function returns an object of class "model_performance" which includes estimated values of several model-performance measures, as well as a data frame containing the observed and predicted values of the dependent variable together with their difference, i.e., residuals. ROC curve or lift chart can be constructed by applying the generic `plot()` function to the object. The type of the required plot is indicated by using argument `geom`. In particular, the argument allows values `geom = "lift"` for lift charts, `geom = "roc"` for ROC curves, `geom = "histogram"` for histograms of residuals, and `geom = "boxplot"` for box-and-whisker plots of residuals. The `plot()` function returns a `ggplot2` object. It is possible to apply the function to more than one object. In that case, the plots for the models corresponding to each object are combined in one graph. In the code below, we create two `ggplot2` objects: one for a graph containing ROC curves for both models and one for a graph of lift charts. Subsequently, we use the `patchwork` package to combine the graphs in one display.
+Application of the `DALEX::model_performance()` function returns an object of class "model_performance" which includes estimated values of several model-performance measures, as well as a data frame containing the observed and predicted values of the dependent variable together with their difference, i.e., residuals. ROC curve or lift chart can be constructed by applying the generic `plot()` function to the object. The type of the required plot is indicated by using argument `geom`. In particular, the argument allows values `geom = "lift"` for lift charts, `geom = "roc"` for ROC curves, `geom = "histogram"` for histograms of residuals, and `geom = "boxplot"` for box-and-whisker plots of residuals. The `plot()` function returns a `ggplot2` object. It is possible to apply the function to more than one object. In that case, the plots for the models corresponding to each object are combined in one graph. In the code below, we create two `ggplot2` objects: one for a graph containing Precision-recall curves for both models and one for a histograms for residuals. Subsequently, we use the `patchwork` package to combine the graphs in one display.
 
-<!---
-(ref:titanicMEexamplesDesc) ROC curves and lift charts obtained by the generic `plot()` function for the logistic-regression model `titanic_lmr_v6` and the random-forest model `titanic_rf_v6` for the Titanic dataset.
----->
+(ref:titanicMEexamplesDesc) Recision recall curve and histogram for residuals  obtained by the generic `plot()` function for the logistic-regression model `titanic_lmr` and the random-forest model `titanic_rf` for the Titanic dataset.
 
-```{r titanicMEexamples, warning=FALSE, message=FALSE, eval=FALSE, fig.cap='(ref:titanicMEexamplesDesc)', fig.width=9, fig.height=5, fig.align='center'}
-p1 <- plot(eva_rf, eva_lr, geom = "roc")
-p2 <- plot(eva_rf, eva_lr, geom = "lift")
+```{r titanicMEexamples, warning=FALSE, message=FALSE, eval=TRUE, fig.cap='(ref:titanicMEexamplesDesc)', fig.width=9, fig.height=5, fig.align='center'}
+p1 <- plot(eva_rf, eva_lr, geom = "histogram")
+p2 <- plot(eva_rf, eva_lr, geom = "prc")
 
 library("patchwork")
 p1 + p2
 ```
 
-The resulting graph (not shown) contains the plots presented in Figures \@ref(fig:titanicROC) and \@ref(fig:titanicLift). 
+The resulting graph \@ref(fig:titanicMEexamples) supplement the ROC and Lift plots presented in Figures \@ref(fig:titanicROC) and \@ref(fig:titanicLift) in which two models are compared against each other. 
 
 <!---
 Both plots can be supplemented with boxplots for residuals. Toward this end, the residuals have got to be computed and added to the explainer object with the help of the `model_performance()` function. Subsequently, the `plot()` can be applied to the resulting object.   
@@ -456,4 +575,42 @@ Both plots can be supplemented with boxplots for residuals. Toward this end, the
 plot(eva_rf, eva_lr, geom = "boxplot")
 ```
 ---->
+
+## Code snippets for Python {#modelPerformancePython}
+
+In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. 
+
+For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
+
+In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
+
+```{python,  eval = FALSE}
+import pandas as pd
+henry = pd.DataFrame({'gender': ['male'],
+                       'age': [47],
+                       'class': ['1st'],
+                       'embarked': ['Southampton'],
+                       'fare': [25],
+                       'sibsp': [0],
+                       'parch': [0]},
+                      index = ['Henry'])
+
+import dalex as dx
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+```
+
+To calculate the model performance one can use the `model_performance` method. 
+
+```{python,  eval = FALSE}
+mp_rf = exp_rf.model_performance(model_type = "classification", cutoff = 0.5)
+mp_rf
+```
+
+The resulting object can be visualised with the `plot` method. 
+
+```{python,  eval = FALSE}
+mp_rf.plot()
+```
+
+
 
