@@ -46,7 +46,9 @@ set.seed(30)
 selected_passangers <- titanic_imputed[sample(1:nrow(titanic_imputed), 25),]
 cp_rf <- predict_profile(explain_titanic_rf, selected_passangers, variables = "age",
                          variable_splits = list(age = seq(0, 70, 0.1)))
-pl1 <- plot(cp_rf, variables = "age") +  
+class(cp_rf) <- c("ceteris_paribus_explainer", "data.frame")
+pl1 <- plot(cp_rf, variables = "age", color = "#46bac1") + 
+      ingredients::show_observations(cp_rf, size = 3, variables = "age") +  
   scale_y_continuous(limits=c(0,1)) +
   ggtitle("Ceteris-paribus profiles","") 
 
@@ -355,7 +357,7 @@ plot(pdp_rf$agr_profiles, pdp_lmr$agr_profiles) +
 
 As a result, the profiles are plotted in a single plot. The resulting graph (not shown) is essentially the same as the one presented in Figure \@ref(fig:pdpPart7), with a possible difference due to the use of a different set of (randomly selected) 100 observations from the Titanic dataset.
 
-## Code snippets for Python {#featureImportancePython}
+## Code snippets for Python {#PDPPython}
 
 In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. The package covers the most often used measures and methods presented in this chapter. Similar functions can be found in library `PDPbox` [@PDPbox].
 
@@ -364,16 +366,6 @@ For illustration purposes, we use the `titanic_rf` random forest model for the T
 In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
 
 ```{python,  eval = FALSE}
-import pandas as pd
-henry = pd.DataFrame({'gender': ['male'],
-                       'age': [47],
-                       'class': ['1st'],
-                       'embarked': ['Southampton'],
-                       'fare': [25],
-                       'sibsp': [0],
-                       'parch': [0]},
-                      index = ['Henry'])
-
 import dalex as dx
 titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
 ```
@@ -387,14 +379,14 @@ By defaut, it calculates profiles for all continuous variables. The other useful
 * `type`, the type of the PD profile, with values "partial" (default), "conditional," and "accumulated"; 
 * `groups`, the name of the explanatory variable that will be used to group profiles, with `groups = None` by default (in which case no grouping of profiles is applied);
 
-In the example below, we calculate the PD profile for *age* by applying the `model_profile()` function to the explainer-object for the random-forest model. By default, the profile is based on 100 randomly selected observations. 
+In the example below, we calculate the PD profile for *age* by applying the `model_profile()` function to the Explainer-object for the random-forest model. By default, the profile is based on 100 randomly selected observations. 
 
 ```{python,  eval = FALSE}
 mp_rf = exp_rf.model_profile()
 mp_rf.result
 ```
 
-```{r examplePythonMProfile1, echo=FALSE, out.width = '100%', fig.align='center'}
+```{r examplePythonMProfile1, echo=FALSE, out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_1.png")
 ```
 
@@ -404,7 +396,7 @@ The resulting object can be visualised with the `plot` method.
 mp_rf.plot()
 ```
 
-```{r examplePythonMProfile2, echo=FALSE, out.width = '100%', fig.align='center'}
+```{r examplePythonMProfile2, echo=FALSE, out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_2.png")
 ```
 
@@ -424,7 +416,7 @@ mp_rf = exp_rf.model_profile( variable_type='categorical')
 mp_rf.plot(variables = ['gender', 'class'])
 ```
 
-```{r examplePythonMProfile3, echo=FALSE, out.width = '100%', fig.align='center'}
+```{r examplePythonMProfile3, echo=FALSE, out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_3.png")
 ```
 
@@ -438,7 +430,7 @@ mp_rf = exp_rf.model_profile(groups = 'gender', variables = ['age', 'fare'])
 mp_rf.plot()
 ```
 
-```{r examplePythonMProfile4, echo=FALSE, out.width = '100%', fig.align='center'}
+```{r examplePythonMProfile4, echo=FALSE, out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_4.png")
 ```
 
