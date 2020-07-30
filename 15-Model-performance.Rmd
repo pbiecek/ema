@@ -6,12 +6,12 @@ source("models/models_titanic.R")
 
 ## Introduction {#modelPerformanceIntro}
 
-As it was pointed out in chapter \@ref(fitting) we are interested in predictions for the random variable $Y$. Some of this information can be extracted from the observed independent variables $\underline X$, so in modelling we are focused on understanding the conditional distribution of $Y|\underline X$. We're trying to approximates expected value with the class of models $f(\underline\theta; \underline X)$. Based on the observed data, we're constructing the $f(\underline{\hat\theta}; \underline X)$ model. 
+As it was pointed out in chapter \@ref(fitting) we are interested in predictions for the random variable $Y$. Some of this information can be extracted from the observed independent variables $\underline X$, so in modelling, we are focused on understanding the conditional distribution of $Y|\underline X$. We're trying to approximates expected value with the class of models $f(\underline\theta; \underline X)$. Based on the observed data, we're constructing the $f(\underline{\hat\theta}; \underline X)$ model. 
 
 In this chapter, we present measures that are useful for the evaluation of the overall performance of a predictive model. 
 
 The quality of prediction can be defined in many ways. Leo Breiman in his fantastic work The Two Cultures [@twoCultures] described two main trends, one related to the accuracy of the $Y|\underline X$ dependency, the other to the effectiveness of prediction.
-We distinguish between evaluating *goodness-of-fit* and *goodness-of-prediction*. In a nutshell, goodness-of-fit (GoF) pertains to the question: how well do the model's predictions explain (fit) dependent-variable values of the observations used for developing the model? On the other hand, goodness-of-prediction (GoP) is related to the question: how well does the model predict a value of the dependent variable for a new observation? For some measures, their interpretation in terms of GoF or GoP depend on whether they are computed by using training or testing data.
+We distinguish between evaluating *goodness-of-fit* and *goodness-of-prediction*. In a nutshell, goodness-of-fit (GoF) pertains to the question: how well do the model's predictions explain (fit) dependent-variable values of the observations used for developing the model? On the other hand, goodness-of-prediction (GoP) is related to the question: how well does the model predict the value of the dependent variable for a new observation? For some measures, their interpretation in terms of GoF or GoP depends on whether they are computed by using training or testing data.
 
 The measures may be applied for several purposes, including:
  
@@ -19,17 +19,17 @@ The measures may be applied for several purposes, including:
 * model comparison: we may want to compare two or more models in order to choose between them;
 * out-of-sample and out-of-time comparisons: we may want to check a model's performance when applied to new data to evaluate if performance has not worsened.
 
-Depending of the nature of the dependent variable (continuous, binary, categorical, count, etc.), different model-performance measures may be used. Moreover, the list of useful measures is growing as new applications emerge. In this chapter, we discuss a selected set of measures, some of which are used in dataset-level exploration techniques introduced in subsequent chapters.
+Depending on the nature of the dependent variable (continuous, binary, categorical, count, etc.), different model-performance measures may be used. Moreover, the list of useful measures is growing as new applications emerge. In this chapter, we discuss a selected set of measures, some of which are used in dataset-level exploration techniques introduced in subsequent chapters.
 
 ## Intuition {#modelPerformanceIntuition}
 
-Most model-performance measures are based on comparison of the model's predictions with the (known) values of the dependent variable in a dataset. For an ideal model, the predictions and the dependent-variable values should be equal. In practice, it is never the case, and we want to quantify the disagreement.
+Most model-performance measures are based on the comparison of the model's predictions with the (known) values of the dependent variable in a dataset. For an ideal model, the predictions and the dependent-variable values should be equal. In practice, it is never the case, and we want to quantify the disagreement.
 
 In principle, model-performance measures may be computed for the training dataset, i.e., the data used for developing the model. However, in that case there is a serious risk that the computed values will overestimate the quality of the model's predictive performance. A more meaningful approach is to apply the measures to an independent testing dataset. Alternatively, a bias-correction strategy can be used when applying them to the training data. Toward this aim, various strategies have been proposed, such as cross-validation or bootstrapping [@Kuhn2013;@Harrell2015;@Steyerberg2019]. In what follows, we mainly consider the simple data-split strategy, i.e., we assume that the available data are split into a training set and a testing set. The model is created on the former, and the latter set is used to assess the model's performance.
 
-It is worth mentioning that there are two important aspects of prediction: *calibration* and *discrimination* [@Harrell1996]. Calibration refers to the extent of bias in predicted values, i.e., the mean difference between the predicted and true values. Discrimination refers to the ability of the predictions to distinguish between individual true values. For instance, consider a model to be used for weather forecasts in a region where, on average, it rains half a year. A simple model that predicts that every other day is rainy is well calibrated because, on average, the resulting predicted risk of a rainy day in a year is 50\%, which agrees with the actual situation. However, the model is not very much discriminative (for each calendar day, the probability of a correct prediction is 50\%, the same as for a fair-coin toss) and, hence, not very useful. 
+It is worth mentioning that there are two important aspects of prediction: *calibration* and *discrimination* [@Harrell1996]. Calibration refers to the extent of bias in predicted values, i.e., the mean difference between the predicted and true values. Discrimination refers to the ability of the predictions to distinguish between individual true values. For instance, consider a model to be used for weather forecasts in a region where, on average, it rains half a year. A simple model that predicts that every other day is rainy is well-calibrated because, on average, the resulting predicted risk of a rainy day in a year is 50\%, which agrees with the actual situation. However, the model is not very much discriminative (for each calendar day, the probability of a correct prediction is 50\%, the same as for a fair-coin toss) and, hence, not very useful. 
 
-Thus, in addition to overall measures of GoP, we may need separate measures for calibration and discrimination of a model. Note that, for the latter, we may want to weigh differently the situation when the prediction is, for instance, larger than the true value, as compared to the case  when it is smaller. Depending on the decision how to weigh different types of disagreement, we may need different measures.
+Thus, in addition to overall measures of GoP, we may need separate measures for calibration and discrimination of a model. Note that, for the latter, we may want to weigh differently the situation when the prediction is, for instance, larger than the true value, as compared to the case  when it is smaller. Depending on the decision on how to weigh different types of disagreement, we may need different measures.
 
 In the best possible scenario, we can specify a single model-performance measure before the model is created and then  optimize the model for this measure. But the more common scenario in practice is to use several performance measures, which are often selected after the model has been created.
 
@@ -44,7 +44,7 @@ We will use $\widehat{y}_{i(-i)}$ to denote the prediction obtained for $y_i$ by
 
 It's worth noting here that the ${\widehat {\underline {\theta_{-i}}}}; \underline {X_{-i}}$ model is a different model than the $\hat {\underline \theta}; \underline X$ model. But it is often assumed that they are close to each other and conclusions about one can be transferred to another.
 
-In the subsequent sections, we present various model-performance measures by assuming that they are computed based on a training dataset. The measures are applied in essentially the same way if a testing dataset is used. If there is any difference in the interpretation or properties of the measures between the two siutations, we will explicitly mention them. 
+In the subsequent sections, we present various model-performance measures by assuming that they are computed based on a training dataset. The measures are applied in essentially the same way if a testing dataset is used. If there is any difference in the interpretation or properties of the measures between the two situations, we will explicitly mention them. 
 
 ### Continuous dependent variable {#modelPerformanceMethodCont}
 
@@ -103,7 +103,7 @@ MAD(f, \underline{X} ,\underline{y}) = median( |r_1|, ..., |r_n| ).
 (\#eq:MAD)
 \end{equation}
 
-MAD is more robust to outliers than MSE. A disadvantage of MAD are its less favorable mathematical properties. 
+MAD is more robust to outliers than MSE. A disadvantage of MAD are its less favourable mathematical properties. 
 
 #### Goodness-of-prediction {#modelPerformanceMethodContGOP}
 
@@ -116,7 +116,7 @@ PRESS(f,\underline{X},\underline{y}) = \sum_{i=1}^{n} (\widehat{y}_{i(-i)} - y_i
 (\#eq:PRESS)
 \end{equation}
 
-Thus, PRESS can be seen as a result of application of the leave-one-out strategy to the evaluation of GoP of a model using the training data. Note that, for the cassical linear-regression model, there is no need to re-fit the model $n$ times to compute PRESS [@Kutner2005]. 
+Thus, PRESS can be seen as a result of the application of the leave-one-out strategy to the evaluation of GoP of a model using the training data. Note that, for the classical linear-regression model, there is no need to re-fit the model $n$ times to compute PRESS [@Kutner2005]. 
 
 Based on PRESS, one can define the predictive squared-error $PSE=PRESS/n$ and the standard deviation error in prediction $SEP=\sqrt{PSE}=\sqrt{PRESS/n}$ [@SummariesTutorial]. Another measure gaining in popularity is 
 
@@ -129,11 +129,11 @@ It is sometimes called the cross-validated $R^2$ or the coefficient of predictio
 
 The aforementioned measures capture the overall predictive performance of a model. A measure aimed at evaluating discrimination is the *concordance (c) index* [@Harrell1996;@Brentnall2018]. It is computed by considering all pairs of observations and computing the fraction of the pairs in which the ordering of the predictions corresponds to the ordering of the true values [@Brentnall2018]. The index assumes the value of 1 in case of perfect discrimination and 0.25 for random discrimination. 
 
-Calibration can be assessed by a scatter plot of the predicted values of $Y$ in fuction of the true ones [@Harrell1996;@vanHouwelingen2000;@Steyerberg2010]. The plot can be characterized by its intercept and slope. In case of perfect prediction, the plot should assume the form of a straight line with intercept 0 and slope 1. A deviation of the intercept from 0 indicates overall bias in predictions ("calibration-in-the-large"), while the value of the slope smaller than 1 suggests overfitting of the model [@vanHouwelingen2000;@Steyerberg2010]. The estimated values of the coefficients can be used to re-calibrate the model [@vanHouwelingen2000]. 
+Calibration can be assessed by a scatter plot of the predicted values of $Y$ in function of the true ones [@Harrell1996;@vanHouwelingen2000;@Steyerberg2010]. The plot can be characterized by its intercept and slope. In case of perfect prediction, the plot should assume the form of a straight line with intercept 0 and slope 1. A deviation of the intercept from 0 indicates overall bias in predictions ("calibration-in-the-large"), while the value of the slope smaller than 1 suggests overfitting of the model [@vanHouwelingen2000;@Steyerberg2010]. The estimated values of the coefficients can be used to re-calibrate the model [@vanHouwelingen2000]. 
 
 ### Binary dependent variable {#modelPerformanceMethodBin}
 
-To introduce model-performance measures, we, somewhat arbitrarily, label the two possible values of the dependent variable as "success" and "failure". Of course, in a particular application, the meaning of the "success" outcome does not have to be positive nor optimistic; for a diagnostic test, "success" often means detection of a disease. We also assume that model prediction $f(\underline{x})$  takes the form of the predicted probability of success. 
+To introduce model-performance measures, we, somewhat arbitrarily, label the two possible values of the dependent variable as "success" and "failure". Of course, in a particular application, the meaning of the "success" outcome does not have to be positive nor optimistic; for a diagnostic test, "success" often means detection of disease. We also assume that model prediction $f(\underline{x})$  takes the form of the predicted probability of success. 
 
 #### Goodness-of-fit {#modelPerformanceMethodBinGOF}
 
@@ -141,7 +141,7 @@ If we assign the value of 1 to success and 0 to failure, it is possible to use M
 $$
 \sum_{i=1}^{n} [y_i\{1-f(\underline{x}_i)\}^2+(1-y_i)\{f(\underline{x}_i)\}^2]/n.
 $$
-Its minimum value is 0 for a "perfect" model and 0.25 for an "uninformative" model that yields the predicted probability of 0.5 for all observations. The Brier score is often also interpreted as an overall predictive-performance measure for models for a binary dependent variable, because it captures both calibration and the concentration of the predictive distribution [@Rufibach2010].
+Its minimum value is 0 for a "perfect" model and 0.25 for an "uninformative" model that yields the predicted probability of 0.5 for all observations. The Brier score is often also interpreted as an overall predictive-performance measure for models for a binary dependent variable because it captures both calibration and the concentration of the predictive distribution [@Rufibach2010].
 
 One of the main issues related to the summary measures based on MSE is that they penalize too mildly for wrong predictions. In fact, the maximum penalty for an individual prediction is equal to 1 (if, for instance, the model yields zero probability for an actual success). To address this issue, the log-likelihood function based on the Bernoulli distribution (see also \@ref(eq:modelTrainingBernoulli)) can be considered:
 
@@ -178,9 +178,9 @@ To introduce some of those measures, we assume that, for each observation from t
 | $f(\underline{x}) \leq C$, predicted: `failure` | False Negative  (type II error): $FN_C$ | True Negative: $TN_C$ | $N_C$ |
 | Total                 | $S$                       | $F$                               | $n$       |
 
-In machine-learning world, the table is often referred to as the "confusion table" or "confusion matrix". In statistics, it is often called the "decision table". The counts $TP_C$ and $TN_C$ on the diagonal of the table correspond to the cases when the predicted and observed value of the dependent variable $Y$ coincide. $FP_C$ is the number of cases in which failure is predicted as success. These are false-positive, or type I error, cases. On the other hand, $FN_C$ is the count of false-negative, or type II error, cases, in which success is predicted as failure. Marginally, there are $P_C$ predicted successes and $N_C$ predicted failures, with $P_C+N_C=n$. In the testing dataset, there are $S$ observed successes and $F$ observed failures, with $S+N=n$.
+In machine-learning world, the table is often referred to as the "confusion table" or "confusion matrix". In statistics, it is often called the "decision table". The counts $TP_C$ and $TN_C$ on the diagonal of the table correspond to the cases when the predicted and observed value of the dependent variable $Y$ coincide. $FP_C$ is the number of cases in which failure is predicted as a success. These are false-positive, or type I error, cases. On the other hand, $FN_C$ is the count of false-negative, or type II error, cases, in which success is predicted as failure. Marginally, there are $P_C$ predicted successes and $N_C$ predicted failures, with $P_C+N_C=n$. In the testing dataset, there are $S$ observed successes and $F$ observed failures, with $S+N=n$.
 
-Let's illustrate the "confusion table" based on an example of pregnancy detectionwith a very simple pregnancy test - morning sickness. The table below shows a sample population of 1000 women aged 20-30 years. Information about the sensitivity and specificity of the test is taken from [@pregnancyMarkers].
+Let's illustrate the "confusion table" based on an example of pregnancy detection with a very simple pregnancy test - morning sickness. The table below shows a sample population of 1000 women aged 20-30 years. Information about the sensitivity and specificity of the test is taken from [@pregnancyMarkers].
 
 
 |                         |True value: `pregnant`    |True value: `not pregnant`            |     Prevalence: 10\%|
@@ -197,7 +197,7 @@ $$
 ACC_C = \frac{TP_C+TN_C}{n}.
 $$
 
-It is the fraction of correct predictions in the entire testing dataset. Accuracy is of interest if true positives and true negatives are more important than their false counterparts. However, accuracy may not be very informative when one of the binary categories is much more prevalent (so called unbalanced labels). For example, if the testing data contain 90\% of successes, a model that would always predict a success would reach accuracy of 0.9, although one could argue that this is not a very useful model.  
+It is the fraction of correct predictions in the entire testing dataset. Accuracy is of interest if true positives and true negatives are more important than their false counterparts. However, accuracy may not be very informative when one of the binary categories is much more prevalent (so called unbalanced labels). For example, if the testing data contain 90\% of successes, a model that would always predict a success would reach an accuracy of 0.9, although one could argue that this is not a very useful model.  
 
 There may be situations when false positives and/or false negatives may be of more concern. In that case, one might want to keep their number low. Hence, other measures, focused on the false results, might be of interest.
 
@@ -216,7 +216,7 @@ $$
 Recall_C = \frac{TP_C}{TP_C+FN_C} = \frac{TP_C}{S_C}.
 $$
 
-Recall is also referred to as *sensitivity* or the *true-positive rate*. It is the fraction of correct predictions among the true successes. Recall is high if the number of false negatives is low. Thus, it is a useful measure when the penalty for committing the type II error (false negative) is high. For instance, consider the use of an algorithm that predicts whether a bank transaction is fraudulent. A false-negative result means that the algorithm accepts a fraudulent transaction as a legitimate one. Such a decision may have immediate and unpleasant consequences for the bank, because it may imply a non-recoverable loss of money. On the other hand, a false-positive result means that a legitimate transaction is considered as fraudulent one and is blocked. However, upon further checking, the legitimate nature of the transaction can be confirmed with, perhaps, annoyed client as the only consequence for the bank. 
+Recall is also referred to as *sensitivity* or the *true-positive rate*. It is the fraction of correct predictions among the true successes. Recall is high if the number of false negatives is low. Thus, it is a useful measure when the penalty for committing the type II error (false negative) is high. For instance, consider the use of an algorithm that predicts whether a bank transaction is fraudulent. A false-negative result means that the algorithm accepts a fraudulent transaction as a legitimate one. Such a decision may have immediate and unpleasant consequences for the bank, because it may imply a non-recoverable loss of money. On the other hand, a false-positive result means that a legitimate transaction is considered as a fraudulent one and is blocked. However, upon further checking, the legitimate nature of the transaction can be confirmed with, perhaps, the annoyed client as the only consequence for the bank. 
 
 The harmonic mean of these two measures defines the *F1 score*: 
 
@@ -252,13 +252,13 @@ plot(model_performance(explain_rf), geom = "roc") +
 ```
 
 
-The ROC curve is very informative. For a model that predicts successes and failures at random, the corresponding curve will be equal to the diagonal line. On the other hand, for a model that yields perfect predictions, the ROC curve reduces to a two intervals that connect points (0,0), (0,1), and (1,1). 
+The ROC curve is very informative. For a model that predicts successes and failures at random, the corresponding curve will be equal to the diagonal line. On the other hand, for a model that yields perfect predictions, the ROC curve reduces to two intervals that connect points (0,0), (0,1), and (1,1). 
 
-Often, there is a need to summarize the ROC curve and, hence, model's performance. A popular measure that is used toward this aim is the area under the curve (AUC). For a model that predicts successes and failures at random, AUC is the area under the diagonal line, i.e., it is equal to 0.5. For a model that yields perfect predictions, AUC is equal to 1. It appears that, in this case, AUC is equivalent to the c-index (see Section \@ref(modelPerformanceMethodContGOP)).
+Often, there is a need to summarize the ROC curve and, hence, the model's performance. A popular measure that is used toward this aim is the area under the curve (AUC). For a model that predicts successes and failures at random, AUC is the area under the diagonal line, i.e., it is equal to 0.5. For a model that yields perfect predictions, AUC is equal to 1. It appears that, in this case, AUC is equivalent to the c-index (see Section \@ref(modelPerformanceMethodContGOP)).
 
 A variant of ROC curve based on Precison and Recall measures is PRC (Precision Recall Curve). An example of this curve is shown in \@ref(fig:examplePRC).
 
-(ref:examplePRCDesc) Precision Recall Curve for the random-forest model for the Titanic dataset. 
+(ref:examplePRCDesc) Precision-Recall Curve for the random-forest model for the Titanic dataset. 
 
 ```{r examplePRC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:examplePRCDesc)', out.width = '50%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
@@ -275,7 +275,7 @@ $$
 Lift_C  = \frac{\frac{TP_C}{P_C}}{\frac{S}{n}} = n\frac{Precision_C}{S}.
 $$
 
-Note that $S/n$ can be seen as the estimated probability of a correct prediction of a success for random guessing. On the other hand, $TP_C/P_C$ is the estimated  probability of a correct prediction of a success given that the model predicts a success. Hence, informally speaking, the lift indicates how many more (or less) times does the model do  better in predicting success as compared to random guessing. As other measures, the lift depends on the choice of cut-off $C$. The plot of the lift as a function of $P_C$ is called the *lift chart*. See an example in Figure \@ref(fig:exampleLift).
+Note that $S/n$ can be seen as the estimated probability of a correct prediction of success for random guessing. On the other hand, $TP_C/P_C$ is the estimated  probability of a correct prediction of a success given that the model predicts a success. Hence, informally speaking, the lift indicates how many more (or less) times does the model do  better in predicting success as compared to random guessing. As other measures, the lift depends on the choice of cut-off $C$. The plot of the lift as a function of $P_C$ is called the *lift chart*. See an example in Figure \@ref(fig:exampleLift).
 
 (ref:exampleLiftDesc) Lift Curve for the random-forest model for the Titanic dataset. 
 
@@ -286,9 +286,9 @@ plot(model_performance(explain_rf), geom = "lift") +
 ```
 
 
-Calibration of predictions can be assessed by a scatter plot of the predicted values of $Y$ in fuction of the true ones. A complicating issue is the fact that the true values are only equal to 0 or 1. Therefore, smoothing techinques or grouping of observations is needed to obtain a meaningful plot [@Steyerberg2010;@Steyerberg2019].
+Calibration of predictions can be assessed by a scatter plot of the predicted values of $Y$ in function of the true ones. A complicating issue is a fact that the true values are only equal to 0 or 1. Therefore, smoothing techniques or grouping of observations is needed to obtain a meaningful plot [@Steyerberg2010;@Steyerberg2019].
 
-There are many more measures aimed at measuring performance of a predictive model for a binary dependent variable. An overview can be found in, e.g., @Berrar2019.
+There are many more measures aimed at measuring the performance of a predictive model for a binary dependent variable. An overview can be found in, e.g., @Berrar2019.
 
 ### Categorical dependent variable {#modelPerformanceMethodCateg}
 
@@ -323,7 +323,7 @@ An alternative approach is to sum the appropriate counts from the confusion tabl
 (\#eq:precmicro)
 \end{equation}
 
-In machine-learning world, this approach is often termed "micro-averaging"  [@Sokolova2009;@Tsoumakas2010], hence subscript $\mu$ for "micro" in \@ref(eq:precmicro). Note that, for accuracy, this computation still leads to  \@ref(eq:accmacro). The measures computed in that way favor classes with larger numbers of observations.
+In machine-learning world, this approach is often termed "micro-averaging"  [@Sokolova2009;@Tsoumakas2010], hence subscript $\mu$ for "micro" in \@ref(eq:precmicro). Note that, for accuracy, this computation still leads to  \@ref(eq:accmacro). The measures computed in that way favour classes with larger numbers of observations.
 
 ### Count dependent variable {#modelPerformanceMethodCount}
 
@@ -488,9 +488,9 @@ plot(eva_rf, eva_lr, geom = "gain")
 
 ## Pros and cons {#modelPerformanceProsCons}
 
-All model-performance measures presented in this chapter are subject to some limitations. For that reason, many measures are available, as the limitations of a particular measure were addressed by developing an alternative one. For instance, RMSE is frequently used and reported for linear-regression models. However, as it is sensitive to outliers, MAD has been proposed as an alternative. In case of predictive models for a binary dependent variable, the measures like accuracy, F1 score, sensitivity, and specificity are often considered, depending on the consequences of correct/incorrect predictions in a particular application. However, the value of those measures depends on the cut-off value used for creating the predictions. For this reason, ROC curve and AUC have been developed and have become very popular. They are not easily extended to the case of a categorical dependent variable, though. 
+All model-performance measures presented in this chapter are subject to some limitations. For that reason, many measures are available, as the limitations of a particular measure were addressed by developing an alternative one. For instance, RMSE is frequently used and reported for linear-regression models. However, as it is sensitive to outliers, MAD has been proposed as an alternative. In case of predictive models for a binary dependent variable, the measures like accuracy, F1 score, sensitivity, and specificity are often considered, depending on the consequences of correct/incorrect predictions in a particular application. However, the value of those measures depends on the cut-off value used for creating predictions. For this reason, ROC curve and AUC have been developed and have become very popular. They are not easily extended to the case of a categorical dependent variable, though. 
 
-Given the advantages and disadvantages of various measures, and the fact that each may reflect a different aspect of the predictive performance of a model, it is customary to report and compare several of them when evaluating a model's performance.
+Given the advantages and disadvantages of various measures and the fact that each may reflect a different aspect of the predictive performance of a model, it is customary to report and compare several of them when evaluating a model's performance.
 
 ## Code snippets for R {#modelPerformanceR}
 
@@ -610,5 +610,4 @@ mp_rf.plot()
 ```{r examplePythonMP2, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_performance_1.png")
 ```
-
 

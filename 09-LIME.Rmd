@@ -4,18 +4,18 @@
 
 Break-down (BD) plots and Shapley values, introduced in Chapters \@ref(breakDown) and \@ref(shapley), respectively, are most suitable for models with a small or moderate number of explanatory variables. 
 
-None of those approaches is well-suited for models with a very large number of explanatory variables because they usually determine non-zero attributions for each variable in the model. However, in domains like, for instance, genomics or image recognition, models with hundreds of thousands, or even millions, of explanatory (input) variables are not uncommon. In such cases, sparse explainations with a small number of variables offer a useful alternative. The most popular example of such sparse explainers is the method Local Interpretable Model-agnostic Explanations (LIME) and its modifications.
+None of those approaches is well-suited for models with a very large number of explanatory variables because they usually determine non-zero attributions for each variable in the model. However, in domains like, for instance, genomics or image recognition, models with hundreds of thousands, or even millions, of explanatory (input) variables are not uncommon. In such cases, sparse explanations with a small number of variables offer a useful alternative. The most popular example of such sparse explainers is the method Local Interpretable Model-agnostic Explanations (LIME) and its modifications.
 
 The LIME method was originally proposed by @lime. The key idea behind this method is to locally approximate a black-box model by a simpler glass-box model, which is easier to interpret. In this chapter, we describe this approach.  
 
 ## Intuition {#LIMEIntuition}
 
-The intuition behind the LIME method is explained in Figure \@ref(fig:limeIntroduction). We want to understand factors that influence a complex black-box model around a single instance of interest (black cross). The colored areas presented in Figure \@ref(fig:limeIntroduction) correspond to decision regions for a binary classifier, i.e., they pertain to a prediction of a value of a binary dependent variable. The axes represent the values of two continuous explanatory variables. The colored areas indicate combinations of values of the two variables for which the model classifies the observation to one of the two classes. To understand the behavior of complex models locally around the point of interest, we will generate an artificial data set to which we will fit an glass-box model.
+The intuition behind the LIME method is explained in Figure \@ref(fig:limeIntroduction). We want to understand the factors that influence a complex black-box model around a single instance of interest (black cross). The coloured areas presented in Figure \@ref(fig:limeIntroduction) correspond to decision regions for a binary classifier, i.e., they pertain to a prediction of a value of a binary dependent variable. The axes represent the values of two continuous explanatory variables. The coloured areas indicate combinations of values of the two variables for which the model classifies the observation to one of the two classes. To understand the behaviour of complex models locally around the point of interest, we will generate an artificial data set to which we will fit a glass-box model.
 Dots correspond to generated artificial data; the size of the dots corresponds to proximity to the instance of interest. We can fit a simpler glass-box model to the  artificial data so that it will locally approximate the predictions of the black-box model. In Figure \@ref(fig:limeIntroduction), a simple linear model (indicated by the dashed line) is used to construct the local approximation. The simpler model serves as a "local explainer" for the more complex model.
 
 We may select different classes of glass-box models. The most typical choices are regularized linear models like LASSO regression [@Tibshirani94regressionshrinkage] or decision trees [@party2006]. Both lead to sparse models that are easier to understand. The important point is to limit the complexity of the models, so that they are easier to explain. 
 
-(ref:limeIntroductionDesc) The idea behind the LIME approximation with a local glass-box model. The colored areas correspond to decision regions for a complex binary classification model. The black cross indicates to the instance (observation) of interest. Dots correspond to aritifical data around the instance of interest. The dashed line presents a simple linear model fitted to the artificial data. The simple model "explains" local behavior of the black-box model around the instance of interest.
+(ref:limeIntroductionDesc) The idea behind the LIME approximation with a local glass-box model. The coloured areas correspond to decision regions for a complex binary classification model. The black cross indicates the instance (observation) of interest. Dots correspond to artificial data around the instance of interest. The dashed line presents a simple linear model fitted to the artificial data. The simple model "explains" local behaviour of the black-box model around the instance of interest.
 
 ```{r limeIntroduction, echo=FALSE, fig.cap='(ref:limeIntroductionDesc)', out.width = '70%', fig.align='center'}
 knitr::include_graphics("figure/lime_introduction.png")
@@ -57,7 +57,7 @@ Practical implementation of this idea involves three important steps, which are 
 
 As it has been mentioned, the black-box model $f()$ and the glass-box model $g()$ operate on different data spaces. For example, let us consider a VGG16 neural network [@Simonyan15] trained on ImageNet data [@ImageNet]. The model uses an image of the size of 244 $\times$ 244 pixels as input and predicts to which of 1000 potential categories does the image belong to. The original space $\mathcal X$ is of dimension 3 $\times$ 244 $\times$ 244 (three single-color channels (*red, green, blue*) for a single pixel $\times$ 244 $\times$ 244 pixels), i.e., the input space is 178,608-dimensional. Explaining predictions in such a high-dimensional space is difficult. Instead, from the perspective of a single instance of interest, the space can be transformed into superpixels, which are treated as binary features that can be turned on or off. Figure \@ref(fig:duckHorse06) (right-hand-side panel) presents an example of 100 superpixels created for an ambiguous picture. Thus, in this case the black-box model $f()$ operates on space $\mathcal X=R^{178608}$, while the glass-box model $g()$ applies to  space $\tilde{ \mathcal X} = \{0,1\}^{100}$.
 
-It is worth noting that superpixels, based on image segmentation, are frequent choices for image data. For text data, groups of words are frequently used as interpretable variables. For tabular data, continuous variables are often discretized to obtain interpretable categorical data. In case of categorical variables, combination of categories is often used. We will present examples in the next section.
+It is worth noting that superpixels, based on image segmentation, are frequent choices for image data. For text data, groups of words are frequently used as interpretable variables. For tabular data, continuous variables are often discretized to obtain interpretable categorical data. In the case of categorical variables, combination of categories is often used. We will present examples in the next section.
 
 (ref:duckHorse06Desc) The left-hand-side panel shows an ambiguous picture, half-horse and half-duck. The right-hand-side panel shows 100 superpixels identified for this figure. Source: https://twitter.com/finmaddison/status/352128550704398338.
 
@@ -67,7 +67,7 @@ knitr::include_graphics("figure/duck_horse_06.png")
 
 ### Sampling around the instance of interest {#LIMEsample}
 
-To develop a local-approximation glass-box model, we need new data points in the low-dimensional interpretable data space around the instance of interest. One could consider sampling the data points from the original dataset. However, there may not be enough points to sample from, because in high-dimensional datasets the data are usually very sparse and data points are "far" from each other. Thus, we need new, artificial data points. For this reason, the data for the development of the glass-box model are often created by using perturbations of the instance of interest. 
+To develop a local-approximation glass-box model, we need new data points in the low-dimensional interpretable data space around the instance of interest. One could consider sampling the data points from the original dataset. However, there may not be enough points to sample from, because in high-dimensional datasets the data are usually very sparse and data points are "far" from each other. Thus, we need new, artificial data points. For this reason, the data for the development of the glass-box model is often created by using perturbations of the instance of interest. 
 
 For binary variables in the low-dimensional space, the common choice is to switch (from 0 to 1 or from 1 to 0) the value of a randomly-selected number of variables describing the instance of interest. 
 
@@ -82,9 +82,9 @@ knitr::include_graphics("figure/duck_horse_process.png")
 
 ### Fitting the glass-box model {#LIMEglas}
 
-Once the aritifical data around the instance of interest have been created, we may attempt to train an interpretable glass-box model $g()$ from class $\mathcal{G}$. 
+Once the artificial data around the instance of interest have been created, we may attempt to train an interpretable glass-box model $g()$ from class $\mathcal{G}$. 
 
-The most common choices for class $\mathcal{G}$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO (east absolute shrinkage and selection operator) [@Tibshirani94regressionshrinkage] or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the K-LASSO method with K non zero coefficients has been mentioned. An alternative choice are CART (classification-and-regression trees) models [@CARTtree].
+The most common choices for class $\mathcal{G}$ are generalized linear models. To get sparse models, i.e., models with a limited number of variables, LASSO (least absolute shrinkage and selection operator) [@Tibshirani94regressionshrinkage] or similar regularization-modelling techniques are used. For instance, in the algorithm presented in Section \@ref(LIMEMethod), the K-LASSO method with K non zero coefficients has been mentioned. An alternative choice are CART (classification-and-regression trees) models [@CARTtree].
 
 For the example of the duck-horse image in Figure \@ref(fig:duckHorse06), the VGG16 network provides 1000 probabilities that the image belongs to one of the 1000 classes used for training the network. It appears that the two most likely classes for the image are *'standard poodle'* (probability of 0.18) and *'goose'* (probability of 0.15). Figure \@ref(fig:duckHorse04) presents LIME explanations for these two predictions. The explanations were obtained with the K-LASSO method which selected $K=15$ superpixels that were the most influential from a model-prediction point of view. For each of the selected two classes, the $K$ superpixels with non-zero coefficients are highlighted. It is interesting to observe that the superpixel which contains the beak is influential for the *'goose'* prediction, while superpixels linked with the white colour are influential for the *'standard poodle'* prediction. At least for the former, the influential feature of the plot does correspond to the intended content of the image. Thus, the results of the explanation increase confidence in the model's predictions.
 
@@ -121,13 +121,13 @@ As mentioned by @lime, the LIME method
 - offers an *interpretable representation*, because the original data space is transformed (for instance, by replacing individual pixels by superpixels for image data) into a more interpretable, lower-dimension space;
 - provides *local fidelity*, i.e., the explanations are locally well-fitted to the black-box model.
 
-The method has been widely adopted in the text and image analysis, partly due to the interpretable data representation. In that case, the explanations are delivered in the form of fragments of an image/text and users can easily find  justification of such explanations. The underlying intuition for the method is easy to understand: a simpler model is used to approximate a more complex one. By using a simpler model, with a smaller number of interpretable explanatory variables, predictions are easier to explain. The LIME method can be applied to complex, high-dimensional models.
+The method has been widely adopted in the text and image analysis, partly due to the interpretable data representation. In that case, the explanations are delivered in the form of fragments of an image/text and users can easily find the justification of such explanations. The underlying intuition for the method is easy to understand: a simpler model is used to approximate a more complex one. By using a simpler model, with a smaller number of interpretable explanatory variables, predictions are easier to explain. The LIME method can be applied to complex, high-dimensional models.
 
 There are several important limitations, however. For instance, as mentioned in Section \@ref(LIMEsample), for tabular data there have been various proposals for finding interpretable representations for continuous and categorical explanatory variables. The issue has not been solved yet. This leads to different implementations of LIME, which use different variable-transformation methods and, consequently, that can lead to different results. 
 
 Another important point is that, because the glass-box model is selected to approximate the black-box model, and not the data themselves, the method does not control the quality of the local fit of the glass-box model to the data. Thus, the latter model may be misleading.
 
-Finally, in high-dimensional data, data points are sparse. Defining a "local neighborhood" of the instance of interest may not be straightforward. Importance of the selection of the neighborhood is discussed, for example, by @LIMESHAPstability. Sometimes even slight changes in the neighborhood strongly affect the obtained explanations.
+Finally, in high-dimensional data, data points are sparse. Defining a "local neighbourhood" of the instance of interest may not be straightforward. Importance of the selection of the neighbourhood is discussed, for example, by @LIMESHAPstability. Sometimes even slight changes in the neighbourhood strongly affect the obtained explanations.
 
 To summarize, the most useful applications of LIME are limited to high-dimensional data for which one can define a low-dimensional interpretable data representation, as in image analysis, text analysis, or genomics.
 
@@ -145,7 +145,7 @@ titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (johnny_d <- archivist:: aread("pbiecek/models/e3596"))
 ```
 
-Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. 
+Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
 
 ```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
 library("randomForest")
@@ -159,7 +159,7 @@ titanic_rf_exp <- DALEX::explain(model = titanic_rf,
 
 ### The `lime` package
 
-The key functions in the `lime` package are `lime()`, which creates an explaination, and `explain()`, which evaluates explanations.   However, the use of these functions is different from the functions discussed in the previous chapters. Therefore, we will use the `predict_surrogate` method of the `localModel` which is a simply to use interface to the `lime` library.
+The key functions in the `lime` package are `lime()`, which creates an explanation, and `explain()`, which evaluates explanations.   However, the use of these functions is different from the functions discussed in the previous chapters. Therefore, we will use the `predict_surrogate` method of the `localModel` which is a simply to use interface to the `lime` library.
 
 The `predict_surrogate` function expects an DALEX explainer and the observation of interest. The argument `type = "lime"` ensures the implementation from the `lime` package will be used to determine the explanations. In this package one can specify two additional arguments: `n_features=3` argument to indicate that the K-LASSO method should select no more than $K=3$ most important variables, and  `n_permutations=1000` argument specifies that 1000 artifical data points are to be sampled for the local-model approximation. 
 
@@ -180,7 +180,7 @@ lime_johnny <- predict_surrogate(titanic_rf_exp,
 lime_rf <- lime(x = titanic_imputed[,colnames(johnny_d)], model = titanic_rf)
 ```
 
-Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwile to indicate the we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicats the name of the the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. -->
+Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwhile to indicate we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicates the name of the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. -->
 
 The resulting object is a data frame with 11 variables. Note that it contains results based on a random set of artificial data points. Hence, in the output below, we present an exemplary set of results.
 
@@ -358,4 +358,4 @@ plot(lime_johnny)
 ```
 
 
-Note that `age`, `gender` and `class` are three correlated variables. Among the crew are only adults and mainly men. This is probably the reason why each of these three packages for LIME explanations generate a slightly different explanation for the model prediction for Johnny D.
+Note that `age`, `gender` and `class` are three correlated variables. Among the crew are only adults and mainly men. This is probably the reason why each of these three packages for LIME explanations generates a slightly different explanation for the model prediction for Johnny D.

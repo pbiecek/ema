@@ -9,13 +9,13 @@ source("models/models_apartments.R")
 
 In this chapter, we focus on partial-dependence (PD) plots, sometimes also called PD profiles. They were introduced in the context of gradient-boosting machines (GBM) by @Friedman00greedyfunction. For many years, PD profiles went unnoticed in the shadow of GBM. However, in recent years, they have become very popular and are available in many data-science-oriented packages like `DALEX` [@DALEX], `iml` [@imlRPackage], `pdp` [@pdpRPackage] or `PDPbox` [@PDPbox].
 
-The general idea underlying the construction of PD profiles is to show how does the expected value of model prediction behave as a function of a selected explanatory variable? For a single model, one can construct an overall PD profile by using all observations from a dataset, or several profiles for sub-groups of the observations. Comparison of sub-group-specific profiles may provide important insight into, for instance, stability of the model's predictions. 
+The general idea underlying the construction of PD profiles is to show how does the expected value of model prediction behave as a function of a selected explanatory variable? For a single model, one can construct an overall PD profile by using all observations from a dataset, or several profiles for sub-groups of the observations. Comparison of sub-group-specific profiles may provide important insight into, for instance, the stability of the model's predictions. 
 
 PD profiles are also useful for comparisons of different models:
 
-* *Agreement between profiles for different models is reassuring.* Some models are more flexible than others. If PD profiles for models, which differ with respect to flexibility, are similar, we can treat it as a evidence that the more flexible model is not over-fitting, and both models *learned* the same relation.
+* *Agreement between profiles for different models is reassuring.* Some models are more flexible than others. If PD profiles for models, which differ with respect to flexibility, are similar, we can treat it as a piece of evidence that the more flexible model is not over-fitting, and both models *learned* the same relation.
 * *Disagreement between profiles may suggest a way to improve a model.* If a PD profile of a simpler, more interpretable model disagrees with a profile of a flexible model, this may suggest a variable transformation that can be used to improve the interpretable model. For example, if a random-forest model indicates a non-linear relationship between the dependent variable and an explanatory variable, then a suitable transformation of the explanatory variable may improve the fit or performance of a linear-regression model.
-* *Evaluation of model performance at boundaries.* Models are known to have a different behavior at the boundaries of the possible range of a dependent variable, i.e., for the largest or the lowest values. For instance, random-forest models are known to shrink predictions towards the average, whereas support-vector machines are known for a larger variance at edges. Comparison of PD profiles may help to understand the differences in models' behavior at boundaries.
+* *Evaluation of model performance at boundaries.* Models are known to have different behaviour at the boundaries of the possible range of a dependent variable, i.e., for the largest or the lowest values. For instance, random-forest models are known to shrink predictions towards the average, whereas support-vector machines are known for a larger variance at edges. Comparison of PD profiles may help to understand the differences in models' behaviour at boundaries.
 
 <!-- General idea is to show how the expected model response behaves as a function of a selected feature. Here the term ,,expected''  will be estimated simply as the average over the population of individual Ceteris Paribus Profiles introduced in Chapter \@ref(ceterisParibus).
 -->
@@ -94,11 +94,11 @@ $$
 h^{f, j}_x(z) := f(x|^j = z).
 $$
 
-So for a single model and a single variable we get a bunch of *what-if* profiles. In the figure \@ref(fig:pdpPart1) we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.
+So for a single model and a single variable, we get a bunch of *what-if* profiles. In the figure \@ref(fig:pdpPart1) we show an example for 100 observations. Despite some variation (random forest are not as stable as we would hope) we see that most profiles are decreasing. So the older the passengers is the lower is the survival probability.
 
 2. Aggregate Ceteris Paribus into a single Partial Dependency Profile
 
-Simple pointwise average across CP profiles. If number of CP profiles is large, it is enough to sample some number of them to get reasonably accurate PD profiles.
+The simple pointwise average across CP profiles. If the number of CP profiles is large, it is enough to sample some number of them to get reasonably accurate PD profiles.
 This way we get the formula \@ref(eq:PDPprofile).
 -->
 
@@ -106,7 +106,7 @@ This way we get the formula \@ref(eq:PDPprofile).
 
 As it has been already mentioned, the mean of CP profiles is a good summary if the profiles are parallel. If they are not parallel, the average may not adequately represent the shape of a subset of profiles. To deal with this issue, one can consider clustering the profiles and calculating the mean separately for each cluster. To cluster the CP profiles, one may use standard methods like K-means or hierarchical clustering. The similarities between observations can be calculated based on the Euclidean distance between CP profiles.
 
-Figure \@ref(fig:pdpPart4) illustrates an application of that approach to the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) for 100 randomly selected instances (observations) from the Titanic dataset. The CP profiles for the *age* variable are marked in grey. It can be noted that they could be split into three clusters: one for a group of passengers with a substantial drop in the predicted survival probability for ages below 18 (with the average represented by the blue line), one with an almost linear decrease of the probability over the age (with the average represented by the red line), and one with almost constant predicted probability (with the average represented by the green line). The plot itself does not allow to identify the variables that may be linked with these clusters, but additional exploratory analysis could be performed for this purpose.
+Figure \@ref(fig:pdpPart4) illustrates an application of that approach to the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) for 100 randomly selected instances (observations) from the Titanic dataset. The CP profiles for the *age* variable are marked in grey. It can be noted that they could be split into three clusters: one for a group of passengers with a substantial drop in the predicted survival probability for ages below 18 (with the average represented by the blue line), one with an almost linear decrease of the probability over the age (with the average represented by the red line), and one with almost constant predicted probability (with the average represented by the green line). The plot itself does not allow to identify the variables that may be linked with these clusters, but the additional exploratory analysis could be performed for this purpose.
 
 (ref:pdpPart4Desc) Clustered partial-dependence profiles for *age* for the random-forest model for 100 randomly selected observations from the Titanic dataset. Grey lines indicate ceteris-paribus profiles that are clustered into three groups with the average profiles indicated by the blue, green, and red lines.
 
@@ -139,9 +139,9 @@ plot(pdp_rf, geom = "profiles") +
 
 ### Contrastive partial-dependence profiles {#contrastivePDPs}
 
-Comparison of clustered or grouped PD profiles for a single model may provide important insight into, for instance, stability of the model predictions. PD profiles can also be compared between different models.
+Comparison of clustered or grouped PD profiles for a single model may provide important insight into, for instance, the stability of the model predictions. PD profiles can also be compared between different models.
 
-Figure \@ref(fig:pdpPart7) presents PD profiles for *age* for the random-forest model and the logistic-regression model with splines for the Titanic data (see Section \@ref(model-titanic-rf)). The profiles are similar with respect to a general relationship between *age* and the predicted probability of survival (the younger the passenger, the better chance of survival). However, the profile for the random-forest model is flatter. The difference between both models is the largest at the left edge of the age scale. This pattern can be seen as expected, because random-forest models, in general, shrink predictions towards the average and they are not very good for extrapolation outside the range of values observed in the training dataset.
+Figure \@ref(fig:pdpPart7) presents PD profiles for *age* for the random-forest model and the logistic-regression model with splines for the Titanic data (see Section \@ref(model-titanic-rf)). The profiles are similar with respect to a general relationship between *age* and the predicted probability of survival (the younger the passenger, the better chance of survival). However, the profile for the random-forest model is flatter. The difference between both models is the largest at the left edge of the age scale. This pattern can be seen as expected because random-forest models, in general, shrink predictions towards the average and they are not very good for extrapolation outside the range of values observed in the training dataset.
 
 (ref:pdpPart7Desc) Partial-dependence profiles for *age* for the random-forest (green line) and logistic-regression (blue line) models for the Titanic dataset.
 
@@ -170,7 +170,7 @@ In this section, we use PD profiles to evaluate performance of the random-forest
 
 Figure \@ref(fig:pdpApartment1) presents CP profiles (grey lines) for 100 randomly-selected apartments together with the estimated PD profile (blue line) for *construction year* and *surface*.
 
-PD profile for *surface* suggests an approximately linear relationship between the explanatory variable and the predicted price. On the other hand, PD profile for *construction year* is U-shaped: the predicted price is the highest for the very new and very old apartments. Note that, while the data were simulated, they were generated to reflect the effect of a lower quality of building materials used in rapid housing construction  after the World War II.
+PD profile for *surface* suggests an approximately linear relationship between the explanatory variable and the predicted price. On the other hand, PD profile for *construction year* is U-shaped: the predicted price is the highest for the very new and very old apartments. Note that, while the data were simulated, they were generated to reflect the effect of a lower quality of building materials used in rapid housing construction after the World War II.
 
 (ref:pdpApartment1Desc) Ceteris-paribus and partial-dependence profiles for *construction year* and  *surface* for 100 randomly-selected apartments for the random-forest model for the apartment-prices dataset.
 
@@ -224,9 +224,9 @@ One of the main challenges in predictive modelling is to avoid over-fitting. The
 
 Figure \@ref(fig:pdpApartment3) presents PD profiles for *construction year* (left-hand-side panel) and *surface* (right-hand-side panel) for the linear-regression model (see Section \@ref(model-Apartments-lr)) and the random-forest model. Several observations are worth making. The linear-regression model cannot, of course, accommodate the non-monotonic relationship between *construction year* and the price per square meter. However, for *surface*, both models support a linear relationship, though the slope of the line resulting from the linear regression is steeper. This may be seen as an expected difference, given that random-forest models yield predictions that are shrunk towards the mean. Overall, we could cautiously conclude that there is not much evidence for overfitting of the more flexible random-forest model. 
 
-Note that the non-monotonic relationship between *construction year* and the price per square meter might be the reason why the explantory variable was found in Section \@ref(featureImportanceR) not to be important in the model. 
+Note that the non-monotonic relationship between *construction year* and the price per square meter might be the reason why the explanatory variable was found in Section \@ref(featureImportanceR) not to be important in the model. 
 
-In Section \@ref(predictionsApartments), we mentioned that a proper model exploration may suggest a way to construct a model with an improved performance, as compared to the random-forest and linear-regression models. In this respect, it is worth observing that the profiles in Figure \@ref(fig:pdpApartment3) suggest that both models miss some aspects of the data. In particular, the linear-regression model does not capture the U-shaped relationship between *construction year* and the price. On the other hand, the effect of *surface* on the apartment price seems to be underestimated by the random-forest model. Hence, one could conclude that, by addressing the issues, one could improve either of the models, possibly with an improvement in predictive performance.  
+In Section \@ref(predictionsApartments), we mentioned that a proper model exploration may suggest a way to construct a model with improved performance, as compared to the random-forest and linear-regression models. In this respect, it is worth observing that the profiles in Figure \@ref(fig:pdpApartment3) suggest that both models miss some aspects of the data. In particular, the linear-regression model does not capture the U-shaped relationship between *construction year* and the price. On the other hand, the effect of *surface* on the apartment price seems to be underestimated by the random-forest model. Hence, one could conclude that, by addressing the issues, one could improve either of the models, possibly with an improvement in predictive performance.  
 
 (ref:pdpApartment3Desc) Partial-dependence profiles for the linear-regression and random-forest models for the apartment-prices dataset. Left-hand-side panel: profiles for *construction year*. Right-hand-side panel: profiles for *surface*.
 
@@ -294,7 +294,7 @@ plot(pdp_rf) +  ggtitle("Partial-dependence profile for age")
 
 The resulting plot for *age* (not shown) corresponds to the one shown for in Figure \@ref(fig:pdpPart7). It may slightly differ, as the two plots are based on different sets of (randomly selected) 100 observations from the Titanic dataset.
 
-A PD profile can be plotted on top of CP profiles. This is a very useful feature if we want to check how well the former captures the latter. It is worth noting that, apart from the PD profile, the object created by the `model_profile()` function also contains the CP profiles for the selected observations and all explanatory variables included in the model. By specifying argument `geom = "profiles"` in the `plot()` function, we add the CP profiles to the plot of the PD profile. 
+A PD profile can be plotted on top of CP profiles. This is a very useful feature if we want to check how well the former captures the latter. It is worth noting that, apart from the PD profile, the object created by the `model_profile()` function also contains the CP profiles for the selected observations and all explanatory variables included in the model. By specifying the argument `geom = "profiles"` in the `plot()` function, we add the CP profiles to the plot of the PD profile. 
  
 ```{r pdpExample2Plot, warning=FALSE, message=FALSE, eval = FALSE}
 plot(pdp_rf, geom = "profiles") + ggtitle("Ceteris-paribus and partial-dependence profiles for age") 
@@ -336,7 +336,7 @@ The resulting plot (not shown) resembles the one shown in Figure \@ref(fig:pdpPa
 
 ### Contrastive partial-dependence profiles
 
-It may be of interest to compare PD profiles for several models. We will compare the random-forest model with the linear-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)). For the latter, we first have got to load it via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using function `explain()`. Note that we first load the `rms` package, as the model was fitted by using function `lmr()` from this package (see Section \@ref(model-titanic-lmr)) and it is important to have the corresponding `predict()` function  available. Finally, we apply the `model_profile()` function to compute CP profiles and the PD profile for *age* based on 100 randomly-selected observations from the Titanic dataset. We also repeat the calculations of the profiles for the random-forest model.  
+It may be of interest to compare PD profiles for several models. We will compare the random-forest model with the linear-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)). For the latter, we first have got to load it via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using function `explain()`. Note that we first load the `rms` package, as the model was fitted by using function `lmr()` from this package (see Section \@ref(model-titanic-lmr)) and it is important to have the corresponding `predict()` function available. Finally, we apply the `model_profile()` function to compute CP profiles and the PD profile for *age* based on 100 randomly-selected observations from the Titanic dataset. We also repeat the calculations of the profiles for the random-forest model.  
 
 ```{r pdpExample5, warning=FALSE, message=FALSE, echo = TRUE}
 library("rms")
