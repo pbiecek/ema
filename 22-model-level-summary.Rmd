@@ -1,0 +1,59 @@
+# Summary of Model-level Exploration {#summaryModelLevel}
+
+## Introduction {#summaryModelLevelIntro}
+
+In Part III of the book, we introduced several techniques for global exploration and explanation of a model's predictions for some population of instances. Each chapter was devoted to a single technique. In practice, these techniques are rarely used separately. Rather, it is more informative to combine different insights offered by each technique into a more holistic overview.
+
+(ref:modelLevelExplainersDesc) Results of model-level-explanation techniques for the random-forest model `titanic_rf` for the Titanic data. 
+
+```{r modelLevelExplainers, echo=FALSE, fig.cap='(ref:modelLevelExplainersDesc)', out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/model_level.png")
+```
+
+Figure \@ref(fig:modelLevelExplainers) offers a graphical illustration of the idea. The graph includes the results of different model-level explanation techniques applied to the random-forest model (Section \@ref(model-titanic-rf)) for the Titanic data (Section \@ref(TitanicDataset)). 
+
+The plots in the first row of Figure \@ref(fig:modelLevelExplainers) show how good is the model and which variables are the most important. We start with measures for model performance as introduced in Chapter \@ref(modelPerformance) along with graphical summaries like ROC. The right plot shows feature importance based on a method introduced in Chapter \@ref(featureImportance). From this row, we see that the model is pretty good and the most important variables are *age*, *gender* and *class*.
+
+The plots in the second row of Figure \@ref(fig:modelLevelExplainers) show partial-dependence profiles for *age* (continuous variable) and *class* (categorical variable). According to this model the deck crew have larges chances of survival. Age is important and the crucial cutoff is around 18 years old. The right panel shows model diagnostic for *age*. Residuals for persons between 20 and 40 years old have slightly higher residuals on average, but the bias is huge.
+
+The plots in the third row of Figure \@ref(fig:instanceLevelExplainers) summarize univariate distributions of the four explanatory variables.
+This figure illustrates that perspectives offered by the different techniques complement each other and, when combined, allow obtaining a more profound insight into the origins of the model's prediction for the instance of interest.   
+
+Figure \@ref(fig:knowledgeExtraction) illustrates how knowledge from model exploration can be used to better understand and model and model the field being modelled.
+
+(ref:knowledgeExtractionDesc) Explainability techniques allow for strengthening the feedback extracted from the model. Modelling is an iterative process, and the more we learn in each iteration, the easier it is to plan the next one. A, data and domain knowledge about variables allows building the model. B, for the model we calculate predictions. D, by analyzing the predictions we learn more about the model. C, by better understanding the model we are able to better understand data and sometimes broaden domain knowledge.
+
+```{r knowledgeExtraction, echo=FALSE, fig.cap='(ref:knowledgeExtractionDesc)', out.width = '100%', fig.align='center'}
+knitr::include_graphics("figure/knowledgeExtraction.png")
+```
+
+While combining various techniques for model-level explanation can provide additional insights, it is worth remembering that the techniques are, indeed, different and their suitability may depend on the problem at hand. This is what we discuss in the remainder of the chapter.
+
+
+## Exploration on training/testing data
+
+The key element of model-level explanatory techniques is the set of observations on which the exploration is performed. Therefore sometimes these techniques are called dataset-level exploration. 
+
+In the case of machine learning models, we often have a split into a training set and a test set. Which one to use for model exploration?
+
+In the case of model performance assessment, it is natural to calculate performance an independent dataset to minimize the problem of overfitting. However, the response-dependence profiles can be carried out on both the training and testing datasets. If we have a model that is well generalized, its behaviour on the training and testing data should be the same. If we notice significant differences in the results between the two datasets, they should be examined, it may be a sign of data-drift or model-drift.
+
+
+## Correlated explanatory variables
+
+Most methods introduced in this part of the book analyse variables independently. Obviously, sometimes variables are correlated and jointly presents some aspects of the model, for example, *fare* and *class* are correlated and both are related to the wealth of the passenger.
+
+Many of the techniques presented in this part can be generalised to a case where they work for two or more variables. For example, the importance of variables presented in Chapter \@ref(featureImportance) is calculated for each variable independently. But permutations can be done on groups of correlated variables so that the importance of the whole group of variables will be evaluated.
+
+Similarly, the partial-dependence technique assumed the independence of variables. But an extension to accumulated-dependence and local-dependence profiles was developed, which take into account the correlations between variables. It is presented in Chapter \@ref(accumulatedLocalProfiles).
+
+
+## Comparison of models (champion-challenger analysis)
+
+The techniques for explaining and exploring models have many applications. One of them is the opportunity to compare models.
+
+Leo Breiman in his work Two Cultures [@twoCultures] described a phenomenon called Rashomon effect. It means that several models with similar performance can base their predictions on completely different relations extracted from the same data.
+
+Chapter \@ref(partialDependenceProfiles) shows an example of comparing a linear regression model with a random forest model. By comparing such two models we can see if they learn certain relationships in the same way. If two different models learn the same relation, it will reassure us that the model has learned everything it was in the data. But sometimes one model does not see something that the more flexible model has noticed. This was the case with the construction date in the apartments data. A more flexible model was able to learn U shape dependencies, and a simple linear regression model was not able to learn it without manual data preprocessing.
+
+
