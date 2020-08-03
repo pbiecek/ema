@@ -1,5 +1,9 @@
 # Residual Diagnostics Plots {#residualDiagnostic}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 ## Introduction {#IntroResidualDiagnostic}
 
 In this chapter, we present methods that are useful for a detailed examination of both overall and instance-specific model performance. In particular, we focus on graphical methods that use residuals. The methods may be used for several purposes:
@@ -160,8 +164,8 @@ In this section, we consider the linear-regression model `apartments_lm` (Sectio
 library("DALEX")
 library("ggplot2")
 library("randomForest")
-apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
-apartments_lr <- archivist::aread("pbiecek/models/55f19")
+#apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
+#apartments_lr <- archivist::aread("pbiecek/models/55f19")
 explainer_apartments_rf <- DALEX::explain(model = apartments_rf, data = apartments_test[,-1],
     y = apartments_test$m2.price, label = "Random Forest", verbose = FALSE)
 explainer_apartments_lr <- DALEX::explain(model = apartments_lr, data = apartments_test[,-1],
@@ -174,8 +178,8 @@ Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) summ
 
 (ref:plotResidualDensity1Desc) Histogram of residuals for the linear-regression model `apartments_lm` and the random-forest model `apartments_rf` for the `apartments_test` dataset. 
 
-```{r plotResidualDensity1, fig.cap='(ref:plotResidualDensity1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=4,  fig.align='center', echo=FALSE}
-plot(mr_lr, mr_rf, geom = "histogram") + scale_x_continuous(breaks = seq(-1000,1600,200))
+```{r plotResidualDensity1, fig.cap='(ref:plotResidualDensity1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=8, fig.height=5,  fig.align='center', echo=FALSE}
+plot(mr_lr, mr_rf, geom = "histogram") + scale_x_continuous(breaks = seq(-1000,1600,200)) + theme_ema
 ```
 
 Despite the similar value of RMSE, the distributions of residuals for both models are different. In particular, Figure \@ref(fig:plotResidualDensity1) indicates that the distribution for the linear-regression model is, in fact, split into two separate, normal-like parts, which may suggest omission of a binary explanatory variable in the model. The two components are located around the values of about -200 and 400. As mentioned in the previous chapters, the reason for this behavior of the residuals is the fact that the model does not capture the non-linear relationship between the price and the year of construction. As we read from Figure \@ref(fig:pdpApartment3) the relationship between the year of production and the price looks like a stepped function. Apartments built between 1940 and 1990 are on average cheaper than those built earlier or later.
@@ -184,8 +188,8 @@ As seen from Figure \@ref(fig:plotResidualDensity1), the distribution of residua
 
 (ref:plotResidualBoxplot1Desc) Box-and-whisker plots of the absolute values of the residuals of the linear-regression model `apartments_lm` and the random-forest model `apartments_rf` for the `apartments_test` dataset. The dots indicate the mean value that corresponds to root-mean-squared-error. 
 
-```{r plotResidualBoxplot1, fig.cap='(ref:plotResidualBoxplot1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=2.5,  fig.align='center', echo=FALSE}
-plot(mr_lr, mr_rf, geom = "boxplot") + scale_y_continuous(breaks = seq(-1000,1600,200))
+```{r plotResidualBoxplot1, fig.cap='(ref:plotResidualBoxplot1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=8, fig.height=2.5,  fig.align='center', echo=FALSE, out.width="80%"}
+plot(mr_lr, mr_rf, geom = "boxplot") + scale_y_continuous(breaks = seq(-1000,1600,200)) + theme_ema
 ```
 
 The plots in Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) suggest that the residuals for the random-forest model are more frequently smaller than the residuals for the linear-regression model. However, a small fraction of the random-forest-model residuals is very large and it is due to them that the RMSE is comparable for the two models.
@@ -196,36 +200,36 @@ Figure \@ref(fig:plotResidual1) shows a scatter plot of residuals (vertical axis
 
 (ref:plotResidual1Desc) Residuals and observed values of the dependent variable for the random-forest model `apartments_rf` for the `apartments_test` dataset. 
 
-```{r plotResidual1, fig.cap='(ref:plotResidual1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=5,  fig.align='center', echo=FALSE}
+```{r plotResidual1, fig.cap='(ref:plotResidual1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=8, fig.height=6,  fig.align='center', echo=FALSE, out.width="80%"}
 md_lr <- model_diagnostics(explainer_apartments_lr)
 md_rf <- model_diagnostics(explainer_apartments_rf)
 
-plot(md_rf, variable = "y", yvariable = "residuals") + xlab("true value of m2.price (y)") + ylab("residuals (r_i)")
+plot(md_rf, variable = "y", yvariable = "residuals") + xlab("true value of m2.price (y)") + ylab("residuals (r_i)") + theme_ema
 ```
 
 The shift towards the average can also be seen from Figure \@ref(fig:plotPrediction1) that shows a scatter plot of the predicted (vertical axis) and observed (horizontal axis) values of the dependent variable. For a "perfectly" fitting model we would expect a diagonal line (indicated in red). The plot shows that, for large observed values of the dependent variable, the predictions are smaller than the observed values, with an opposite trend for the small observed values of the dependent variable.
 
 (ref:plotPrediction1Desc) Predicted and observed values of the dependent variable for the random-forest model `apartments_rf` for the `apartments_test` dataset. The red line indicates the diagonal. 
 
-```{r plotPrediction1, fig.cap='(ref:plotPrediction1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=5,  fig.align='center', echo=FALSE}
+```{r plotPrediction1, fig.cap='(ref:plotPrediction1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=8, fig.height=6,  fig.align='center', echo=FALSE, out.width="80%"}
 plot(md_rf, variable = "y", yvariable = "y_hat") + xlab("true value of m2.price (y)") + ylab("predicted m2.price (y_hat)") + geom_abline(
-    colour = "red", intercept = 0, slope = 1)
+    colour = "red", intercept = 0, slope = 1) + theme_ema
 ```
 
 Figure \@ref(fig:plotResidual2) shows an index plot of residuals, i.e., their scatter plot in function of an (arbitrary) identifier of the observation (horizontal axis). The plot indicates an asymmetric distribution of residuals around zero, as there is an excess of large positive (larger than 500) residuals without a corresponding fraction of negative values. This can be linked to the right-skewed distribution seen in Figures \@ref(fig:plotResidualDensity1) and \@ref(fig:plotResidualBoxplot1) for the random-forest model. 
 
 (ref:plotResidual2Desc) Index plot of residuals for the random-forest model `apartments_rf` for the `apartments_test` dataset. 
 
-```{r plotResidual2, fig.cap='(ref:plotResidual2Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=7, fig.height=5,  fig.align='center'}
-plot(md_rf, variable = "ids", yvariable = "residuals", smooth = FALSE) + xlab("observation id") + ylab("residuals")
+```{r plotResidual2, fig.cap='(ref:plotResidual2Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=8, fig.height=6,  fig.align='center', out.width="80%"}
+plot(md_rf, variable = "ids", yvariable = "residuals", smooth = FALSE) + xlab("observation id") + ylab("residuals") + theme_ema
 ```
 
 Figure \@ref(fig:plotResidual3) shows a scatter plot of residuals (vertical axis) in function of the predicted (horizontal axis) value of the dependent variable. For a "good" model, we would like to see a symmetric scatter of points around the horizontal line at zero. The plot in Figure \@ref(fig:plotResidual3), as the one in Figure \@ref(fig:plotResidual1), suggests that the predictions are shifted (biased) towards the average. 
 
 (ref:plotResidual3Desc) Residuals and predicted values of the dependent variable for the random-forest model `apartments_rf` for the `apartments_test` dataset. 
 
-```{r plotResidual3, fig.cap='(ref:plotResidual3Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=5,  fig.align='center'}
-plot(md_rf, variable = "y_hat", yvariable = "residuals") + ylab("residuals") + xlab("predicted m2.price (y_hat)")
+```{r plotResidual3, fig.cap='(ref:plotResidual3Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=5,  fig.align='center', out.width="55%"}
+plot(md_rf, variable = "y_hat", yvariable = "residuals") + ylab("residuals") + xlab("predicted m2.price (y_hat)") + theme_ema
 ```
 
 The random-forest model, as the linear-regression model, assumes that residuals should be homoscedastic, i.e., that they should have a constant variance. Figure \@ref(fig:plotScaleLocation1) presents a variant of the scale-location plot of residuals, i.e., a scatterplot of the absolute value of residuals (vertical axis) in function of the predicted values of the dependent variable (horizontal axis). The plot includes a smoothed line capturing the average trend. For homoscedastic residuals, we would expect a symmetric scatter around a horizontal line; the smoothed trend should be also horizontal. The plot in Figure \@ref(fig:plotScaleLocation1) deviates from the expected pattern and indicates that the variability of the residuals depends on the (predicted) value of the dependent variable. 
@@ -234,9 +238,9 @@ For classical models, like linear regression, such heterogeneity of the residual
 
 (ref:plotScaleLocation1Desc) The scale-location plot of residuals for the random-forest model `apartments_rf` for the `apartments_test` dataset. 
 
-```{r plotScaleLocation1, fig.cap='(ref:plotScaleLocation1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=5,  fig.align='center'}
+```{r plotScaleLocation1, fig.cap='(ref:plotScaleLocation1Desc)',  warning=FALSE, message=FALSE, echo = FALSE, fig.width=5, fig.height=5,  fig.align='center', out.width="55%"}
 plot(md_rf, variable = "y_hat", yvariable = "abs_residuals") + 
-    xlab("predicted m2.price") + ylab("absolute value of residuals")
+    xlab("predicted m2.price") + ylab("absolute value of residuals") + theme_ema
 ```
 
 ## Pros and cons {#ProsConsResidualDiagnostic}
@@ -253,9 +257,24 @@ For illustration purposes, we will show how to create the plots shown in Section
 
 We first load the two models via the `archivist` hooks, as listed in Section \@ref(ListOfModelsApartments). Subsequently, we construct the corresponding explainers by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that we use the `apartments_test` data frame without the first column, i.e., the *m2.price* variable, in the `data` argument. This will be the dataset to which the model will be applied. The *m2.price* variable is explicitly specified as the dependent variable in the `y` argument. We also load the `randomForest` package, as it is important to have the corresponding `predict()` function available for the random-forest model. 
 
-```{r modelResidualsArchivistReadcode, message=FALSE, eval=TRUE}
+```{r modelResidualsArchivistReadcode, message=FALSE, eval=FALSE}
 library("DALEX")
 model_apart_lm <- archivist:: aread("pbiecek/models/55f19")
+explain_apart_lm <- DALEX::explain(model = model_apart_lm, 
+                           data    = apartments_test[,-1], 
+                           y       = apartments_test$m2.price, 
+                           label   = "Linear Regression")
+
+library("randomForest")
+model_apart_rf <- archivist:: aread("pbiecek/models/fe7a5")
+explain_apart_rf <- DALEX::explain(model = model_apart_rf, 
+                           data    = apartments_test[,-1], 
+                           y       = apartments_test$m2.price, 
+                           label   = "Random Forest")
+```
+
+```{r, message=FALSE, eval=TRUE, echo=FALSE}
+library("DALEX")
 explain_apart_lm <- DALEX::explain(model = model_apart_lm, 
                            data    = apartments_test[,-1], 
                            y       = apartments_test$m2.price, 
@@ -263,7 +282,6 @@ explain_apart_lm <- DALEX::explain(model = model_apart_lm,
                            verbose = FALSE)
 
 library("randomForest")
-model_apart_rf <- archivist:: aread("pbiecek/models/fe7a5")
 explain_apart_rf <- DALEX::explain(model = model_apart_rf, 
                            data    = apartments_test[,-1], 
                            y       = apartments_test$m2.price, 
@@ -317,8 +335,8 @@ plot(md_rf, variable = "y", yvariable = "residuals")
 To produce Figure \@ref(fig:plotPrediction1), we have got to use the predicted values of the dependent variable on the vertical axis. This is achieved by specifying the `yvariable = "y_hat"` argument. We add the diagonal reference line to the plot by using the `geom_abline()` function. 
 
 ```{r plotResidual3code, warning=FALSE, message=FALSE, eval=FALSE}
-plot(md_rf, variable = "y", yvariable = "y_hat") + geom_abline(colour = "red", 
-                                                    intercept = 0, slope = 1)
+plot(md_rf, variable = "y", yvariable = "y_hat") +
+      geom_abline(colour = "red", intercept = 0, slope = 1)
 ```
 
 Figure \@ref(fig:plotResidual2) presents an index plot of residuals, i.e., residuals (on the vertical axis) in function of identifiers of individual observations (on the horizontal axis). Toward this aim, we use the `plot()` function call as below.

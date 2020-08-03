@@ -2,6 +2,10 @@
 source("models/models_titanic.R")
 ```
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 # Model-performance Measures {#modelPerformance}
 
 ## Introduction {#modelPerformanceIntro}
@@ -73,8 +77,8 @@ library("DALEX")
 library("randomForest")
 library("ggplot2")
 
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 
 explain_rf <- DALEX::explain(model = titanic_rf, 
                               data = titanic_imputed[,-9],
@@ -83,7 +87,7 @@ explain_rf <- DALEX::explain(model = titanic_rf,
                               verbose = FALSE)
 
 plot(model_performance(explain_rf), geom = "boxplot") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 
@@ -248,7 +252,7 @@ All the measures depend on the choice of cut-off $C$. To assess the form and the
 #knitr::include_graphics("figure/ROCcurve.png")
 plot(model_performance(explain_rf), geom = "roc") +
   geom_ribbon(aes(ymin = tpr, ymax=fpr), fill = "#371ea3") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 
@@ -263,7 +267,7 @@ A variant of ROC curve based on Precison and Recall measures is PRC (Precision R
 ```{r examplePRC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:examplePRCDesc)', out.width = '50%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
 plot(model_performance(explain_rf), geom = "prc") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 
@@ -282,7 +286,7 @@ Note that $S/n$ can be seen as the estimated probability of a correct prediction
 ```{r exampleLift, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleLiftDesc)', out.width = '50%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
 plot(model_performance(explain_rf), geom = "lift") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 
@@ -389,8 +393,8 @@ library("DALEX")
 library("ggplot2")
 library("randomForest")
 
-apartments_lr <- archivist:: aread("pbiecek/models/55f19")
-apartments_rf <- archivist:: aread("pbiecek/models/fe7a5")
+#apartments_lr <- archivist:: aread("pbiecek/models/55f19")
+#apartments_rf <- archivist:: aread("pbiecek/models/fe7a5")
 
 explainer_apartments_lr <- DALEX::explain(apartments_lr, data = apartments_test, y = apartments_test$m2.price, label = "Linear Regression", verbose = FALSE)
 explainer_apartments_rf <- DALEX::explain(apartments_rf, data = apartments_test, y = apartments_test$m2.price, label = "Random Forest", verbose = FALSE)
@@ -399,14 +403,14 @@ mp1 <- model_performance(explainer_apartments_lr)
 mp2 <- model_performance(explainer_apartments_rf)
 
 plot(mp1, mp2, geom = "boxplot") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 (ref:prepareMPBoxplotDesc2) The histogram of the residuals in the Random Forest model and Linear Regression model for the Titanic data. 
 
 ```{r prepareMPBoxplotEx2, message=FALSE, warning=FALSE, echo= FALSE, fig.width=8, fig.height=4, fig.cap='(ref:prepareMPBoxplotDesc2)', out.width = '80%', fig.align='center'}
 plot(mp1, mp2, geom = "histogram") +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + theme_ema
 ```
 
 
@@ -435,9 +439,9 @@ library("DALEX")
 library("rms")
 library("randomForest")
 
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_lmr <- archivist::aread("pbiecek/models/58b24")
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 
 #load("models/titanic_rf.rda")
 #load("models/titanic.rda")
@@ -471,7 +475,7 @@ library("randomForest")
 # plot results
 eva_rf <- DALEX::model_performance(explain_titanic_rf)
 eva_lr <- DALEX::model_performance(explain_titanic_lmr)
-plot(eva_rf, eva_lr, geom = "roc")
+plot(eva_rf, eva_lr, geom = "roc") + theme_ema
 ```
 
 Figure \@ref(fig:titanicLift) presents lift charts for both models. Also in this case the curve for the random-forest suggests a better performance than for the logistic-regression model, except for the very high values of cut-off $C$.
@@ -479,7 +483,7 @@ Figure \@ref(fig:titanicLift) presents lift charts for both models. Also in this
 (ref:titanicLiftDesc) Lift charts for the random-forest and logistic-regression models for the Titanic dataset.
 
 ```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap='(ref:titanicLiftDesc)', fig.align='center'}
-plot(eva_rf, eva_lr, geom = "lift")
+plot(eva_rf, eva_lr, geom = "lift") + theme_ema
 ```
 
 ```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap="Cumulative-gain chart for the random-forest model and the logistic-regression model for the Titanic dataset.", fig.align='center'}
@@ -500,7 +504,7 @@ For illustration purposes, we use the random-forest model `titanic_rf` (see Sect
 
 To illustrate the use of the functions, we first retrieve the `titanic_lmr` and `titanic_rf` model-objects via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 titanic_lmr <- archivist::aread("pbiecek/models/58b24")
 titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
@@ -535,7 +539,6 @@ explain_lmr <- explain(model = titanic_lmr,
                        y = titanic_imputed$survived == "yes", 
                        label = "Logistic Regression")
 explain_lmr$model_info$type = "classification"
-
 explain_rf <- explain(model = titanic_rf,  
                       data = titanic_imputed[, -9],
                       y = titanic_imputed$survived == "yes", 
@@ -545,23 +548,26 @@ explain_rf <- explain(model = titanic_rf,
 Function `model_performance()` calculates, by default, a set of selected model-performance measures. These include MSE, RMSE, $R^2$, and MAD for linear-regression models, and recall, precision, F1, accuracy, and AUC for models for a binary dependent variable. The function includes the `cutoff` argument that allows specifying the cut-off value for the measures that require it, i.e., recall, precision, F1 score, and accuracy. By default, the cut-off value is set at 0.5. Note that, by default, all measures are computed for the data that are extracted from the explainer object; these can be training or testing data.  
 
 ```{r modelPerformanceMeasureRF, message=FALSE}
-eva_rf <- DALEX::model_performance(explain_rf)
-eva_rf 
+(eva_rf <- DALEX::model_performance(explain_rf))
 ```
 
 ```{r modelPerformanceMeasureLMR, message=FALSE}
-eva_lr <- DALEX::model_performance(explain_lmr)
-eva_lr
+(eva_lr <- DALEX::model_performance(explain_lmr))
 ```
 
 Application of the `DALEX::model_performance()` function returns an object of class "model_performance" which includes estimated values of several model-performance measures, as well as a data frame containing the observed and predicted values of the dependent variable together with their difference, i.e., residuals. ROC curve or lift chart can be constructed by applying the generic `plot()` function to the object. The type of the required plot is indicated by using argument `geom`. In particular, the argument allows values `geom = "lift"` for lift charts, `geom = "roc"` for ROC curves, `geom = "histogram"` for histograms of residuals, and `geom = "boxplot"` for box-and-whisker plots of residuals. The `plot()` function returns a `ggplot2` object. It is possible to apply the function to more than one object. In that case, the plots for the models corresponding to each object are combined in one graph. In the code below, we create two `ggplot2` objects: one for a graph containing Precision-recall curves for both models and one for a histograms for residuals. Subsequently, we use the `patchwork` package to combine the graphs in one display.
 
 (ref:titanicMEexamplesDesc) Recision recall curve and histogram for residuals  obtained by the generic `plot()` function for the logistic-regression model `titanic_lmr` and the random-forest model `titanic_rf` for the Titanic dataset.
 
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+p1 <- plot(eva_rf, eva_lr, geom = "histogram") 
+p2 <- plot(eva_rf, eva_lr, geom = "prc") 
+```
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+p1 <- plot(eva_rf, eva_lr, geom = "histogram") + theme_ema
+p2 <- plot(eva_rf, eva_lr, geom = "prc") + theme_ema
+```
 ```{r titanicMEexamples, warning=FALSE, message=FALSE, eval=TRUE, fig.cap='(ref:titanicMEexamplesDesc)', fig.width=9, fig.height=5, fig.align='center'}
-p1 <- plot(eva_rf, eva_lr, geom = "histogram")
-p2 <- plot(eva_rf, eva_lr, geom = "prc")
-
 library("patchwork")
 p1 + p2
 ```
@@ -586,13 +592,15 @@ In the first step we create an Explainer, an object that will provide a uniform 
 
 ```{python,  eval = FALSE}
 import dalex as dx
-titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
+                  label = "Titanic RF Pipeline")
 ```
 
 To calculate the model performance one can use the `model_performance` method. 
 
 ```{python,  eval = FALSE}
-mp_rf = titanic_rf_exp.model_performance(model_type = "classification", cutoff = 0.5)
+mp_rf = titanic_rf_exp.model_performance(model_type = "classification", 
+          cutoff = 0.5)
 mp_rf.result
 ```
 

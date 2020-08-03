@@ -3,6 +3,10 @@ source("models/models_titanic.R")
 source("models/models_apartments.R")
 ```
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 # Local-dependence and Accumulated-dependence Profiles {#accumulatedLocalProfiles}
 
 ## Introduction {#ALPIntro}
@@ -56,13 +60,13 @@ pl1 <- ggplot(xx, aes(x1, x2)) +
   geom_vline(xintercept = seq(0,1,0.2), color = "grey", lty = 2) +
   theme_classic() +
   scale_x_continuous("X1",breaks = seq(0,1,0.2), expand = c(0,0)) +
-  scale_y_continuous("X2",breaks = seq(0,1,0.2), expand = c(0,0)) 
+  scale_y_continuous("X2",breaks = seq(0,1,0.2), expand = c(0,0))  + theme_ema
 
 pl2 <- ggplot(xx, aes(x1, yx)) +
   geom_point() + 
   theme_classic() +
   scale_x_continuous("X1",breaks = seq(0,1,0.2), expand = c(0,0), limits = c(0,1)) +
-  scale_y_continuous("Y",breaks = seq(0,2,0.5), expand = c(0,0), limits = c(0,2)) 
+  scale_y_continuous("Y",breaks = seq(0,2,0.5), expand = c(0,0), limits = c(0,2))  + theme_ema
 
 library(patchwork)
 pl1 + pl2
@@ -124,12 +128,13 @@ Table: (\#tab:FullData) Sample means $yx$
 
 By using this simple approach, we can compute the PD profile for $X^1$. Consider $X^1=z$. To apply the estimator defined in  \@ref(eq:PDPest), we need the predicted values $\hat{f}(z,x^2_i)$ for any observed value of $x^2_i \in [0,1]$. As our observations are uncorrelated and fill-in the unit-square, we can use the suitable mean values for that purpose. In particular, for $z \in [0,0.2]$, we get
 
-\begin{eqnarray}
-\hat g_{PD}^{1}(z) &=& \frac{1}{1000}\sum_{i}\hat{f}(z,x^2_i) = \\
-&=& (198\times 0.19+197\times 0.42+ 173\times 0.63 + 228\times 0.80 + 204\times 1.00)/1000 = \\
-&=& 0.6.
+\begin{align}
+\hat g_{PD}^{1}(z) &= \frac{1}{1000}\sum_{i}\hat{f}(z,x^2_i) = \nonumber \\
+&= (198\times 0.19+197\times 0.42+ 173\times 0.63 + \nonumber\\
+& \ \ \ \ \ 228\times 0.80 + 204\times 1.00)/1000  \nonumber \\
+& = 0.6.
 (\#eq:fullDataPD)
-\end{eqnarray}
+\end{align}
 
 By following the same principle, for $z \in (0.2,0.4]$, $(0.4,0.6]$, $(0.6,0.8]$, and $(0.8,1]$ we get the values of 0.8, 1, 1.2, and 1.4. Thus, overall, we obtain a piecewise-constant profile with values that capture the (correct) linear effect of $X^1$ in model \@ref(eq:simpleModel). In fact, by using, for instance, midpoints of the intervals for $z$, i.e., 0.1, 0.3, 0.5, 0.7, and 0.9, we could describe the profile by the linear function $0.5+z$.    
 
@@ -145,13 +150,13 @@ pl1 <- ggplot(xx.red, aes(x1, x2)) +
   geom_vline(xintercept = seq(0,1,0.2), color = "grey", lty = 2) +
   theme_classic() +
   scale_x_continuous("X1",breaks = seq(0,1,0.2), expand = c(0,0)) +
-  scale_y_continuous("X2",breaks = seq(0,1,0.2), expand = c(0,0))
+  scale_y_continuous("X2",breaks = seq(0,1,0.2), expand = c(0,0)) + theme_ema
 
 pl2 <- ggplot(xx.red, aes(x1, yx)) +
   geom_point() + 
   theme_classic() +
   scale_x_continuous("X1",breaks = seq(0,1,0.2), expand = c(0,0), limits = c(0,1)) +
-  scale_y_continuous("Y",breaks = seq(0,2,0.5), expand = c(0,0), limits = c(0,2)) 
+  scale_y_continuous("Y",breaks = seq(0,2,0.5), expand = c(0,0), limits = c(0,2)) + theme_ema 
 
 library(patchwork)
 pl1 + pl2
@@ -180,10 +185,11 @@ kableExtra::kable(tab.mean.red, format = "simple")
 
 When computing the PD profile for $X^1$, we now encounter the issue related to the fact that, for instance, for $z \in [0,0.2]$, we have not got any observations and, hence, any sample mean for $x^2_i>0.2$. To overcome this issue, we could extrapolate the predictions (i.e., mean values) obtained for other intervals of $z$. That is, we could assume that, for $x^2_i \in (0.2,0.4]$, the prediction is equal to 0.59, for $x^2_i \in (0.4,0.6]$ it is equal to 0.98, and so on. This leads to the following value of the PD profile for $z \in [0,0.2]$:    
 
-\begin{eqnarray*}
-\hat g_{PD}^{1}(z) &=& \frac{1}{207}\sum_{i}\hat{f}(z,x^2_i) = \\
-&=& \frac{1}{1000}(198\times 0.19+197\times 0.59+ 173\times 0.99 + 228\times 1.40 + 204\times 1.77)=1.  
-\end{eqnarray*}
+\begin{align}
+\hat g_{PD}^{1}(z) &= \frac{1}{207}\sum_{i}\hat{f}(z,x^2_i) = \nonumber \\
+&= \frac{1}{1000}(198\times 0.19+197\times 0.59+ 173\times 0.99 + \nonumber \\
+& \ \ \ \ \ 228\times 1.40 + 204\times 1.77)=1.  
+\end{align}
 
 This is a larger value than 0.6 computed in \@ref(eq:fullDataPD) for the uncorrelated data. The reason is the extrapolation: for instance, for $z \in [0,0.2]$ and $x^2_i \in (0.6,0.8]$, we use 1.40 as the predicted value of $Y$. However, we have seen that the sample mean for those observations is equal to 0.80. 
 
@@ -216,7 +222,7 @@ pl3 <- ggplot() +
   scale_x_continuous("X1",breaks = seq(0,1,0.2), expand = c(0,0)) +
   scale_y_continuous("X2",breaks = seq(0,1,0.2), expand = c(0,0)) +
   geom_segment(data = data.frame(x = c(0,0.1777,0,0.597),y = c(0.424,0, 0.783,0.424),xend = c(1,0.1777,1,0.597),yend = c(0.424,0.424, 0.783, 0.783)), 
-               aes(x=x,y=y,xend=xend,yend=yend), size=1, lty=2)
+               aes(x=x,y=y,xend=xend,yend=yend), size=1, lty=2) + theme_ema
 
 vp <- viewport(height = unit(0.8,"npc"), width=unit(0.4, "npc"), 
               y = 0.5, x = 0.75)
@@ -515,7 +521,7 @@ g_{AL}^{(x_1 + 1)\cdot x_2, 1}(z) =
 
 --->
 
-### Dependence profiles for a toy example
+### Dependence profiles for a toy example with interaction
 
 In this section, we will show the behaviour of partial dependence, local dependence and accumulated dependence for a model in which the interaction and correlation between variables are present.
 
@@ -582,14 +588,14 @@ Looking at equation \@ref(eq:trickyModel) one can see that from the perspective 
 
 In AL profiles the effect of the $X^1$ variable is defined as the cumulative sum of local derivatives due to the $X^1$ variable
 
-\begin{equation}
-g_{AL}^{1}(z) = 
-\int_{-1}^z E \left[\frac{\partial f(X^1, X^2)}{\partial X^1} | X^1 = v \right] dv = 
-\int_{-1}^z E \left[X^2 | X^1 = v \right] dv = 
+\begin{align}
+g_{AL}^{1}(z) &= 
+\int_{-1}^z E \left[\frac{\partial f(X^1, X^2)}{\partial X^1} | X^1 = v \right] dv \nonumber \\
+& = \int_{-1}^z E \left[X^2 | X^1 = v \right] dv = 
 \int_{-1}^z v dv =
 (z^2 - 1)/2.
 (\#eq:ALtrickyModel)
-\end{equation}
+\end{align}
 
 This formula better reflects the behaviour of function $f(X^1,X^2)$ due to $X^1$ removing the effect of changes in variable $X^2$.
 
@@ -631,14 +637,14 @@ Figure \@ref(fig:featureEffectsApartment) shows the three types of profiles for 
 
 (ref:featureEffectsApartmentDesc) Partial-dependence, local-dependence, and accumulated local profiles for the random-forest model for the apartment-prices dataset.
 
-```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap='(ref:featureEffectsApartmentDesc)', fig.align='center', out.width='75%'}
+```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:featureEffectsApartmentDesc)', fig.align='center', out.width='100%'}
 library("randomForest")
 library("ingredients")
 library("DALEX")
 library("ggplot2")
 
-model_apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
-explain_apartments_rf <- DALEX::explain(model = model_apartments_rf, data = apartments[,-1],
+#apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
+explain_apartments_rf <- DALEX::explain(model = apartments_rf, data = apartments[,-1],
     y = apartments$m2.price, label = "Random Forest", verbose = FALSE)
 
 pd_rf <- partial_dependency(explain_apartments_rf, variables = c("no.rooms", "surface"))
@@ -651,7 +657,7 @@ ac_rf$`_yhat_`  <- ac_rf$`_yhat_` + max(pd_rf$`_yhat_`)
 cd_rf$`_label_` <- "local dependence"
 
 plot(pd_rf, ac_rf, cd_rf) + ylab("Predicted price") +
-  ggtitle("Number of rooms and surface", "") 
+  ggtitle("Number of rooms and surface", "")  + theme_ema
 ```
 
 ## Pros and cons {#ALPProsCons}
@@ -672,12 +678,19 @@ For illustration purposes, we use the random-forest model `apartments_rf` (see S
 
 We first load the model via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that, beforehand, we have got to load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
  
-```{r, warning=FALSE, echo = TRUE, message=FALSE}
-model_apart_rf <- archivist::aread("pbiecek/models/fe7a5")
+```{r, warning=FALSE, eval = FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
-model_apart_rf <- archivist::aread("pbiecek/models/fe7a5")
-explainer_apart_rf <- DALEX::explain(model = model_apart_rf, 
+apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
+explainer_apart_rf <- DALEX::explain(model = apartments_rf, 
+                             data    = apartments_test[,-1],
+                             y       = apartments_test$m2.price, 
+                             label   = "Random Forest")
+```
+```{r, warning=FALSE, echo = FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+explainer_apart_rf <- DALEX::explain(model = apartments_rf, 
                              data    = apartments_test[,-1],
                              y       = apartments_test$m2.price, 
                              label   = "Random Forest", 
@@ -696,9 +709,13 @@ The resulting object of class "model_profile" contains the LD profiles for both 
 
 (ref:aleExample3PlotDesc) Local-dependence profiles for the random-forest model and explanatory variables surface and number of rooms for the apartment prices dataset.
 
-```{r aleExample3Plot, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap='(ref:aleExample3PlotDesc)', fig.align='center', out.width='80%'}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(ld_rf) +
-  ggtitle("Local-dependence profiles for no. of rooms and surface", "") 
+  ggtitle("Local-dependence profiles for no. of rooms and surface", "")
+```
+```{r aleExample3Plot, warning=FALSE, message=FALSE, fig.width=8, fig.height=5, echo=FALSE, fig.cap='(ref:aleExample3PlotDesc)', fig.align='center', out.width='80%'}
+plot(ld_rf) +
+  ggtitle("Local-dependence profiles for no. of rooms and surface", "")  + theme_ema
 ```
 
 The resulting plot is shown in Figure \@ref(fig:aleExample3Plot). The profiles essentially correspond to those included in Figure \@ref(fig:featureEffectsApartment).
@@ -715,9 +732,13 @@ By applying the `plot()` function to the object, we obtain separate plots of the
 
 (ref:aleExample2PlotDesc) Accumulated local profiles for the random-forest model and explanatory variables surface and number of rooms for the apartment prices dataset
 
-```{r aleExample2Plot, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=5,  fig.cap='(ref:aleExample2PlotDesc)', fig.align='center', out.width='80%'}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(al_rf) +
-  ggtitle("Accumulated local profiles for no. of rooms and surface", "") 
+  ggtitle("Accumulated local profiles for no. of rooms and surface", "")
+```
+```{r aleExample2Plot, warning=FALSE, message=FALSE, fig.width=8, echo=FALSE, fig.height=5,  fig.cap='(ref:aleExample2PlotDesc)', fig.align='center', out.width='80%'}
+plot(al_rf) +
+  ggtitle("Accumulated local profiles for no. of rooms and surface", "")  + theme_ema
 ```
 
 Function `plot()` allows including all plots in a single graph. We will show how to apply it in order to  obtain Figure \@ref(fig:featureEffectsApartment). Toward this end, we have got to create PD profiles first (see Section \@ref(PDPR)). We also modify the labels of the PD, LD, and AL profiles contained in the `agr_profiles` components of the "model_profile"-class objects created for the different profiles.
@@ -734,7 +755,7 @@ al_rf$agr_profiles$`_label_` = "accumulated local"
 Subsequently, we simply apply the `plot()` function to the `agr_profiles` components of the "model_profile"-class objects for the different profiles (see Section \@ref(PDPR)).   
 
 ```{r aleExample5Plot, warning=FALSE, message=FALSE, eval=FALSE, fig.width=6.5, fig.height=5,  fig.cap="Different types of profiles for the number of rooms and surface.", fig.align='center', out.width='80%'}
-plot(pd_rf$agr_profiles, ld_rf$agr_profiles, al_rf$agr_profiles)
+plot(pd_rf, ld_rf, al_rf) 
 ```
 
 The resulting plot (not shown) is essentially the same as the one presented in Figure \@ref(fig:featureEffectsApartment), with a possible difference due to the use of a different set of (randomly selected) 100 observations from the apartment-prices dataset.
@@ -750,7 +771,8 @@ In the first step we create an Explainer, an object that will provide a uniform 
 
 ```{python,  eval = FALSE}
 import dalex as dx
-titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
+                    label = "Titanic RF Pipeline")
 ```
 
 
@@ -764,7 +786,7 @@ ld_rf.result['_label_'] = 'LD profiles'
 ld_rf.result
 ```
 
-```{r examplePythonLDProfile1, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonLDProfile1, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_accumulated_1.png")
 ```
 
@@ -774,7 +796,7 @@ The resulting object can be visualised with the `plot` method.
 ld_rf.plot(variables = ['age', 'fare'])
 ```
 
-```{r examplePythonLDProfile2, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonLDProfile2, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_accumulated_2.png")
 ```
 
@@ -791,6 +813,6 @@ Both AL and LD profiles can be plotted in a single chart. Just pass the `ld_rf` 
 al_rf.plot(ld_rf, variables = ['age', 'fare'])
 ```
 
-```{r examplePythonLDProfile3, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonLDProfile3, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_accumulated_3.png")
 ```

@@ -3,6 +3,10 @@ source("models/models_titanic.R")
 source("models/models_apartments.R")
 ```
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 # Partial-dependence Profiles {#partialDependenceProfiles}
 
 ## Introduction {#PDPIntro}
@@ -35,8 +39,8 @@ library("DALEX")
 library("randomForest")
 library("ggplot2")
 
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 explain_titanic_rf <- DALEX::explain(model = titanic_rf, 
                               data = titanic_imputed[,-9],
                               y = titanic_imputed$survived == "yes", 
@@ -50,14 +54,14 @@ class(cp_rf) <- c("ceteris_paribus_explainer", "data.frame")
 pl1 <- plot(cp_rf, variables = "age", color = "#46bac1") + 
       ingredients::show_observations(cp_rf, size = 3, variables = "age") +  
   scale_y_continuous(limits=c(0,1)) +
-  ggtitle("Ceteris-paribus profiles","") 
+  ggtitle("Ceteris-paribus profiles","")  + theme_ema
 
 pdp_rf <- model_profile(explain_titanic_rf, variables = "age")
 class(cp_rf) <- c("ceteris_paribus_explainer", "data.frame")
 pdp_rf$cp_profiles <- cp_rf
 pl2 <- plot(pdp_rf, geom = "profiles") +
   scale_y_continuous(limits=c(0,1)) +
-  ggtitle("Partial-dependence profile","") 
+  ggtitle("Partial-dependence profile","")  + theme_ema
 
 library("gridExtra")
 grid.arrange(pl1, pl2, ncol = 2)
@@ -117,7 +121,7 @@ pdp_rf <- model_profile(explain_titanic_rf,
                            k = 3,  
                         variable_splits = list(age = seq(0, 70, 0.1)))
 plot(pdp_rf, geom = "profiles") +
-  ggtitle("Three clusters for 100 ceteris-paribus profiles for age","") 
+  ggtitle("Three clusters for 100 ceteris-paribus profiles for age","")  + theme_ema
 ```
 
 ### Grouped partial-dependence profiles {#groupedPDPs}
@@ -134,7 +138,7 @@ pdp_rf <- model_profile(explain_titanic_rf,
                            groups = "gender",
                          variable_splits = list(age = seq(0, 70, 0.1)))
 plot(pdp_rf, geom = "profiles") +
-  ggtitle("Ceteris-paribus profiles for age grouped by gender","")
+  ggtitle("Ceteris-paribus profiles for age grouped by gender","") + theme_ema
 ```
 
 ### Contrastive partial-dependence profiles {#contrastivePDPs}
@@ -150,7 +154,7 @@ Figure \@ref(fig:pdpPart7) presents PD profiles for *age* for the random-forest 
 #cp_gbm <- partial_dependency(explain_titanic_gbm, selected_passangers)
 #pdp_gbm <- aggregate_profiles(cp_gbm, variables = "age")
 library("rms")
-titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+#titanic_lmr <- archivist::aread("pbiecek/models/58b24")
 explain_titanic_lmr <- DALEX::explain(model = titanic_lmr, data = titanic_imputed[, -9],
     y = titanic_imputed$survived == "yes", label = "Logistic Regression", verbose = FALSE)
 explain_titanic_lmr$model_info$type = "classification"
@@ -159,7 +163,7 @@ pdp_glm <- model_profile(explain_titanic_lmr, variables = "age",  variable_split
 pdp_rf <- model_profile(explain_titanic_rf, variables = "age",  variable_splits = list(age = seq(0, 70, 0.1)))
 
 plot(pdp_rf$agr_profiles, pdp_glm$agr_profiles) +
-  ggtitle("Partial-dependence profiles for age for two models", "") 
+  ggtitle("Partial-dependence profiles for age for two models", "") + theme_ema 
 ```
 
 ## Example: apartment-prices data {#PDPExample}
@@ -174,14 +178,14 @@ PD profile for *surface* suggests an approximately linear relationship between t
 
 (ref:pdpApartment1Desc) Ceteris-paribus and partial-dependence profiles for *construction year* and  *surface* for 100 randomly-selected apartments for the random-forest model for the apartment-prices dataset.
 
-```{r pdpApartment1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap='(ref:pdpApartment1Desc)', fig.align='center', out.width='75%'}
+```{r pdpApartment1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap='(ref:pdpApartment1Desc)', fig.align='center', out.width='100%'}
 library("randomForest")
-apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
+#apartments_rf <- archivist::aread("pbiecek/models/fe7a5")
 explain_apartments_rf <- DALEX::explain(model = apartments_rf, data = apartments[,-1],
     y = apartments$m2.price, label = "Random Forest", verbose = FALSE)
 pd_rf <- model_profile(explain_apartments_rf, variables = c("construction.year","surface"))
 plot(pd_rf, variables = c("construction.year","surface"), geom = "profiles") + 
-  ggtitle("Partial-dependence profiles on the predicted price per square meter","") 
+  ggtitle("Partial-dependence profiles on the predicted price per square meter","") + theme_ema 
 ```
 
 ### Clustered partial-dependence profiles
@@ -190,14 +194,14 @@ Almost all CP profiles for *construction year*, presented in Figure \@ref(fig:pd
 
 (ref:pdpApartment1clusteredDesc) Ceteris-paribus (grey lines) and partial-dependence profiles (red, green, and blue lines) for three clusters for 100 randomly-selected apartments for the random-forest model for the apartment-prices dataset. Left-hand-side panel: profiles for *construction year*. Right-hand-side panel: profiles for *surface*.
 
-```{r pdpApartment1clustered, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5,  fig.cap='(ref:pdpApartment1clusteredDesc)', fig.align='center', out.width='75%'}
+```{r pdpApartment1clustered, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5,  fig.cap='(ref:pdpApartment1clusteredDesc)', fig.align='center', out.width='100%'}
 pd_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"),
                           k = 3)
 
 plot(pd_rf, variables = c("construction.year", "surface"), 
      geom = "profiles")  +
-  ggtitle("Three clusters for 100 ceteris-paribus profiles","") 
+  ggtitle("Three clusters for 100 ceteris-paribus profiles","")  + theme_ema
 ```
 
 ### Grouped partial-dependence profiles
@@ -208,14 +212,14 @@ Figure \@ref(fig:pdpApartment2) shows PD profiles for *construction year* (left-
 
 (ref:pdpApartment2Desc) Partial-dependence profiles for separate districts for the random-forest model for the apartment-prices dataset. Left-hand-side panel: profiles for *construction year*. Right-hand-side panel: profiles for *surface*.
 
-```{r pdpApartment2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap='(ref:pdpApartment2Desc)', fig.align='center', out.width='75%'}
+```{r pdpApartment2, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap='(ref:pdpApartment2Desc)', fig.align='center', out.width='100%'}
 pd_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"),
                           groups = "district")
 
 plot(pd_rf, variables = c("construction.year", "surface"), 
      geom = "profiles") +
-  ggtitle("Partial-dependence profiles by district", "")
+  ggtitle("Partial-dependence profiles by district", "") + theme_ema
 ```
 
 ### Contrastive partial-dependence profiles
@@ -230,8 +234,8 @@ In Section \@ref(predictionsApartments), we mentioned that a proper model explor
 
 (ref:pdpApartment3Desc) Partial-dependence profiles for the linear-regression and random-forest models for the apartment-prices dataset. Left-hand-side panel: profiles for *construction year*. Right-hand-side panel: profiles for *surface*.
 
-```{r pdpApartment3, warning=FALSE, message=FALSE, echo=FALSE, fig.width=6.5, fig.height=5.5, fig.cap='(ref:pdpApartment3Desc)', fig.align='center', out.width='75%'}
-apartments_lm <- archivist::aread("pbiecek/models/55f19")
+```{r pdpApartment3, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5.5, fig.cap='(ref:pdpApartment3Desc)', fig.align='center', out.width='85%'}
+#apartments_lm <- archivist::aread("pbiecek/models/55f19")
 explain_apartments_lm <- DALEX::explain(model = apartments_lm, data = apartments[,-1], 
     y = apartments$m2.price, label = "Linear Regression", verbose = FALSE)
 pdp_lm <- model_profile(explain_apartments_lm, 
@@ -239,7 +243,7 @@ pdp_lm <- model_profile(explain_apartments_lm,
 pdp_rf <- model_profile(explain_apartments_rf, 
                           variables = c("construction.year", "surface"))
 plot(pdp_rf$agr_profiles, pdp_lm$agr_profiles) +
-  ggtitle("Partial-dependence profiles for two models","")
+  ggtitle("Partial-dependence profiles for two models","") + theme_ema
 
 ```
 
@@ -257,16 +261,26 @@ For illustration purposes, we use the random-forest model `titanic_rf` (see Sect
 
 We first retrieve the version of the `titanic` data with imputed missing values and the `titanic_rf` model-object via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that, beforehand, we have got to load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. 
  
-```{r, warning=FALSE, echo = TRUE, message=FALSE}
+```{r, warning=FALSE, echo = FALSE, message=FALSE}
 library("DALEX")
 library("randomForest")
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-model_rf <- archivist::aread("pbiecek/models/4e0fc")
-explainer_rf <- DALEX::explain(model = model_rf,  
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#model_rf <- archivist::aread("pbiecek/models/4e0fc")
+explainer_rf <- DALEX::explain(model = titanic_rf,  
                                data = titanic_imputed[, -9],
                                y = titanic_imputed$survived, 
                                label = "Random Forest", 
                                verbose = FALSE)
+```
+```{r, warning=FALSE, eval= FALSE, message=FALSE}
+library("DALEX")
+library("randomForest")
+titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+explainer_rf <- DALEX::explain(model = titanic_rf,  
+                               data = titanic_imputed[, -9],
+                               y = titanic_imputed$survived, 
+                               label = "Random Forest")
 ```
 
 ### Partial-dependence profiles
@@ -297,7 +311,8 @@ The resulting plot for *age* (not shown) corresponds to the one shown for in Fig
 A PD profile can be plotted on top of CP profiles. This is a very useful feature if we want to check how well the former captures the latter. It is worth noting that, apart from the PD profile, the object created by the `model_profile()` function also contains the CP profiles for the selected observations and all explanatory variables included in the model. By specifying the argument `geom = "profiles"` in the `plot()` function, we add the CP profiles to the plot of the PD profile. 
  
 ```{r pdpExample2Plot, warning=FALSE, message=FALSE, eval = FALSE}
-plot(pdp_rf, geom = "profiles") + ggtitle("Ceteris-paribus and partial-dependence profiles for age") 
+plot(pdp_rf, geom = "profiles") + 
+    ggtitle("Ceteris-paribus and partial-dependence profiles for age") 
 ```
 
 The resulting plot (not shown) is essentially the same as the one shown in the right-hand-side panel of Figure \@ref(fig:pdpIntuition). 
@@ -307,13 +322,15 @@ The resulting plot (not shown) is essentially the same as the one shown in the r
 To calculate clustered PD profiles, we have got to cluster the CP profiles. Toward this aim, we use the `k` argument of the `model_profile` function that specifies the number of clusters that are to be formed by the `hclust()` function. In the code below, we specify that three clusters are to be formed for profiles for *age*. 
 
 ```{r pdpExample3, warning=FALSE, message=FALSE}
-pdp_rf_clust <- model_profile(explainer = explainer_rf, variables = "age", k = 3)
+pdp_rf_clust <- model_profile(explainer = explainer_rf, 
+                              variables = "age", k = 3)
 ```
 
 The clustered PD profiles can be plotted on top of the CP profiles by using the `geom = "profiles"` argument in the `plot()` function. 
 
 ```{r pdpExample3Plot, warning=FALSE, message=FALSE, eval = FALSE, fig.width=6.5, fig.height=5,  fig.cap="Clustered partial-dependence profiles for age.", fig.align='center', out.width='80%'}
-plot(pdp_rf_clust, geom = "profiles") + ggtitle("Clustered partial-dependence profiles for age") 
+plot(pdp_rf_clust, geom = "profiles") + 
+    ggtitle("Clustered partial-dependence profiles for age") 
 ```
 
 The resulting plot (not shown) resembles the one shown for the random-forest model in Figure \@ref(fig:pdpPart4). The only difference may stem from the fact that the two plots are based on a different set of (randomly selected) 100 observations from the Titanic dataset.
@@ -323,13 +340,15 @@ The resulting plot (not shown) resembles the one shown for the random-forest mod
 The `model_profile()` function admits the `groups` argument that allows constructing PD profiles for groups of observations defined by the levels of an explanatory variable. In the example below, we use the argument to obtain PD profiles for *age*, while grouping them by *gender*. 
 
 ```{r pdpExample4, warning=FALSE, message=FALSE}
-pdp_rf_gender <- model_profile(explainer = explainer_rf, variables = "age", groups = "gender")
+pdp_rf_gender <- model_profile(explainer = explainer_rf, 
+                               variables = "age", groups = "gender")
 ```
 
 The grouped PD profiles can be plotted on top of the CP profiles by using the `geom = "profiles"` argument in the `plot()` function. 
 
 ```{r pdpExample4Plot, warning=FALSE, message=FALSE, eval = FALSE, fig.width=6.5, fig.height=5,  fig.cap="Grouped Partial dependence profiles.", fig.align='center', out.width='80%'}
-plot(pdp_rf_gender, geom = "profiles") + ggtitle("Partial-dependence profiles for age, grouped by gender") 
+plot(pdp_rf_gender, geom = "profiles") + 
+    ggtitle("Partial-dependence profiles for age, grouped by gender") 
 ```
 
 The resulting plot (not shown) resembles the one shown in Figure \@ref(fig:pdpPart5).
@@ -338,11 +357,24 @@ The resulting plot (not shown) resembles the one shown in Figure \@ref(fig:pdpPa
 
 It may be of interest to compare PD profiles for several models. We will compare the random-forest model with the linear-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)). For the latter, we first have got to load it via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using function `explain()`. Note that we first load the `rms` package, as the model was fitted by using function `lmr()` from this package (see Section \@ref(model-titanic-lmr)) and it is important to have the corresponding `predict()` function available. Finally, we apply the `model_profile()` function to compute CP profiles and the PD profile for *age* based on 100 randomly-selected observations from the Titanic dataset. We also repeat the calculations of the profiles for the random-forest model.  
 
-```{r pdpExample5, warning=FALSE, message=FALSE, echo = TRUE}
+```{r, warning=FALSE, message=FALSE, eval= FALSE}
 library("rms")
-model_lmr <- archivist::aread("pbiecek/models/58b24")
-explainer_lmr <- DALEX::explain(model = model_lmr, data = titanic_imputed[, -9],
-    y = titanic_imputed$survived, label = "Logistic Regression", verbose = FALSE)
+titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+explainer_lmr <- DALEX::explain(model = titanic_lmr, 
+                                data = titanic_imputed[, -9],
+                                y = titanic_imputed$survived, 
+                                label = "Logistic Regression")
+
+pdp_lmr <- model_profile(explainer = explainer_lmr, variables = "age")
+pdp_rf <- model_profile(explainer = explainer_rf, variables = "age")
+```
+```{r pdpExample5, warning=FALSE, message=FALSE, echo = FALSE}
+library("rms")
+explainer_lmr <- DALEX::explain(model = titanic_lmr, 
+                                data = titanic_imputed[, -9],
+                                y = titanic_imputed$survived, 
+                                label = "Logistic Regression", 
+                                verbose = FALSE)
 pdp_lmr <- model_profile(explainer = explainer_lmr, variables = "age")
 pdp_rf <- model_profile(explainer = explainer_rf, variables = "age")
 ```
@@ -350,9 +382,8 @@ pdp_rf <- model_profile(explainer = explainer_rf, variables = "age")
 To overlay the PD profiles for *age* for the two models in a single plot, we apply the `plot()` function to the  `agr_profiles` components of the "model_profile"-class objects for the two models. The components contain the PD profiles for *age*.   
 
 ```{r pdpExample5Plot, warning=FALSE, message=FALSE, eval = FALSE, fig.width=6.5, fig.height=5,  fig.cap="Partial-dependence profiles for age for two models.", fig.align='center', out.width='80%'}
-
-plot(pdp_rf$agr_profiles, pdp_lmr$agr_profiles) +
-  ggtitle("Partial-dependence profiles for age for two models") 
+plot(pdp_rf, pdp_lmr) +
+    ggtitle("Partial-dependence profiles for age for two models") 
 ```
 
 As a result, the profiles are plotted in a single plot. The resulting graph (not shown) is essentially the same as the one presented in Figure \@ref(fig:pdpPart7), with a possible difference due to the use of a different set of (randomly selected) 100 observations from the Titanic dataset.
@@ -367,7 +398,8 @@ In the first step we create an Explainer, an object that will provide a uniform 
 
 ```{python,  eval = FALSE}
 import dalex as dx
-titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
+                  label = "Titanic RF Pipeline")
 ```
 
 
@@ -380,14 +412,14 @@ By defaut, it calculates profiles for all continuous variables. The other useful
 * `type`, the type of the PD profile, with values "partial" (default), "conditional," and "accumulated"; 
 * `groups`, the name of the explanatory variable that will be used to group profiles, with `groups = None` by default (in which case no grouping of profiles is applied);
 
-In the example below, we calculate the PD profile for *age* by applying the `model_profile()` function to the Explainer-object for the random-forest model. By default, the profile is based on 100 randomly selected observations. 
+In the example below, we calculate the PD profile for *age* by applying the `model_profile()` function to the Explainer-object for the random-forest model. By default, the profile is based on 300 randomly selected observations. 
 
 ```{python,  eval = FALSE}
 mp_rf = titanic_rf_exp.model_profile()
 mp_rf.result
 ```
 
-```{r examplePythonMProfile1, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonMProfile1, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_1.png")
 ```
 
@@ -404,7 +436,7 @@ knitr::include_graphics("figure/python_model_profile_2.png")
 A PD profile can be plotted on top of CP profiles. This is a very useful feature if we want to check how well the former captures the latter. By specifying the argument `geom = "profiles"` in the `plot()` function, we add the CP profiles to the plot of the PD profile. 
 
 ```{python,  eval = FALSE}
-mp_rf.plot(geom='profiles')
+mp_rf.plot(geom = 'profiles')
 ```
 
 The resulting plot (not shown) is essentially the same as the one shown in the right-hand-side panel of Figure \@ref(fig:pdpIntuition). 
@@ -413,11 +445,11 @@ By default, the model_profile function draws profiles only for continuous variab
 The following example calculates and plots profiles for `class` and `gender`/
 
 ```{python,  eval = FALSE}
-mp_rf = titanic_rf_exp.model_profile( variable_type='categorical')
+mp_rf = titanic_rf_exp.model_profile( variable_type = 'categorical')
 mp_rf.plot(variables = ['gender', 'class'])
 ```
 
-```{r examplePythonMProfile3, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonMProfile3, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_3.png")
 ```
 
@@ -427,11 +459,12 @@ knitr::include_graphics("figure/python_model_profile_3.png")
 The `model_profile()` function admits the `groups` argument that allows constructing PD profiles for groups of observations defined by the levels of an explanatory variable. In the example below, we use the argument to obtain PD profiles for *age*, while grouping them by *gender*. 
 
 ```{python,  eval = FALSE}
-mp_rf = titanic_rf_exp.model_profile(groups = 'gender', variables = ['age', 'fare'])
+mp_rf = titanic_rf_exp.model_profile(groups = 'gender', 
+                                  variables = ['age', 'fare'])
 mp_rf.plot()
 ```
 
-```{r examplePythonMProfile4, echo=FALSE, out.width = '70%', fig.align='center'}
+```{r examplePythonMProfile4, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_profile_4.png")
 ```
 

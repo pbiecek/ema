@@ -1,5 +1,9 @@
 #  Break-down Plots for Interactions {#iBreakDown}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 In Chapter \@ref(breakDown), we presented a model-agnostic approach to calculate of the attribution of an explanatory variable for a model's predictions. However, for some models, like models with interactions, the procedure introduced in Chapter \@ref(breakDown) depends on the ordering of the explanatory variables that are used in computations. 
 
 In this chapter, we present an algorithm that addresses the issue. In particular, the algorithm identifies interactions between pairs of variables and takes them into account when constructing break-down (BD) plots. In our presentation, we focus on pairwise interactions that involve pairs of explanatory variables, but the algorithm can be easily extended to interactions involving a larger number of variables.
@@ -64,7 +68,7 @@ Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-ti
 
 Table \@ref(tab:titanicIBreakDownList) presents single-variable contributions $\Delta^{j|\emptyset}(\underline{x}_*)$, paired-variable contributions $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$, and interaction contributions $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$ for each explanatory variable and each pair of variables. All the measures are calculated for Johnny D, the instance of interest. 
 
-Table: (\#tab:titanicIBreakDownList) Paired-variable contributions $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$,  interaction contributions $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$, and single-variable contributions $\Delta^{j|\emptyset}(\underline{x}_*)$ for the random-forest model `titanic_rf` and Johnny D for the Titanic data.
+Table: (\#tab:titanicIBreakDownList) Paired-variable contributions $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$,  interaction contributions $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$, and single-variable contributions $\Delta^{j|\emptyset}(\underline{x}_*)$ for the random-forest model and Johnny D for the Titanic data.
 
 |Variable        | $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ | $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$|$\Delta^{i|\emptyset}(\underline{x}_*)$ |
 |:---------------|------:|---------:|------:|
@@ -110,7 +114,7 @@ Based on the ordering of the rows in Table \@ref(tab:titanicIBreakDownList), the
 * then *sibsp* and *parch* as variables with the smallest net contributions (among single variables), which are larger than the contribution of their interaction.
 
 <!---
-Table: (\#tab:titanicIBreakDownList) Expected model's predictions $E_{\underline{X}}\{f(\underline{X})|X^i = \underline{x}_*^i, X^j = \underline{x}_*^j\}=\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)+v_0$, paired-variable contributions $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$, and interaction contributions $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$ for the random-forest model `titanic_rf` and passenger `johny_d` in the Titanic data.
+Table: (\#tab:titanicIBreakDownList) Expected model's predictions $E_{\underline{X}}\{f(\underline{X})|X^i = \underline{x}_*^i, X^j = \underline{x}_*^j\}=\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)+v_0$, paired-variable contributions $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$, and interaction contributions $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$ for the random-forest model and passenger johny D in the Titanic data.
 
 |Variable        |$\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)+v_0$| $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ | $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$|
 |:---------------|-----:|------:|---------:|
@@ -182,7 +186,7 @@ Table \@ref(tab:titanicIBreakDownList2) presents the variable-importance measure
 $$E_{\underline{X}}\left\{f(\underline{X}) | \underline{X}^{\{1,\ldots,j\}} = \underline{x}^{\{1,\ldots,j\}}_*\right\}=v_0+\sum_{k=1}^j v(k,\underline{x}_*)=v_0+\Delta^{\{1,\ldots\,j\}|\emptyset}(\underline{x}_*).$$
 Note that the expected value presented in the last row, 0.422, corresponds to the model's prediction for the instance of interest, passenger Johnny D.
  
-Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $v(j,\underline{x}_*)$ and the conditonal expected values $v_0+\sum_{k=1}^j v(k,\underline{x}_*)$ computed by using the sequence  of variables *age*, *fare:class*, *gender*, *embarked*, *sibsp*, and *parch* for the random-forest model `titanic_rf` and Johnny D for the Titanic data.
+Table: (\#tab:titanicIBreakDownList2) Variable-importance measures $v(j,\underline{x}_*)$ and the conditonal expected values $v_0+\sum_{k=1}^j v(k,\underline{x}_*)$ computed by using the sequence  of variables *age*, *fare:class*, *gender*, *embarked*, *sibsp*, and *parch* for the random-forest model and Johnny D for the Titanic data.
 
 |Variable               |  $j$ | $v(j,\underline{x}_*)$ | $v_0+\sum_{k=1}^j v(k,\underline{x}_*)$|
 |:----------------------|------:|------------:|-----------:|
@@ -212,14 +216,14 @@ $E_{\underline{X}}\left\{f(\underline{X}) | X^{\{1,\ldots,j\}} = \underline{x}^{
 
 Figure \@ref(fig:iBreakDownTitanicExamplePlot) presents the interaction-break-down (iBD) plot corresponding to the results shown in Table \@ref(tab:titanicIBreakDownList2). The interaction between *fare* and *class* variables is included in the plot as a single bar. As the effects of these two variables cannot be disentangled, the plot uses just that single bar to represent the contribution of both variables. Table \@ref(tab:titanicIBreakDownList) indicates that *class* alone would increase the mean prediction by 0.185, while *fare* would increase the mean prediction by 0.143. However, taken together, they increase the average prediction only by 0.098.  A possible explanation of this negative interaction could be that, while the ticket fare of 72 is high on average, it is actually below the median when the first-class passengers are considered. Thus, if first-class passengers with "cheaper" tickets, as Johnny D, were, for instance, placed in cabins that made it more difficult to reach a lifeboat, this could lead to lower chances of survival as compared to other passengers from the same class (though the chances could be still higher as compared to passengers from other, lower travel classes).
 
-(ref:iBreakDownTitanicExamplePlotDesc) Break-down plot with interactions for the `titanic_rf` model and Johnny D for the Titanic data.
+(ref:iBreakDownTitanicExamplePlotDesc) Break-down plot with interactions for the random-forest model and Johnny D for the Titanic data.
 
-```{r iBreakDownTitanicExamplePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:iBreakDownTitanicExamplePlotDesc)', out.width = '80%', fig.align='center', fig.width=8, fig.height=4}
+```{r iBreakDownTitanicExamplePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:iBreakDownTitanicExamplePlotDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
 library("DALEX")
 library("iBreakDown")
 library("randomForest")
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 # load("models/titanic_rf.rda")
 # load("models/titanic.rda")
 
@@ -246,7 +250,7 @@ x <- titanic_rf
 p <- ncol(data)
 new_observation <- johnny_d
 
-plot(break_down(explain_titanic_rf, johnny_d, interactions = TRUE))
+plot(break_down(explain_titanic_rf, johnny_d, interactions = TRUE))+ theme_ema
 ```
 
 ```{r iBreakDownTitanicExample, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
@@ -341,15 +345,20 @@ For illustration purposes, we use the `titanic_rf` random-forest model for the T
 
 First, we retrieve the `titanic_rf` model-object and the data for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
+```
+  class gender age sibsp parch fare  embarked
+1   1st   male  47     0     0   25 Cherbourg
+```
+
 Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that, beforehand, we have got to load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
 
-```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
+```{r, warning=FALSE, message=FALSE, echo = FALSE, eval = TRUE}
 library("DALEX")
 library("randomForest")
 explain_rf <- DALEX::explain(model = titanic_rf,  
@@ -357,6 +366,14 @@ explain_rf <- DALEX::explain(model = titanic_rf,
                              y = titanic_imputed$survived == "yes", 
                          label = "Random Forest",
                        verbose = FALSE)
+```
+```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
+library("DALEX")
+library("randomForest")
+explain_rf <- DALEX::explain(model = titanic_rf,  
+                          data = titanic_imputed[, -9],
+                             y = titanic_imputed$survived == "yes", 
+                         label = "Random Forest")
 ```
 
 The key function to construct iBD plots is the `DALEX::predict_parts()` function. The use of the function has already been explained in Section \@ref(BDR). In order to perform calculations that allow obtaining iBD plots, the required argument is `type = "break_down_interactions"`.
@@ -372,10 +389,10 @@ We can compare the obtained variable-importance measures to those reported for J
 
 By applying the generic `plot()` function to the object created by the `DALEX::predict_parts()` function we obtain the iBD plot. 
 
-(ref:iBDforHenryDesc) Break-down plot with interactions obtained by applying the generic `plot()` function for the `titanic_rf` model and Henry for the Titanic data.
+(ref:iBDforHenryDesc) Break-down plot with interactions obtained by applying the generic `plot()` function for the randim-forest model and Henry for the Titanic data.
 
-```{r iBDforHenry, warning=FALSE, message=FALSE, fig.cap='(ref:iBDforHenryDesc)', out.width = '80%', fig.align='center', fig.width=8, fig.height=4}
-plot(bd_rf) 
+```{r iBDforHenry, warning=FALSE, message=FALSE, fig.cap='(ref:iBDforHenryDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
+plot(bd_rf) + theme_ema
 ```
 
 The resulting iBD plot for Henry is shown in Figure \@ref(fig:iBDforHenry). It can be compared to the iBD plot for Johnny D that is presented in Figure  \@ref(fig:iBreakDownTitanicExamplePlot). 
@@ -402,7 +419,8 @@ henry = pd.DataFrame({'gender': ['male'],
                       index = ['Henry'])
 
 import dalex as dx
-titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
+                    label = "Titanic RF Pipeline")
 ```
 
 To calculate the attributions with the break down method with interactions one can use the `predict_parts` method with `type='break_down_interactions'` argument. The first argument is the observation for which the attributions are to be calculated. 
@@ -410,7 +428,9 @@ To calculate the attributions with the break down method with interactions one c
 Interactions are often weak and their net effects are not greater than the contributions of individual variables. If we would like to increase our preference for interactions we can increase the value of the `interaction_preference` argument. The default value of $1$ means no preferences. Results are stored in the `result` field.
 
 ```{python,  eval = FALSE}
-bd_henry = titanic_rf_exp.predict_parts(henry, type='break_down_interactions', interaction_preference = 5)
+bd_henry = titanic_rf_exp.predict_parts(henry, 
+                type = 'break_down_interactions', 
+                interaction_preference = 5)
 bd_henry.result
 ```
 
@@ -420,6 +440,6 @@ The resulting object can be visualised with the `plot` method.
 bd_henry.plot()
 ```
 
-```{r ibdPython2, echo=FALSE, out.width = '80%', fig.align='center'}
+```{r ibdPython2, echo=FALSE, out.width = '90%', fig.align='center'}
 knitr::include_graphics("figure/ibd_python_1.png")
 ```

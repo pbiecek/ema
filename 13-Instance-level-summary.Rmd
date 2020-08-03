@@ -1,5 +1,9 @@
 # Summary of Instance-level Exploration {#summaryInstanceLevel}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 ## Introduction {#summaryInstanceLevelIntro}
 
 In Part II of the book, we introduced a number of techniques for exploration and explanation of a model's predictions for individual instances. Each chapter was devoted to a single technique. In practice, these techniques are rarely used separately. Rather, it is more informative to combine different insights offered by each technique into a more holistic overview.
@@ -93,7 +97,7 @@ Figure \@ref(fig:championChallengerSHAP) shows the Shapley values (see Chapter \
 
 (ref:championChallengerSHAPDesc) Shapley values for four different models for the Titanic data and Johnny D.
 
-```{r championChallengerSHAP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=5, fig.cap='(ref:championChallengerSHAPDesc)', out.width = '100%', fig.align='center'}
+```{r championChallengerSHAP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9.5, fig.height=4.5, fig.cap='(ref:championChallengerSHAPDesc)', out.width = '100%', fig.align='center'}
 library("iBreakDown")
 library("randomForest")
 library("gbm")
@@ -102,14 +106,14 @@ library("rms")
 library("DALEX")
 set.seed(1)
 
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 
-titanic_lmr <- archivist::aread("pbiecek/models/58b24")
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
-titanic_gbm <- archivist::aread("pbiecek/models/b7078")
-titanic_svm <- archivist::aread("pbiecek/models/9c27f")
+#titanic_lmr <- archivist::aread("pbiecek/models/58b24")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_gbm <- archivist::aread("pbiecek/models/b7078")
+#titanic_svm <- archivist::aread("pbiecek/models/9c27f")
 
-johnny_d <- archivist::aread("pbiecek/models/e3596")
+#johnny_d <- archivist::aread("pbiecek/models/e3596")
 
 explain_titanic_lmr <- DALEX::explain(model = titanic_lmr, data = titanic_imputed[, -9],
     y = titanic$survived == "yes", label = "Logistic Regression", verbose = FALSE)
@@ -134,8 +138,8 @@ sp_lmr_johnny <- variable_attribution(explain_titanic_lmr, johnny_d, type = "sha
 
 library(patchwork)
 scale_y <- scale_y_continuous("", limits = c(-0.25, 0.50))
-(plot(sp_rf_johnny) + scale_y | plot(sp_gbm_johnny) + scale_y) / 
-  (plot(sp_svm_johnny) + scale_y | plot(sp_lmr_johnny) + scale_y) +
+(plot(sp_rf_johnny) + scale_y + theme_ema | plot(sp_gbm_johnny) + scale_y + theme_ema) / 
+  (plot(sp_svm_johnny) + scale_y + theme_ema | plot(sp_lmr_johnny) + scale_y + theme_ema) +
   plot_annotation(title = "Shapley values for Johnny D", 
                   theme = DALEX::theme_drwhy())
 
@@ -147,7 +151,7 @@ For the SVM model, the most important variable is *gender*, while for the other 
 
 (ref:championChallengerBDDesc) Interaction break-down plots for four different models for the Titanic data and Johnny D.
 
-```{r championChallengerBD, warning=FALSE, message=FALSE, echo=FALSE, fig.width=11, fig.height=5, fig.cap='(ref:championChallengerBDDesc)', out.width = '100%', fig.align='center'}
+```{r championChallengerBD, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9.5, fig.height=4.5, fig.cap='(ref:championChallengerBDDesc)', out.width = '100%', fig.align='center'}
 set.seed(1)
 bd_rf_johnny <- variable_attribution(explain_titanic_rf, johnny_d, type = "break_down_interactions")
 bd_gbm_johnny <- variable_attribution(explain_titanic_gbm, johnny_d, type = "break_down_interactions")
@@ -156,10 +160,10 @@ bd_lmr_johnny <- variable_attribution(explain_titanic_lmr, johnny_d, type = "bre
 
 library(patchwork)
 scale_y <- scale_y_continuous("", limits = c(0.2,1))
-(plot(bd_rf_johnny) + scale_y + ggtitle("","") | plot(bd_gbm_johnny) + scale_y  + ggtitle("","") ) / 
-  (plot(bd_svm_johnny) + scale_y  + ggtitle("","")  | plot(bd_lmr_johnny) + scale_y  + ggtitle("","") ) +
+(plot(bd_rf_johnny) + scale_y + ggtitle("","") + theme_ema | plot(bd_gbm_johnny) + scale_y  + ggtitle("","")  + theme_ema) / 
+  (plot(bd_svm_johnny) + scale_y  + ggtitle("","")  + theme_ema | plot(bd_lmr_johnny) + scale_y  + ggtitle("","")  + theme_ema) +
   plot_annotation(title = "Interaction break-down plots for Johnny D", 
-                  theme = DALEX::theme_drwhy())
+                  theme = DALEX::theme_drwhy()) 
 ```
 
 Figure \@ref(fig:championChallengerCP) shows CP profiles for *age* and *fare* and the four compared models. For *fare*, the logistic-regression and SVM models show little effect. A similar conclusion can be drawn for the boosting model, though for this model the profile shows considerable oscillations. The profile for the random-forest model suggests a decrease in the predicted probability of survival when the ticket fare increases over about 37 pounds.  
@@ -168,7 +172,7 @@ For *age*, the CP profile for the SVM model shows, again, considerable oscillati
 
 (ref:championChallengerCPDesc) Ceteris-paribus plots for variables *age* and *fare* for four different models for the Titanic data and Johnny D.
 
-```{r championChallengerCP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:championChallengerCPDesc)', out.width = '75%', fig.align='center'}
+```{r championChallengerCP, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:championChallengerCPDesc)', out.width = '90%', fig.align='center'}
 splits <- list(age = seq(0,70,0.1), fare = seq(0,100,0.2))
 
 cp_rf_johnny <- individual_profile(explain_titanic_rf, johnny_d, 
@@ -183,7 +187,7 @@ cp_lmr_johnny <- individual_profile(explain_titanic_lmr, johnny_d,
 plot(cp_rf_johnny, cp_gbm_johnny, cp_svm_johnny, cp_lmr_johnny, variables = c("age", "fare"),
      color = "_label_") +
   guides(col = guide_legend(nrow = 1)) + scale_color_discrete("Model:") +
-  ggtitle("Ceteris-paribus profiles for Johnny D","")
+  ggtitle("Ceteris-paribus profiles for Johnny D","") + theme_ema
 ```
  
  Leo Breiman in his work Two Cultures [@twoCultures] described a phenomenon called Rashomon effect. It means that several models with similar performance can base their predictions on completely different relations extracted from the same data.

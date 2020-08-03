@@ -1,5 +1,9 @@
 # Local Interpretable Model-agnostic Explanations (LIME) {#LIME}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 ## Introduction {#LIMEIntroduction}
 
 Break-down (BD) plots and Shapley values, introduced in Chapters \@ref(breakDown) and \@ref(shapley), respectively, are most suitable for models with a small or moderate number of explanatory variables. 
@@ -43,7 +47,7 @@ Input: similarity - a distance function in the original data space
 1. Let x' = h(x*) be a version of x* in the lower-dimensional space
 2. for i in 1...N {
 3.   z'[i] <- sample_around(x') 
-4.   y'[i] <- f(z'[i])                # prediction for new observation z'[i]
+4.   y'[i] <- f(z'[i])       # prediction for new observation z'[i]
 5.   w'[i] <- similarity(x', z'[i]) 
 6. }
 7. return K-LASSO(y', x', w')
@@ -59,7 +63,7 @@ As it has been mentioned, the black-box model $f()$ and the glass-box model $g()
 
 It is worth noting that superpixels, based on image segmentation, are frequent choices for image data. For text data, groups of words are frequently used as interpretable variables. For tabular data, continuous variables are often discretized to obtain interpretable categorical data. In the case of categorical variables, combination of categories is often used. We will present examples in the next section.
 
-(ref:duckHorse06Desc) The left-hand-side panel shows an ambiguous picture, half-horse and half-duck. The right-hand-side panel shows 100 superpixels identified for this figure. Source: https://twitter.com/finmaddison/status/352128550704398338.
+(ref:duckHorse06Desc) The left-hand-side panel shows an ambiguous picture, half-horse and half-duck. The right-hand-side panel shows 100 superpixels identified for this figure. Source [Twitter](https://twitter.com/finmaddison/status/352128550704398338).
 
 ```{r duckHorse06, echo=FALSE, fig.cap='(ref:duckHorse06Desc)', out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/duck_horse_06.png")
@@ -102,7 +106,7 @@ First, we have got to define an interpretable data space. One option would be to
 
 (ref:LIMEexample01Desc) LIME method for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data. Presented values are the coefficients of the K-LASSO model fitted locally to the predictions from the original model. 
 
-```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample01Desc)', out.width = '60%', fig.align='center'}
+```{r LIMEexample01, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample01Desc)', out.width = '80%', fig.width=7, fig.height=4, fig.align='center'}
 knitr::include_graphics("figure/LIMEexample01.png")
 ```
 
@@ -139,22 +143,34 @@ Different implementations of LIME offer different algorithms for extraction of i
 
 In what follows, for illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that it is developed to predict the probability of survival from sinking of Titanic. Instance-level explanations are calculated for Johnny D, an 8-year-old passenger that travelled in the first class. We first retrieve the `titanic_rf` model-object and the data frame for Johnny D via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
-(johnny_d <- archivist:: aread("pbiecek/models/e3596"))
+johnny_d <- archivist:: aread("pbiecek/models/e3596")
+```
+```
+  class gender age sibsp parch fare    embarked
+1   1st   male   8     0     0   72 Southampton
 ```
 
 Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
 
-```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
+```{r, warning=FALSE, message=FALSE, echo = FALSE, eval = TRUE}
 library("randomForest")
 library("DALEX")
 titanic_rf_exp <- DALEX::explain(model = titanic_rf,  
-                          data = titanic_imputed[, -9],
-                             y = titanic_imputed$survived == "yes", 
-                         label = "Random Forest",
-                       verbose = FALSE)
+                        data = titanic_imputed[, -9],
+                           y = titanic_imputed$survived == "yes", 
+                       label = "Random Forest",
+                     verbose = FALSE)
+```
+```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
+library("randomForest")
+library("DALEX")
+titanic_rf_exp <- DALEX::explain(model = titanic_rf,  
+                        data = titanic_imputed[, -9],
+                           y = titanic_imputed$survived == "yes", 
+                       label = "Random Forest")
 ```
 
 ### The `lime` package
@@ -213,7 +229,7 @@ The output includes column `case` that provides indices of observations for whic
 Column `feature_weight` provides the estimated coefficients for the variables selected by the K-LASSO method for the explanation. The `model_intercept` column provides of the value of the intercept. Thus, the linear combination of the transformed explanatory variables used in the glass-box model approximating the random-forest model around the instance of interest, Johnny D, is given by the following equation (see Section \@ref(fitting)):
 
 $$
-\hat p_{surrogate} = 0.5541115 - 0.4038175 \cdot 1_{male} + 0.1636630 \cdot 1_{age <= 22}  + 0.1645234 \cdot 1_{class = 1st} = 0.4784804,
+\hat p_{lime} = 0.55411 - 0.40381 \cdot 1_{male} + 0.16366 \cdot 1_{age <= 22}  + 0.16452 \cdot 1_{class = 1st} = 0.47848,
 $$ 
 where $1_A$ denotes the indicator variable for condition $A$. Note that the computed value corresponds to the number given in the column `model_prediction` in the printed output. 
 
@@ -236,7 +252,7 @@ plot(lime_johnny)
 
 ### The `localModel` package
 
-The key tool of the `localModel` package is the `individual_surrogate_model()` function that fits the local glass-box model. The function is applied to the explainer-object obtained with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)). Below we will use the `predict_surrogate` method which is a wrapper for `individual_surrogate_model()` with simplified interface.
+The core function of the `localModel` package is the `individual_surrogate_model()` function that fits the local glass-box model. The function is applied to the explainer-object obtained with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)). Below we will use the `predict_surrogate` method which is a wrapper with simplified interface.
 
 The main arguments of the `predict_surrogate()` function are: `x`, which specifies the explainer object; `new_observation`, which indicates the data frame with the data for the instance(s) of interest. The `localModel` implementation uses also two additional arguments, `size` i.e., the number of artificial data points to be sampled for the local model approximation and `seed` for setting a seed for random number ganeratiot for a repeateable execution.
 
@@ -276,7 +292,7 @@ plot_interpretable_feature(lime_johnny, "age")
 ```
 ```{r LIMEexample02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:LIMEexample02Desc)', out.width = '70%', fig.width=7, fig.height=5, fig.align='center'}
 plot_interpretable_feature(lime_johnny, "age") + ggtitle("Interpretable representation for age","" ) + 
-  xlab("age") + ylab("model response")
+  xlab("age") + ylab("model response") + theme_ema
 ```
 
 By applying the generic `plot()` function to the object containing the explanation we obtain a graphical presentation of the results.
@@ -287,10 +303,10 @@ The resulting plot is shown in Figure \@ref(fig:limeExplLocalModelTitanic). The 
 ```{r, eval=FALSE}
 plot(lime_johnny)
 ```
-```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, fig.cap='(ref:limeExplLocalModelTitanicDesc)', out.width = '70%', fig.align='center', fig.width=6, fig.height=3.5}
+```{r limeExplLocalModelTitanic, echo=FALSE, eval = TRUE, fig.cap='(ref:limeExplLocalModelTitanicDesc)', out.width = '50%', fig.align='center', fig.width=7, fig.height=3}
 plot(lime_johnny) + 
   facet_null() + 
-  ggtitle("localModel explanations for Johny D","") + theme_drwhy_vertical()
+  ggtitle("localModel explanations for Johny D","") + theme_drwhy_vertical() + theme_ema
 ```
 
 <!---

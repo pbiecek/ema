@@ -2,6 +2,10 @@
 
 # FIFA 19 {#UseCaseFIFA}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 ## Introduction {#FIFAintro}
 
 In the previous chapters, we introduced a range of methods for the exploration of predictive models. Different methods were discussed in separate chapters, and while illustrated, they were not directly compared. Thus, in this chapter, we apply the methods to one dataset in order to present their relative merits. In particular, we present an example of a full process of a model development along the lines introduced in Chapter \@ref(modelDevelopmentProcess). This will allow users to show how one can combine results from different methods.
@@ -69,14 +73,14 @@ pl1 <- ggplot(fifa19small, aes(Value.EUR)) +
   theme_drwhy() + 
   scale_x_continuous("Estimated value in Euro", trans = "log10", labels = dollar_format(suffix = "€", prefix = "")) + 
   ggtitle("ECDF for player's value","") + 
-  scale_y_continuous("Fraction of players with value higher than x", label = scales::percent)
+  scale_y_continuous("Fraction of players with value higher than x", label = scales::percent) + theme_ema
 
 pl2 <- ggplot(fifa19small, aes(Value.EUR)) +
   geom_histogram(bins = 50) +
   theme_drwhy() + 
   scale_x_continuous("Value in Euro", trans = "log10", labels = dollar_format(suffix = "€", prefix = "")) + 
   ylab("Number of players with given value") +
-  ggtitle("Histogram for player's value","") 
+  ggtitle("Histogram for player's value","")  + theme_ema
 
 pl1 + pl2
 ```
@@ -94,7 +98,7 @@ library("tidyr")
 fifa19small4long <- gather(fifa19small4, variable, value)
 ggplot(fifa19small4long, aes(value)) +
   geom_histogram() + 
-  theme_drwhy() + facet_wrap(~variable, ncol = 2, scales = "free") + ggtitle("Histograms for player's characteristics","") + scale_x_continuous("")
+  theme_drwhy() + facet_wrap(~variable, ncol = 2, scales = "free") + ggtitle("Histograms for player's characteristics","") + scale_x_continuous("") + theme_ema
 ```
 
 ### Code snippets for R 
@@ -138,7 +142,7 @@ ggplot(fifa19small4long, aes(value, Value.EUR)) +
   facet_wrap(~variable, ncol = 2, scales = "free") + 
   scale_y_continuous("Value in Euro", trans = "log10", labels = dollar_format(suffix = "€", prefix = "")) + 
   scale_x_continuous("") + 
-  ggtitle("Scatterplots for player's characteristics","")
+  ggtitle("Scatterplots for player's characteristics","") + theme_ema
 
 ```
 
@@ -151,7 +155,7 @@ library("GGally")
 ggpairs(fifa19small4v[,-1], 
         diag = list(continuous = "barDiag")) +
   theme_drwhy() + 
-   ggtitle("Scatterplot matrix for player's characteristics","")
+   ggtitle("Scatterplot matrix for player's characteristics","") + theme_ema
 
 ```
 
@@ -259,14 +263,14 @@ The code below fits the models to the data. The dependent variable `ylog` contai
 ```{python, eval=FALSE}
 from lightgbm import LGBMRegressor
 
-X = fifa.drop(["nationality", "overall", "potential", "value_eur", "wage_eur"], axis = 1)
+X = fifa.drop(["nationality", "overall", "potential", 
+      "value_eur", "wage_eur"], axis = 1)
 y = fifa['value_eur']
 ylog = np.log(y)
 
-X_train, X_test, ylog_train, ylog_test, y_train, y_test = train_test_split(X, ylog, y, test_size=0.25, random_state=4)
-
+X_train, X_test, ylog_train, ylog_test, y_train, y_test =
+    train_test_split(X, ylog, y, test_size = 0.25, random_state = 4)
 gbm_model = LGBMRegressor()
-
 gbm_model.fit(X_train, ylog_train, verbose = False)
 ```
 
@@ -311,7 +315,7 @@ Figure \@ref(fig:modelPerformanceBoxplot) compares distributions of absolute mod
 ```{r modelPerformanceBoxplot, warning=FALSE, message=FALSE, echo=FALSE, eval = FALSE, fig.width=8, fig.height=3, fig.cap='(ref:modelPerformanceBoxplotDesc)', out.width = '90%', fig.align='center'}
 plot(fifa_mr_gbm_shallow, fifa_mr_gbm_deep, fifa_mr_rf, fifa_mr_rm, geom = "boxplot") +
   scale_y_continuous("Absolute residuals in Euro", trans = "log10", labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Distributions of absolute residuals","")
+  ggtitle("Distributions of absolute residuals","") + theme_ema
 ```
 
 In addition to computing measures of the overall performance of the model, we should conduct a more detailed examination of both overall- and instance-specific performance. Toward this aim, we can apply residual diagnostics, as discussed in Chapter \@ref(residualDiagnostic). 
@@ -337,7 +341,7 @@ plot(fifa_md_gbm_shallow, fifa_md_gbm_deep, fifa_md_rf, fifa_md_rm,
   facet_wrap(~label) +
   geom_abline(slope = 1) + 
   theme(legend.position = "none") +
-  ggtitle("Predicted and observed player's values", "")
+  ggtitle("Predicted and observed player's values", "") + theme_ema
 ```
 
 The resulting plot is shown in Figure \@ref(fig:modelPerformanceScatterplot). It indicates that predictions are closest to the observed values of the dependent variable for the random-forest model. It is worth noting that the smoothed trend for the model is close to a straight line, but with a slope smaller than 1. This implies the random-forest model underestimates the actual value of the most expensive players, while it overestimates the value for the least expensive ones. A similar pattern can be observed for the gradient-boosting models. This "shrinking to the mean" is typical for this type of models. 
@@ -358,7 +362,6 @@ Results of this function can be visualised with the generic `plot()` function. I
 
 ```{r modelAuditFifaR2, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 fifa_md_gbm_deep <- model_diagnostics(fifa_gbm_exp_deep)
-
 plot(fifa_md_gbm_deep, 
      variable = "y", yvariable = "y_hat") +
   scale_x_continuous("Value in Euro", trans = "log10", 
@@ -366,7 +369,7 @@ plot(fifa_md_gbm_deep,
   scale_y_continuous("Predicted value in Euro", trans = "log10", 
                      labels = dollar_format(suffix = "€", prefix = "")) + 
   geom_abline(slope = 1) + 
-  ggtitle("Predicted and observed player's values", "")
+  ggtitle("Predicted and observed player's values", "") 
 ```
 
 
@@ -385,9 +388,15 @@ Subsequently, we can construct a plot of the obtained mean (over the default 10 
 
 (ref:featureImportancePlotDesc) Mean variable-importance calculated using 10 permutations for the four developed models. 
 
-```{r featureImportancePlot, warning=FALSE, message=FALSE, echo=TRUE, fig.width=9, fig.height=11, fig.cap='(ref:featureImportancePlotDesc)', out.width = '90%', fig.align='center'}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(fifa_mp_gbm_shallow, fifa_mp_gbm_deep, fifa_mp_rf, fifa_mp_rm,
-     max_vars = 20, bar_width = 4, show_boxplots = FALSE) + ggtitle("Feature Importance", "")
+     max_vars = 20, bar_width = 4, show_boxplots = FALSE) +
+     ggtitle("Feature Importance", "") 
+```
+```{r featureImportancePlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=12, fig.cap='(ref:featureImportancePlotDesc)', out.width = '100%', fig.align='center'}
+plot(fifa_mp_gbm_shallow, fifa_mp_gbm_deep, fifa_mp_rf, fifa_mp_rm,
+     max_vars = 20, bar_width = 4, show_boxplots = FALSE) +
+     ggtitle("Feature Importance", "") + theme_ema
 ```
 
 The resulting plot is shown in Figure \@ref(fig:featureImportancePlot). The bars for each explanatory variable start at the RMSE value of a particular model and end at the (mean) RMSE calculated for data with permuted values of the variable. 
@@ -415,7 +424,7 @@ Subsequently, we can construct a plot of contrastive PD profiles (see Section \@
 plot(fifa19_pd_shallow, fifa19_pd_deep, fifa19_pd_rf, fifa19_pd_rm) +
   scale_y_continuous("Predicted value in Euro", trans = "log10", 
                      labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Contrastive partial-dependence profiles for selected variables","")
+  ggtitle("Contrastive partial-dependence profiles for selected variables","") + theme_ema
 ```
 
 The resulting plot is shown in Figure \@ref(fig:usecaseFIFApdPlot). For `Reactions`, `BallControl`, and `Dribbling` the shape of the profiles is, in general, similar for all the models and implies an increasing predicted player's value for an increasing (at least, after passing some threshold) value of the explanatory variable. However, for `Age`, the shape is different and suggests a decreasing player's value after the age of about 25 years. It is worth noting that the range of expected model's predictions is, in general, the smallest for the random-forest model. Also, the three tree-based models tend to stabilize the predictions at the ends of the explanatory-variable ranges.
@@ -435,14 +444,14 @@ The `model_parts()` function from the `DALEX`package (see Section \@ref(featureI
 
 ```{r modelLeveleModelsEx1, warning=FALSE, message=FALSE, eval=FALSE}
 fifa_mp_gbm_deep <- model_parts(fifa_gbm_exp_deep)
-plot(fifa_mp_gbm_deep, max_vars = 20, bar_width = 4, show_boxplots = FALSE)
+plot(fifa_mp_gbm_deep, max_vars = 20, 
+     bar_width = 4, show_boxplots = FALSE) 
 ```
 
 The `model_profile()` function from the `DALEX`package (see Section \@ref(PDPR)) is used to calculate partial dependence profiles. The generic `plot()` function visualizes these profiles for selected variables.
 
 ```{r modelLeveleModelsEx2, warning=FALSE, message=FALSE, eval=FALSE}
 selected_variables <- c("Reactions", "BallControl", "Dribbling", "Age")
-
 fifa19_pd_deep <- model_profile(fifa_gbm_exp_deep, 
                              variables = selected_variables)
 plot(fifa19_pd_deep)
@@ -457,7 +466,7 @@ The `model_parts` method from the `dalex` library (see Section \@ref(featureImpo
 
 ```{python, eval=FALSE}
 fifa_mp_gbm = fifa_gbm.model_parts()
-fifa_mp_gbm.plot(max_vars=20)
+fifa_mp_gbm.plot(max_vars = 20)
 ```
 
 The `model_profile` method from the `dalex` library (see Section \@ref(PDPPython)) is used to calculate partial dependence profiles. The `plot()` method visualizes these profiles for selected variables.
@@ -501,11 +510,11 @@ Subsequently, we create the BD plot.
 
 (ref:usecaseFIFAbreakDowDesc) Break-down plot for Robert Lewandowski for the random-forest model.
 
-```{r usecaseFIFAbreakDownPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=4, fig.cap='(ref:usecaseFIFAbreakDowDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAbreakDownPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap='(ref:usecaseFIFAbreakDowDesc)', out.width = '100%', fig.align='center'}
 pl1 <- plot(fifa_bd_rf) +
   scale_y_continuous("Predicted value in Euro", 
                       labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Break-down plot for Robert Lewandowski","")
+  ggtitle("Break-down plot for Robert Lewandowski","") + theme_ema
 pl1
 ```
 <!----
@@ -529,11 +538,11 @@ Subsequently, we create a plot illustrating the computed values.
 
 (ref:usecaseFIFAshapPlotDesc) Shapley values for Robert Lewandowski for the random-forest model.
 
-```{r usecaseFIFAshapPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=4, fig.cap='(ref:usecaseFIFAshapPlotDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAshapPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap='(ref:usecaseFIFAshapPlotDesc)', out.width = '100%', fig.align='center'}
 plot(fifa_shap_rf, show_boxplots = FALSE) +
   scale_y_continuous("Estimated value in Euro", 
                      labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Shapley values for Robert Lewandowski","")
+  ggtitle("Shapley values for Robert Lewandowski","") + theme_ema
 ```
 
 <!---
@@ -590,7 +599,7 @@ plot(fifa_cp_rf, color = "_label_",
              variables = c("Age", "Reactions", "BallControl", "Dribbling")) + 
   scale_y_continuous("Estimated value in Euro", trans = "log10", 
                      labels = dollar_format(suffix = "€", prefix = "")) +
-  theme(legend.position = "none") + ggtitle("Ceteris Paribus profile", "")
+  theme(legend.position = "none") + ggtitle("Ceteris Paribus profile", "") + theme_ema
 ```
 
 The resulting plot is shown in Figure \@ref(fig:usecaseFIFAceterisParibusPlot). It suggests that, among the four variables, `BallControl` and `Reactions` lead to the largest changes of predictions for this instance. For all four variables, the profiles flatten at the left- and right-hand-side edges. The predicted value of Robert Lewandowski reaches or is very close to the maximum for all four profiles. It is interesting to note that, for `Age`, the predicted value is located at the border of the age region at which the profile suggests a sharp drop in player's value. 
@@ -606,8 +615,8 @@ Subsequently, we construct a plot that shows the histogram of residuals for all 
 
 (ref:usecaseFIFAceterisParibusNeighboursPlotDesc) Distribution of residuals for all players and neighbours of Robert Lewandowski.
 
-```{r usecaseFIFAceterisParibusNeighboursPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=4.5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursPlotDesc)', out.width = '90%', fig.align='center'}
-plot(id_rf) 
+```{r usecaseFIFAceterisParibusNeighboursPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4.5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursPlotDesc)', out.width = '90%', fig.align='center'}
+plot(id_rf)  + theme_ema
 ```
 
 The resulting plot is presented in Figure \@ref(fig:usecaseFIFAceterisParibusNeighboursPlot). Clearly, the neighbours of Robert Lewandowski include some of the most expensive players. Therefore, as compared to the overall distribution, the distribution of residuals for the neighbours is skewed to the right and their mean is larger as the overall mean.  Thus, the model underestimates the actual value of the most expensive players. This was also noted based on the plot in the bottom-left panel of Figure \@ref(fig:modelPerformanceScatterplot).
@@ -625,11 +634,11 @@ id_rf_age <- individual_diagnostics(fifa_rf_exp, fifa19small_red["R. Lewandowski
 
 (ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc) Local-stability plot for age for 30 neighbors of Robert Lewandowski and the random-forest model.
 
-```{r usecaseFIFAceterisParibusNeighboursAgeRFPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc)', out.width = '90%', fig.align='center'}
+```{r usecaseFIFAceterisParibusNeighboursAgeRFPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc)', out.width = '90%', fig.align='center'}
 plot(id_rf_age) +  
   scale_y_continuous("Estimated value in Euro", trans = "log10", 
                      labels = dollar_format(suffix = "€", prefix = "")) +   
-  ggtitle("Local-stability plot for Robert Lewandowski", "")
+  ggtitle("Local-stability plot for Robert Lewandowski", "") + theme_ema
 ```
 
 The resulting local-stability plot is presented in Figure \@ref(fig:usecaseFIFAceterisParibusNeighboursAgeRFPlot). The CP profiles are almost parallel, but span quite a wide range of the predicted player's values. Thus, one could conclude that the predictions for the most expensive players are not very stable. Also, the plot includes more positive residuals (indicated in the plot by green vertical intervals) than negative ones (indicated by red vertical intervals). This confirms the conclusion drawn from Figure \@ref(fig:usecaseFIFAceterisParibusNeighboursPlot) that the values of the most expensive players are underestimated by the model.
@@ -648,29 +657,31 @@ The `predict_parts()` function from the `DALEX`package (see Chapters \@ref(break
 Use `type = "break_down"` to calculate break-down plots.
 
 ```{r instanceLeveleModelsEx1, warning=FALSE, message=FALSE, eval=FALSE}
-fifa_bd_gbm <- predict_parts(fifa_gbm_exp, new_observation = fifa["R. Lewandowski",], type = "break_down")
-
+fifa_bd_gbm <- predict_parts(fifa_gbm_exp, 
+                   new_observation = fifa["R. Lewandowski",],
+                   type = "break_down")
 plot(fifa_bd_gbm) +
   scale_y_continuous("Predicted value in Euro", 
-                      labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Break-down plot for Robert Lewandowski","")
+                  labels = dollar_format(suffix = "€", prefix = "")) + 
+  ggtitle("Break-down plot for Robert Lewandowski","") 
 ```
 
 Or use `type = "shap"` to calculate Shapley values.
 
 ```{r instanceLeveleModelsEx2, warning=FALSE, message=FALSE, eval=FALSE}
-fifa_shap_gbm <- variable_attribution(fifa_gbm_exp, new_observation = fifa["R. Lewandowski",], type = "shap")
+fifa_shap_gbm <- predict_parts(fifa_gbm_exp, 
+                     new_observation = fifa["R. Lewandowski",], 
+                     type = "shap")
 plot(fifa_shap_gbm, show_boxplots = FALSE) +
   scale_y_continuous("Estimated value in Euro", 
-                     labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Shapley values for Robert Lewandowski","")
+                   labels = dollar_format(suffix = "€", prefix = "")) + 
+  ggtitle("Shapley values for Robert Lewandowski","") 
 ```
 
 The `predict_profile()` function from the `DALEX` package (see Section \@ref(CPR)) is used to calculate cateris paribus profiles. The generic `plot()` function visualizes these profiles for selected variables.
 
 ```{r modelLeveleModelsEx3, warning=FALSE, message=FALSE, eval=FALSE}
 selected_variables <- c("Reactions", "BallControl", "Dribbling", "Age")
-
 fifa_cp_gbm <- predict_profile(fifa_gbm_exp,
                    new_observation = fifa["R. Lewandowski",], 
                          variables = selected_variables)
@@ -727,20 +738,20 @@ The BD plot is presented in Figure \@ref(fig:usecaseFIFAbreakDownCR7Plot). It su
 
 (ref:usecaseFIFAbreakDownCR7PlotDesc) Break-down plot for Cristiano Ronaldo for the random-forest model.
 
-```{r usecaseFIFAbreakDownCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownCR7PlotDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAbreakDownCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownCR7PlotDesc)', out.width = '100%', fig.align='center'}
 fifa_bd_rf_cr <- variable_attribution(fifa_rf_exp, 
         new_observation = fifa19small_red["Cristiano Ronaldo",])
 
 plot(fifa_bd_rf_cr) +
   scale_y_continuous("Estimated value in Euro", labels=dollar_format(suffix="€",prefix="")) + 
-  ggtitle("Break-down plot for Cristiano Ronaldo", "")
+  ggtitle("Break-down plot for Cristiano Ronaldo", "") + theme_ema
 ```
 
 Figure \@ref(fig:usecaseFIFAshapCR7Plot) presents Shapley values for Cristiano Ronaldo. It indicates that the four explanatory variables with the largest values are `Reactions`, `Dribbling`, `BallControl`, and `ShortPassing`. These are the same variables as for Robert Lewandowski, though in a different order. Interestingly, the plot for Cristiano Ronaldo includes variable `Age`, for which Shapley value is negative. It suggests that CR7's age has got a negative effect on the model's prediction. 
 
 (ref:usecaseFIFAshapCR7PlotDesc) Shapley values for Cristiano Ronaldo for the random-forest model.
 
-```{r usecaseFIFAshapCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap='(ref:usecaseFIFAshapCR7PlotDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAshapCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAshapCR7PlotDesc)', out.width = '100%', fig.align='center'}
 set.seed(1965)
 fifa_shap_rf_cr <- variable_attribution(fifa_rf_exp, 
                       new_observation = fifa19small_red["Cristiano Ronaldo",],
@@ -748,7 +759,7 @@ fifa_shap_rf_cr <- variable_attribution(fifa_rf_exp,
 plot(fifa_shap_rf_cr, show_boxplots = FALSE) +
   scale_y_continuous("Estimated value in Euro", 
                      labels = dollar_format(suffix = "€", prefix = "")) + 
-  ggtitle("Shapley values for Cristiano Ronaldo","")
+  ggtitle("Shapley values for Cristiano Ronaldo","") + theme_ema
 ```
 
 Finally, Figure \@ref(fig:usecaseFIFAceterisParibusCR7Plot) presents CP profiles for four selected explanatory variables for Cristiano Ronaldo. 
@@ -764,7 +775,7 @@ fifa_cp_rf <- individual_profile(fifa_rf_exp,
                            variable_splits = selected_splits)
 plot(fifa_cp_rf, variables = c("Age", "Reactions", "BallControl", "Dribbling")) + 
   scale_y_continuous("Estimated value in Euro", trans = "log10", 
-                     labels = dollar_format(suffix = "€", prefix = "")) 
+                     labels = dollar_format(suffix = "€", prefix = ""))  + theme_ema
 ```
 
 The profiles are similar to those presented in Figure \@ref(fig:usecaseFIFAceterisParibusPlot) for Robert Lewandowski. An interesting difference is that, for `Age`, the predicted value for Cristiano Ronaldo is located within the region of age, linked with a sharp drop in player's value. This is in accordance with the observation, made based on Figure \@ref(fig:usecaseFIFAshapCR7Plot), that CR7's age has got a negative effect on the model's prediction. 
@@ -790,12 +801,12 @@ Figure \@ref(fig:usecaseFIFAbreakDownWS) shows the BD plot for the random-forest
 
 (ref:usecaseFIFAbreakDownWSDesc) Break-down plot for Wojciech Szczęsny for the random-forest model.
 
-```{r usecaseFIFAbreakDownWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownWSDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAbreakDownWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownWSDesc)', out.width = '100%', fig.align='center'}
 fifa_bd_rf_ws <- variable_attribution(fifa_rf_exp, 
                             new_observation = fifa19small_red["W. Szczęsny",])
 plot(fifa_bd_rf_ws) +
   scale_y_continuous("Estimated value in Euro", labels=dollar_format(suffix="€", prefix="")) + 
-  ggtitle("Break-down plot for Wojciech Szczęsny","")
+  ggtitle("Break-down plot for Wojciech Szczęsny","") + theme_ema
 
 ```
 
@@ -803,14 +814,14 @@ Figure \@ref(fig:usecaseFIFAshapWS) presents Shapley values (over 25 random orde
 
 (ref:usecaseFIFAshapWSDesc) Shapley values for Wojciech Szczęsny for the random-forest model.
 
-```{r usecaseFIFAshapWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=10, fig.height=5, fig.cap='(ref:usecaseFIFAshapWSDesc)', out.width = '100%', fig.align='center'}
+```{r usecaseFIFAshapWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAshapWSDesc)', out.width = '100%', fig.align='center'}
 set.seed(1994)
 fifa_shap_rf_ws <- variable_attribution(fifa_rf_exp, 
                                         new_observation = fifa19small_red["W. Szczęsny",],
                                         type = "shap",)
 plot(fifa_shap_rf_ws, show_boxplots = FALSE) +
   scale_y_continuous("Estimated value in Euro", labels=dollar_format(suffix="€", prefix="")) + 
-  ggtitle("Shapley values for Wojciech Szczęsny","")
+  ggtitle("Shapley values for Wojciech Szczęsny","") + theme_ema
 ```
 
 
@@ -894,7 +905,7 @@ a + ggtitle("Shapley for CR7") + scale_y_continuous("",labels = dollar_format(su
 
 predict_profile(fifa_exp, cr17) %>% plot(variables = c("Age", "BallControl")) + ggtitle("Ceteris Paribus Profiles for CR7") + scale_y_continuous("",labels = dollar_format(suffix = "€", prefix = ""))
 
-plot(a, show_boxplots = FALSE) + coord_flip(xlim=c(31,41)) + ggtitle("Shapley for CR17")
+plot(a, show_boxplots = FALSE) + coord_flip(xlim=c(31,41)) + ggtitle("Shapley for CR17") + theme_ema
 
 predict_diagnostics(fifa_exp, cr17) %>% plot() + scale_x_continuous("",labels = dollar_format(suffix = "€", prefix = ""))
 
@@ -904,7 +915,7 @@ model_parts(fifa_exp) %>% plot(show_boxplots = FALSE, max_vars = 10)
 
 model_profile(fifa_exp) %>% plot(variables = c("Age", "BallControl"), geom = "profiles") + ggtitle("Partial Dependence Profiles for GBM model")
 
-model_profile(fifa_exp) %>% DALEX:::plot.model_profile_profiles(variables = c("Age", "BallControl")) + scale_y_continuous("",labels = dollar_format(suffix = "€", prefix = ""))+ ggtitle("Partial Dependence Profiles for GBM model")
+model_profile(fifa_exp) %>% DALEX:::plot.model_profile_profiles(variables = c("Age", "BallControl")) + scale_y_continuous("",labels = dollar_format(suffix = "€", prefix = ""))+ ggtitle("Partial Dependence Profiles for GBM model") + theme_ema
 
 ```
 

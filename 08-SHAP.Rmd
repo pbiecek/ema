@@ -1,5 +1,9 @@
 # Shapley Additive Explanations (SHAP) for Average Attributions {#shapley}
 
+```{r, echo=FALSE}
+source("code_snippets/ema_init.R")
+```
+
 In Chapter \@ref(breakDown), we introduced break-down (BD) plots, a procedure to calculate of the attribution of an explanatory variable for a model's prediction. We also indicated that, in the presence of interactions, the computed value of the attribution depends on the order of explanatory covariates that are used in calculations. One solution to the problem, presented in Chapter \@ref(breakDown), is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter \@ref(iBreakDown), is to identify interactions and explicitly present their contributions to the predictions.
 
 In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable's attribution overall, or a large number of, possible orderings. The idea is closely linked to "Shapley values" developed originally for cooperative games [@shapleybook1952]. The approach was first introduced by @imeJLMR and @Strumbelj2014. It was widely adopted after the publication of the paper by @SHAP and Python's library for SHapley Additive exPlanations, SHAP [@shapPackage]. The authors of SHAP introduced an efficient algorithm for tree-based models [@TreeSHAP]. They also showed that Shapley values could be presented as a unification of a collection of different commonly used techniques for model explanations [@SHAP].
@@ -19,7 +23,7 @@ Figure \@ref(fig:shapOrdering) presents the averages, calculated over the ten or
 
 (ref:shapOrderingDesc) Average attributions for ten random orderings. Red and green bars present the means. Box plots summarize the distribution of contributions for each explanatory variable across the orderings.
 
-```{r shapOrdering, echo=FALSE, fig.cap='(ref:shapOrderingDesc)', out.width = '70%', fig.align='center'}
+```{r shapOrdering, echo=FALSE, fig.cap='(ref:shapOrderingDesc)', out.width = '80%', fig.align='center'}
 knitr::include_graphics("figure/shap_ordering.png")
 ```
 
@@ -87,7 +91,7 @@ library(ggplot2)
 set.seed(8)
 shap_attributions <- break_down_uncertainty(explain_titanic_rf, johnny_d, path = "average", B = 25)
 shap_attributions$label = "The `titanic_rf` random forest model"
-plot(shap_attributions) + ggtitle("Average attributions for Johnny D", "") + facet_null()
+plot(shap_attributions) + ggtitle("Average attributions for Johnny D", "") + facet_null() + theme_ema
 
 shap_attributions[shap_attributions$B == 0,"mean"]
 knitr::kable(as.data.frame(shap_attributions[shap_attributions$B == 0,c(3,1)]))
@@ -165,9 +169,8 @@ library("DALEX")
 library("randomForest")
 library("ggplot2")
 
-titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
-
-titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
+#titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
+#titanic_rf <- archivist::aread("pbiecek/models/4e0fc")
 
 #load("models/titanic_rf.rda")
 #load("models/titanic.rda")
@@ -179,7 +182,7 @@ explain_titanic_rf <- DALEX::explain(model = titanic_rf,
                               colorize = FALSE,
                               verbose = FALSE)
 
-johnny_d <- archivist::aread("pbiecek/models/e3596")
+#johnny_d <- archivist::aread("pbiecek/models/e3596")
 
 #johnny_d <- data.frame(
 #  class = factor("1st", levels = c("1st", "2nd", "3rd", "deck crew", "engineering crew", 
@@ -208,11 +211,11 @@ The picture for variables *fare* and *class* is more complex, as their contribut
 
 (ref:shappJohny02Desc) Explanatory-variable attributions for the prediction for Johnny D for the random-forest model `titanic_rf` and the Titanic data based on 25 random orderings. Left-hand-side plot: box plots summarize the distribution of the attributions for each explanatory variable across the orderings. Red and green bars present Shapley values. Right-hand-side plot: Shapley values (mean attributions) without box plots.
 
-```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:shappJohny02Desc)', fig.width=11, fig.height=5.5, out.width = '100%', fig.align='center'}
+```{r shappJohny02, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:shappJohny02Desc)', fig.width=11, fig.height=4, out.width = '100%', fig.align='center'}
 library("patchwork")
 
-pl1 <- plot(shap_johnny) + ggtitle("Average attributions for Johnny D") + facet_null()
-pl2 <- plot(shap_johnny, show_boxplots = FALSE) + ggtitle("Average attributions for Johnny D") + facet_null()
+pl1 <- plot(shap_johnny) + ggtitle("Average attributions for Johnny D") + facet_null() + theme_ema
+pl2 <- plot(shap_johnny, show_boxplots = FALSE) + ggtitle("Average attributions for Johnny D") + facet_null() + theme_ema
 pl1 + pl2
 ```
 
@@ -249,22 +252,36 @@ For illustration purposes, we use the `titanic_rf` random-forest model for the T
 
 We first retrieve the `titanic_rf` model-object and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
-```{r, warning=FALSE, message=FALSE, eval=TRUE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
 titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
+```
+  class gender age sibsp parch fare  embarked
+1   1st   male  47     0     0   25 Cherbourg
+```
+
 Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. The model's prediction for Henry is obtained  with the help of the  function. 
 
-```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = TRUE}
+```{r, warning=FALSE, message=FALSE, echo = FALSE, eval = TRUE}
 library("randomForest")
 library("DALEX")
 explain_rf <- DALEX::explain(model = titanic_rf,  
-                          data = titanic_imputed[, -9],
-                             y = titanic_imputed$survived == "yes", 
-                         label = "Random Forest",
-                       verbose = FALSE)
+                        data = titanic_imputed[, -9],
+                           y = titanic_imputed$survived == "yes", 
+                       label = "Random Forest",
+                     verbose = FALSE)
+predict(explain_rf, henry)
+```
+```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
+library("randomForest")
+library("DALEX")
+explain_rf <- DALEX::explain(model = titanic_rf,  
+                        data = titanic_imputed[, -9],
+                           y = titanic_imputed$survived == "yes", 
+                       label = "Random Forest")
 predict(explain_rf, henry)
 ```
 
@@ -287,16 +304,24 @@ By applying the generic function `plot()` to the `shap_henry` object we obtain t
 
 (ref:ShapforHenryDesc) A plot of Shapley values with box plots obtained by applying the generic `plot()` function to the explainer for the `titanic_rf` model and passenger Henry for the Titanic data.
 
-```{r ShapforHenry, warning=FALSE, message=FALSE, fig.cap='(ref:ShapforHenryDesc)', out.width = '80%', fig.align='center', fig.width=8, fig.height=4}
-plot(shap_henry) 
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+plot(shap_henry)
+```
+
+```{r ShapforHenry, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:ShapforHenryDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
+plot(shap_henry) + theme_ema
 ```
 
 To obtain a plot with only Shapley values, i.e., without the box plots, we apply the `show_boxplots=FALSE` argument in the `plot()` function call.
 
 (ref:ShapOnlyforHenryDesc) A plot of Shapley values without box plots obtained by applying the generic `plot()` function to the explainer for the `titanic_rf` model and passenger Henry for the Titanic data.
 
-```{r ShapOnlyforHenry, warning=FALSE, message=FALSE, fig.cap='(ref:ShapOnlyforHenryDesc)', out.width = '80%', fig.align='center', fig.width=8, fig.height=4}
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(shap_henry, show_boxplots = FALSE) 
+```
+
+```{r ShapOnlyforHenry, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:ShapOnlyforHenryDesc)', out.width = '70%', fig.align='center', fig.width=7, fig.height=4}
+plot(shap_henry, show_boxplots = FALSE)  + theme_ema
 ```
 
 The resulting plot, shown in Figure \@ref(fig:ShapOnlyforHenry), can be compared to the plot in the right-hand-side panel of Figure \@ref(fig:shappJohny02) for Johnny D. The most remarkable difference is related to the contribution of *age*. The young age of Johnny D markedly increases the chances of survival, in contrary to the negative contribution of the age of 47 for Henry. 
@@ -312,23 +337,24 @@ In the first step we create an Explainer, an object that will provide a uniform 
 
 ```{python,  eval = FALSE}
 import pandas as pd
-henry = pd.DataFrame({'gender': ['male'],
-                       'age': [47],
-                       'class': ['1st'],
+henry = pd.DataFrame({'gender'   : ['male'],
+                       'age'     : [47],
+                       'class'   : ['1st'],
                        'embarked': ['Southampton'],
-                       'fare': [25],
-                       'sibsp': [0],
-                       'parch': [0]},
+                       'fare'    : [25],
+                       'sibsp'   : [0],
+                       'parch'   : [0]},
                       index = ['Henry'])
 
 import dalex as dx
-titanic_rf_exp = dx.Explainer(titanic_rf, X, y, label = "Titanic RF Pipeline")
+titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
+                  label = "Titanic RF Pipeline")
 ```
 
 To calculate the attributions with the break down method with interactions one can use the `predict_parts` method with `type='shap'` argument. The first argument is the observation for which the attributions are to be calculated.  Results are stored in the `results` field. 
 
 ```{python,  eval = FALSE}
-bd_henry = titanic_rf_exp.predict_parts(henry, type='shap')
+bd_henry = titanic_rf_exp.predict_parts(henry, type = 'shap')
 bd_henry.result
 ```
 
@@ -338,7 +364,7 @@ To visualize these values just call the `plot()` function.
 bd_henry.plot()
 ```
 
-```{r shapPython2, echo=FALSE, out.width = '80%', fig.align='center'}
+```{r shapPython2, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/shap_python_1.png")
 ```
 
