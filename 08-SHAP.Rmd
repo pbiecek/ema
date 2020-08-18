@@ -1,12 +1,12 @@
 # Shapley Additive Explanations (SHAP) for Average Attributions {#shapley}
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 source("code_snippets/ema_init.R")
 ```
 
-In Chapter \@ref(breakDown), we introduced break-down (BD) plots, a procedure to calculate of the attribution of an explanatory variable for a model's prediction. We also indicated that, in the presence of interactions, the computed value of the attribution depends on the order of explanatory covariates that are used in calculations. One solution to the problem, presented in Chapter \@ref(breakDown), is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter \@ref(iBreakDown), is to identify interactions and explicitly present their contributions to the predictions.
+In Chapter \@ref(breakDown), we introduced break-down (BD) plots, a procedure for calculation of an attribution of an explanatory variable for a model's prediction. We also indicated that, in the presence of interactions, the computed value of the attribution depends on the order of explanatory covariates that are used in calculations. One solution to the problem, presented in Chapter \@ref(breakDown), is to find an ordering in which the most important variables are placed at the beginning. Another solution, described in Chapter \@ref(iBreakDown), is to identify interactions and explicitly present their contributions to the predictions.
 
-In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable's attribution overall, or a large number of, possible orderings. The idea is closely linked to "Shapley values" developed originally for cooperative games [@shapleybook1952]. The approach was first introduced by @imeJLMR and @Strumbelj2014. It was widely adopted after the publication of the paper by @SHAP and Python's library for SHapley Additive exPlanations, SHAP [@shapPackage]. The authors of SHAP introduced an efficient algorithm for tree-based models [@TreeSHAP]. They also showed that Shapley values could be presented as a unification of a collection of different commonly used techniques for model explanations [@SHAP].
+In this chapter, we introduce yet another approach to address the ordering issue. It is based on the idea of averaging the value of a variable's attribution over all (or a large number of) possible orderings. The idea is closely linked to "Shapley values" developed originally for cooperative games [@shapleybook1952]. The approach was first introduced by @imeJLMR and @Strumbelj2014. It has been widely adopted after the publication of the paper by @SHAP and Python's library for SHapley Additive exPlanations, SHAP [@shapPackage]. The authors of SHAP introduced an efficient algorithm for tree-based models [@TreeSHAP]. They also showed that Shapley values could be presented as a unification of a collection of different commonly used techniques for model explanations [@SHAP].
 
 ## Intuition {#SHAPIntuition}
 
@@ -106,7 +106,7 @@ Shapley values are a solution to the following problem. A coalition of players c
 
 Let's translate this problem to the context of a model's predictions. Explanatory variables are the players, while model $f()$ plays the role of the coalition. The payoff from the coalition is the model's prediction. The problem to solve is how to distribute the model's prediction across particular variables?
 
-The idea of using Shapley values for evaluation of local variable-importance was introduced by @imeJLMR. We will define the values here using the notation introduced in Section \@ref(BDMethodGen).
+The idea of using Shapley values for evaluation of local variable-importance was introduced by @imeJLMR. We will define the values using the notation introduced in Section \@ref(BDMethodGen).
 
 Let us consider a permutation $J$ of the set of indices $\{1,2,\ldots,p\}$ corresponding to an ordering of $p$ explanatory variables included in the model $f()$. Denote by $\pi(J,j)$ the set of the indices of the variables that are positioned in $J$ before the $j$-th variable. Note that, if the $j$-th variable is placed as the first, then $\pi(J,j) = \emptyset$. Consider the model's prediction $f(\underline{x}_*)$ for a particular instance of interest $\underline{x}_*$. The Shapley value is defined as follows:
 
@@ -134,11 +134,11 @@ S \subseteq \{1,\ldots,p\}\setminus \{j\} \\ |S|=s
 
 where $|S|$ denotes the cardinal number (size) of set $S$ and the second sum is taken over all subsets $S$ of explanatory variables, excluding the $j$-th one, of size $s$. 
 
-Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p}-1$, i.e., it is much smaller than number of all permutations $p!$. Nevertheless, for a large $p$, it may be feasible to compute Shapley values neither using  \@ref(eq:SHAP) nor \@ref(eq:SHAP1). In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced by @Strumbelj2014. An efficient implementation of computations of Shapley values for tree based models was used in package SHAP [@SHAP]. 
+Note that the number of all subsets of sizes from 0 to $p-1$ is $2^{p}-1$, i.e., it is much smaller than number of all permutations $p!$. Nevertheless, for a large $p$, it may be feasible to compute Shapley values neither using  \@ref(eq:SHAP) nor \@ref(eq:SHAP1). In that case, an estimate based on a sample of permutations may be considered. A Monte Carlo estimator was introduced by @Strumbelj2014. An efficient implementation of computations of Shapley values for tree-based models was used in package SHAP [@SHAP]. 
 
 From the properties of Shapley values for cooperative games it follows that, in the context of predictive models, they enjoy the following properties:
 
-* Symmetry: if two explanatory variables $j$ and $k$ are interchangeable, i.e., for any set of explanatory variables $S \subseteq \{1,\dots,p\}\setminus \{j,k\}$ we have got
+* Symmetry: if two explanatory variables $j$ and $k$ are interchangeable, i.e., if, for any set of explanatory variables $S \subseteq \{1,\dots,p\}\setminus \{j,k\}$ we have got
 $$
 \Delta^{j|S}(\underline{x}_*) = \Delta^{k|S}(\underline{x}_*),
 $$
@@ -205,7 +205,7 @@ shap_johnny <- variable_attribution(explain_titanic_rf,
 
 Let us consider the random-forest model `titanic_rf` (see Section \@ref(model-titanic-rf)) and passenger Johny D (see Section \@ref(predictions-titanic)) as the instance of interest in the Titanic data. 
 
-Box plots in Figure \@ref(fig:shappJohny02) present the distribution of the contributions $\Delta^{j|\pi(J,j)}(\underline{x}_*)$ for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive Shapley values across the orderings. It is clear that the young age of Johny D results in a positive contribution for all orderings; the resulting Shapley value is equal to 0.2525. On the other hand, the effect of gender is in all cases negative, with the Shapley value equal to -0.0908.
+Box plots in Figure \@ref(fig:shappJohny02) present the distribution of the contributions $\Delta^{j|\pi(J,j)}(\underline{x}_*)$ for each explanatory variable of the model for 25 random orderings of the explanatory variables. Red and green bars represent, respectively, the negative and positive Shapley values across the orderings. It is clear that the young age of Johnny D results in a positive contribution for all orderings; the resulting Shapley value is equal to 0.2525. On the other hand, the effect of gender is in all cases negative, with the Shapley value equal to -0.0908.
 
 The picture for variables *fare* and *class* is more complex, as their contributions can even change the sign, depending on the ordering. Note that Figure \@ref(fig:shappJohny02) presents Shapley values separately for each of the two variables. However, it is worth recalling that the iBD plot in Figure \@ref(fig:iBreakDownTitanicExamplePlot) indicated an important contribution of an interaction between the two variables. Hence, their contributions should not be separated. Thus, the Shapley values for *fare* and *class*, presented in Figure \@ref(fig:shappJohny02), should be interpreted with caution.
 
@@ -246,7 +246,7 @@ An important practical limitation of the general model-agnostic method is that, 
  
 ## Code snippets for R {#SHAPRcode}
 
-In this section, we use the `DALEX` package, which is a wrapper for the `iBreakDown` R package. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. Note that there are also other R packages that offer similar functionalities, like `iml` [@imlRPackage], `fastshap` [@fastshapRpackage] or `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage].
+In this section, we use the `DALEX` package, which is a wrapper for the `iBreakDown` R package. The package covers all methods presented in this chapter. It is available on `CRAN` and `GitHub`. Note that there are also other R packages that offer similar functionalities, like `iml` [@imlRPackage], `fastshap` [@fastshapRpackage] or `shapper` [@shapperPackage], which is a wrapper for the Python library `SHAP` [@shapPackage].
 
 For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
@@ -258,12 +258,17 @@ titanic_rf <- archivist:: aread("pbiecek/models/4e0fc")
 (henry <- archivist::aread("pbiecek/models/a6538"))
 ```
 
-```
-  class gender age sibsp parch fare  embarked
-1   1st   male  47     0     0   25 Cherbourg
-```
-
 Then we construct the explainer for the model by using function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). We also load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function  available. The model's prediction for Henry is obtained  with the help of the  function. 
+
+```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
+library("randomForest")
+library("DALEX")
+explain_rf <- DALEX::explain(model = titanic_rf,  
+                        data = titanic_imputed[, -9],
+                           y = titanic_imputed$survived == "yes", 
+                       label = "Random Forest")
+predict(explain_rf, henry)
+```
 
 ```{r, warning=FALSE, message=FALSE, echo = FALSE, eval = TRUE}
 library("randomForest")
@@ -275,17 +280,8 @@ explain_rf <- DALEX::explain(model = titanic_rf,
                      verbose = FALSE)
 predict(explain_rf, henry)
 ```
-```{r, warning=FALSE, message=FALSE, echo = TRUE, eval = FALSE}
-library("randomForest")
-library("DALEX")
-explain_rf <- DALEX::explain(model = titanic_rf,  
-                        data = titanic_imputed[, -9],
-                           y = titanic_imputed$survived == "yes", 
-                       label = "Random Forest")
-predict(explain_rf, henry)
-```
 
-To compute Shapley values for Henry, we apply function `predict_parts()` as in Section \@ref(BDR) to the explainer-object `explain_rf` and the data frame for the instance of interest, i.e., Henry. By specifying the `type="shap"` argument we indicate that we want to compute Shapley values. Additionally, the `B=25` argument indicates that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. Note that `B=25` is also the default value of the argument.
+To compute Shapley values for Henry, we apply function `predict_parts()` (as in Section \@ref(BDR)) to the explainer-object `explain_rf` and the data frame for the instance of interest, i.e., Henry. By specifying the `type="shap"` argument we indicate that we want to compute Shapley values. Additionally, the `B=25` argument indicates that we want to select 25 random orderings of explanatory variables for which the Shapley values are to be computed. Note that `B=25` is also the default value of the argument.
 
 ```{r, warning=FALSE, message=FALSE}
 shap_henry <- predict_parts(explainer = explain_rf, 
@@ -300,13 +296,15 @@ The resulting object `shap_henry` is a data frame with variable-specific attribu
 shap_henry
 ```
 
-By applying the generic function `plot()` to the `shap_henry` object we obtain the plot shown in Figure \@ref(fig:ShapforHenry). It includes the Shapley values and box plots summarizing the distributions of the variable contributions for the selected random orderings.
-
-(ref:ShapforHenryDesc) A plot of Shapley values with box plots obtained by applying the generic `plot()` function to the explainer for the `titanic_rf` model and passenger Henry for the Titanic data.
+By applying the generic function `plot()` to the `shap_henry` object, we obtain a graphical illustration of the results. 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(shap_henry)
 ```
+
+The resulting plot is shown in Figure \@ref(fig:ShapforHenry). It includes the Shapley values and box plots summarizing the distributions of the variable-specific contributions for the selected random orderings.
+
+(ref:ShapforHenryDesc) A plot of Shapley values with box plots for the `titanic_rf` model and passenger Henry for the Titanic data, obtained by applying the generic `plot()` function in R.
 
 ```{r ShapforHenry, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:ShapforHenryDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
 plot(shap_henry) + theme_ema
@@ -314,33 +312,32 @@ plot(shap_henry) + theme_ema
 
 To obtain a plot with only Shapley values, i.e., without the box plots, we apply the `show_boxplots=FALSE` argument in the `plot()` function call.
 
-(ref:ShapOnlyforHenryDesc) A plot of Shapley values without box plots obtained by applying the generic `plot()` function to the explainer for the `titanic_rf` model and passenger Henry for the Titanic data.
-
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(shap_henry, show_boxplots = FALSE) 
 ```
+
+The resulting plot, shown in Figure \@ref(fig:ShapOnlyforHenry), can be compared to the plot in the right-hand-side panel of Figure \@ref(fig:shappJohny02) for Johnny D. The most remarkable difference is related to the contribution of *age*. The young age of Johnny D markedly increases the chances of survival, in contrary to the negative contribution of the age of 47 for Henry. 
+
+(ref:ShapOnlyforHenryDesc) A plot of Shapley values without box plots for the `titanic_rf` model and passenger Henry for the Titanic data, obtained by applying the generic `plot()` function in R.
 
 ```{r ShapOnlyforHenry, warning=FALSE, message=FALSE, echo=FALSE, fig.cap='(ref:ShapOnlyforHenryDesc)', out.width = '70%', fig.align='center', fig.width=7, fig.height=4}
 plot(shap_henry, show_boxplots = FALSE)  + theme_ema
 ```
 
-The resulting plot, shown in Figure \@ref(fig:ShapOnlyforHenry), can be compared to the plot in the right-hand-side panel of Figure \@ref(fig:shappJohny02) for Johnny D. The most remarkable difference is related to the contribution of *age*. The young age of Johnny D markedly increases the chances of survival, in contrary to the negative contribution of the age of 47 for Henry. 
-
-
 ## Code snippets for Python {#SHAPPythonCode}
 
-In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. Note that the most popular implementation in Python is available in the `shap` library [@SHAP], but here we show implementations from the `dalex` library because it is consistent with other methods shown in this book. 
+In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. Note that the most popular implementation in Python is available in the `shap` library [@SHAP]. In this section, however, we show implementations from the `dalex` library because they are consistent with other methods presented in this book. 
 
-For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
+For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
 
-In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
+In the first step we create an explainer-object that provides a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose (see Section \@ref(ExplainersTitanicPythonCode)).
 
 ```{python,  eval = FALSE}
 import pandas as pd
 henry = pd.DataFrame({'gender'   : ['male'],
                        'age'     : [47],
                        'class'   : ['1st'],
-                       'embarked': ['Southampton'],
+                       'embarked': ['Cherbourg'],
                        'fare'    : [25],
                        'sibsp'   : [0],
                        'parch'   : [0]},
@@ -351,21 +348,25 @@ titanic_rf_exp = dx.Explainer(titanic_rf, X, y,
                   label = "Titanic RF Pipeline")
 ```
 
-To calculate the attributions with the break down method with interactions one can use the `predict_parts` method with `type='shap'` argument. The first argument is the observation for which the attributions are to be calculated.  Results are stored in the `results` field. 
+To calculate Shapley values we use the `predict_parts()` method with the `type='shap'` argument (see Section \@ref(BDPython)). The first argument indicates the data observation for which the values are to be calculated. Results are stored in the `results` field. 
 
 ```{python,  eval = FALSE}
 bd_henry = titanic_rf_exp.predict_parts(henry, type = 'shap')
 bd_henry.result
 ```
 
-To visualize these values just call the `plot()` function.
+To visualize the obtained values, we simply call the `plot()` method.
 
 ```{python,  eval = FALSE}
 bd_henry.plot()
 ```
 
-```{r shapPython2, echo=FALSE, out.width = '100%', fig.align='center'}
+The resulting plot is shown in Figure \@ref(fig:shapPython2). 
+
+(ref:shapPython2Desc) A plot of Shapley values for the `titanic_rf` model and passenger Henry for the Titanic data, obtained by applying the `plot()` method in Python. [TOMASZ: CHERBOURG]
+
+```{r shapPython2, echo=FALSE, out.width = '100%', fig.align='center', fig.cap='(ref:shapPython2Desc)'}
 knitr::include_graphics("figure/shap_python_1.png")
 ```
 
-By default, shap values are calculated and plotted for all variables in the data. If one wants to limit the number of variables in the chart, use the argument `max_vars` of the `plot()` function.
+By default, Shapley values are calculated and plotted for all variables in the data. To limit the number of variables included in the graph, we can use the argument `max_vars` in the `plot()` method (see Section \@ref(BDPython)).

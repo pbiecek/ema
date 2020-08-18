@@ -3,17 +3,17 @@ source("models/models_titanic.R")
 source("models/models_apartments.R")
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 source("code_snippets/ema_init.R")
 ```
 
-# Local-dependence and Accumulated-dependence Profiles {#accumulatedLocalProfiles}
+# Local-dependence and Accumulated-local Profiles {#accumulatedLocalProfiles}
 
 ## Introduction {#ALPIntro}
 
 Partial-dependence (PD) profiles, introduced in the previous chapter, are easy to explain and interpret, especially given their estimation as the mean of ceteris-paribus (CP) profiles. However, as it was mentioned in Section \@ref(PDPProsCons), the profiles may be misleading if, for instance, explanatory variables are correlated. In many applications, this is the case. For example, in the apartment-prices dataset (see Section \@ref(ApartmentDataset)), one can expect that variables *surface* and *number of rooms* may be positively correlated, because apartments with a larger number of rooms usually also have a larger surface. Thus, in ceteris-paribus profiles, it is not realistic to consider, for instance, an apartment with five rooms and a surface of 20 square meters. Similarly, in the Titanic dataset, a positive association can be expected for the values of variables *fare* and *class*, as tickets in the higher classes are more expensive than in the lower classes. 
 
-In this chapter, we present accumulated-dependence profiles that address this issue. As they are related to local-dependence profiles, we introduce the latter first. Both approaches were proposed by @ALEPlotRPackage.
+In this chapter, we present accumulated-local profiles that address this issue. As they are related to local-dependence profiles, we introduce the latter first. Both approaches were proposed by @ALEPlotRPackage.
 
 
 ## Intuition {#ALPIntuition}
@@ -36,9 +36,9 @@ where $\varepsilon \sim N(0,0.1^2)$.
 
 For this model, the effect of $X^1$ for any value of $X^2$ is linear, i.e., it can be described by a straight line with the intercept equal to 0 and the slope equal to 1. 
 
-Assume that observations of explanatory variables $X^1$ ad $X^2$ are uniformly distributed over the unit square, as illustrated in the left-hand-side panel of Figure \@ref(fig:PDPcorr1) for a set of 1000 observations. The right-hand-side panel of Figure \@ref(fig:PDPcorr1) presents the scatter plot of the observed values of $Y$ in a function of $X^1$. The plot for $X^2$ is, essentially, the same and we do not show it. 
+Assume that observations of explanatory variables $X^1$ ad $X^2$ are uniformly distributed over the unit square, as illustrated in the left-hand-side panel of Figure \@ref(fig:PDPcorr1) for a set of 1000 observations. The right-hand-side panel of Figure \@ref(fig:PDPcorr1) presents the scatter plot of the observed values of $Y$ in function of $X^1$. The plot for $X^2$ is, essentially, the same and we do not show it. 
 
-(ref:PDPcorr1Desc) Observations of two explanatory variables uniformly distributed over the unit square (left-hand-side panel) and the scatter plot of the observed values of the dependent variable $Y$ in a function of $X^1$ (right-hand-side panel).
+(ref:PDPcorr1Desc) Observations of two explanatory variables uniformly distributed over the unit square (left-hand-side panel) and the scatter plot of the observed values of the dependent variable $Y$ in function of $X^1$ (right-hand-side panel).
 
 ```{r PDPcorr1, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap='(ref:PDPcorr1Desc)', fig.align='center', out.width='90%'}
 
@@ -85,16 +85,20 @@ pl1 + pl2
 # plot(xx$x1,xx$yx)
 ```
 
-In view of the plot shown in the right-hand-side panel of Figure \@ref(fig:PDPcorr1), we could consider using a simple linear model with $X^1$ and $X^2$ as explanatory variables. Assume, however, that we would like to analyze the data without postulating any particular parametric form of the effect of the variables. A naïve way would be to split the observed range of each of the two variables into, for instance, five intervals (as illustrated in the left-hand-side panel of Figure \@ref(fig:PDPcorr1)), and estimate the means of observed values of $Y$ for the  resulting 25 groups of observations. The table below provides the sample means (with rows and columns defined by the ranges of possible values of, respectively, $X^1$ and $X^2$).   
+In view of the plot shown in the right-hand-side panel of Figure \@ref(fig:PDPcorr1), we could consider using a simple linear model with $X^1$ and $X^2$ as explanatory variables. Assume, however, that we would like to analyze the data without postulating any particular parametric form of the effect of the variables. A naïve way would be to split the observed range of each of the two variables into, for instance, five intervals (as illustrated in the left-hand-side panel of Figure \@ref(fig:PDPcorr1)), and estimate the means of observed values of $Y$ for the  resulting 25 groups of observations. Table \@ref(tab:FullDataMeans) presents the sample means (with rows and columns defined by the ranges of possible values of, respectively, $X^1$ and $X^2$).   
+
+Table: (\#tab:FullDataMeans) Sample means of $Y$ for 25 groups of observations resulting from splitting the ranges of explanatory variables $X^1$ and $X^2$ into five intervals (see the left-hand-side panel of Figure \@ref(fig:PDPcorr1)). 
 
 ```{r FullDataMeans, warning=FALSE, message=FALSE, echo=FALSE}
 tab.mean <- round(with(xx, tapply(yx, list(x1c,x2c), mean)),2)
 kableExtra::kable(tab.mean, format = "simple")
 ```
 
-The means are based on the following numbers of observations:   
+Table \@ref(tab:FullDataNumbers) presents the number of observations for each of the sample means from Table \@ref(tab:FullDataMeans). 
 
-```{r warning=FALSE, message=FALSE, echo=FALSE}
+Table: (\#tab:FullDataNumbers) Number of observations for the sample means from Table \@ref(tab:FullDataMeans). 
+
+```{r FullDataNumbers, warning=FALSE, message=FALSE, echo=FALSE}
 tab.count <- table(xx$x1c,xx$x2c)
 total.c <- margin.table(tab.count,2)
 total <- total.c
@@ -177,7 +181,9 @@ pl1 + pl2
 
 Now, the "naïve" modelling approach would amount to using only five sample means, as in the table below.   
 
-```{r warning=FALSE, message=FALSE, echo=FALSE}
+Table: (\#tab:ReducedDataMeans) Sample means of $Y$ for five groups of observations (see the left-hand-side panel of Figure \@ref(fig:PDPcorr2)). 
+
+```{r ReducedDataMeans, warning=FALSE, message=FALSE, echo=FALSE}
 tab.mean.red <- round(with(xx.red, tapply(yx, list(x1c,x2c), mean)),2)
 
 kableExtra::kable(tab.mean.red, format = "simple")
@@ -191,13 +197,13 @@ When computing the PD profile for $X^1$, we now encounter the issue related to t
 & \ \ \ \ \ 228\times 1.40 + 204\times 1.77)=1.  
 \end{align}
 
-This is a larger value than 0.6 computed in \@ref(eq:fullDataPD) for the uncorrelated data. The reason is the extrapolation: for instance, for $z \in [0,0.2]$ and $x^2_i \in (0.6,0.8]$, we use 1.40 as the predicted value of $Y$. However, we have seen that the sample mean for those observations is equal to 0.80. 
+This is a larger value than 0.6 computed in \@ref(eq:fullDataPD) for the uncorrelated data. The reason is the extrapolation: for instance, for $z \in [0,0.2]$ and $x^2_i \in (0.6,0.8]$, we use 1.40 as the predicted value of $Y$. However, Table \@ref(tab:FullDataMeans) indicates that the sample mean for those observations is equal to 0.80. 
 
-In fact, by using the same extrapolation principle, we get $\hat g_{PD}^{1}(z) = 1$ also for $z \in (0.2,0.4]$, $(0.4,0.6]$, $(0.6,0.8]$, and $(0.8,1]$. Thus, the obtained profile indicates no effect of $X^1$, which clearly a wrong conclusion. 
+In fact, by using the same extrapolation principle, we get $\hat g_{PD}^{1}(z) = 1$ also for $z \in (0.2,0.4]$, $(0.4,0.6]$, $(0.6,0.8]$, and $(0.8,1]$. Thus, the obtained profile indicates no effect of $X^1$, which is clearly a wrong conclusion. 
 
-While the modelling approach presented in the example above may seem to be simplistic, it does illustrate the issue  that would also appear for other flexible modelling methods like, for instance, regression trees. In particular, the left-hand-side panel of Figure \@ref(fig:PDPcorr3) presents a regression tree fitted to the data shown in Figure \@ref(fig:PDPcorr2) by using function `tree()` from the R package `tree`. The right-hand-side panel of Figure \@ref(fig:PDPcorr3) presents the corresponding split of the observations. According to the model, the predicted value of $Y$ for the observations in the region $x^1 \in [0,0.2]$ and $x^2 \in [0.8,1]$ would be equal to 1.74. This extrapolation implies a substantial overestimation, as the true expected value of $Y$ in the region is equal to 1. Note that the latter is well estimated by the sample mean equal to 0.99 in the case of the uncorrelated data shown in Figure \@ref(fig:PDPcorr1). 
+While the modelling approach presented in the example above may seem to be simplistic, it does illustrate the issue  that would also appear for other flexible modelling methods like, for instance, regression trees. In particular, the left-hand-side panel of Figure \@ref(fig:PDPcorr3) presents a regression tree fitted to the data shown in Figure \@ref(fig:PDPcorr2) by using function `tree()` from the R package `tree`. The right-hand-side panel of Figure \@ref(fig:PDPcorr3) presents the corresponding split of the observations. According to the model, the predicted value of $Y$ for the observations in the region $x^1 \in [0,0.2]$ and $x^2 \in [0.8,1]$ would be equal to 1.74. This extrapolation implies a substantial overestimation, as the true expected value of $Y$ in the region is equal to 1. Note that the latter is well estimated by the sample mean equal to 0.99 (see Table \@ref(tab:FullDataMeans)) in the case of the uncorrelated data shown in Figure \@ref(fig:PDPcorr1). 
 
-The PD profile for $X^1$ for the regression tree would be equal to 0.2, 0.8, and 1.5 for $z \in [0,0.2]$,  $(0.2,0.6]$, and $(0.6,1]$, respectively. It does show an effect of $X^1$, but the obtained values deviate from linearity. For instance, by using midpoints of the intervals for $z$, i.e., 0.1, 0.4, and 0.8 we could (approximately) describe the profile by the linear function $2z$, i.e., with a slope larger than 1.  
+The PD profile for $X^1$ for the regression tree would be equal to 0.2, 0.8, and 1.5 for $z \in [0,0.2]$,  $(0.2,0.6]$, and $(0.6,1]$, respectively. It does show an effect of $X^1$, but if we used midpoints of the intervals for $z$, i.e., 0.1, 0.4, and 0.8, we could (approximately) describe the profile by the linear function $2z$, i.e., with a slope larger than (the true value of) 1.  
 
 (ref:PDPcorr3Desc) Results of fitting of a regression tree to the data shown in Figure \@ref(fig:PDPcorr2) (left-hand-side panel) and the corresponding split of the observations of the two explanatory variables (right-hand-side panel).
 
@@ -279,7 +285,7 @@ This result is due to the fact that the CP profile, given in \@ref(eq:CPtrickyMo
 The issue stems from the fact that, in the definition \@ref(eq:PDPdef0) of the PD profile, the expected value of model predictions is computed by using the marginal distribution of $X^2$, which disregards the value of $X^1$. Clearly, this is an issue when the explanatory variables are correlated. This observation suggests a modification: instead of the marginal distribution, one might use the conditional distribution of $X^2$ given $X^1$, because it reflects the association between the two variables. The modification leads to the definition of an LD profile. 
 
 It turns out, however, that the modification does not fully address the issue of correlated explanatory variables. 
-As argued by @Apley2019, if an explanatory variable is correlated with some other variables, the LD profile for the variable will still capture the effect of the other variables. This is because the profile is obtained by marginalizing over (in fact, ignoring) the remaining variables in the model, which results in an effect similar to the "omitted variable" bias in linear regression. Thus, in this respect, LD profiles share the same limitation as PD profiles. To address the limitation, @Apley2019 proposed the concept of local-dependence effects and accumulated-dependence (AL) profiles.
+As argued by @Apley2019, if an explanatory variable is correlated with some other variables, the LD profile for the variable will still capture the effect of the other variables. This is because the profile is obtained by marginalizing over (in fact, ignoring) the remaining variables in the model, which results in an effect similar to the "omitted variable" bias in linear regression. Thus, in this respect, LD profiles share the same limitation as PD profiles. To address the limitation, @Apley2019 proposed the concept of local-dependence effects and accumulated-local (AL) profiles.
 
 <!---
 If we focus on variable $X^1$ we can conclude that, according to \@ref(eq:trickyModel), the effect of the variable is similar to function $f(x_1) = -x_1 -1$ for values close to $(x_1, x_2) = (-1,-1)$ and similar to function $f(x_1) = x_1 +1$ for values close to $(x_1, x_2) = (1,1)$. This means that the effect is decreasing, at the rate -1,  around $(-1,-1)$ and it is increasing, at the rate 1, around $(1,1)$. The function specified in  \@ref(eq:LDtrickyModel) does not explicitly reflect this behavior. To address this issue, [@Appley2019] proposed the concept of accumulated local effects and accumulated local (AL) profiles, in which the effect of $X^1$ is defined as the cumulative sum of local derivatives of the model function with respect to $X^1$.
@@ -345,14 +351,14 @@ Hence, it suggests an effect of $X^1$ twice larger than the correct one.
 
 To address the limitation, AL profiles can be used. We present them in the next section. 
 
-### Accumulated local profile
+### Accumulated-local profile
 
 Consider model $f()$ and define 
 
 $$
 q^j(\underline{u})=\left\{ \frac{\partial f(\underline{x})}{\partial x^j} \right\}_{\underline{x}=\underline{u}}.
 $$
-The Accumulated local (AL) profile for model $f()$ and variable $X^j$ is defined as follows:
+Accumulated-local (AL) profile for model $f()$ and variable $X^j$ is defined as follows:
 
 \begin{equation}
 g_{AL}^{j}(z) = \int_{z_0}^z \left[E_{\underline{X}^{-j}|X^j=v}\left\{ q^j(\underline{X}^{j|=v}) \right\}\right] dv + c,
@@ -380,7 +386,7 @@ Consequently, irrespectively of the joint distribution of $X^1$ and $X^2$ and up
 g_{AL}^{1}(z) = \int_{z_0}^z \left\{E_{{X}^{2}|X^1=v}(1)\right\} dv + z_0 = z.
 \]
 
-To estimate an AL profile, one replaces the integral in \@ref(eq:ALPdef) by a summation and the derivative with a finite difference [@Apley2019]. In particular, consider a partition of the range of observed values $x_{i}^j$ of variable $X^j$ into $K$ intervals $N_j(k)=\left(z_{k-1}^j,z_k^j\right]$ ($k=1,\ldots,K$). Note that $z_0^j$ can be chosen just below $\min(x_1^j,\ldots,x_N^j)$ and $z_K^j=\max(x_1^j,\ldots,x_N^j)$. Let $n_j(k)$ denote the number of observations $x_i^j$ falling into $N_j(k)$, with $\sum_{k=1}^K n_j(k)=n$. An estimator of AL profile for variable $X^j$ can then be constructed as follows: 
+To estimate an AL profile, one replaces the integral in \@ref(eq:ALPdef) by a summation and the derivative with a finite difference [@Apley2019]. In particular, consider a partition of the range of observed values $x_{i}^j$ of variable $X^j$ into $K$ intervals $N_j(k)=\left(z_{k-1}^j,z_k^j\right]$ ($k=1,\ldots,K$). Note that $z_0^j$ can be chosen just below $\min(x_1^j,\ldots,x_N^j)$ and $z_K^j=\max(x_1^j,\ldots,x_N^j)$. Let $n_j(k)$ denote the number of observations $x_i^j$ falling into $N_j(k)$, with $\sum_{k=1}^K n_j(k)=n$. An estimator of the AL profile for variable $X^j$ can then be constructed as follows: 
 
 \begin{equation}
 \widehat{g}_{AL}^{j}(z) = \sum_{k=1}^{k_j(z)} \frac{1}{n_j(k)} \sum_{i: x_i^j \in N_j(k)} \left\{ f\left(\underline{x}_i^{j| = z_k^j}\right) - f\left(\underline{x}_i^{j| = z_{k-1}^j}\right) \right\} - \hat{c},
@@ -521,34 +527,37 @@ g_{AL}^{(x_1 + 1)\cdot x_2, 1}(z) =
 
 --->
 
-### Dependence profiles for a toy example with interaction
+### Dependence profiles for a model with interaction and correlated explanatory variables: an example
 
-In this section, we will show the behaviour of partial dependence, local dependence and accumulated dependence for a model in which the interaction and correlation between variables are present.
+[TOMASZ: I STILL THINK THAT THIS EXAMPLE IS CONFUSING, AS IT MIXES EFFECTS OF CORRELATION AND SAMPLE MEAN OF 0 (WHICH ARE ESTIMATION ISSUES), AND INTERACTION (WHICH IS A PROFILE-DEFINITION ISSUE).]
 
-Let us consider the following, simple model with for two explanatory variables: 
+In this section, we illustrate in more detail the behavior of PD, LD, and AL profiles for a model with an interaction and correlated explanatory variables. In particular, let us consider the following, simple model with for two explanatory variables: 
+
 \begin{equation}
 f(X^1, X^2) = (X^1 + 1)\cdot X^2.
 (\#eq:trickyModel)
 \end{equation}
 
-Moreover, assume that explanatory variables $X^1$ and $X^2$ are uniformly distributed over the interval $[-1,1]$ and perfectly correlated, i.e., $X^2 = X^1$. Suppose that we have got the following dataset with 8 observations:
+[TOMASZ: THE KEY QUESTION IS: WHAT IS THE "CORRECT" SUMMARY OF THE EFFECT OF $X^1$ IN THIS MODEL? IT IS NEVER STATED, SO IT IS DIFFICULT TO SEE BIAS IN DIFFERENT PROFILES. BASED ON THE MODEL FUNCTION, ONE COULD ARGUE THAT THE EFFECT IS LINEAR, BUT WITH A SLOPE DEPENDING ON X2.]
 
+Moreover, assume that explanatory variables $X^1$ and $X^2$ are uniformly distributed over the interval $[-1,1]$ and perfectly correlated, i.e., $X^2 = X^1$. Suppose that we have got a dataset with eight observations as in Table \@ref(tab:trickyModelData). Note that, for both $X^1$ and $X^2$, the sum of all observed values is equal to 0. 
+
+Table: (\#tab:trickyModelData) A sample of eight observations. 
 
 | i     | 1  |     2 |     3 |     4 |     5 |     6 |     7 |  8  |
 |-------|----|-------|-------|-------|-------|-------|-------|-----|
-| $X^1$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
-| $X^2$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
+| $x^1$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
+| $x^2$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
 | $y$   | 0  | -0.2059 | -0.2451 | -0.1204 |  0.1596 |  0.6149 |  1.2141 |  2  |
 
-Note that, for both $X^1$ and $X^2$, the sum of all observed values is equal to 0. 
 
+(ref:accumulatedLocalEffectsNewDesc) Partial-dependence, local-dependence, and accumulated-local profiles for a simple model with interaction and correlated explanatory variables. Panel A: ceteris-paribus profiles (top plot) and the corresponding partial-dependence profile. Panel B: local-dependence profile. Panel C: accumulated-local profile. [TOMASZ: REMOVE THE LEFT PANEL WITH CP PROFILES ONLY. THE FIGURE IS ONLY USED FOR PD. IT CAN BE SKIPPED, IN FACT, AS EVERYTHING IS BEING EXPLAINED DIRECTLY.]
 
-```{r accumulatedLocalEffectsNew, echo=FALSE, fig.cap="Partial-dependence, local-dependence, and accumulated-dependence profiles. Panel A: Ceteris-paribus profiles (top plot) and the corresponding partial-dependence profile. Panel B: local-dependence profile. Panel C: accumulated local profile. ", out.width = '90%', fig.align='center'}
+```{r accumulatedLocalEffectsNew, echo=FALSE, fig.cap=, out.width = '90%', fig.align='center', fig.cap='(ref:accumulatedLocalEffectsNewDesc)'}
 knitr::include_graphics("figure/CP_ALL.png")
 ```
 
-
-The top part of Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew) shows CP profiles for $X^1$ for model \@ref(eq:trickyModel) calculated for selected eight observations. The bottom part of the panel presents the corresponding estimate of the PD profile for $X^1$, i.e., the average of the CP profiles. The profile suggests no effect of variable $X^1$, which is clearly a misleading conclusion.
+The top part of Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew) shows CP profiles for $X^1$ for model \@ref(eq:trickyModel) calculated for selected eight observations. The bottom part of the panel presents the corresponding estimate of the PD profile for $X^1$, i.e., the average of the CP profiles. The profile suggests no effect of variable $X^1$, which is clearly a misleading conclusion. [TOMASZ: THE FIGURE IS ONLY USED FOR PD. IT CAN BE SKIPPED, IN FACT, AS EVERYTHING IS BEING EXPLAINED DIRECTLY.]
 
 To understand the reason, let us explicitly express the CP profile for $X^1$ for model \@ref(eq:trickyModel):
 
@@ -557,36 +566,33 @@ h^{1}_{CP}(z) = f(z,X^2) = (z+1)\cdot X^2.
 (\#eq:CPtrickyModel)
 \end{equation}
 
-By allowing $z$ to take any value in the interval $[-1,1]$, we get the CP profiles as straight lines with the slope equal to the value of variable $X^2$. Hence, for instance, the CP profile for observation $(-1,-1)$ is a straight line with the slope equal to -1. 
+By allowing $z$ to take any value in the interval $[-1,1]$, we get the CP profiles as straight lines with the slope equal to the value of variable $X^2$. Hence, for instance, the CP profile for observation $(-1,-1)$ is a straight line with the slope equal to -1.  
 
-Recall that the PD profile for $X^j$, defined in equation \@ref(eq:PDPdef0), is the expected value, over the joint distribution of all explanatory variables other than $X^j$, of the model predictions when $X^j$ is set to $z$. This leads to the estimation of the profile by taking the average of CP profiles for $X^j$ (see equation \@ref(eq:PDPest)). 
- 
-In our case, this implies that the PD profile for $X^1$ is the expected value of the model predictions over the distribution of $X^2$, i.e., over the uniform distribution on the interval $[-1,1]$. Thus, the PD profile is estimated by taking the average of the CP profiles (see \@ref(eq:CPtrickyModel)) at each value of $z$ in $[-1,1]$:
+Recall that the PD profile for $X^j$, defined in equation \@ref(eq:PDPdef0), is the expected value, over the joint distribution of all explanatory variables other than $X^j$, of the model predictions when $X^j$ is set to $z$. This leads to the estimation of the profile by taking the average of CP profiles for $X^j$, as given in \@ref(eq:PDPest).
+
+In our case, this implies that the PD profile for $X^1$ is the expected value of the model predictions over the distribution of $X^2$, i.e., over the uniform distribution on the interval $[-1,1]$. Thus, the PD profile is estimated by taking the average of the CP profiles, given by \@ref(eq:CPtrickyModel), at each value of $z$ in $[-1,1]$:
 
 \begin{equation}
 \hat g_{PD}^{1}(z) =  \frac{1}{8} \sum_{i=1}^{8} (z+1)\cdot X^2_{i} = \frac{z+1}{8}  \sum_{i=1}^{8} X^2_{i} = 0.
 (\#eq:PDtrickyModel)
 \end{equation}
 
-As a result, the PD profile for $X^1$ is estimated as a horizontal line at 0, as seen in the bottom part of Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew). 
+As a result, the PD profile for $X^1$ is estimated as a horizontal line at 0, as seen in the bottom part of Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew). [TOMASZ: BUT IF THE SAMPLE MEAN OF $X^1$ WERE NOT 0, THE PD PROFILE WOULD BE A LINEAR FUNCTION OF Z. AND ONE COULD SAY THAT IT WOULD CORRECTLY (THOUGH WITH A "WRONG" SLOPE) REFLECT THE LINEARITY OF THE CP PROFILES. THE READER COULD ASK: WOULD THAT BE WRONG? AND USING 0 CAN BE SEEN AS CREATING AN ARTIFICIAL EFFECT, FORCING THE PD PROFILE TO LOOK "BAD".]
 
-The calculations in equation \@ref(eq:PDtrickyModel) ignore the fact that, given our assumptions, one cannot change $z$  *freely* for a particular value of $X^2$, because $X^1$ and $X^2$ are assumed to be perfectly correlated. In fact, in this case, the CP profile for the $i$-th observation should actually be undefined for any values of $z$ different from $x^2_i$. As a consequence, the sum used in the calculation of the PD profile in equation \@ref(eq:PDtrickyModel) would involve undefined terms for any $z$.
+The calculations in equation \@ref(eq:PDtrickyModel) ignore the fact that, given our assumptions, one cannot change $z$ *freely* for a particular value of $X^2$, because $X^1$ and $X^2$ are assumed to be perfectly correlated. In fact, in this case, the CP profile for the $i$-th observation should actually be undefined for any values of $z$ different from $x^2_i$. As a consequence, the sum used in the calculation of the PD profile in equation \@ref(eq:PDtrickyModel) would involve undefined terms for any $z$.
 
-Thus, the issue is related to the fact of using the marginal distribution of $X^2$, which disregards the value of $X^1$, in the definition of the PD profile. This observation suggests a modification: instead of the marginal distribution, one might consider the conditional distribution of $X^2 | X^1$. The modification leads to the definition of the LD profile. 
+Thus, the issue is related to the fact of using the marginal distribution of $X^2$, which disregards the value of $X^1$, in the definition of the PD profile. This observation suggests a modification: instead of the marginal distribution, one might consider the conditional distribution of $X^2$ given $X^1$. The modification leads to the definition of LD profile. 
 
-For in our example, the conditional distribution of $X^2$, given $X^1=z$, is just a probability mass of 1 at $z$. Consequently, the Local-dependence (LD) profile, for any $z \in [-1,1]$, is given by 
+In our example, the conditional distribution of $X^2$, given $X^1=z$, is just a probability mass of 1 at $z$. Consequently, for model \@ref(eq:trickyModel), the LD profile for $X^1$ and any $z \in [-1,1]$ is given by
+
 \begin{equation}
 g_{LD}^{1}(z) =  z \cdot (z+1).
 (\#eq:LDtrickyModel)
 \end{equation}
 
-It turns out, however, that the modification does not fully address the issue of correlated explanatory variables. 
+[TOMASZ: SO, THIS IS THE MODEL FUNCTION. THE READER COULD ASK: WHAT IS WRONG WITH THAT?] It turns out, however, that the modification does not fully address the issue of correlated explanatory variables. [TOMASZ: THIS IS CONFUSING. CORRELATION IS AN ESTIMATION ISSUE. THE FACT THAT CORRELATION DOES SOMETHING TO THE ESTIMATION OF THE LD PROFILE DOES NOT MEAN THAT THE PROFILE IS ACTUALLY WRONG.] In particular, equation \@ref(eq:trickyModel) indicates that the effect of $X^1$ is similar to function $f(x^1) = -(x^1+1)$ for values close to $(x^1, x^2) = (-1,-1)$ and similar to function $f(x^1) = x^1 +1$ for values close to $(x^1, x^2) = (1,1)$. Thus, it linearly decreases at the rate equal to 1 for values close to $(-1,-1)$ and increases with the same rate for values close to $(1,1)$. The function given in \@ref(eq:LDtrickyModel) does not explicitly show this. 
 
-<!-- Profile LD  -->
-
-Looking at equation \@ref(eq:trickyModel) one can see that from the perspective of $X^1$ the effect of the variable $x_1$ is similar to the function $f(x_1) = -x_1 -1$ for values close to $(x_1, x_2) = (-1,-1)$ and similar to the function $f(x_1) = x_1 +1$ for values close to $(x_1, x_2) = (1,1)$. So  first it decreases at the same rate as it increases later. The function in equation \@ref(eq:LDtrickyModel) does not show this. 
-
-In AL profiles the effect of the $X^1$ variable is defined as the cumulative sum of local derivatives due to the $X^1$ variable
+By using definition \@ref(eq:ALPdef), the AL profile for model \@ref(eq:trickyModel) is given by
 
 \begin{align}
 g_{AL}^{1}(z) &= 
@@ -597,9 +603,7 @@ g_{AL}^{1}(z) &=
 (\#eq:ALtrickyModel)
 \end{align}
 
-This formula better reflects the behaviour of function $f(X^1,X^2)$ due to $X^1$ removing the effect of changes in variable $X^2$.
-
-
+This formula better reflects the behavior of function $f(X^1,X^2)$ due to $X^1$ removing the effect of changes in variable $X^2$. [TOMASZ: I DO NOT UNDERSTAND THIS SENTENCE. AND: THE OBTAINED AL IS A QUADRATIC FUNCTION OF Z, AS IS THE LD PROFILE. SO WHY IS AL OK, BUT LD IS WRONG? IN FACT, ONE COULD ARGUE THAT BOTH ARE WRONG, WHILE THE LINEAR PD (IF IT THE SAMPLE MEAN WERE NOT CHOSEN TO BE 0) WOULD BE APPROXIMATELY RIGHT.]
 
 <!--
 Let us consider model \@ref(eq:trickyModel) and explanatory-variable vector $X=(X^1,X^2)$ with $X^1$ uniformly distributed over $[-1,1]$ and $X^2=X^1$. Hence, $X^2$ is perfectly correlated with $X^1$. Moreover, consider the eight observations for $X$ from Section \@ref(ALPIntuition).
@@ -635,7 +639,7 @@ In this section, we use PD, LD, and AL profiles to evaluate performance of the r
 
 Figure \@ref(fig:featureEffectsApartment) shows the three types of profiles for both variables estimated according to formulas \@ref(eq:PDPest), \@ref(eq:LDPest2), and \@ref(eq:ALPest2). As we can see from the plots, the profiles calculated with different methods are different. The LD profiles are steeper than the PD profiles. This is because, for instance, the effect of *surface* includes the effect of other correlated variables, including *number of rooms*. The AL profile eliminates the effect of correlated variables. Since the AL and PD profiles are parallel to each other, they suggest that the model is additive for these two explanatory variables. 
 
-(ref:featureEffectsApartmentDesc) Partial-dependence, local-dependence, and accumulated local profiles for the random-forest model for the apartment-prices dataset.
+(ref:featureEffectsApartmentDesc) Partial-dependence, local-dependence, and accumulated-local profiles for the random-forest model for the apartment-prices dataset.
 
 ```{r featureEffectsApartment, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:featureEffectsApartmentDesc)', fig.align='center', out.width='100%'}
 library("randomForest")
@@ -668,15 +672,15 @@ When explanatory variables are independent and there are no interactions in the 
 
 When the model is additive, but an explanatory variable is correlated with some other variables, neither PD nor LD profiles will properly capture the effect of the explanatory variable on the model's predictions. However, the AL profile will provide a correct summary of the effect.
 
-When there are interactions in the model, none of the profiles will provide a correct assessment of the effect of an explanatory variable involved in the interaction(s). This is because the profiles for the variable will also include the effect of other variables. Comparison of PD, LD, and AL profiles may help in identifying whether there are any interactions in the model and/or whether explanatory variables are correlated. When there are interactions, they may be explored by using a  generalization of the PD profiles for two or more dependent variables [@Apley2019].
+When there are interactions in the model, none of the profiles will provide a correct assessment of the effect of any explanatory variable involved in the interaction(s). This is because the profiles for the variable will also include the effect of other variables. Comparison of PD, LD, and AL profiles may help in identifying whether there are any interactions in the model and/or whether explanatory variables are correlated. When there are interactions, they may be explored by using a  generalization of the PD profiles for two or more dependent variables [@Apley2019].
 
 ## Code snippets for R {#ALPR}
 
-In this section, we present variable importance metrics as implemented in the `DALEX` package for R. The package covers the most often used measures and methods presented in this chapter. In particular, it includes wrappers for functions from the `ingredients` package [@ingredientsRPackage]. Note that similar functionalities can be found in package `ALEPlots` [@ALEPlotRPackage] or `iml` [@imlRPackage].
+In this section, we present the `DALEX` package for R, which covers the methods presented in this chapter. In particular, it includes wrappers for functions from the `ingredients` package [@ingredientsRPackage]. Note that similar functionalities can be found in package `ALEPlots` [@ALEPlotRPackage] or `iml` [@imlRPackage].
 
 For illustration purposes, we use the random-forest model `apartments_rf` (see Section \@ref(model-Apartments-rf)) for the apartment prices dataset (see Section \@ref(ApartmentDataset)). Recall that the goal is to predict the price per square meter of an apartment. In our illustration, we focus on two explanatory variables, *surface* and *number of rooms*.
 
-We first load the model via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that, beforehand, we have got to load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
+We first load the model-object via the `archivist` hook, as listed in Section \@ref(ListOfModelsApartments). Then we construct the explainer for the model by using the function `explain()` from the `DALEX` package (see Section \@ref(ExplainersTitanicRCode)). Note that, beforehand, we have got to load the `randomForest` package, as the model was fitted by using function `randomForest()` from this package (see Section \@ref(model-titanic-rf)) and it is important to have the corresponding `predict()` function available. 
  
 ```{r, warning=FALSE, eval = FALSE, message=FALSE}
 library("DALEX")
@@ -697,7 +701,7 @@ explainer_apart_rf <- DALEX::explain(model = apartments_rf,
                              verbose = FALSE)
 ```
 
-The function that allows the computation of LD and AL profiles in the `DALEX` package is `model_profile()`. Its use and arguments were described in Section \@ref(PDPR). LD profiles are calculated by specifying argument `type = "conditional"`. In the example below, we calculate the profile only for the explanatory variables *surface* and * the number of rooms*. By default, the profile is based on 100 randomly selected observations. 
+The function that allows the computation of LD and AL profiles in the `DALEX` package is `model_profile()`. Its use and arguments were described in Section \@ref(PDPR). LD profiles are calculated by specifying argument `type = "conditional"`. In the example below, we also use  the `variables` argument to calculate the profile only for the explanatory variables *surface* and *no.rooms*. By default, the profile is based on 100 randomly selected observations. 
 
 ```{r aleExample3, warning=FALSE, message=FALSE}
 ld_rf <- model_profile(explainer = explainer_apart_rf,
@@ -707,20 +711,21 @@ ld_rf <- model_profile(explainer = explainer_apart_rf,
 
 The resulting object of class "model_profile" contains the LD profiles for both explanatory variables. By applying the `plot()` function to the object, we obtain separate plots of the profiles. 
 
-(ref:aleExample3PlotDesc) Local-dependence profiles for the random-forest model and explanatory variables surface and number of rooms for the apartment prices dataset.
+(ref:aleExample3PlotDesc) Local-dependence profiles for the random-forest model and explanatory variables *no.rooms* and *surface* for the apartment-prices dataset.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(ld_rf) +
   ggtitle("Local-dependence profiles for no. of rooms and surface", "")
 ```
+
+The resulting plot is shown in Figure \@ref(fig:aleExample3Plot). The profiles essentially correspond to those included in Figure \@ref(fig:featureEffectsApartment).
+
 ```{r aleExample3Plot, warning=FALSE, message=FALSE, fig.width=8, fig.height=5, echo=FALSE, fig.cap='(ref:aleExample3PlotDesc)', fig.align='center', out.width='80%'}
 plot(ld_rf) +
   ggtitle("Local-dependence profiles for no. of rooms and surface", "")  + theme_ema
 ```
 
-The resulting plot is shown in Figure \@ref(fig:aleExample3Plot). The profiles essentially correspond to those included in Figure \@ref(fig:featureEffectsApartment).
-
-AL profiles are calculated by applying function `model_profile()` with the additional argument `type = "accumulated"`.
+AL profiles are calculated by applying function `model_profile()` with the additional argument `type = "accumulated"`. In the example below, we also use  the `variables` argument to calculate the profile only for the explanatory variables *surface* and *no.rooms*.
 
 ```{r aleExample2, warning=FALSE, message=FALSE}
 al_rf <- model_profile(explainer = explainer_apart_rf,
@@ -728,17 +733,17 @@ al_rf <- model_profile(explainer = explainer_apart_rf,
                        variables = c("no.rooms", "surface"))
 ```
 
-By applying the `plot()` function to the object, we obtain separate plots of the AL profiles for *number of rooms* and *surface*. They are presented in Figure \@ref(fig:aleExample2Plot). The profiles essentially correspond to those included in Figure \@ref(fig:featureEffectsApartment). 
+By applying the `plot()` function to the object, we obtain separate plots of the AL profiles for *no.rooms* and *surface*. They are presented in Figure \@ref(fig:aleExample2Plot). The profiles essentially correspond to those included in Figure \@ref(fig:featureEffectsApartment). 
 
-(ref:aleExample2PlotDesc) Accumulated local profiles for the random-forest model and explanatory variables surface and number of rooms for the apartment prices dataset
+(ref:aleExample2PlotDesc) Accumulated-local profiles for the random-forest model and explanatory variables *no.rooms* and *surface* for the apartment-prices dataset.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(al_rf) +
-  ggtitle("Accumulated local profiles for no. of rooms and surface", "")
+  ggtitle("Accumulated-local profiles for no. of rooms and surface", "")
 ```
 ```{r aleExample2Plot, warning=FALSE, message=FALSE, fig.width=8, echo=FALSE, fig.height=5,  fig.cap='(ref:aleExample2PlotDesc)', fig.align='center', out.width='80%'}
 plot(al_rf) +
-  ggtitle("Accumulated local profiles for no. of rooms and surface", "")  + theme_ema
+  ggtitle("Accumulated-local profiles for no. of rooms and surface", "")  + theme_ema
 ```
 
 Function `plot()` allows including all plots in a single graph. We will show how to apply it in order to  obtain Figure \@ref(fig:featureEffectsApartment). Toward this end, we have got to create PD profiles first (see Section \@ref(PDPR)). We also modify the labels of the PD, LD, and AL profiles contained in the `agr_profiles` components of the "model_profile"-class objects created for the different profiles.
@@ -762,12 +767,11 @@ The resulting plot (not shown) is essentially the same as the one presented in F
 
 ## Code snippets for Python {#ALPPython}
 
+In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. 
 
-In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub`. The package covers the most often used measures and methods presented in this chapter.
+For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. 
 
-For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. 
-
-In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
+In the first step we create an explainer-object that will provide a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose.
 
 ```{python,  eval = FALSE}
 import dalex as dx
@@ -775,44 +779,47 @@ titanic_rf_exp = dx.Explainer(titanic_rf, X, y,
                     label = "Titanic RF Pipeline")
 ```
 
+The function that allows calculations of LD profiles is `model_profile()`. It was already introduced in Section \@ref(PDPPython). By defaut, it calculates PD profiles. To obtain LD profiles, the `type = 'conditional'` should be used.
 
-The function that allows calculations of PD profiles is `model_profile()`. It was already introduced in Section \@ref(PDPPython). By defaut, it calculates partial dependency profiles but this may be changed with the `type` argument. Set `type = "conditional"` to get LD profiles and `type = "accumulated"` to get AD profiles.
-
-In the example below, we calculate the LD profile for *age*  and *fare* by applying the `model_profile()` function with `type = "conditional"` option to the Explainer-object for the random-forest model. Results are stored in the `ld_rf.result` field.
+In the example below, we calculate the LD profile for *age*  and *fare* by applying the `model_profile()` function  to the explainer-object for the random-forest model while specifying `type = 'conditional'`. Results are stored in the `ld_rf.result` field.
 
 ```{python,  eval = FALSE}
-ld_rf = titanic_rf_exp.model_profile(type = "conditional")
+ld_rf = titanic_rf_exp.model_profile(type = 'conditional')
 ld_rf.result['_label_'] = 'LD profiles'
 ld_rf.result
 ```
-
+[TOMASZ: RESULTS AS A FIGURE? COMMENTS WERE USED IN CHAP. 4]
 ```{r examplePythonLDProfile1, echo=FALSE, out.width = '100%', fig.align='center'}
 knitr::include_graphics("figure/python_model_accumulated_1.png")
 ```
 
-The resulting object can be visualised with the `plot` method. 
+Results can be visualised by using the `plot()` method. Note that, in the code below, we use the `variables` argument to display the LD profiles only for *age* and *fare*. The resulting plot is presented in Figure \@ref(fig:examplePythonLDProfile2). 
+
+(ref:examplePythonLDProfile2Desc) Local-dependence profiles for *age* and *fare* for the random-forest model for the Titanic data, obtained by using the `plot()` method in Python.
 
 ```{python,  eval = FALSE}
 ld_rf.plot(variables = ['age', 'fare'])
 ```
 
-```{r examplePythonLDProfile2, echo=FALSE, out.width = '100%', fig.align='center'}
+```{r examplePythonLDProfile2, echo=FALSE, out.width = '100%', fig.align='center', fig.cap='(ref:examplePythonLDProfile2Desc)'}
 knitr::include_graphics("figure/python_model_accumulated_2.png")
 ```
 
-In order to calculate AL profile for *age*  and *fare* by applying the `model_profile()` function with `type = "accumulated"` option.
+In order to calculate the AL profiles for *age* and *fare*, we apply the `model_profile()` function with the `type = 'accumulated'` option.
 
 ```{python,  eval = FALSE}
-al_rf = titanic_rf_exp.model_profile(type = "accumulated")
+al_rf = titanic_rf_exp.model_profile(type = 'accumulated')
 al_rf.result['_label_'] = 'AL profiles'
 ```
 
-Both AL and LD profiles can be plotted in a single chart. Just pass the `ld_rf` object as a first argument to the `plot()` function.
+We can plot AL and LD profiles in a single chart. Toward this end, in the code below, we pass the `ld_rf` object, which contains LD profiles, as the first argument of the `plot()` method of the `al_rf` object that includes AL profiles. We also use the `variables` argument to display the profiles only for *age* and *fare*. The resulting plot is presented in Figure \@ref(fig:examplePythonALLDProfiles). 
 
 ```{python,  eval = FALSE}
 al_rf.plot(ld_rf, variables = ['age', 'fare'])
 ```
 
-```{r examplePythonLDProfile3, echo=FALSE, out.width = '100%', fig.align='center'}
+(ref:examplePythonALLDProfilesDesc) Local-dependence and accumulated-local profiles for *age* and *fare* for the random-forest model for the Titanic data, obtained by using the `plot()` method in Python.
+
+```{r examplePythonALLDProfiles, echo=FALSE, out.width = '100%', fig.align='center',fig.cap='(ref:examplePythonALLDProfilesDesc)'}
 knitr::include_graphics("figure/python_model_accumulated_3.png")
 ```

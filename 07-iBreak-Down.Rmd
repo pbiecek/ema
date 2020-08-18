@@ -1,10 +1,10 @@
 #  Break-down Plots for Interactions {#iBreakDown}
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 source("code_snippets/ema_init.R")
 ```
 
-In Chapter \@ref(breakDown), we presented a model-agnostic approach to calculate of the attribution of an explanatory variable for a model's predictions. However, for some models, like models with interactions, the procedure introduced in Chapter \@ref(breakDown) depends on the ordering of the explanatory variables that are used in computations. 
+In Chapter \@ref(breakDown), we presented a model-agnostic approach to calculation of the attribution of an explanatory variable to a model's predictions. However, for some models, like models with interactions, the results of the method introduced in Chapter \@ref(breakDown) depend on the ordering of the explanatory variables that are used in computations. 
 
 In this chapter, we present an algorithm that addresses the issue. In particular, the algorithm identifies interactions between pairs of variables and takes them into account when constructing break-down (BD) plots. In our presentation, we focus on pairwise interactions that involve pairs of explanatory variables, but the algorithm can be easily extended to interactions involving a larger number of variables.
 
@@ -20,7 +20,7 @@ The overall probability of survival for males is 20.5%, but for the male passeng
 
 **Explanation 2:** 
 
-The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of *age* (being a boy) is positive, as it increases the survival probability by 20.2 percentage points. On the other hand, for boys, travelling in the second class increases the probability further, from 40.7% overall to 91.7%. Thus, by considering first the effect of *age*, and then the effect of *class*, we can conclude the effect of +20.2 percentage points for *age* (being a boy) and +51 percentage points for *class*.
+The overall probability of survival for males is 20.5%, but for boys the probability is higher, i.e., 40.7%. Thus, the effect of *age* (being a boy) is positive, as it increases the survival probability by 20.2 percentage points. On the other hand, for boys, travelling in the second class increases the probability further from 40.7% overall to 91.7%. Thus, by considering first the effect of *age*, and then the effect of *class*, we can conclude the effect of +20.2 percentage points for *age* (being a boy) and +51 percentage points for *class*.
 
 Table: (\#tab:titanicMaleSurvival) Proportion of survivors for men on Titanic.
 
@@ -52,12 +52,12 @@ The example illustrates that interactions complicate the evaluation of the impor
 Identification of interactions in the model is performed in three steps [@iBreakDownRPackage]:
 
 1. For each explanatory variable, compute $\Delta^{j|\emptyset}(\underline{x}_*)$ as in equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen). The measure quantifies the additive contribution of each variable to the instance prediction.
-2. For each pair of explanatory variables, compute $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ as in equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen) and then the ,,net effect'' of the interaction 
+2. For each pair of explanatory variables, compute $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ as in equation \@ref(eq:deltaBreakDownAdditive) in Section \@ref(BDMethodGen), and then the "net effect" of the interaction 
 \begin{equation}
 \Delta^{\{i,j\}}_I(x_*) \equiv \Delta^{\{i,j\}|\emptyset}(\underline{x}_*)-\Delta^{i|\emptyset}(\underline{x}_*)-\Delta^{j|\emptyset}(\underline{x}_*).
 (\#eq:deltaBreakDownInteractions)
 \end{equation}
-Note that $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ quantifies the joint contribution of a pair of variables. Thus, $\Delta^{\{i,j\}}_I(x_*)$ measures the contribution related to the deviation from additivity, i.e., to the interaction between the $i$-th and $j$-th variable.
+Note that $\Delta^{\{i,j\}|\emptyset}(\underline{x}_*)$ quantifies the joint contribution of a pair of variables. Thus, $\Delta^{\{i,j\}}_I(\underline{x}_*)$ measures the contribution related to the deviation from additivity, i.e., to the interaction between the $i$-th and $j$-th variable.
 3. Rank the so-obtained measures for individual explanatory variables and interactions to determine the final ordering for computing the variable-importance measures. Using the ordering, compute variable-importance measures $v(j, \underline{x}_*)$, as defined in equation \@ref(eq:viBD) in Section \@ref(BDMethodGen).
 
 The time complexity of the first step is $O(p)$, where $p$ is the number of explanatory variables. For the second step, the complexity is $O(p^2)$, while for the third step it is $O(p)$. Thus, the time complexity of the entire procedure is $O(p^2)$.
@@ -101,7 +101,7 @@ Table: (\#tab:titanicIBreakDownList) Paired-variable contributions $\Delta^{\{i,
 |embarked:sibsp  | -0.002|     0.001|       |
 |parch:class     |  0.183|     0.000|       |
 
-The table illustrates the calculation of the interaction contributions. For instance, the additive contribution of *age* is equal to 0.270, while for *fare* it is equal to 0.143. The joint contribution of these two variables is equal to 0.249. Hence, the contribution attributed to the interaction is equal to 0.249-0.270-0.143=-0.164.    
+The table illustrates the calculation of the contributions of interactions. For instance, the additive contribution of *age* is equal to 0.270, while for *fare* it is equal to 0.143. The joint contribution of these two variables is equal to 0.249. Hence, the contribution attributed to the interaction is equal to 0.249-0.270-0.143=-0.164.    
 
 Note that the rows of Table \@ref(tab:titanicIBreakDownList)  are sorted according to the absolute value of the net contribution of the single explanatory variable or the net contribution of the interaction between two variables. For a single variable, the net contribution is simply measured by $\Delta^{j|\emptyset}(\underline{x}_*)$, while for an interaction it is given by $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$. In this way, if two variables are important and there is little interaction, then the net contribution of the interaction is smaller than the contribution of any of the two variables. Consequently, the interaction will be ranked lower. This is the case, for example, of variables *age* and *gender* in Table \@ref(tab:titanicIBreakDownList). On the other hand, if the interaction is important, then its net contribution will be larger than the contribution of any of the two variables. This is the case, for example, of variables *fare* and *class* in Table \@ref(tab:titanicIBreakDownList).
 
@@ -110,7 +110,7 @@ Based on the ordering of the rows in Table \@ref(tab:titanicIBreakDownList), the
 * *age*, because it has the largest (in absolute value) net contribution equal to 0.270; 
 * *fare:class* interaction, because its net contribution (-0.231) is the second largest (in absolute value);
 * *gender*, because variables *class* and *fare* are already accounted for in the *fare:class* interaction and the  net contribution of *gender*, equal to 0.125, is the largest (in absolute value) among the remaining variables and interactions;
-* *embarked* harbor, based on a similar reasoning as for *gender*;  
+* *embarked* harbor (based on a similar reasoning as for *gender*);  
 * then *sibsp* and *parch* as variables with the smallest net contributions (among single variables), which are larger than the contribution of their interaction.
 
 <!---
@@ -182,7 +182,6 @@ Table: (\#tab:titanicIBreakDownList) Expected model's predictions $E_{\underline
 --->
 
 Table \@ref(tab:titanicIBreakDownList2) presents the variable-importance measures computed by using the following ordering of explanatory variables and their pairwise interactions: *age*, *fare:class*, *gender*, *embarked*, *sibsp*, and *parch*. The table presents also the conditional expected values (see equations \@ref(eq:generalBreakDownLocalAccuracy) and \@ref(eq:viBD) in Section \@ref(BDMethodGen))
-
 $$E_{\underline{X}}\left\{f(\underline{X}) | \underline{X}^{\{1,\ldots,j\}} = \underline{x}^{\{1,\ldots,j\}}_*\right\}=v_0+\sum_{k=1}^j v(k,\underline{x}_*)=v_0+\Delta^{\{1,\ldots\,j\}|\emptyset}(\underline{x}_*).$$
 Note that the expected value presented in the last row, 0.422, corresponds to the model's prediction for the instance of interest, passenger Johnny D.
  
@@ -335,13 +334,13 @@ iBD plots share many advantages and disadvantages of BD plots for models without
 
 Though the numerical complexity of the iBD procedure is quadratic, it may be time-consuming in case of models with a large number of explanatory variables. For a model with $p$ explanatory variables, we have got to calculate $p*(p+1)/2$ net contributions for single variables and pairs of variables. For datasets with a small number of observations, the calculations of the net contributions will be subject to a larger variability and, therefore, larger randomness in the ranking of the contributions.
 
-It is also worth noting that the presented procedure of identification of interactions is not based on any formal statistical-significance test. Thus, the procedure may suffer from false-positive and, especially for small sample sizes, false-negative errors.
+It is also worth noting that the presented procedure of identification of interactions is not based on any formal statistical-significance test. Thus, the procedure may lead to false-positive findings and, especially for small sample sizes, false-negative errors.
 
 ## Code snippets for R {#iBDRcode}
 
-In this section, we use the `DALEX` package, which is a wrapper for `iBreakDown` R package. The package covers all methods presented in this chapter. It is available on CRAN and GitHub. 
+In this section, we use the `DALEX` package, which is a wrapper for `iBreakDown` R package. The package covers all methods presented in this chapter. It is available on `CRAN` and `GitHub`. 
 
-For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic)).
+For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-rf). Recall that the model is constructed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
 First, we retrieve the `titanic_rf` model-object and the data for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
@@ -389,7 +388,7 @@ We can compare the obtained variable-importance measures to those reported for J
 
 By applying the generic `plot()` function to the object created by the `DALEX::predict_parts()` function we obtain the iBD plot. 
 
-(ref:iBDforHenryDesc) Break-down plot with interactions obtained by applying the generic `plot()` function for the randim-forest model and Henry for the Titanic data.
+(ref:iBDforHenryDesc) Break-down plot with interactions for the random-forest model and Henry for the Titanic data, obtained by applying the generic `plot()` function in R.
 
 ```{r iBDforHenry, warning=FALSE, message=FALSE, fig.cap='(ref:iBDforHenryDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
 plot(bd_rf) + theme_ema
@@ -397,22 +396,20 @@ plot(bd_rf) + theme_ema
 
 The resulting iBD plot for Henry is shown in Figure \@ref(fig:iBDforHenry). It can be compared to the iBD plot for Johnny D that is presented in Figure  \@ref(fig:iBreakDownTitanicExamplePlot). 
 
-
-
 ## Code snippets for Python {#iBDPythonCode}
 
 In this section, we use the `dalex` library for Python. The package covers all methods presented in this chapter. It is available on `pip` and `GitHub.` 
 
-For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Recall that the model is developed to predict the probability of survival for passengers of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
+For illustration purposes, we use the `titanic_rf` random-forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the first class (see Section \@ref(predictions-titanic-python)).
 
-In the first step we create an Explainer, an object that will provide a uniform interface for the predictive model. We use the `Explainer` constructor for this purpose.
+In the first step we create an explainer-object that provides a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose (see Section \@ref(ExplainersTitanicPythonCode)).
 
 ```{python,  eval = FALSE}
 import pandas as pd
 henry = pd.DataFrame({'gender': ['male'],
                        'age': [47],
                        'class': ['1st'],
-                       'embarked': ['Southampton'],
+                       'embarked': ['Cherbourg'],
                        'fare': [25],
                        'sibsp': [0],
                        'parch': [0]},
@@ -423,9 +420,9 @@ titanic_rf_exp = dx.Explainer(titanic_rf, X, y,
                     label = "Titanic RF Pipeline")
 ```
 
-To calculate the attributions with the break down method with interactions one can use the `predict_parts` method with `type='break_down_interactions'` argument. The first argument is the observation for which the attributions are to be calculated. 
+To calculate the attributions with the break-down method with interactions, we use the `predict_parts()` method with `type='break_down_interactions'` argument (see Section \@ref(BDPython)). The first argument indicates the data for the observation for which the attributions are to be calculated. 
 
-Interactions are often weak and their net effects are not greater than the contributions of individual variables. If we would like to increase our preference for interactions we can increase the value of the `interaction_preference` argument. The default value of $1$ means no preferences. Results are stored in the `result` field.
+Interactions are often weak and their net effects are not larger than the contributions of individual variables. If we would like to increase our preference for interactions, we can use the `interaction_preference` argument. The default value of $1$ means no preference, while larger values indicate a larger preference. Results are stored in the `result` field.
 
 ```{python,  eval = FALSE}
 bd_henry = titanic_rf_exp.predict_parts(henry, 
@@ -434,12 +431,16 @@ bd_henry = titanic_rf_exp.predict_parts(henry,
 bd_henry.result
 ```
 
-The resulting object can be visualised with the `plot` method. 
+By applying the `plot()` method to the resulting object, we construct the corresponding iBD plot. 
 
 ```{python,  eval = FALSE}
 bd_henry.plot()
 ```
 
-```{r ibdPython2, echo=FALSE, out.width = '90%', fig.align='center'}
+The resulting plot for Henry is shown in Figure \@ref(fig:ibdPython2). 
+
+(ref:ibdPython2Desc) Break-down plot with interactions for the random-forest model and Henry for the Titanic data, obtained by applying the `plot()` method in Python. [TOMASZ: CHERBOURG]
+
+```{r ibdPython2, echo=FALSE, out.width = '90%', fig.align='center', fig.cap='(ref:ibdPython2Desc)'}
 knitr::include_graphics("figure/ibd_python_1.png")
 ```
