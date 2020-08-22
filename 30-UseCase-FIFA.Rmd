@@ -63,7 +63,7 @@ summary(fifa19small$Value.EUR)
 (subset(fifa19small,fifa19small$Value.EUR>100000000)$Name)
 ```
 
-Thus, in our analyses we will consider a logarithmically-transformed player's value. Figure \@ref(fig:distFIFA19Value) presents the empirical cumulative-distribution function and histogram for the transformed value. They indicate that the transformation makes the distribution less skewed.
+Thus, in our analyses, we will consider a logarithmically-transformed player's value. Figure \@ref(fig:distFIFA19Value) presents the empirical cumulative-distribution function and histogram for the transformed value. They indicate that the transformation makes the distribution less skewed.
 
 (ref:distFIFA19ValueDesc) The empirical cumulative-distribution function and histogram for the log$_{10}$-transformed players' values.
 
@@ -176,7 +176,7 @@ Given different possible forms of relationship between the (logarithmically-tran
 
 - a boosting model with 250 trees of 1-level depth, as implemented in package `gbm` [@gbm],
 - a boosting model with 250 trees of 4-levels depth (this model should be able to catch interactions between variables),
-- a random-forest model with 250 trees, as implemented in package `ranger` [@rangerRpackage],
+- a random forest model with 250 trees, as implemented in package `ranger` [@rangerRpackage],
 - a linear model with a spline-transformation of explanatory variables, as implemented in package `rms` [@rms].
 
 These models will be explored in detail in the following sections.
@@ -184,7 +184,7 @@ These models will be explored in detail in the following sections.
 
 ### Code snippets for R 
 
-In this section, we show R-code snippets used to develop the gradient-boosting model. Other models were built in a similar way.
+In this section, we show R-code snippets used to develop the gradient boosting model. Other models were built in a similar way.
 
 The code below fits the model to the data. The dependent variable `LogValue` contains the base-10 logarithm of `Value.EUR`, i.e., of the player's value.
 
@@ -223,7 +223,7 @@ fifa_ols <- ols(LogValue ~ rcs(Age) + rcs(International.Reputation) +
         rcs(GKReflexes), data = fifa19small_red)
 ```
 
-For model-exploration purposes, we have got to create an explainer-object with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)). The code below is used for the gradient-boosting model. Note that the model was fitted to the logarithmically-transformed player's value. However, it is more natural to interpret the predictions on the original scale. This is why, in the provided syntax, we apply the `predict_function` argument to specify a user-defined function to obtain predictions on the original scale, in Euro. Additionally, we use  the `data` and `y` arguments to indicate the data frame with explanatory variables and the values of the dependent variable, for which predictions are to be obtained. Finally, the model receives its own `label`.
+For model-exploration purposes, we have got to create an explainer-object with the help of the `DALEX::explain()` function (see Section \@ref(ExplainersTitanicRCode)). The code below is used for the gradient boosting model. Note that the model was fitted to the logarithmically-transformed player's value. However, it is more natural to interpret the predictions on the original scale. This is why, in the provided syntax, we apply the `predict_function` argument to specify a user-defined function to obtain predictions on the original scale, in Euro. Additionally, we use  the `data` and `y` arguments to indicate the data frame with explanatory variables and the values of the dependent variable, for which predictions are to be obtained. Finally, the model receives its own `label`.
 
 ```{r createExplainersEx, message=FALSE, warning=FALSE, results='hide', eval=FALSE}
 library("DALEX")
@@ -258,20 +258,21 @@ fifa_rm_exp <- DALEX::explain(fifa_ols,
 
 ### Code snippets for Python
 
-In this section, we show Python-code snippets used to develop the gradient-boosting model. Other models were built in a similar way.
+In this section, we show Python-code snippets used to develop the gradient boosting model. Other models were built in a similar way.
 
 The code below fits the model to the data. The dependent variable `ylog` contains the logarithm of `value_eur`, i.e., of the player's value.
 
 ```{python, eval=FALSE}
 from lightgbm import LGBMRegressor
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 X = fifa.drop(["nationality", "overall", "potential", 
       "value_eur", "wage_eur"], axis = 1)
 y = fifa['value_eur']
 ylog = np.log(y)
 
-X_train, X_test, ylog_train, ylog_test, y_train, y_test =
-    train_test_split(X, ylog, y, test_size = 0.25, random_state = 4)
+X_train, X_test, ylog_train, ylog_test, y_train, y_test = train_test_split(X, ylog, y, test_size = 0.25, random_state = 4)
 gbm_model = LGBMRegressor()
 gbm_model.fit(X_train, ylog_train, verbose = False)
 ```
@@ -283,12 +284,12 @@ def predict_function(model, data):
     return np.exp(model.predict(data))
     
 fifa_gbm_exp = dx.Explainer(gbm_model, X_test, y_test, 
-  predict_function = predict_function, label = 'gbm')
+    predict_function = predict_function, label = 'gbm')
 ```
 
 ## Model audit {#FIFAmodelaudit}
 
-Having developed the four candidate models, we may want to evaluate their performance. Toward this aim, we can use the measures discussed in Section \@ref(modelPerformanceMethodCont). The computed values are presented in Table \@ref(tab:modelPerformanceFIFA). On average, the values of the root-mean-squared-error (RMSE) and mean-absolute-deviation (MAD) are the smallest for the random-forest model. 
+Having developed the four candidate models, we may want to evaluate their performance. Toward this aim, we can use the measures discussed in Section \@ref(modelPerformanceMethodCont). The computed values are presented in Table \@ref(tab:modelPerformanceFIFA). On average, the values of the root-mean-squared-error (RMSE) and mean-absolute-deviation (MAD) are the smallest for the random forest model. 
 
 Table: (\#tab:modelPerformanceFIFA) Model-performance measures for the four models for the FIFA 19 data. 
 
@@ -303,6 +304,7 @@ perf_mat <- rbind(unlist(fifa_mr_gbm_shallow$measures),
     unlist(fifa_mr_rf$measures),
     unlist(fifa_mr_rm$measures))
 rownames(perf_mat) <- c("GBM shallow","GBM deep","RF","RM")
+colnames(perf_mat) <- c("MSE", "RMSE", "R2", "MAD")
 kableExtra::kable(perf_mat, format = "simple")
 ```
 
@@ -345,19 +347,19 @@ plot(fifa_md_gbm_shallow, fifa_md_gbm_deep, fifa_md_rf, fifa_md_rm,
   ggtitle("Predicted and observed player's values", "") + theme_ema
 ```
 
-The resulting plot is shown in Figure \@ref(fig:modelPerformanceScatterplot). It indicates that predictions are closest to the observed values of the dependent variable for the random-forest model. It is worth noting that the smoothed trend for the model is close to a straight line, but with a slope smaller than 1. This implies the random-forest model underestimates the actual value of the most expensive players, while it overestimates the value for the least expensive ones. A similar pattern can be observed for the gradient-boosting models. This "shrinking to the mean" is typical for this type of models. 
+The resulting plot is shown in Figure \@ref(fig:modelPerformanceScatterplot). It indicates that predictions are closest to the observed values of the dependent variable for the random forest model. It is worth noting that the smoothed trend for the model is close to a straight line, but with a slope smaller than 1. This implies the random forest model underestimates the actual value of the most expensive players, while it overestimates the value for the least expensive ones. A similar pattern can be observed for the gradient boosting models. This "shrinking to the mean" is typical for this type of models. 
 
 ### Code snippets for R 
 
-In this section, we show R-code snippets for model audit for the gradient-boosting model. For other models a similar syntax was used. 
+In this section, we show R-code snippets for model audit for the gradient boosting model. For other models a similar syntax was used. 
 
-The `model_performance()` function (see Section \@ref(modelPerformanceR)is used to calculate the values of RMSE, MSE, R$^2$, and MAD for the model.
+The `model_performance()` function (see Section \@ref(modelPerformanceR)) is used to calculate the values of RMSE, MSE, R$^2$, and MAD for the model.
 
 ```{r modelAuditFifaR, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 model_performance(fifa_gbm_exp_deep)
 ```
 
-The `model_diagnostics()` function (see Section \@ref(RcodeResidualDiagnostic)) is used to create residual-diagnostics plots. Results of this function can be visualised with the generic `plot()` function. In the code below, additional arguments are used to improve the outlook and iterpretability of both axes.
+The `model_diagnostics()` function (see Section \@ref(RcodeResidualDiagnostic)) is used to create residual-diagnostics plots. Results of this function can be visualised with the generic `plot()` function. In the code below, additional arguments are used to improve the outlook and interpretability of both axes.
 
 ```{r modelAuditFifaR2, warning=FALSE, message=FALSE, echo=TRUE, eval=FALSE}
 fifa_md_gbm_deep <- model_diagnostics(fifa_gbm_exp_deep)
@@ -371,10 +373,21 @@ plot(fifa_md_gbm_deep,
   ggtitle("Predicted and observed player's values", "") 
 ```
 
+### Code snippets for Python
 
-## Model understanding (dataset-level explanation) {#FIFAmodelunderst}
+In this section, we show Python-code snippets used to perform residual diagnostic for trained the gradient boosting model. Other models were tested in a similar way.
 
-All four developed models involve many explanatory variables. It is of interest to understand which of the variables  exercises the largest influence of models' predictions. Toward this aim, we can apply the permutation-based variable-importance measure discussed in Chapter \@ref(featureImportance). Subsequently, we can construct a plot of the obtained mean (over the default 10 permutations) variable-importance measures. Note that we consider only the top 20.   
+The `fifa_gbm_exp.model_diagnostics()` function (see Section \@ref(PythoncodeResidualDiagnostic)) is used to calculate the residuals and absolute residuals.
+Results of this function can be visualised with the `plot()` function. The code below produce diagnostic plots similar to these presented in figure \@ref(fig:modelPerformanceScatterplot).
+
+```{python, eval=FALSE}
+fifa_md_gbm = fifa_gbm_exp.model_diagnostics()
+fifa_md_gbm.plot(variable = "y", yvariable = "y_hat")
+```
+
+## Model understanding (dataset-level explanations) {#FIFAmodelunderst}
+
+All four developed models involve many explanatory variables. It is of interest to understand which of the variables  exercises the largest influence of models' predictions. Toward this aim, we can apply the permutation-based variable-importance measure discussed in Chapter \@ref(featureImportance). Subsequently, we can construct a plot of the obtained mean (over the default 10 permutations) variable-importance measures. Note that we consider only the top 20 variables.   
 
 ```{r featureImportance, warning=FALSE, message=FALSE, echo=FALSE}
 fifa_mp_gbm_shallow <- model_parts(fifa_gbm_exp_shallow)
@@ -383,9 +396,9 @@ fifa_mp_rf <- model_parts(fifa_rf_exp)
 fifa_mp_rm <- model_parts(fifa_rm_exp)
 ```
 
-(ref:featureImportancePlotDesc) Mean variable-importance calculated using 10 permutations for the four models for the FIFA 19 data. [TOMASZ: I DO NOT GET THE PLOT OF ALL FOUR MODELS, ONLY FOR GBM SHALLOW.]
+(ref:featureImportancePlotDesc) Mean variable-importance calculated using 10 permutations for the four models for the FIFA 19 data.
 
-```{r, warning=FALSE, message=FALSE, eval=FALSE}
+```{r, warning=FALSE, message=FALSE, eval=FALSE, echo=FALSE}
 plot(fifa_mp_gbm_shallow, fifa_mp_gbm_deep, fifa_mp_rf, fifa_mp_rm,
      max_vars = 20, bar_width = 4, show_boxplots = FALSE) +
      ggtitle("Feature Importance", "") 
@@ -398,9 +411,9 @@ plot(fifa_mp_gbm_shallow, fifa_mp_gbm_deep, fifa_mp_rf, fifa_mp_rm,
 
 The resulting plot is shown in Figure \@ref(fig:featureImportancePlot). The bar for each explanatory variable starts at the RMSE value of a particular model and ends at the (mean) RMSE calculated for data with permuted values of the variable. 
 
-Figure \@ref(fig:featureImportancePlot) indicates that, for the gradient-booting and random-forest models, the two explanatory variables with the largest values of the importance measure are `Reactions` or `BallControl`. The importance of other variables varies depending on the model. Interestingly, in the linear-regression model, the highest importance is given to goal-keeping skills.   
+Figure \@ref(fig:featureImportancePlot) indicates that, for the gradient-booting and random forest models, the two explanatory variables with the largest values of the importance measure are `Reactions` or `BallControl`. The importance of other variables varies depending on the model. Interestingly, in the linear-regression model, the highest importance is given to goal-keeping skills.   
 
-We may also want to take a look at the partial-dependence (PD) profiles discussed in Chapter \@ref(partialDependenceProfiles). Recall that they illustrate how does the expected value of a model's predictions behave as a function of an explanatory variable. To create the profiles, we apply function `model_profile()` from the `DALEX`package (see Section \@ref(PDPR)). We focus on variables `Reactions`, `BallControl`, and `Dribbling` that were important in the random-forest model (see Figure \@ref(fig:featureImportancePlot)). We also consider `Age`, as it had some effect in the gradient-boosting models. Subsequently, we can construct a plot of contrastive PD profiles (see Section \@ref(contrastivePDPs)) that is shown in Figure \@ref(fig:usecaseFIFApdPlot).
+We may also want to take a look at the partial-dependence (PD) profiles discussed in Chapter \@ref(partialDependenceProfiles). Recall that they illustrate how does the expected value of a model's predictions behave as a function of an explanatory variable. To create the profiles, we apply function `model_profile()` from the `DALEX` package (see Section \@ref(PDPR)). We focus on variables `Reactions`, `BallControl`, and `Dribbling` that were important in the random forest model (see Figure \@ref(fig:featureImportancePlot)). We also consider `Age`, as it had some effect in the gradient boosting models. Subsequently, we can construct a plot of contrastive PD profiles (see Section \@ref(contrastivePDPs)) that is shown in Figure \@ref(fig:usecaseFIFApdPlot).
 
 ```{r usecaseFIFApd, warning=FALSE, message=FALSE, echo=FALSE}
 selected_variables <- c("Reactions", "BallControl", "Dribbling", "Age")
@@ -422,7 +435,7 @@ plot(fifa19_pd_shallow, fifa19_pd_deep, fifa19_pd_rf, fifa19_pd_rm) +
   ggtitle("Contrastive partial-dependence profiles for selected variables","") + theme_ema
 ```
 
-Figure \@ref(fig:usecaseFIFApdPlot) indicates that the shape of the PD profiles for `Reactions`, `BallControl`, and `Dribbling` is, in general, similar for all the models and implies an increasing predicted player's value for an increasing (at least, after passing some threshold) value of the explanatory variable. However, for `Age`, the shape is different and suggests a decreasing player's value after the age of about 25 years. It is worth noting that the range of expected model's predictions is, in general, the smallest for the random-forest model. Also, the three tree-based models tend to stabilize the predictions at the ends of the explanatory-variable ranges.
+Figure \@ref(fig:usecaseFIFApdPlot) indicates that the shape of the PD profiles for `Reactions`, `BallControl`, and `Dribbling` is, in general, similar for all the models and implies an increasing predicted player's value for an increasing (at least, after passing some threshold) value of the explanatory variable. However, for `Age`, the shape is different and suggests a decreasing player's value after the age of about 25 years. It is worth noting that the range of expected model's predictions is, in general, the smallest for the random forest model. Also, the three tree-based models tend to stabilize the predictions at the ends of the explanatory-variable ranges.
 
 The most interesting difference between the conclusions drawn from Figure \@ref(fig:distFIFA19scatter) and those obtained from Figure \@ref(fig:usecaseFIFApdPlot) is observed for variable `Age`. In particular, Figure \@ref(fig:distFIFA19scatter) suggests that the relationship between player's age and value is non-monotonic, while Figure \@ref(fig:usecaseFIFApdPlot) suggests a non-increasing relationship. How can we explain this difference? A possible explanation is as follows. The youngest players have lower values, not because of their age, but because of their lower skills, which are correlated (as seen from the scatter-plot matrix in Figure \@ref(fig:distFIFA19scatter2)) with young age. The simple data exploration analysis, presented in the upper-left panel of Figure \@ref(fig:distFIFA19scatter), cannot separate the effects of age and skills. As a result, the analysis suggests a decrease in player's value for the youngest players. In models, however, the effect of age is estimated while adjusting for the effect of skills. After this adjustment, the effect takes the form of a non-increasing pattern, as shown by the PD profiles for `Age` in Figure \@ref(fig:usecaseFIFApdPlot). 
 
@@ -430,9 +443,9 @@ This example indicates that *exploration of models may provide more insight than
 
 ### Code snippets for R 
 
-In this section, we show R-code snippets for dataset-level exploration for the gradient-boosting model. For other models a similar syntax was used. 
+In this section, we show R-code snippets for dataset-level exploration for the gradient boosting model. For other models a similar syntax was used. 
 
-The `model_parts()` function from the `DALEX`package (see Section \@ref(featureImportanceR)) is used to calculate the permutation-based variable-importance measure. The generic `plot()` function is applied to graphically present the computed values of the measure. The `max_vars` argument is used to limit the number of presented variables up to 20.
+The `model_parts()` function from the `DALEX` package (see Section \@ref(featureImportanceR)) is used to calculate the permutation-based variable-importance measure. The generic `plot()` function is applied to graphically present the computed values of the measure. The `max_vars` argument is used to limit the number of presented variables up to 20.
 
 ```{r modelLeveleModelsEx1, warning=FALSE, message=FALSE, eval=FALSE}
 fifa_mp_gbm_deep <- model_parts(fifa_gbm_exp_deep)
@@ -440,7 +453,7 @@ plot(fifa_mp_gbm_deep, max_vars = 20,
      bar_width = 4, show_boxplots = FALSE) 
 ```
 
-The `model_profile()` function from the `DALEX`package (see Section \@ref(PDPR)) is used to calculate PD profiles. The generic `plot()` function is used to graphically present the profiles for selected variables.
+The `model_profile()` function from the `DALEX` package (see Section \@ref(PDPR)) is used to calculate PD profiles. The generic `plot()` function is used to graphically present the profiles for selected variables.
 
 ```{r modelLeveleModelsEx2, warning=FALSE, message=FALSE, eval=FALSE}
 selected_variables <- c("Reactions", "BallControl", "Dribbling", "Age")
@@ -451,25 +464,34 @@ plot(fifa19_pd_deep)
 
 ### Code snippets for Python
 
-In this section, we show Python-code snippets for dataset-level exploration for the gradient-boosting model. For other models a similar syntax was used. 
+In this section, we show Python code snippets for dataset-level exploration for the gradient boosting model. For other models a similar syntax was used. 
 
 The `model_parts()` method from the `dalex` library (see Section \@ref(featureImportancePython)) is used to calculate the permutation-based variable-importance measure. The `plot()` method is applied to graphically present the computed values of the measure.  
 
 ```{python, eval=FALSE}
-fifa_mp_gbm = fifa_gbm.model_parts()
+fifa_mp_gbm = fifa_gbm_exp.model_parts()
 fifa_mp_gbm.plot(max_vars = 20)
 ```
 
 The `model_profile()` method from the `dalex` library (see Section \@ref(PDPPython)) is used to calculate PD profiles. The `plot()` method is used to graphically present the computed profiles.
 
 ```{python, eval=FALSE}
-fifa_mp_gbm = fifa_gbm.model_profile()
+fifa_mp_gbm = fifa_gbm_exp.model_profile()
 
-fifa_mp_gbm.plot(variables = ['Reactions', 'BallControl',
-                               'Dribbling', 'Age'])
+fifa_mp_gbm.plot(variables = ['movement_reactions', 'skill_ball_control', 
+    'skill_dribbling', 'age'])
 ```
 
-## Instance-level explanation {#FIFAinstanceunderst}
+In order to calculated other types of profiles, just change the `type` argument.
+
+```{python, eval=FALSE}
+fifa_mp_gbm = fifa_gbm_exp.model_profile(type = 'accumulated')
+
+fifa_mp_gbm.plot(variables = ['movement_reactions', 'skill_ball_control', 
+    'skill_dribbling', 'age'])
+```
+
+## Instance-level explanations {#FIFAinstanceunderst}
 
 After evaluation of the models at the dataset-level, we may want to focus on particular instances. 
 
@@ -491,14 +513,14 @@ kableExtra::kable(tmp4, format = "simple", row.names  = FALSE)
 #fifa19small_red["R. Lewandowski",]
 ```
 
-First, we take a look at variable attributions, discussed in Chapter \@ref(breakDown). Recall that they decompose model's prediction into parts that can be attributed to different explanatory variables. The attributions can be presented in a break-down (BD) plot. For brevity, we only consider the random-forest model. The resulting BD plot is shown in Figure \@ref(fig:usecaseFIFAbreakDownPlot). 
+First, we take a look at variable attributions, discussed in Chapter \@ref(breakDown). Recall that they decompose model's prediction into parts that can be attributed to different explanatory variables. The attributions can be presented in a break-down (BD) plot. For brevity, we only consider the random forest model. The resulting BD plot is shown in Figure \@ref(fig:usecaseFIFAbreakDownPlot). 
 
 ```{r usecaseFIFAbreakDown, warning=FALSE, message=FALSE, echo=FALSE}
 fifa_bd_rf <- variable_attribution(fifa_rf_exp, 
                         new_observation = fifa19small_red["R. Lewandowski",])
 ```
 
-(ref:usecaseFIFAbreakDowDesc) Break-down plot for Robert Lewandowski for the random-forest model.
+(ref:usecaseFIFAbreakDowDesc) Break-down plot for Robert Lewandowski for the random forest model.
 
 ```{r usecaseFIFAbreakDownPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap='(ref:usecaseFIFAbreakDowDesc)', out.width = '100%', fig.align='center'}
 pl1 <- plot(fifa_bd_rf) +
@@ -516,7 +538,7 @@ pl1 <- plot(fifa_bd_gbm) +
 pl1 + pl2
 --->
 
-Figure \@ref(fig:usecaseFIFAbreakDownPlot) suggests that the explanatory variables with the largest effect are `Composure`, `Volleys`, `LongShots`, and `Stamina`. However, in Chapter \@ref(breakDown) it was mentioned that variable attributions may depend on the order of explanatory covariates that are used in calculations. Thus, in Chapter \@ref(shapley) we introduced Shapley values, based on the idea of averaging the attributions over many orderings. Figure \@ref(fig:usecaseFIFAshapPlot) presents the means of the Shapley values computed by using 25 random orderings for the random-forest model.
+Figure \@ref(fig:usecaseFIFAbreakDownPlot) suggests that the explanatory variables with the largest effect are `Composure`, `Volleys`, `LongShots`, and `Stamina`. However, in Chapter \@ref(breakDown) it was mentioned that variable attributions may depend on the order of explanatory covariates that are used in calculations. Thus, in Chapter \@ref(shapley) we introduced Shapley values, based on the idea of averaging the attributions over many orderings. Figure \@ref(fig:usecaseFIFAshapPlot) presents the means of the Shapley values computed by using 25 random orderings for the random forest model.
 
 ```{r usecaseFIFAshap, warning=FALSE, message=FALSE, echo=FALSE}
 set.seed(1990)
@@ -524,7 +546,7 @@ fifa_shap_rf <- variable_attribution(fifa_rf_exp,
    new_observation = fifa19small_red["R. Lewandowski",], type = "shap")
 ```
 
-(ref:usecaseFIFAshapPlotDesc) Shapley values for Robert Lewandowski for the random-forest model.
+(ref:usecaseFIFAshapPlotDesc) Shapley values for Robert Lewandowski for the random forest model.
 
 ```{r usecaseFIFAshapPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4, fig.cap='(ref:usecaseFIFAshapPlotDesc)', out.width = '100%', fig.align='center'}
 plot(fifa_shap_rf, show_boxplots = FALSE) +
@@ -543,7 +565,7 @@ plot(fifa_pg, show_boxplots = FALSE) +
 
 Figure \@ref(fig:usecaseFIFAshapPlot) indicates that the five explanatory variables with the largest Shapley values are `BallControl`, `Dribbling`, `Reactions`, `ShortPassing`, and `Positioning`. This makes sense, as Robert Lewandowski is a striker.
 
-In Chapter \@ref(ceterisParibus), we introduced ceteris-paribus (CP) profiles. They capture the effect of a selected explanatory variable in terms of changes in a model's prediction induced by changes in the variable's values. Figure \@ref(fig:usecaseFIFAceterisParibusPlot) presents the profiles for variables `Age`, `Reactions`, `BallControl`, and `Dribbling` for the random-forest model.
+In Chapter \@ref(ceterisParibus), we introduced ceteris-paribus (CP) profiles. They capture the effect of a selected explanatory variable in terms of changes in a model's prediction induced by changes in the variable's values. Figure \@ref(fig:usecaseFIFAceterisParibusPlot) presents the profiles for variables `Age`, `Reactions`, `BallControl`, and `Dribbling` for the random forest model.
 
  <!--The profiles can be obtained with the help of function `predict_profiles()`  package (see Section \@ref(CPR)). We first have got to compute and store the values of the profiles for the selected variables. In the code below we use argument `variable_splits` to provide the values, at which the profiles are to be computed. -->
 <!---
@@ -581,10 +603,10 @@ fifa_cp_rf <- individual_profile(fifa_rf_exp,
 Subsequently, we plot the profiles with the help of the `plot()`function. 
 -->
 
-(ref:usecaseFIFAceterisParibusPlotDesc) Ceteris-paribus profiles for Robert Lewandowski for four selected variables  and the random-forest model.
+(ref:usecaseFIFAceterisParibusPlotDesc) Ceteris-paribus profiles for Robert Lewandowski for four selected variables  and the random forest model.
 
 ```{r usecaseFIFAceterisParibusPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap='(ref:usecaseFIFAceterisParibusPlotDesc)', out.width = '90%', fig.align='center'}
-plot(fifa_cp_rf, color = "_label_", 
+plot(fifa_cp_rf, #color = "_label_", 
              variables = c("Age", "Reactions", "BallControl", "Dribbling")) + 
   scale_y_continuous("Estimated value in Euro", trans = "log10", 
                      labels = dollar_format(suffix = "€", prefix = "")) +
@@ -602,7 +624,7 @@ id_rf <- individual_diagnostics(fifa_rf_exp, fifa19small_red["R. Lewandowski",],
                           neighbors = 30)
 ```
 
-(ref:usecaseFIFAceterisParibusNeighboursPlotDesc) Distribution of residuals for the random-forest model for all players and for 30 neighbors of Robert Lewandowski.
+(ref:usecaseFIFAceterisParibusNeighboursPlotDesc) Distribution of residuals for the random forest model for all players and for 30 neighbors of Robert Lewandowski.
 
 ```{r usecaseFIFAceterisParibusNeighboursPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=4.5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursPlotDesc)', out.width = '90%', fig.align='center'}
 plot(id_rf)  + theme_ema
@@ -621,7 +643,7 @@ id_rf_age <- individual_diagnostics(fifa_rf_exp, fifa19small_red["R. Lewandowski
 
 <!--Then we apply function `plot()` to obtain the desired plot.-->
 
-(ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc) Local-stability plot for `Age` for 30 neighbors of Robert Lewandowski and the random-forest model.
+(ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc) Local-stability plot for `Age` for 30 neighbors of Robert Lewandowski and the random forest model.
 
 ```{r usecaseFIFAceterisParibusNeighboursAgeRFPlot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAceterisParibusNeighboursAgeRFPlotDesc)', out.width = '90%', fig.align='center'}
 plot(id_rf_age) +  
@@ -634,9 +656,9 @@ The CP profiles in Figure \@ref(fig:usecaseFIFAceterisParibusNeighboursAgeRFPlot
 
 ### Code snippets for R 
 
-In this section, we show R-code snippets for instance-level exploration for the gradient-boosting model. For other models a similar syntax was used. 
+In this section, we show R-code snippets for instance-level exploration for the gradient boosting model. For other models a similar syntax was used. 
 
-The `predict_parts()` function from the `DALEX`package (see Chapters \@ref(breakDown)-\@ref(shapley)) is used to calculate variable attributions. Note that we apply the `type = "break_down"` argument to prepare BD plots. The generic `plot()` function is used to graphically present the plots.
+The `predict_parts()` function from the `DALEX` package (see Chapters \@ref(breakDown)-\@ref(shapley)) is used to calculate variable attributions. Note that we apply the `type = "break_down"` argument to prepare BD plots. The generic `plot()` function is used to graphically present the plots.
 
 ```{r instanceLeveleModelsEx1, warning=FALSE, message=FALSE, eval=FALSE}
 fifa_bd_gbm <- predict_parts(fifa_gbm_exp, 
@@ -670,23 +692,32 @@ fifa_cp_gbm <- predict_profile(fifa_gbm_exp,
 plot(fifa_cp_gbm, variables = selected_variables)
 ```
 
-Finally, the `predict_diagnostics()` function (see Section \@ref(cPLocDiagR)) allows calculating local-stability  plots. The generic `plot()` function can be used to plot these profiles for selected variables. [TOMASZ: NO YNTAX FOOR THE PLOT.]
+Finally, the `predict_diagnostics()` function (see Section \@ref(cPLocDiagR)) allows calculating local-stability  plots. The generic `plot()` function can be used to plot these profiles for selected variables. 
 
 ```{r modelLeveleModelsEx4, warning=FALSE, message=FALSE, eval=FALSE}
-id_rf <- predict_diagnostics(fifa_rf_exp, 
+id_gbm <- predict_diagnostics(fifa_gbm_exp, 
                          fifa["R. Lewandowski",],
                          neighbors = 30)
+plot(id_gbm) +  
+  scale_y_continuous("Estimated value in Euro", trans = "log10", 
+                     labels = dollar_format(suffix = "€", prefix = "")) 
 ```
 
 ### Code snippets for Python
 
-In this section, we show Python-code snippets for instance-level exploration for the gradient-boosting model. For other models a similar syntax was used. 
+In this section, we show Python-code snippets for instance-level exploration for the gradient boosting model. For other models a similar syntax was used. 
+
+First, we need to select instance of interest. In this example we will use *Cristiano Ronaldo*.
+
+```{python, eval=FALSE}
+cr7 = X.loc['Cristiano Ronaldo',]
+```
 
 The `predict_parts()` method from the `dalex` library (see Sections \@ref(BDPython) and \@ref(SHAPPythonCode)) can be used to calculate calculate variable attributions. The `plot()` method with `max_vars` argument is applied to graphically present the corresponding BD plot for up to 20 variables.
 
 ```{python, eval=FALSE}
-fifa_mp_gbm = fifa_gbm.predict_parts()
-fifa_mp_gbm.plot(max_vars = 20)
+fifa_pp_gbm = fifa_gbm_exp.predict_parts(cr7, type='break_down')
+fifa_pp_gbm.plot(max_vars = 20)
 ```
 
 To calculate Shapley values, the `predict_parts()` method should be applied with the `type='shap'` argument (see Section \@ref(SHAPPythonCode)). 
@@ -694,15 +725,15 @@ To calculate Shapley values, the `predict_parts()` method should be applied with
 The `predict_profile()` method from the `dalex` library (see Section \@ref(CPPython) allows calculation of the CP profiles. The `plot()` method with the `variables` argument plots the profiles for selected variables.
 
 ```{python, eval=FALSE}
-fifa_mp_gbm <- fifa_gbm.predict_profile()
+fifa_mp_gbm = fifa_gbm_exp.predict_profile(cr7)
 
-fifa_mp_gbm.plot(variables = ['Reactions', 'BallControl',
-                               'Dribbling', 'Age'])
+fifa_mp_gbm.plot(variables =  ['movement_reactions', 'skill_ball_control', 
+    'skill_dribbling', 'age'])
 ```
 
 ### CR7 {#FIFACR7}
 
-As a second example, we present explanations for the random-forest-model's prediction for *Cristiano Ronaldo* (CR7). Table \@ref(tab:CR7) presents his characteristics, as included in the analyzed dataset. Note that Cristiano Ronaldo, as Robert Lewandowski, is also a striker. It might be thus of interest to compare the characteristics contributing to the model's predictions for the two players. 
+As a second example, we present explanations for the random forest-model's prediction for *Cristiano Ronaldo* (CR7). Table \@ref(tab:CR7) presents his characteristics, as included in the analyzed dataset. Note that Cristiano Ronaldo, as Robert Lewandowski, is also a striker. It might be thus of interest to compare the characteristics contributing to the model's predictions for the two players. 
 
 Table: (\#tab:CR7) Characteristics of Cristiano Ronaldo.
 
@@ -720,7 +751,7 @@ kableExtra::kable(tmp4, format = "simple", row.names  = FALSE)
 
 The BD plot for Cristiano Ronaldo is presented in Figure \@ref(fig:usecaseFIFAbreakDownCR7Plot). It suggests that the explanatory variables with the largest effect are `ShotPower`, `LongShots`, `Volleys`, and `Vision`.
 
-(ref:usecaseFIFAbreakDownCR7PlotDesc) Break-down plot for Cristiano Ronaldo for the random-forest model.
+(ref:usecaseFIFAbreakDownCR7PlotDesc) Break-down plot for Cristiano Ronaldo for the random forest model.
 
 ```{r usecaseFIFAbreakDownCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownCR7PlotDesc)', out.width = '100%', fig.align='center'}
 fifa_bd_rf_cr <- variable_attribution(fifa_rf_exp, 
@@ -733,7 +764,7 @@ plot(fifa_bd_rf_cr) +
 
 Figure \@ref(fig:usecaseFIFAshapCR7Plot) presents Shapley values for Cristiano Ronaldo. It indicates that the four explanatory variables with the largest values are `Reactions`, `Dribbling`, `BallControl`, and `ShortPassing`. These are the same variables as for Robert Lewandowski, though in a different order. Interestingly, the plot for Cristiano Ronaldo includes variable `Age`, for which Shapley value is negative. It suggests that CR7's age has got a negative effect on the model's prediction. 
 
-(ref:usecaseFIFAshapCR7PlotDesc) Shapley values for Cristiano Ronaldo for the random-forest model.
+(ref:usecaseFIFAshapCR7PlotDesc) Shapley values for Cristiano Ronaldo for the random forest model.
 
 ```{r usecaseFIFAshapCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAshapCR7PlotDesc)', out.width = '100%', fig.align='center'}
 set.seed(1965)
@@ -748,7 +779,7 @@ plot(fifa_shap_rf_cr, show_boxplots = FALSE) +
 
 Finally, Figure \@ref(fig:usecaseFIFAceterisParibusCR7Plot) presents CP profiles for `Age`, `Reactions`, `Dribbling`, and `BallControl`. 
 
-(ref:usecaseFIFAceterisParibusCR7PlotDesc) Ceteris-paribus profiles for Cristiano Ronaldo for four selected variables  and the random-forest model.
+(ref:usecaseFIFAceterisParibusCR7PlotDesc) Ceteris-paribus profiles for Cristiano Ronaldo for four selected variables  and the random forest model.
 
 ```{r usecaseFIFAceterisParibusCR7Plot, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=6.5, fig.cap='(ref:usecaseFIFAceterisParibusCR7PlotDesc)', out.width = '90%', fig.align='center'}
 selected_splits <- list(Age = seq(15,45,0.1), Reactions = seq(20,100,0.1), 
@@ -767,7 +798,7 @@ The profiles are similar to those presented in Figure \@ref(fig:usecaseFIFAceter
 
 ### Wojciech Szczęsny {#FIFASzczesny}
 
-One might be interested in the characteristics influencing the random-forest model's predictions for players other than strikers. To address the question, we present explanations for *Wojciech Szczęsny*, a goalkeeper. Table \@ref(tab:WS) presents his characteristics, as included in the analyzed dataset. 
+One might be interested in the characteristics influencing the random forest model's predictions for players other than strikers. To address the question, we present explanations for *Wojciech Szczęsny*, a goalkeeper. Table \@ref(tab:WS) presents his characteristics, as included in the analyzed dataset. 
 
 Table: (\#tab:WS) Characteristics of Wojciech Szczęsny.
 
@@ -785,7 +816,7 @@ kableExtra::kable(tmp4, format = "simple", row.names  = FALSE)
 
 Figure \@ref(fig:usecaseFIFAbreakDownWS) shows the BD plot. We can see that the most important contributions come from the explanatory variables related to goalkeeping skills like `GKPositioning`, `GKHandling`, and `GKReflexes`. Interestingly, field-player skills like `BallControl` or `Dribbling` have a negative effect.
 
-(ref:usecaseFIFAbreakDownWSDesc) Break-down plot for Wojciech Szczęsny for the random-forest model.
+(ref:usecaseFIFAbreakDownWSDesc) Break-down plot for Wojciech Szczęsny for the random forest model.
 
 ```{r usecaseFIFAbreakDownWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAbreakDownWSDesc)', out.width = '100%', fig.align='center'}
 fifa_bd_rf_ws <- variable_attribution(fifa_rf_exp, 
@@ -798,7 +829,7 @@ plot(fifa_bd_rf_ws) +
 
 Figure \@ref(fig:usecaseFIFAshapWS) presents Shapley values (over 25 random orderings of explanatory variables). The plot confirms that the most important contributions to the prediction for Wojciech Szczęsny are due to goalkeeping skills like `GKDiving`, `GKPositioning`, `GKReflexes`, and `GKHandling`. Interestingly, `Reactions` is also important, as it was the case for Robert Lewandowski (see Figure \@ref(fig:usecaseFIFAshapPlot)) and Cristiano Ronaldo (see Figure \@ref(fig:usecaseFIFAshapCR7Plot)).
 
-(ref:usecaseFIFAshapWSDesc) Shapley values for Wojciech Szczęsny for the random-forest model.
+(ref:usecaseFIFAshapWSDesc) Shapley values for Wojciech Szczęsny for the random forest model.
 
 ```{r usecaseFIFAshapWS, warning=FALSE, message=FALSE, echo=FALSE, fig.width=8, fig.height=5, fig.cap='(ref:usecaseFIFAshapWSDesc)', out.width = '100%', fig.align='center'}
 set.seed(1994)

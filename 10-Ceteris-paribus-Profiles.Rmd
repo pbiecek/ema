@@ -6,7 +6,7 @@ source("code_snippets/ema_init.R")
 
 ## Introduction {#CPIntro}
 
-Chapters \@ref(breakDown)--\@ref(LIME) focused on the methods that quantified the importance of explanatory variables in the context of a single-instance prediction. Their appplication yields a decomposition of the prediction into components that can be attributed to particular variables. In this chapter, we focus on a method that evaluates the effect of a selected explanatory variable in terms of changes of a model's prediction induced by changes in the variable's values. The method is based on the *ceteris paribus* principle. *"Ceteris paribus"* is a Latin phrase meaning "other things held constant" or "all else unchanged." The method examines the influence of an explanatory variable by assuming that the values of all other variables do not change. The main goal is to understand how do changes in the values of the variable affect the model's predictions. 
+Chapters \@ref(breakDown)--\@ref(LIME) focused on the methods that quantified the importance of explanatory variables in the context of a single-instance prediction. Their application yields a decomposition of the prediction into components that can be attributed to particular variables. In this chapter, we focus on a method that evaluates the effect of a selected explanatory variable in terms of changes of a model's prediction induced by changes in the variable's values. The method is based on the *ceteris paribus* principle. *"Ceteris paribus"* is a Latin phrase meaning "other things held constant" or "all else unchanged." The method examines the influence of an explanatory variable by assuming that the values of all other variables do not change. The main goal is to understand how do changes in the values of the variable affect the model's predictions. 
 
 Explanation tools (explainers) presented in this chapter are linked to the second law introduced in Section \@ref(three-single-laws), i.e., the law of "Prediction's speculation." This is why the tools are also known as "What-if" model analysis or Individual Conditional Expectations [@ICEbox]. It appears that it is easier to understand how does a black-box model work if we can explore the model by investigating the influence of explanatory variables separately, changing one at a time. 
 
@@ -16,7 +16,7 @@ is the model response, or to what-if analysis, how the model response would chan
 
 ## Intuition {#CPIntuition}
 
-Ceteris-paribus (CP) profiles show how a model's prediction would change if the value of a single exploratory variable changed. In essence, a CP profile shows the dependence of the conditional expectation of the dependent variable (response) on the values of the particular explanatory variable. For example, panel A of Figure \@ref(fig:modelResponseCurveLine) presents response (prediction) surface for two explanatory variables, *age* and *class*, for the logistic-regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)) for the Titanic dataset (see Section \@ref(TitanicDataset)). We are interested in the change of the model's prediction for passenger Henry (see Section \@ref(predictions-titanic)) induced by each of the variables. Toward this end, we may want to explore the curvature of the response surface around a single point with *age* equal to 47 and *class* equal to "1st," indicated in the plot. CP profiles are one-dimensional plots that examine the curvature across each dimension, i.e., for each variable. Panel B of Figure \@ref(fig:modelResponseCurveLine) presents the CP profiles for *age* and *class*. Note that, in the CP profile for *age*, the point of interest is indicated by the dot. The plots for both variables suggest that the predicted probability of survival varies considerably for different ages and classes. 
+Ceteris-paribus (CP) profiles show how a model's prediction would change if the value of a single exploratory variable changed. In essence, a CP profile shows the dependence of the conditional expectation of the dependent variable (response) on the values of the particular explanatory variable. For example, panel A of Figure \@ref(fig:modelResponseCurveLine) presents response (prediction) surface for two explanatory variables, *age* and *class*, for the logistic regression model `titanic_lmr` (see Section \@ref(model-titanic-lmr)) for the Titanic dataset (see Section \@ref(TitanicDataset)). We are interested in the change of the model's prediction for passenger Henry (see Section \@ref(predictions-titanic)) induced by each of the variables. Toward this end, we may want to explore the curvature of the response surface around a single point with *age* equal to 47 and *class* equal to "1st", indicated in the plot. CP profiles are one-dimensional plots that examine the curvature across each dimension, i.e., for each variable. Panel B of Figure \@ref(fig:modelResponseCurveLine) presents the CP profiles for *age* and *class*. Note that, in the CP profile for *age*, the point of interest is indicated by the dot. The plots for both variables suggest that the predicted probability of survival varies considerably for different ages and classes. 
 
 (ref:modelResponseCurveLineDesc) Panel A) shows the model response (prediction) surface for variables *age* and *class.* Ceteris-paribus (CP) profiles are conditional, one-dimensional plots that are marked with black curves. They help to understand the changes of the curvature of the surface induced by changes in only a single explanatory variable. Panel B) CP profiles for individual variables, *age* (continuous) and *class* (categorical). 
 
@@ -82,7 +82,7 @@ h^{f,j}_{\underline{x}_*}(z) \equiv f\left(\underline{x}_*^{j|=z}\right).
 (\#eq:CPPdef)
 \end{equation}
 
-CP profile is a function that describes the dependence of the (approximated) conidtional expected value (prediction) of $Y$ on the value $z$ of the $j$-th explanatory variable. Note that, in practice, $z$ assumes values from the entire observed range for the variable, while values of all other explanatory variables are kept fixed at the values specified by $\underline{x}_*$. 
+CP profile is a function that describes the dependence of the (approximated) conditional expected value (prediction) of $Y$ on the value $z$ of the $j$-th explanatory variable. Note that, in practice, $z$ assumes values from the entire observed range for the variable, while values of all other explanatory variables are kept fixed at the values specified by $\underline{x}_*$. 
 
 Note that, in the situation when only a single model is considered, we will skip the model index and we will denote the CP profile for the $j$-th explanatory variable and the point of interest $\underline{x}_*$ by $h^{j}_{\underline{x}_*}(z)$.
 
@@ -91,7 +91,7 @@ Note that, in the situation when only a single model is considered, we will skip
 
 For continuous explanatory variables, a natural way to represent the CP function \@ref(eq:CPPdef) is to use a plot similar to one of those presented in Figure \@ref(fig:profileAgeRf). In the figure, the dot on the curves marks the instance-prediction of interest, i.e., prediction $f(\underline{x}_*)$ for a single observation $\underline{x}_*$. The curve itself shows how would the prediction change if the value of a particular explanatory variable changed. 
 
-In particular, Figure \@ref(fig:profileAgeRf) presents CP profiles for the *age* variable for the logistic-regression model `titanic_lmr` and the random-forest model `titanic_rf` for the Titanic dataset (see Sections \@ref(model-titanic-lmr) and \@ref(model-titanic-rf), respectively). The instance of interest is passenger Henry, a 47-year-old man who travelled in the first class (see Section \@ref(predictions-titanic)). It is worth observing that the profile for the logistic-regression model is smooth, while the one for the random-forest model is a step function with some variability. However, the general shape of the two CP profiles is similar. If Henry were a newborn, while keeping values of all other explanatory variables unchanged, his predicted survival probability would increase by about 40 percentage points for both models. And if Henry were 100-years old, the predictions would decrease by more than 10 percentage points. 
+In particular, Figure \@ref(fig:profileAgeRf) presents CP profiles for the *age* variable for the logistic regression model `titanic_lmr` and the random forest model `titanic_rf` for the Titanic dataset (see Sections \@ref(model-titanic-lmr) and \@ref(model-titanic-rf), respectively). The instance of interest is passenger Henry, a 47-year-old man who travelled in the first class (see Section \@ref(predictions-titanic)). It is worth observing that the profile for the logistic regression model is smooth, while the one for the random forest model is a step function with some variability. However, the general shape of the two CP profiles is similar. If Henry were a newborn, while keeping values of all other explanatory variables unchanged, his predicted survival probability would increase by about 40 percentage points for both models. And if Henry were 80-years old, the predictions would decrease by more than 10 percentage points. 
 
 ```{r, warning=FALSE, echo=FALSE}
 #titanic_imputed <- archivist::aread("pbiecek/models/27e5c")
@@ -119,7 +119,7 @@ cpplot_class_rf <- plot(cp_titanic_rf, variables = "class", variable_type = "cat
 cpplot_class_lmr <- plot(cp_titanic_lmr, variables = "class", variable_type = "categorical", categorical_type = "bars")  + ggtitle("Ceteris Paribus for titanic_lmr", "")  + theme_ema
 ```
 
-(ref:profileAgeRfDesc) Ceteris-paribus profiles for variable *age* for the logistic-regression  (`titanic_lmr`) and random-forest (`titanic_rf` ) models that predict the probability of surviving of passenger Henry based on the Titanic data. Dots indicate the values of the variable and of the prediction for Henry.
+(ref:profileAgeRfDesc) Ceteris-paribus profiles for variable *age* for the logistic regression  (`titanic_lmr`) and random forest (`titanic_rf` ) models that predict the probability of surviving of passenger Henry based on the Titanic data. Dots indicate the values of the variable and of the prediction for Henry.
 
 ```{r profileAgeRf, echo=FALSE, fig.cap='(ref:profileAgeRfDesc)', out.width = '100%', fig.align='center', fig.width=9.5, fig.height=4}
 library(patchwork)
@@ -127,22 +127,22 @@ library(patchwork)
 cpplot_age_lmr + cpplot_age_rf 
 ```
 
-For a categorical explanatory variable, a natural way to represent the CP function is to use a bar plot similar to one of those presented in Figure \@ref(fig:profileAgeRf2). In particular, the figure presents CP profiles for the *class* variable in the logistic-regression and random-forest models for the Titanic dataset (see Sections \@ref(model-titanic-lmr) and \@ref(model-titanic-rf), respectively). For this instance (observation), passenger Henry, the predicted probability for the logistic-regression model would decrease substantially if the value of *class* changed to "2nd" or "3rd." On the other hand, for the random-forest model, the largest change would be marked if *class* changed to "desk crew."
+For a categorical explanatory variable, a natural way to represent the CP function is to use a bar plot similar to one of those presented in Figure \@ref(fig:profileAgeRf2). In particular, the figure presents CP profiles for the *class* variable in the logistic regression and random forest models for the Titanic dataset (see Sections \@ref(model-titanic-lmr) and \@ref(model-titanic-rf), respectively). For this instance (observation), passenger Henry, the predicted probability for the logistic regression model would decrease substantially if the value of *class* changed to "2nd" or "3rd." On the other hand, for the random forest model, the largest change would be marked if *class* changed to "desk crew."
 
-(ref:profileAgeRf2Desc) Ceteris-paribus profiles for variable *class* for the logistic-regression (`titanic_lmr`) and random-forest (`titanic_rf` ) models that predict the probability of surviving of passenger Henry based on the Titanic data. Dots indicate the values of the variable and of the prediction for Henry.
+(ref:profileAgeRf2Desc) Ceteris-paribus profiles for variable *class* for the logistic regression (`titanic_lmr`) and random forest (`titanic_rf` ) models that predict the probability of surviving of passenger Henry based on the Titanic data. Dots indicate the values of the variable and of the prediction for Henry.
 
 ```{r profileAgeRf2, echo=FALSE, fig.cap='(ref:profileAgeRf2Desc)', out.width = '100%', fig.align='center', fig.width=9.5, fig.height=5}
 #knitr::include_graphics("figure/profile_class_rf.png")
 cpplot_class_lmr + cpplot_class_rf 
 ```
 
-Usually, black-box models contain a large number of explanatory variables. However, CP profiles are legible even for tiny subplots, if created with techniques like sparklines or small multiples [@Tufte1986]. By using the techniques, we can display a large number of profiles, while at the same time keeping profiles for consecutive variables in separate panels, as shown in Figure \@ref(fig:profileV4Rf) for the random-forest model for the Titanic dataset. It helps if the panels are ordered so that the most important profiles are listed first. A method to assess the importance of CP profiles is discussed in the next chapter. 
+Usually, black-box models contain a large number of explanatory variables. However, CP profiles are legible even for tiny subplots, if created with techniques like sparklines or small multiples [@Tufte1986]. By using the techniques, we can display a large number of profiles, while at the same time keeping profiles for consecutive variables in separate panels, as shown in Figure \@ref(fig:profileV4Rf) for the random forest model for the Titanic dataset. It helps if the panels are ordered so that the most important profiles are listed first. A method to assess the importance of CP profiles is discussed in the next chapter. 
 
-(ref:profileV4RfDesc) Ceteris-paribus profiles for all continuous explanatory variables for the random-forest model `titanic_rf` for the Titanic dataset and passenger Henry. Dots indicate the values of the variables and of the prediction for Henry. 
+(ref:profileV4RfDesc) Ceteris-paribus profiles for all continuous explanatory variables for the random forest model `titanic_rf` for the Titanic dataset and passenger Henry. Dots indicate the values of the variables and of the prediction for Henry. 
 
 ```{r profileV4Rf, echo=FALSE, fig.cap='(ref:profileV4RfDesc)', out.width = '100%', fig.align='center', fig.width=11, fig.height=3.5}
 #knitr::include_graphics("figure/profile_v4_rf3.png")
-plot(cp_titanic_rf) + facet_wrap(~`_vname_`, ncol = 4, scales = "free_x")  + ggtitle("Ceteris Paribus for titanic_lmr", "") + theme_ema
+plot(cp_titanic_rf) + facet_wrap(~`_vname_`, ncol = 4, scales = "free_x")  + ggtitle("Ceteris Paribus for titanic_rf", "") + theme_ema
 ```
 
 
@@ -150,7 +150,7 @@ plot(cp_titanic_rf) + facet_wrap(~`_vname_`, ncol = 4, scales = "free_x")  + ggt
 
 One-dimensional CP profiles, as presented in this chapter, offer a uniform, easy to communicate, and extendable approach to model exploration. Their graphical representation is easy to understand and explain. It is possible to show profiles for many variables or models in a single plot. CP profiles are easy to compare, as we can overlay profiles for two or more models to better understand differences between the models. We can also compare two or more instances to better understand model-prediction's stability. CP profiles are also a useful tool for sensitivity analysis.
 
-However, there are several issues related to the use of the CP profiles. One of the most impotant ones is related to the presence of correlated explanatory variables. For such variables, the application of the *ceteris paribus* principle may lead to unrealistic settings and misleading results, as it is not possible to keep one variable fixed while varying the other one. For example, variables like surface and number of rooms, which can be used in prediction of an apartment's price, are usually correlated. Thus, it is unrealistic to consider very small apartments with a large number of rooms. In fact, in a training dataset, there may be no such combinations. Yet, as implied by \@ref(eq:CPPdef), to compute a CP profile for the number-of-rooms variable for a particular instance of a small-surface apartment, we should consider the model's predictions $f\left(\underline{x}_*^{j|=z}\right)$ for all values of $z$ (i.e., numbers of rooms) observed in the training dataset, including large ones. This means that, especially for flexible models like, for example, regression trees, predictions for a large number of rooms $z$ may have to be obtained by extrapolating the results obtained for large-surface apartments. Needless to say, such extrapolation may be problematic. We will come back to this issue in Chapters \@ref(partialDependenceProfiles) and \@ref(accumulatedLocalProfiles).
+However, there are several issues related to the use of the CP profiles. One of the most important ones is related to the presence of correlated explanatory variables. For such variables, the application of the *ceteris paribus* principle may lead to unrealistic settings and misleading results, as it is not possible to keep one variable fixed while varying the other one. For example, variables like surface and number of rooms, which can be used in prediction of an apartment's price, are usually correlated. Thus, it is unrealistic to consider very small apartments with a large number of rooms. In fact, in a training dataset, there may be no such combinations. Yet, as implied by \@ref(eq:CPPdef), to compute a CP profile for the number-of-rooms variable for a particular instance of a small-surface apartment, we should consider the model's predictions $f\left(\underline{x}_*^{j|=z}\right)$ for all values of $z$ (i.e., numbers of rooms) observed in the training dataset, including large ones. This means that, especially for flexible models like, for example, regression trees, predictions for a large number of rooms $z$ may have to be obtained by extrapolating the results obtained for large-surface apartments. Needless to say, such extrapolation may be problematic. We will come back to this issue in Chapters \@ref(partialDependenceProfiles) and \@ref(accumulatedLocalProfiles).
 
 A somewhat similar issue is related to the presence of interactions in a model, as they imply the dependence of the effect of one variable on other one(s). Pairwise interactions require the use of two-dimensional CP profiles that are more complex than one-dimensional ones. Needless to say, interactions of higher orders pose even a greater challenge.
 
@@ -162,7 +162,7 @@ Finally, while bar plots allow visualization of CP profiles for factors (categor
 
 In this section, we present CP profiles as implemented in the `DALEX` package for R. Note that presented functions are, in fact, wrappers to package `ingredients` [@ingredientsRPackage] with a simplified interface. There are also other R packages that offer similar functionalities, like `condvis` [@condvisRPackage], `pdp` [@pdpRPackage], `ICEbox` [@ICEbox], `ALEPlot` [@ALEPlotRPackage], or `iml` [@imlRPackage].
 
-For illustration, we use two classification models developed in Chapter \@ref(TitanicDataset), namely the logistic-regression model `titanic_lmr` (Section \@ref(model-titanic-lmr)) and the random-forest model `titanic_rf` (Section \@ref(model-titanic-rf)). They are developed to predict the probability of survival after sinking of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old male passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
+For illustration, we use two classification models developed in Chapter \@ref(TitanicDataset), namely the logistic regression model `titanic_lmr` (Section \@ref(model-titanic-lmr)) and the random forest model `titanic_rf` (Section \@ref(model-titanic-rf)). They are developed to predict the probability of survival after sinking of Titanic. Instance-level explanations are calculated for Henry, a 47-year-old male passenger that travelled in the first class (see Section \@ref(predictions-titanic)).
 
 We first retrieve the `titanic_lmr` and `titanic_rf` model-objects and the data frame for Henry via the `archivist` hooks, as listed in Section \@ref(ListOfModelsTitanic). We also retrieve the version of the `titanic` data with imputed missing values.
 
@@ -185,8 +185,8 @@ library("rms")
 explain_lmr <- explain(model = titanic_lmr, 
                        data  = titanic_imputed[, -9],
                        y     = titanic_imputed$survived == "yes",
+                       type = "classification",
                        label = "Logistic Regression")
-explain_lmr$model_info$type = "classification"
 
 library("randomForest")
 explain_rf <- DALEX::explain(model = titanic_rf,  
@@ -199,7 +199,7 @@ explain_rf <- DALEX::explain(model = titanic_rf,
 
 The easiest way to create and plot CP profiles is to use the `predict_profile()` function and then apply the generic `plot()` function to the resulting object. By default, profiles for all explanatory variables are calculated, while profiles for all numeric (continuous) variables are plotted. One can limit the number of variables for which calculations and/or plots are necessary by using the `variables` argument. 
 
-To compute the CP profiles, the `predict_profile()` function requires arguments `explainer`, which specifies the name of the explainer-object, and `new_observation`, which specifies the name of the data frame for the instance for which prediction is of interest. As a result, the function returns an object of class "ceteris_paribus_explainer." It is a data frame with the model's predictions. Below we illustrate the use of the function for the random-forest model.
+To compute the CP profiles, the `predict_profile()` function requires arguments `explainer`, which specifies the name of the explainer-object, and `new_observation`, which specifies the name of the data frame for the instance for which prediction is of interest. As a result, the function returns an object of class "ceteris_paribus_explainer." It is a data frame with the model's predictions. Below we illustrate the use of the function for the random forest model.
 
 ```{r, warning=FALSE, message=FALSE}
 cp_titanic_rf <- predict_profile(explainer = explain_rf, 
@@ -213,7 +213,7 @@ To obtain a graphical representation of CP profiles, the generic `plot()` functi
 
 Below we show the code that can be used to create plots similar to those presented in the upper part of Figure \@ref(fig:profileV4Rf). By default, the `plot()` function provides a graph with plots for all numerical variables. To limit the display to variables *age* and *fare*, the names of the variables are provided in the `variables` argument. The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01).
 
-(ref:titanicCeterisProfile01Desc) Ceteris-paribus profiles for variables *age* and *fare* and the `titanic_rf` random-forest model for the Titanic data. Dots indicate the values of the variables and of the prediction for Henry.
+(ref:titanicCeterisProfile01Desc) Ceteris-paribus profiles for variables *age* and *fare* and the `titanic_rf` random forest model for the Titanic data. Dots indicate the values of the variables and of the prediction for Henry.
 
 ```{r, warning=FALSE, message=FALSE,  eval=FALSE}
 library("ggplot2")
@@ -229,7 +229,7 @@ plot(cp_titanic_rf, variables = c("age", "fare")) +
 
 To plot CP profiles for categorical variables, we have got to add the `variable_type = "categorical"` argument to the `plot()` function. In that case, we can use the `categorical_type` argument to specify whether we want to obtain a plot with `"lines"` (default) or `"bars"`. In the code below, we also use argument `variables` to indicate that we want to create plots only for variables *class* and *embarked*. The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01B). 
 
-(ref:titanicCeterisProfile01BDesc) Ceteris-paribus profiles for variables *class* and *embarked* and the `titanic_rf` random-forest model for the Titanic data. Dots indicate the values of the variables and of the prediction for Henry. 
+(ref:titanicCeterisProfile01BDesc) Ceteris-paribus profiles for variables *class* and *embarked* and the `titanic_rf` random forest model for the Titanic data. Dots indicate the values of the variables and of the prediction for Henry. 
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(cp_titanic_rf, variables = c("class", "embarked"), 
@@ -249,7 +249,7 @@ plot(cp_titanic_rf, variables = c("class", "embarked"),
 The `predict_profile()` function is very flexible. To better understand how can it be used, we briefly review its arguments:
 
 * `explainer`, `data`, `predict_function`, `label` - they provide information about the model. If the object provided in the `explainer` argument has been created with the `DALEX::explain()` function, then values of the other arguments are extracted from the object; this is how we use the function in this chapter. Otherwise, we have got to specify directly the model-object, the data frame used for fitting the model, the function that should be used to compute predictions, and the model label.
-* `new_observation` - a data frame with data for instance(s), for which we want to calculate CP profiles, with the same variables as in the data used to fit the model. Note, however, that it is best not to inlcude the dependent variable in the data frame.
+* `new_observation` - a data frame with data for instance(s), for which we want to calculate CP profiles, with the same variables as in the data used to fit the model. Note, however, that it is best not to include the dependent variable in the data frame, as they should not appear in plots.
 * `y` - the observed values of the dependent variable corresponding to `new_observation`. The use of this argument is illustrated in Section  \@ref(cPLocDiagIntro). 
 * `variables` - names of explanatory variables, for which CP profiles are to be calculated. By default, `variables = NULL` and the profiles are constructed for all variables, which may be time consuming.
 * `variable_splits` - a list of values for which CP profiles are to be calculated. By default, `variable_splits = NULL` and the list includes all values for categorical variables and uniformly-placed values for continuous variables; for the latter, one can specify the number of the values with the `grid_points` argument (by default, `grid_points = 101`).
@@ -259,14 +259,14 @@ The code below uses argument `variable_splits` to specify that CP profiles are t
 ```{r, warning=FALSE, message=FALSE}
 variable_splits = list(age = seq(0, 70, 0.1), 
                       fare = seq(0, 100, 0.1))
-cp_titanic_rf <- individual_profile(explainer = explain_rf, 
+cp_titanic_rf <- predict_profile(explainer = explain_rf, 
                               new_observation = henry,
                               variable_splits = variable_splits)
 ```
 
-Susbequently, to replicate the plots presented in the upper part of Figure \@ref(fig:profileV4Rf), a call to function `plot()` can be used as below. The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01).
+Subsequently, to replicate the plots presented in the upper part of Figure \@ref(fig:profileV4Rf), a call to function `plot()` can be used as below. The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01).
 
-(ref:titanicCeterisProfile01CDesc) Ceteris-paribus profiles for variables *class* and *embarked* and the `titanic_rf` random-forest model. Blue dots indicate the values of the variables and of the prediction for Henry.
+(ref:titanicCeterisProfile01CDesc) Ceteris-paribus profiles for variables *class* and *embarked* and the `titanic_rf` random forest model. Blue dots indicate the values of the variables and of the prediction for Henry.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 plot(cp_titanic_rf, variables = c("age", "fare")) + 
@@ -281,7 +281,7 @@ plot(cp_titanic_rf, variables = c("age", "fare")) +
 
 <!-- To enhance the plot, additional functions can be used. The generic `plot()` function creates a `ggplot2` object with a single `geom_line` layer. Function `show_observations` adds `geom_point` layer, `show_rugs` adds `geom_rugs`, while `show_profiles` adds another `geom_line`. All these functions take, as the first argument, an object created with the `ceteris_paribus()` function. They can be combined freely  to superimpose profiles for different models or observations. -->
 
-In the example below, we present the code to create CP profiles for two passengers, Henry and Johnny D (see Section \@ref(predictions-titanic)), for the random-forest model `titanic_rf` (Section \@ref(model-titanic-rf)). Toward this end, we first retrieve the `johnny_d` data frame via the `archivist` hook, as listed in Section \@ref(ListOfModelsTitanic). We then apply the `individual_profile()` function with the explainer-object `explain_rf` specified in the `explainer` argument and the combined data frame for Henry and Johnny D used in the `new_observation` argument. We also use argument `variable_splits` to specify that CP profiles are to be calculated for *age* and *fare*, together with the list of values at which the profiles are to be evaluated. 
+In the example below, we present the code to create CP profiles for two passengers, Henry and Johnny D (see Section \@ref(predictions-titanic)), for the random forest model `titanic_rf` (Section \@ref(model-titanic-rf)). Toward this end, we first retrieve the `johnny_d` data frame via the `archivist` hook, as listed in Section \@ref(ListOfModelsTitanic). We then apply the `predict_profile()` function with the explainer-object `explain_rf` specified in the `explainer` argument and the combined data frame for Henry and Johnny D used in the `new_observation` argument. We also use argument `variable_splits` to specify that CP profiles are to be calculated for *age* and *fare*, together with the list of values at which the profiles are to be evaluated. 
 
 <!---
 {r, warning=FALSE, message=FALSE, eval=FALSE}
@@ -298,12 +298,12 @@ johnny_d
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-cp_titanic_rf2 <- individual_profile(explainer = explain_rf, 
+cp_titanic_rf2 <- predict_profile(explainer = explain_rf, 
                                new_observation = rbind(henry, johnny_d),
                                variable_splits = variable_splits)
 ```
 
-To create the plots of CP profile, we apply the `plot()` function. We use the  `scale_color_manual` function to add names of passengers to the plot, and to control colors and positions.
+To create the plots of CP profile, we apply the `plot()` function. We use the  `scale_color_manual()` function to add names of passengers to the plot, and to control colors and positions.
 
 (ref:titanicCeterisProfile01DDesc) Ceteris-paribus profiles for the `titanic_rf` model. Profiles for different passengers are color-coded. Dots indicate the values of the variables and of the predictions for the passengers.
 
@@ -327,11 +327,11 @@ plot(cp_titanic_rf2, color = "_ids_", variables = c("age", "fare")) +
 ```
 
 
-### Comparison of models (champion-challenger analysis)
+### Comparison of models (champion-challenger)
 
 One of the most interesting uses of the CP profiles is the comparison for two or more of models.
 
-To illustrate this possibility, first, we have go to construct profiles for the models. In our illustration, for the sake of clarity, we limit ourselves to the logistic-regression (Section \@ref(model-titanic-lmr)) and random-forest (Section \@ref(model-titanic-rf)) models for the Titanic data. Moreover, we use Henry as the instance for which predictions are of interest. We apply the `predict_profile()` function to compute the CP profiles for the two models.
+To illustrate this possibility, first, we have to construct profiles for the models. In our illustration, for the sake of clarity, we limit ourselves to the logistic regression (Section \@ref(model-titanic-lmr)) and random forest (Section \@ref(model-titanic-rf)) models for the Titanic data. Moreover, we use Henry as the instance for which predictions are of interest. We apply the `predict_profile()` function to compute the CP profiles for the two models.
 
 ```{r, warning=FALSE, message=FALSE, eval=FALSE}
 cp_titanic_rf <- predict_profile(explain_rf, henry)
@@ -356,10 +356,10 @@ plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_",
      ggtitle("Ceteris-paribus profiles for Henry", "") 
 ```
 
-The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01E). For Henry, the predicted probability of survival is higher for the logistic-regression model than for the random-forest model. CP profiles for *age* show a similar shape, however, and indicate decreasing probability with age. For *fare*, the profile for the logistic-regression model suggests a slight increase of the probabilty, while for the random-forest a decreasing trend can be infered. The difference between the values of the CP profiles for *fare* increases with the increasing values of the variable.
+The resulting plot is shown in Figure \@ref(fig:titanicCeterisProfile01E). For Henry, the predicted probability of survival is higher for the logistic regression model than for the random forest model. CP profiles for *age* show a similar shape, however, and indicate decreasing probability with age. Note that this relation is not linear because we used spline transformation for the *age* variable, see Section \@ref(model-titanic-lmr). For *fare*, the profile for the logistic regression model suggests a slight increase of the probability, while for the random forest a decreasing trend can be inferred. The difference between the values of the CP profiles for *fare* increases with the increasing values of the variable.
 We can only speculate what is the reason for the difference. Perhaps the cause is the correlation between the ticket *fare* and *class.* The logistic regression model handles the dependency of variables differently than the random forest model.
 
-(ref:titanicCeterisProfile01EDesc) Comparison of the ceteris-paribus profiles for Henry for the logistic-regression and random-forest models. Profiles for different models are color-coded. Dots indicate the values of the variables and of the prediction for Henry.
+(ref:titanicCeterisProfile01EDesc) Comparison of the ceteris-paribus profiles for Henry for the logistic regression and random forest models. Profiles for different models are color-coded. Dots indicate the values of the variables and of the prediction for Henry.
 
 ```{r titanicCeterisProfile01E, warning=FALSE, message=FALSE, fig.width=8, echo=FALSE, fig.height=4, fig.cap='(ref:titanicCeterisProfile01EDesc)', out.width = '100%', fig.align='center'}
 plot(cp_titanic_rf, cp_titanic_lmr, color = "_label_",  variables = c("age", "fare")) +
@@ -397,13 +397,17 @@ cp_henry = titanic_rf_exp.predict_profile(henry)
 cp_henry.result
 ```
 
+```{r, echo=FALSE, out.width = '100%'}
+knitr::include_graphics("figure/cp_python_3.png")
+```
+
 The resulting object can be visualised by using the `plot()` method. By default, CP profiles for all continuous variables are plotted. To select specific variables, a vector with the names of the variables can be provided in the `variables` argument. In the code below, we select variables *age* and *fare*. The resulting plot is shown in Figure \@ref(fig:cpPython1). 
 
 ```{python,  eval = FALSE}
 cp_henry.plot(variables = ['age', 'fare'])
 ```
 
-(ref:cpPython1Desc) Ceteris-paribus profiles for continuous explanatory variables *age* and *fare* for the random-forest model for the Titanic data and passenger Henry. Dots indicate the values of the variables and of the prediction for Henry. [TOMASZ: PLOT FOR JOHNNY D. REMEMBER TO USE CHERBOURG FOR HENRY.]
+(ref:cpPython1Desc) Ceteris-paribus profiles for continuous explanatory variables *age* and *fare* for the random forest model for the Titanic data and passenger Henry. Dots indicate the values of the variables and of the prediction for Henry.
 
 ```{r cpPython1, echo=FALSE, out.width = '80%', fig.align='center', fig.cap='(ref:cpPython1Desc)'}
 knitr::include_graphics("figure/cp_python_1.png")
@@ -416,9 +420,24 @@ cp_henry.plot(variables = ['class', 'embarked'],
                variable_type = 'categorical')
 ```
 
-(ref:cpPython2Desc) Ceteris-paribus profiles for categorical explanatory variables *class* and *embarked* for the random-forest model for the Titanic data and passenger Henry.  [TOMASZ: PLOT FOR JOHNNY D. REMEMBER TO USE CHERBOURG FOR HENRY.]
+(ref:cpPython2Desc) Ceteris-paribus profiles for categorical explanatory variables *class* and *embarked* for the random forest model for the Titanic data and passenger Henry.  
 
 ```{r cpPython2, echo=FALSE, out.width = '80%', fig.align='center', fig.cap='(ref:cpPython2Desc)'}
 knitr::include_graphics("figure/cp_python_2.png")
 ```
 
+[TODO: zaktualizować po zmienie pakietu]
+
+
+You can place Ceteris-paribus profiles for several models on a single chart. Simply add them as further arguments for the `plot` function. See an example below. The resulting plot is shown in Figure \@ref(fig:cpPython4).  
+
+```{python,  eval = FALSE}
+cp_henry2 = titanic_lr_exp.predict_profile(henry)
+cp_henry.plot(cp_henry2, variables = ['age', 'fare'])
+```
+
+(ref:cpPython4Desc) Ceteris-paribus profiles for logistic regression model and random forest model for the Titanic data and passenger Henry.  
+
+```{r cpPython4, echo=FALSE, out.width = '80%', fig.align='center', fig.cap='(ref:cpPython4Desc)'}
+knitr::include_graphics("figure/cp_python_4.png")
+```
