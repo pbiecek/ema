@@ -399,12 +399,12 @@ Let us consider the random forest model `titanic_rf` (see Section \@ref(model-ti
 
 First, we take a look at the random forest model. We will illustrate the "confusion table" by using threshold $C$ equal to 0.5, i.e., we will classify passengers as "survivors" and "non-survivors" depending whether their model-predicted probability of survival was larger than 50\% or not, respectively. Table  \@ref(tab:confMatRF) presents the resulting table.  
 
-Table: (\#tab:confMatRF) Confusion table for the random forest model for the Titanic data. Predicted survival status is equal to TRUE if the model-predicted probability of survival $\hat y_i$ is larger than 50\%. 
+Table: (\#tab:confMatRF) Confusion table for the random forest model for the Titanic data. Predicted survival status is equal to *survived* if the model-predicted probability of survival $\hat y_i$ is larger than 50\%. 
 
-|                          |Actual survival: TRUE|Actual survival: FALSE| Total |
+|                          |Actual: survived|Actual: died| Total |
 |--------------------------|---------------------|----------------------|-------|
-| Predicted survival: TRUE |                  454|                    60|    514|
-| Predicted survival: FALSE|                  257|                  1436|   1693|
+| Predicted: survived |                  454|                    60|    514|
+| Predicted: died|                  257|                  1436|   1693|
 | Total                    |                  711|                  1496|   2207|
 
 Based on the table, we obtain the value of accuracy equal to (454+1436)/2207 = 0.8564. The values of precision and recall (sensitivity) are equal to 454/514=0.8833 and 454/711 = 0.6385, respectively, with the resulting F1 score equal to 0.7412. Specificity is equal to 1436/1496=0.9599. 
@@ -507,49 +507,60 @@ Figure \@ref(fig:exampleROC) presents the ROC curve for the random forest model.
 
 (ref:exampleROCDesc) Receiver Operating Characteristic curve for the random forest model for the Titanic dataset. The Gini coefficient can be calculated as 2 x area between the ROC curve and the diagonal (this area is highlighted). The AUC coefficient is defined as an area under the ROC curve.
 
-```{r exampleROC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleROCDesc)', out.width = '50%', fig.align='center'}
+```{r exampleROC, warning=FALSE, message=FALSE, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleROCDesc)', out.width = '50%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
 plot(model_performance(explain_rf), geom = "roc") +
   geom_ribbon(aes(ymin = tpr, ymax=fpr), fill = "#371ea3") +
   theme(legend.position = "none") + theme_ema
 ```
 
-Figure \@ref(fig:examplePRC) presents the precision-recall curve for the random forest model. 
+Figure \@ref(fig:examplePRC) presents the precision-recall curve (left panel) and lift chart (right panel) for the random forest model. 
 
-(ref:examplePRCDesc) Precision-recall curve for the random forest model for the Titanic dataset. 
+(ref:examplePRCDesc) Precision-recall curve (left panel) and lift chart (right panel) for the random forest model for the Titanic dataset. 
 
-```{r examplePRC, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:examplePRCDesc)', out.width = '50%', fig.align='center'}
+```{r examplePRC, warning=FALSE, message=FALSE, fig.width=9, fig.height=4.5, echo=FALSE, fig.cap='(ref:examplePRCDesc)', out.width = '100%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
-plot(model_performance(explain_rf), geom = "prc") +
+pl1 <- plot(model_performance(explain_rf), geom = "prc") +
   geom_line(aes(recall, precis), size=1.4, color = "#371ea3") + ylim(0,1.05)+
   theme(legend.position = "none") + theme_ema
+
+pl2 <- plot(model_performance(explain_rf), geom = "lift") +
+  geom_line(aes(pr, lift/0.3222), size=1.4, color = "#371ea3") +  theme(legend.position = "none") + theme_ema + ylim(1,3.13)
+
+library(patchwork)
+pl1 + pl2
 ```
 
+<!--
 Figure \@ref(fig:exampleLift) presents the lift chart for the random forest model. 
 
 (ref:exampleLiftDesc) Lift chart for the random forest model for the Titanic dataset. 
 
-```{r exampleLift, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleLiftDesc)', out.width = '50%', fig.align='center'}
+```{r exampleLift, warning=FALSE, message=FALSE, fig.width=4.5, fig.height=4.5, echo=FALSE, fig.cap='(ref:exampleLiftDesc)', out.width = '50%', fig.align='center'}
 #knitr::include_graphics("figure/ROCcurve.png")
 plot(model_performance(explain_rf), geom = "lift") +
   geom_line(aes(pr, lift/0.3222), size=1.4, color = "#371ea3") +  theme(legend.position = "none") + theme_ema + ylim(1,3.13)
 ```
 
+-->
+
 Table \@ref(tab:confMatLR) presents the confusion table for the logistic regression model for threshold $C$ equal to 0.5. The resulting values of accuracy, precision, recall (sensitivity), F1 score, and specificity are equal to 0.8043, 0.7522, 0.5851, 0.6582, and 0.9084. The values are smaller than for the random forest model, suggesting a better performance of the latter. 
 
 Table: (\#tab:confMatLR) Confusion table for the logisitc regression model for the Titanic data. Predicted survival status is equal to TRUE if the model-predicted probability of survival is larger than 50\%. 
 
-|                          |Actual survival: TRUE|Actual survival: FALSE| Total |
+|                          |Actual: survived|Actual: died| Total |
 |--------------------------|---------------------|----------------------|-------|
-| Predicted survival: TRUE |                  416|                   137|    653|
-| Predicted survival: FALSE|                  295|                  1359|   1654|
+| Predicted: survived |                  416|                   137|    653|
+| Predicted: died|                  295|                  1359|   1654|
 | Total                    |                  711|                  1496|   2207|
 
-Figure \@ref(fig:titanicROC) presents ROC curves for both the logistic regression and the random forest model. The curve for the random forest model lies above the one for the logistic regression model for the majority of the cut-offs $C$, except for the very high values of the cut-off $C$. AUC for the logistic regression model is equal to 0.8174 and is smaller than for the random forest model. 
+Left panel in figure \@ref(fig:titanicROC) presents ROC curves for both the logistic regression and the random forest model. The curve for the random forest model lies above the one for the logistic regression model for the majority of the cut-offs $C$, except for the very high values of the cut-off $C$. AUC for the logistic regression model is equal to 0.8174 and is smaller than for the random forest model. Right panel in figure \@ref(fig:titanicLift) presents lift charts for both models. Also in this case the curve for the random forest suggests a better performance than for the logistic regression model, except for the very high values of cut-off $C$.
 
-(ref:titanicROCDesc) Receiver Operating Characteristic curves for the random forest and logistic regression models for the Titanic dataset.
+<!--(ref:titanicLiftDesc) Lift charts for the random forest and logistic regression models for the Titanic dataset.-->
 
-```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap='(ref:titanicROCDesc)', fig.align='center'}
+(ref:titanicROCDesc) Receiver Operating Characteristic curves (left panel) and lift charts (right panel) for the random forest and logistic regression models for the Titanic dataset.
+
+```{r titanicROC, warning=FALSE, message=FALSE, echo=FALSE, fig.width=9, fig.height=4.5, out.width = '100%', fig.cap='(ref:titanicROCDesc)', fig.align='center'}
 library("DALEX")
 library("rms")
 library("randomForest")
@@ -557,17 +568,21 @@ library("randomForest")
 # plot results
 eva_rf <- DALEX::model_performance(explain_titanic_rf)
 eva_lr <- DALEX::model_performance(explain_titanic_lmr)
-plot(eva_rf, eva_lr, geom = "roc") + theme_ema
+pl3 <- plot(eva_rf, eva_lr, geom = "roc") + theme_ema
+
+pl4 <- plot(eva_rf, eva_lr, geom = "lift") + theme_ema
+pl3 + pl4
 ```
 
+<!--
 Figure \@ref(fig:titanicLift) presents lift charts for both models. Also in this case the curve for the random forest suggests a better performance than for the logistic regression model, except for the very high values of cut-off $C$.
 
 (ref:titanicLiftDesc) Lift charts for the random forest and logistic regression models for the Titanic dataset.
 
-```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap='(ref:titanicLiftDesc)', fig.align='center'}
+```{r titanicLift, warning=FALSE, message=FALSE, echo=FALSE, fig.width=5, fig.height=5, out.width = '50%', eval = FALSE, fig.cap='(ref:titanicLiftDesc)', fig.align='center'}
 plot(eva_rf, eva_lr, geom = "lift") + theme_ema
 ```
-
+-->
 ```{r titanicGain, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE, fig.width=5, fig.height=5, out.width = '50%', fig.cap="Cumulative-gain chart for the random forest model and the logistic regression model for the Titanic dataset.", fig.align='center'}
 plot(eva_rf, eva_lr, geom = "gain")
 ```
@@ -695,21 +710,15 @@ The resulting object can be visualised in many different ways. Let's start wit R
 ```{python,  eval = FALSE}
 import plotly.express as px
 from sklearn.metrics import roc_curve, auc
-
 y_score = titanic_rf_exp.predict(X)
 fpr, tpr, thresholds = roc_curve(y, y_score)
-
-fig = px.area(
-    x=fpr, y=tpr,
+fig = px.area(x=fpr, y=tpr,
     title=f'ROC Curve (AUC={auc(fpr, tpr):.4f})',
     labels=dict(x='False Positive Rate', y='True Positive Rate'),
-    width=700, height=500
-)
+    width=700, height=500)
 fig.add_shape(
     type='line', line=dict(dash='dash'),
-    x0=0, x1=1, y0=0, y1=1
-)
-
+    x0=0, x1=1, y0=0, y1=1)
 fig.update_yaxes(scaleanchor="x", scaleratio=1)
 fig.update_xaxes(constrain='domain')
 fig.show()
@@ -717,25 +726,19 @@ fig.show()
 
 (ref:examplePythonMP4Desc) The ROC plot for the random forest model for the Titanic dataset.  
 
-```{r examplePythonMP4, echo=FALSE, out.width = '80%', fig.cap='(ref:examplePythonMP4Desc)'}
+```{r examplePythonMP4, echo=FALSE, out.width = '60%', fig.align='center',  fig.cap='(ref:examplePythonMP4Desc)'}
 knitr::include_graphics("figure/python_model_performance_4.png")
 ```
 
 Next plot will show FP and TP rates as a function of different thresholds. Figure \@ref(fig:examplePythonMP3) presents the created plot.
 
 ```{python,  eval = FALSE}
-df = pd.DataFrame({
-    'False Positive Rate': fpr,
-    'True Positive Rate': tpr
-}, index=thresholds)
+df = pd.DataFrame({'False Positive Rate': fpr,
+        'True Positive Rate': tpr }, index=thresholds)
 df.index.name = "Thresholds"
 df.columns.name = "Rate"
-
-fig_thresh = px.line(
-    df, title='TPR and FPR at every threshold',
-    width=700, height=500
-)
-
+fig_thresh = px.line(df, 
+    title='TPR and FPR at every threshold', width=700, height=500)
 fig_thresh.update_yaxes(scaleanchor="x", scaleratio=1)
 fig_thresh.update_xaxes(range=[0, 1], constrain='domain')
 fig_thresh.show()
@@ -743,7 +746,7 @@ fig_thresh.show()
 
 (ref:examplePythonMP3Desc) The FRP/TPR as a function of threshold for the random forest model for the Titanic dataset.  
 
-```{r examplePythonMP3, echo=FALSE, out.width = '100%', fig.align='center', fig.cap='(ref:examplePythonMP3Desc)'}
+```{r examplePythonMP3, echo=FALSE, out.width = '80%', fig.align='center', fig.cap='(ref:examplePythonMP3Desc)'}
 knitr::include_graphics("figure/python_model_performance_3.png")
 ```
 

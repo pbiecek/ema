@@ -44,6 +44,7 @@ euro_format <- function(largest_with_cents = 100000) {
 
 load("misc/fifa19small.rda")
 rownames(fifa19small) <- fifa19small$Name
+colnames(fifa19small)[9] <- "Reputation"
 ```
 
 The original dataset contains 89 variables that describe 16,924 players. The variables include information such as age, nationality, club, wage, etc. In what follows, we focus on 45 variables that are included in data frame `fifa` included in the `DALEX` package for R and Python. The variables from this dataset set are listed in Table \@ref(tab:FIFAvariables).
@@ -208,7 +209,7 @@ library("ranger")
 fifa_rf <- ranger(LogValue~., data = fifa19small_red, num.trees = 250)
 
 library("rms")
-fifa_ols <- ols(LogValue ~ rcs(Age) + rcs(International.Reputation) +
+fifa_ols <- ols(LogValue ~ rcs(Age) + rcs(Reputation) +
         rcs(Skill.Moves) + rcs(Crossing) + rcs(Finishing) +
         rcs(HeadingAccuracy) + rcs(ShortPassing) + rcs(Volleys) +
         rcs(Dribbling) + rcs(Curve) + rcs(FKAccuracy) +
@@ -268,11 +269,12 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 
 X = fifa.drop(["nationality", "overall", "potential", 
-      "value_eur", "wage_eur"], axis = 1)
+     "value_eur", "wage_eur"], axis = 1)
 y = fifa['value_eur']
 ylog = np.log(y)
 
-X_train, X_test, ylog_train, ylog_test, y_train, y_test = train_test_split(X, ylog, y, test_size = 0.25, random_state = 4)
+X_train, X_test, ylog_train, ylog_test, y_train, y_test =
+     train_test_split(X, ylog, y, test_size = 0.25, random_state = 4)
 gbm_model = LGBMRegressor()
 gbm_model.fit(X_train, ylog_train, verbose = False)
 ```
@@ -338,9 +340,9 @@ For instance, we can create a plot comparing the predicted (fitted) and observed
 plot(fifa_md_gbm_shallow, fifa_md_gbm_deep, fifa_md_rf, fifa_md_rm, 
      variable = "y", yvariable = "y_hat") +
   scale_x_continuous("Value in Euro", trans = "log10", 
-                      labels = dollar_format(suffix = "€", prefix = "")) + 
+             labels = dollar_format(suffix = "€", prefix = "")) + 
   scale_y_continuous("Predicted value in Euro", trans = "log10", 
-                     labels = dollar_format(suffix = "€", prefix = "")) + 
+             labels = dollar_format(suffix = "€", prefix = "")) + 
   facet_wrap(~label) +
   geom_abline(slope = 1) + 
   theme(legend.position = "none") +
@@ -478,8 +480,8 @@ The `model_profile()` method from the `dalex` library (see Section \@ref(PDPPyth
 ```{python, eval=FALSE}
 fifa_mp_gbm = fifa_gbm_exp.model_profile()
 
-fifa_mp_gbm.plot(variables = ['movement_reactions', 'skill_ball_control', 
-    'skill_dribbling', 'age'])
+fifa_mp_gbm.plot(variables = ['movement_reactions',
+    'skill_ball_control', 'skill_dribbling', 'age'])
 ```
 
 In order to calculated other types of profiles, just change the `type` argument.
@@ -487,8 +489,8 @@ In order to calculated other types of profiles, just change the `type` argument.
 ```{python, eval=FALSE}
 fifa_mp_gbm = fifa_gbm_exp.model_profile(type = 'accumulated')
 
-fifa_mp_gbm.plot(variables = ['movement_reactions', 'skill_ball_control', 
-    'skill_dribbling', 'age'])
+fifa_mp_gbm.plot(variables = ['movement_reactions',
+    'skill_ball_control', 'skill_dribbling', 'age'])
 ```
 
 ## Instance-level explanations {#FIFAinstanceunderst}
@@ -727,8 +729,8 @@ The `predict_profile()` method from the `dalex` library (see Section \@ref(CPPyt
 ```{python, eval=FALSE}
 fifa_mp_gbm = fifa_gbm_exp.predict_profile(cr7)
 
-fifa_mp_gbm.plot(variables =  ['movement_reactions', 'skill_ball_control', 
-    'skill_dribbling', 'age'])
+fifa_mp_gbm.plot(variables =  ['movement_reactions',
+    'skill_ball_control', 'skill_dribbling', 'age'])
 ```
 
 ### CR7 {#FIFACR7}

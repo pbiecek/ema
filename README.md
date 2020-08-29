@@ -2,7 +2,7 @@
 
 # Explanatory Model Analysis
 
-## Explore, Explain and Examine Predictive Models
+## Explore, Explain, and Examine Predictive Models
 
 See the html website here: https://pbiecek.github.io/ema/
 

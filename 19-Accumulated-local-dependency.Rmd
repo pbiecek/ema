@@ -528,7 +528,7 @@ g_{AL}^{(x_1 + 1)\cdot x_2, 1}(z) =
 
 ### Dependence profiles for a model with interaction and correlated explanatory variables: an example
 
-In this section, we illustrate in more detail the behavior of PD, LD, and AL profiles for a model with an interaction and correlated explanatory variables. In particular, let us consider the following, simple model with for two explanatory variables: 
+In this section, we illustrate in more detail the behavior of PD, LD, and AL profiles for a model with an interaction between correlated explanatory variables. In particular, let us consider the following, simple model with for two explanatory variables: 
 
 \begin{equation}
 f(X^1, X^2) = (X^1 + 1)\cdot X^2.
@@ -545,18 +545,14 @@ Table: (\#tab:trickyModelData) A sample of eight observations.
 | $X^2$ | -1 | -0.71 | -0.43 | -0.14 |  0.14 |  0.43 |  0.71 |  1  |
 | $y$   | 0  | -0.2059 | -0.2451 | -0.1204 |  0.1596 |  0.6149 |  1.2141 |  2  |
 
-Note that PD, LD, AL profiles describe the effect of a variable in isolation from the values of other variables. In \@ref(eq:trickyModel) model, the effect of variable $X^1$ depends on the value of variable $X^2$. For models with interactions it is subjective to define what would be the "true" main effect of variable $X^1$. But complex predictive models are usually not additive. Examining the case of the \@ref(eq:trickyModel) model, we will gain some intuition on how PD, LS and AL profiles may behave in case of an interaction. 
+Note that PD, LD, AL profiles describe the effect of a variable in isolation from the values of other variables. In model \@ref(eq:trickyModel), the effect of variable $X^1$ depends on the value of variable $X^2$. For models with interactions, it is subjective to define what would be the "true" main effect of variable $X^1$. Complex predictive models often have interactions. By examining the case of model \@ref(eq:trickyModel), we will provide some intuition on how PD, LD and AL profiles may behave in such cases. 
 
 
-(ref:accumulatedLocalEffectsNewDesc) Partial-dependence, local-dependence, and accumulated-local profiles for model \@ref(eq:trickyModel). Panel A: ceteris-paribus profiles for 8 selected observations. Panel B: all CP profiles contribute to calculation of PD profile (top), the corresponding partial-dependence profile (bottom). Panel C: only parts of CP profiles close to observations of interest contribute to calculation of LD profile (top), the corresponding local-dependence profile (bottom).  Panel D: only parts of CP profiles contribute to calculation of AL profile (top), the corresponding accumulated-local profile (bottom).
+(ref:accumulatedLocalEffectsNewDesc) Partial-dependence (PD), local-dependence (LD), and accumulated-local (AL) profiles for model \@ref(eq:trickyModel). Panel A: ceteris-paribus (CP) profiles for eight observations from Table \@ref(tab:trickyModelData). Panel B: entire CP profiles (top) contribute to calculation of the corresponding PD profile (bottom). Panel C: only parts of the CP profiles (top), close to observations of interest, contribute to the calculation of the corresponding LD profile (bottom).  Panel D: only parts of the CP profiles (top) contribute to the calculation of the corresponding AL profile (bottom).
 
 ```{r accumulatedLocalEffectsNew, echo=FALSE, fig.cap=, out.width = '90%', fig.align='center', fig.cap='(ref:accumulatedLocalEffectsNewDesc)'}
 knitr::include_graphics("figure/CP_ALL.png")
 ```
-
-The Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew) shows CP profiles for $X^1$ for model \@ref(eq:trickyModel) calculated for selected eight observations. 
-
-The Panel B shows how PD profile for $X^1$ is calculated. It is the average of the CP profiles. Each CP profile is linear and the average value of the $X^2$ variable is chosen so that the average CP profile is zero.
 
 Let us explicitly express the CP profile for $X^1$ for model \@ref(eq:trickyModel):
 
@@ -565,7 +561,7 @@ h^{1}_{CP}(z) = f(z,X^2) = (z+1)\cdot X^2.
 (\#eq:CPtrickyModel)
 \end{equation}
 
-By allowing $z$ to take any value in the interval $[-1,1]$, we get the CP profiles as straight lines with the slope equal to the value of variable $X^2$. Hence, for instance, the CP profile for observation $(-1,-1)$ is a straight line with the slope equal to -1.  
+By allowing $z$ to take any value in the interval $[-1,1]$, we get the CP profiles as straight lines with the slope equal to the value of variable $X^2$. Hence, for instance, the CP profile for observation $(-1,-1)$ is a straight line with the slope equal to -1.  The CP profiles  for the eight observations, from Table \@ref(tab:trickyModelData) are presented in panel A of Figure \@ref(fig:accumulatedLocalEffectsNew).
 
 Recall that the PD profile for $X^j$, defined in equation \@ref(eq:PDPdef0), is the expected value, over the joint distribution of all explanatory variables other than $X^j$, of the model predictions when $X^j$ is set to $z$. This leads to the estimation of the profile by taking the average of CP profiles for $X^j$, as given in \@ref(eq:PDPest).
 
@@ -576,20 +572,21 @@ In our case, this implies that the PD profile for $X^1$ is the expected value of
 (\#eq:PDtrickyModel)
 \end{equation}
 
-As a result, the PD profile for $X^1$ is estimated as a horizontal line at 0, as seen in the bottom part of Panel A of Figure \@ref(fig:accumulatedLocalEffectsNew). 
+As a result, the PD profile for $X^1$ is estimated as a horizontal line at 0, as seen in the bottom part of Panel B of Figure \@ref(fig:accumulatedLocalEffectsNew). 
 
-Since the $X^1$ and $X^2$ variables are correlated, it can be argued that we should not include entire CP profiles, but only parts of them. In fact, for perfect correlation of explanatory variables, the CP profile for the $i$-th observation should actually be undefined for any values of $z$ different from $x^2_i$. As a consequence, the sum used in the calculation of the PD profile in equation \@ref(eq:PDtrickyModel) would involve undefined terms for any $z$.
+Since the $X^1$ and $X^2$ variables are correlated, it can be argued that we should not include entire CP profiles in the calculation of the PD profile, but only parts of them. In fact, for perfectly correlated explanatory variables, the CP profile for the $i$-th observation should actually be undefined for any values of $z$ different from $x^2_i$. <!-- As a consequence, the sum used in the calculation of the PD profile in equation \@ref(eq:PDtrickyModel) should involve undefined terms for any $z$.-->
 
-Thus, the issue is related to the fact of using the marginal distribution of $X^2$, which disregards the value of $X^1$, in the definition of the PD profile. This observation suggests a modification: instead of the marginal distribution, one might consider the conditional distribution of $X^2$ given $X^1$. The modification leads to the definition of LD profile. 
+The estimated horizontal PD profile results from using the marginal distribution of $X^2$, which disregards the value of $X^1$, in the definition of the profile. This observation suggests a modification: instead of the marginal distribution, one might consider the conditional distribution of $X^2$ given $X^1$. The modification leads to the definition of LD profile. 
 
-The Panel C of Figure \@ref(fig:accumulatedLocalEffectsNew) shows LD profile would look like for empirical estimate of the marginal distribution calculated in four bins. We can also use the theoretical (here known) distribution. The conditional distribution of $X^2$, given $X^1=z$, is just a probability mass of 1 at $z$. Consequently, for model \@ref(eq:trickyModel), the LD profile for $X^1$ and any $z \in [-1,1]$ is given by
+For the data from Table \@ref(tab:trickyModelData), the conditional distribution of $X^2$, given $X^1=z$, is just a probability mass of 1 at $z$. Consequently, for model \@ref(eq:trickyModel), the LD profile for $X^1$ and any $z \in [-1,1]$ is given by
 
 \begin{equation}
 g_{LD}^{1}(z) =  z \cdot (z+1).
 (\#eq:LDtrickyModel)
 \end{equation}
 
-The LD profile shows the average response over the conditional distribution. Part of which can be attributed to the effect of the correlated variable $X^2$. AL profile shows the net variability of $X^1$ variable itself. The Panel D of Figure \@ref(fig:accumulatedLocalEffectsNew) shows AL profile would look like for empirical estimate of the marginal distribution calculated in four bins.  Since we know the joint distribution of explanatory variables and the formula for the model we explicitly calculate the AL profile. 
+The bottom part of panel C of Figure \@ref(fig:accumulatedLocalEffectsNew) presents the LD profile estimated by applying estimator \@ref(eq:LDPdef), in which the conditional distribution was calculated by using four bins with two observations each (shown in the top part of the panel). The LD profile shows the average of predictions over the conditional distribution. Part of the average can be attributed to the effect of the correlated variable $X^2$. AL profile shows the net effect of $X^1$ variable. 
+
 By using definition \@ref(eq:ALPdef), the AL profile for model \@ref(eq:trickyModel) is given by
 
 \begin{align}
@@ -601,9 +598,11 @@ g_{AL}^{1}(z) &=
 (\#eq:ALtrickyModel)
 \end{align}
 
-It is clear that PD, LD and AL profiles show different aspects of the model. In the analyzed example for tricky model we got three different explanations of X1 variable effect. 
+The bottom part of panel D of Figure \@ref(fig:accumulatedLocalEffectsNew) presents the AL profile estimated by applying estimator \@ref(eq:ALPdef), in which the range of observed values of $X^1$ was split into four intervals with two observations each. 
 
-In practice, the explanatory variables are typically correlated and complex predictive models are usually not additive. Therefore, when analyzing the model it is worth to check how much PD, LD and AL models differ. And if so, look for potential causes. Correlations can be detected at the stage of data exploration. Interactions can be noticed by looking at individual CP profiles.
+It is clear that PD, LD and AL profiles show different aspects of the model. In the analyzed example of model \@ref(eq:trickyModel), we obtain three different explanations of the effect of variable $X^1$.
+
+In practice, explanatory variables are typically correlated and complex predictive models are usually not additive. Therefore, when analyzing any model, it is worth to check how much do the PD, LD, and AL profiles differ. And if so, look for potential causes. Correlations can be detected at the stage of data exploration. Interactions can be noted by looking at individual CP profiles.
 
 <!--
 Let us consider model \@ref(eq:trickyModel) and explanatory-variable vector $X=(X^1,X^2)$ with $X^1$ uniformly distributed over $[-1,1]$ and $X^2=X^1$. Hence, $X^2$ is perfectly correlated with $X^1$. Moreover, consider the eight observations for $X$ from Section \@ref(ALPIntuition).

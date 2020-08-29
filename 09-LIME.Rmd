@@ -72,7 +72,7 @@ To develop a local-approximation glass-box model, we need new data points in the
 
 For binary variables in the low-dimensional space, the common choice is to switch (from 0 to 1 or from 1 to 0) the value of a randomly-selected number of variables describing the instance of interest. 
 
-For continuous variables, various proposals have been formulated in different papers. For example, @imlRPackage and @molnar2019 suggest adding Gaussian noise to continuous variables. @limePackage propose to discretize continuous variables by using quintiles and then perturb the discretized versions of the variables. @localModelPackage discretize continuous variables based on segmentation of local ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)). 
+For continuous variables, various proposals have been formulated in different papers. For example, @imlRPackage and @molnar2019 suggest adding Gaussian noise to continuous variables. @limePackage propose to discretize continuous variables by using quantiles and then perturb the discretized versions of the variables. @localModelPackage discretize continuous variables based on segmentation of local ceteris-paribus profiles (for more information about the profiles, see Chapter \@ref(ceterisParibus)). 
 
 In the example of the duck-horse image in Figure \@ref(fig:duckHorse06), the perturbations of the image could be created by randomly excluding some of the superpixels. An illustration of this process is shown in  Figure \@ref(fig:duckHorseProcess).
 
@@ -182,8 +182,11 @@ In the code below, we apply the `predict_surrogate()` function to the explainer-
 
 ```{r, warning=FALSE, message=FALSE, eval=TRUE}
 set.seed(1)
+library("DALEXtra")
 library("lime")
-library("localModel")
+model_type.dalex_explainer <- DALEXtra::model_type.dalex_explainer
+predict_model.dalex_explainer <- DALEXtra::predict_model.dalex_explainer
+
 lime_johnny <- predict_surrogate(explainer = titanic_rf_exp, 
                   new_observation = johnny_d, 
                   n_features = 3, 
@@ -329,8 +332,8 @@ knitr::include_graphics("figure/lime_expl_localModel_titanic.png")
 The key functions of the `iml` package are `Predictor$new()`, which creates an explainer, and `LocalModel$new()`, which develops the local glass-box model. The main arguments of the `Predictor$new()` function are `model`, which specifies the model-object, and `data`, the data frame used for fitting the model. As mentioned earlier, we will apply the `predict_surrogate()` function from the `DALEXtra` package to access the functions via an interface that is consistent with the approach used in the previous chapters. To choose the `iml`-implementation of LIME, we set argument `type="iml"` (see Section \@ref(LIMERcodelime)). In that case, the method accepts, apart from the required arguments `explainer`and `new_observation`, an additional argument `k` that specifies the number of explanatory variables included in the local-approximation model.   
 
 ```{r, warning=FALSE, message=FALSE}
+library("DALEXtra")
 library("iml")
-library("localModel")
 iml_johnny <- predict_surrogate(explainer = titanic_rf_exp, 
                   new_observation = johnny_d, 
                   k = 3, 
@@ -386,13 +389,78 @@ It is worth noting that *age*, *gender*, and *class* are correlated. For instanc
 
 ## Code snippets for Python {#LIMEPythoncode}
 
-In this section, we use the `dalex` library for Python. The package covers methods presented in this chapter.  Note that the most popular implementation in Python is available in the `lime` library [@lime]. In this section, however, we show implementations from the `dalex` library because they are consistent with other methods presented in this book. 
+In this section, we use the `lime` library for Python, which is probably the most popular implementation of the LIME method [@lime]. The `lime` library requires categorical variables to be encoded in a numerical format. This requires some additional work with the data. Therefore, below we will show you how to use this method in Python step by step.
 
-For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class (see Section \@ref(predictions-titanic-python)).
+For illustration purposes, we use the random forest model for the Titanic data. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class.
 
-In the first step we create an explainer-object that provides a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose (see Section \@ref(ExplainersTitanicPythonCode)).
+In the first step we read the Titanic data and encode categorical variables. In this case, we use the simplest encoding for *gender*, *class* and *embarked*, i.e., the label-encoding.
 
 ```{python,  eval = FALSE}
+import dalex as dx
+
+titanic = dx.datasets.load_titanic()
+X = titanic.drop(columns='survived')
+y = titanic.survived
+
+from sklearn import preprocessing
+le = preprocessing.LabelEncoder()
+
+X['gender']   = le.fit_transform(X['gender'])
+X['class']    = le.fit_transform(X['class'])
+X['embarked'] = le.fit_transform(X['embarked'])
+```
+
+In the next step we train a random forest model.
+
+```{python,  eval = FALSE}
+from sklearn.ensemble import RandomForestClassifier as rfc
+titanic_fr = rfc()
+titanic_fr.fit(X, y)
+```
+
+It is time to define the observation for which model prediction will be explained. We write Henry's data into `pandas.Series` object.
+
+```{python,  eval = FALSE}
+import pandas as pd
+henry = pd.Series([1, 47.0, 0, 1, 25.0, 0, 0], 
+                  index =['gender', 'age', 'class', 'embarked',
+                          'fare', 'sibsp', 'parch']) 
+```
+
+The `lime` library explains models that operate on images, text or tabular data. In the latter case we have to use `LimeTabularExplainer` module. 
+
+```{python,  eval = FALSE}
+from lime.lime_tabular import LimeTabularExplainer 
+explainer = LimeTabularExplainer(X, 
+                      feature_names=X.columns, 
+                      class_names=['died', 'survived'], 
+                      discretize_continuous=False, 
+                      verbose=True)
+```
+
+The result is an explainer that can be used to interpret model around specific observations.
+In the following example we explain the behaviour of the model for Henry.
+The `explain_instance()` method finds a local approximation with an interpretable linear model.
+The result can be presented graphically with the `show_in_notebook()` method.
+
+```{python,  eval = FALSE}
+lime = explainer.explain_instance(henry, titanic_fr.predict_proba)
+lime.show_in_notebook(show_table=True)
+```
+
+The resulting plot is shown in Figure \@ref(fig:limePython1). 
+
+(ref:limePython1Desc) A plot of LIME model values for the random forest model and passenger Henry for the Titanic data. 
+
+```{r limePython1, echo=FALSE, out.width = '100%', fig.align='center', fig.cap='(ref:limePython1Desc)'}
+knitr::include_graphics("figure/lime_python_1.png")
+```
+
+<!--
+To calculate LIME surrogate we use the `predict_surrogate()` method which is a wrapper to the `lime` library. The first argument indicates the data observation for which the values are to be calculated. All other arguments are passed to the `explain` function in the `lime` library. As a result we get an explanation.
+
+```{python,  eval = FALSE}
+
 import pandas as pd
 henry = pd.DataFrame({'gender'   : ['male'],
                        'age'     : [47],
@@ -406,11 +474,8 @@ henry = pd.DataFrame({'gender'   : ['male'],
 import dalex as dx
 titanic_rf_exp = dx.Explainer(titanic_rf, X, y, 
                   label = "Titanic RF Pipeline")
-```
-
-To calculate LIME surrogate we use the `predict_surrogate()` method which is a wrapper to the `lime` library. The first argument indicates the data observation for which the values are to be calculated. All other arguments are passed to the `explain` function in the `lime` library. As a result we get an explanation.
-
-```{python,  eval = FALSE}
+                  
+                  
 print(titanic.survived)
 lime_henry = titanic_rf_exp.predict_surrogate(henry,
                  feature_names=['age', 'fare', 'parch', 'sibsp', 
@@ -437,4 +502,4 @@ The resulting plot is shown in Figure \@ref(fig:limePython2).
 ```{r limePython2, echo=FALSE, out.width = '100%', fig.align='center', fig.cap='(ref:limePython2Desc)'}
 knitr::include_graphics("figure/shap_python_1.png")
 ```
-
+-->
