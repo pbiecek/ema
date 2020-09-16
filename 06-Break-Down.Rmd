@@ -217,23 +217,30 @@ Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\und
 
 |variable $j$           | $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ | $|\Delta^{j|\emptyset}(\underline{x}_*)|$  |
 |:----------------------|---------:|---------:|
-|age = 8                | 0.7407795| 0.5051210|
-|class = 1st            | 0.6561034| 0.4204449|
-|fare = 72              | 0.6141968| 0.3785383|
-|sibsp = 0              | 0.4786182| 0.2429597|
-|parch = 0              | 0.4679240| 0.2322655|
-|embarked = Southampton | 0.4602620| 0.2246035|
-|gender = male          | 0.3459458| 0.1102873|
+|age = 8                | 0.5051210| 0.2698115|
+|class = 1st            | 0.4204449| 0.1851354|
+|fare = 72              | 0.3785383| 0.1432288|
+|gender = male          | 0.1102873| 0.1250222|
+|embarked = Southampton | 0.2246035| 0.0107060|
+|sibsp = 0              | 0.2429597| 0.0076502|
+|parch = 0              | 0.2322655| 0.0030440|
 
 ```{r, echo=FALSE, eval=FALSE}
 library("iBreakDown")
+library("randomForest")
+library("DALEX")
+library("ggplot2")
+load("models/explain_rf.rda")
+load("models/johny_d.rda")
+
 avg = mean(predict(explain_rf$model, type = "prob")[,2])
 
 deltas <- iBreakDown:::calculate_1d_changes(explain_rf$model, 
                                   johny_d, 
                                   explain_rf$data[,colnames(johny_d)], 
                                   predict_function = explain_rf$predict_function)
-dftmp <- data.frame(variable = names(deltas), E = unlist(deltas) + 0.2356585, delta = unlist(deltas))
+#dftmp <- data.frame(variable = names(deltas), E = unlist(deltas) + 0.2356585, delta = unlist(deltas))
+dftmp <- data.frame(variable = names(deltas), E = unlist(deltas), delta = abs(unlist(deltas) - 0.2353095))
 library("dplyr")
 dftmp %>% arrange(-delta) %>% knitr::kable()
 
