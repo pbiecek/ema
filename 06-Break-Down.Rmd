@@ -6,21 +6,21 @@ source("code_snippets/ema_init.R")
 
 ## Introduction {#BDIntroduction}
 
-Probably the most commonly asked question when trying to understand a model's prediction for a single observation is: *which variables contribute to this result the most?* There is no single best approach that can be used to answer this question. In this chapter, we introduce break-down (BD) plots, which offer a possible solution. The plots can be used to present "variable attributions," i.e., the decomposition of the model's prediction into contributions that can be attributed to different explanatory variables. Note that the method is similar to the `EXPLAIN` algorithm introduced by @explainPaper and implemented in the `ExplainPrediction` package [@explainPackage].
+Probably the most commonly asked question when trying to understand a model's prediction for a single observation is: *which variables contribute to this result the most?* There is no single best approach that can be used to answer this question. In this chapter, we introduce break-down (BD) plots, which offer a possible solution. The plots can be used to present "variable attributions", i.e., the decomposition of the model's prediction into contributions that can be attributed to different explanatory variables. Note that the method is similar to the `EXPLAIN` algorithm introduced by @explainPaper and implemented in the `ExplainPrediction` package [@explainPackage].
 
 ## Intuition {#BDIntuition}
 
 As mentioned in Section \@ref(fitting), we assume that prediction $f(\underline{x})$ is an approximation of the expected value of the dependent variable $Y$ given values of explanatory variables $\underline{x}$. The underlying idea of BD plots is to capture the contribution of an explanatory variable to the model's prediction by computing the shift in the expected value of $Y$, while fixing the values of other variables. 
 
-This idea is illustrated in Figure \@ref(fig:BDPrice4). Consider an example related to the prediction obtained for the random forest model `model_rf` for the Titanic data (see Section \@ref(model-titanic-rf)). We are interested in the probability of survival for Johnny D, an 8-years-old passenger travelling in the first class (see Section \@ref(predictions-titanic)). Panel A of Figure \@ref(fig:BDPrice4) shows the distribution of the model's predictions for observations from the Titanic dataset. In particular, the violin plot in the row marked "all data" summarizes the distribution of predictions for all 2207 observations from the dataset. The red dot indicates the mean value that can be interpreted as an estimate of the expected value of the model's predictions over the distribution of all explanatory variables. In this example, the mean value is equal to 23.5%.
+This idea is illustrated in Figure \@ref(fig:BDPrice4). Consider an example related to the prediction obtained for the random forest model `model_rf` for the Titanic data (see Section \@ref(model-titanic-rf)). We are interested in the probability of survival for Johnny D, an 8-year-old passenger travelling in the first class (see Section \@ref(predictions-titanic)). Panel A of Figure \@ref(fig:BDPrice4) shows the distribution of the model's predictions for observations from the Titanic dataset. In particular, the violin plot in the row marked "all data" summarizes the distribution of predictions for all 2207 observations from the dataset. The red dot indicates the mean value that can be interpreted as an estimate of the expected value of the model's predictions over the distribution of all explanatory variables. In this example, the mean value is equal to 23.5%.
 
-(ref:BDPrice4Caption) Break-down plots show how do the contributions attributed to individual explanatory variables change the mean model's prediction to yield the actual prediction for a particular single instance (observation). Panel A) The first row shows the distribution and the mean value (red dot) of the model's predictions for all data. The next rows show the distribution and the mean value of the predictions when fixing values of subsequent explanatory variables. The last row shows the prediction for the particular instance of interest. B) Red dots indicate the mean predictions from panel A. C) The green and red bars indicate, respectively, positive and negative changes in the mean predictions (contributions attributed to explanatory variables). 
+(ref:BDPrice4Caption) Break-down plots show how the contributions attributed to individual explanatory variables change the mean model's prediction to yield the actual prediction for a particular single instance (observation). Panel A) The first row shows the distribution and the mean value (red dot) of the model's predictions for all data. The next rows show the distribution and the mean value of the predictions when fixing values of subsequent explanatory variables. The last row shows the prediction for the particular instance of interest. B) Red dots indicate the mean predictions from panel A. C) The green and red bars indicate, respectively, positive and negative changes in the mean predictions (contributions attributed to explanatory variables). 
 
 ```{r BDPrice4, echo=FALSE, fig.cap='(ref:BDPrice4Caption)', out.width = '90%', fig.align='center'}
 knitr::include_graphics("figure/break_down_distr.png")
 ```
 
-To evaluate the contribution of individual explanatory variables to this particular single-instance prediction, we investigate the changes in the model's predictions when fixing the values of consecutive variables. For instance, the violin plot in the row marked  "age=8" in panel A of Figure \@ref(fig:BDPrice4) summarizes the distribution of the predictions obtained when the *age* variable takes the value "8 years", as for Johnny D. Again, the red dot indicates the mean of the predictions and it can be interpreted as an estimate of the expected value of the predictions over the distribution of all explanatory variables other than *age*. The violin plot in the "class=1st" row describes the distribution and the mean value of predictions with the values of variables *age* and *class* set to "8 years" and "1st class", respectively. Subsequent rows contain similar information for other explanatory variables included in the random forest model. In the last row, all explanatory variables are fixed at the values describing Johnny D. Hence, the last row contains only one point, the red dot, which corresponds to the model's prediction, i.e., survival probability, for Johnny D.
+To evaluate the contribution of individual explanatory variables to this particular single-instance prediction, we investigate the changes in the model's predictions when fixing the values of consecutive variables. For instance, the violin plot in the row marked  "age=8" in panel A of Figure \@ref(fig:BDPrice4) summarizes the distribution of the predictions obtained when the *age* variable takes the value "8 years", as for Johnny D. Again, the red dot indicates the mean of the predictions, and it can be interpreted as an estimate of the expected value of the predictions over the distribution of all explanatory variables other than *age*. The violin plot in the "class=1st" row describes the distribution and the mean value of predictions with the values of variables *age* and *class* set to "8 years" and "1st class", respectively. Subsequent rows contain similar information for other explanatory variables included in the random forest model. In the last row, all explanatory variables are fixed at the values describing Johnny D. Hence, the last row contains only one point, the red dot, which corresponds to the model's prediction, i.e., survival probability, for Johnny D.
 
 The thin grey lines in panel A of Figure \@ref(fig:BDPrice4) show the change of predictions for different individuals when the value of a particular explanatory variable is being replaced by the value indicated in the name of the row. For instance, the lines between the first and the second row indicate that fixing the value of the *age*  variable to "8 years" has a different effect for different individuals. For some individuals (most likely, passengers that are 8 years old) the model's prediction does not change at all. For others, the predicted value increases (probably for the passengers older than 8 years) or decreases (most likely for the passengers younger than 8 years).
 
@@ -28,13 +28,13 @@ Eventually, however, we may be interested in the mean predictions, or even only 
 
 What can be learned from BD plots as those presented in Figure \@ref(fig:BDPrice4)? The plots offer a summary of the effects of particular explanatory variables on a model's predictions. 
 
-From Figure \@ref(fig:BDPrice4) we can conclude, for instance, that the mean prediction for the random forest model for the Titanic dataset is equal to 23.5 percent. This is the predicted probability of survival averaged over all people on Titanic. Note that it is not the percentage of individuals that survived, but the mean model-prediction. Thus, for a different model, we would most likely obtain a different mean value.
+From Figure \@ref(fig:BDPrice4) we can conclude, for instance, that the mean prediction for the random forest model for the Titanic dataset is equal to 23.5\%. This is the predicted probability of survival averaged over all people on Titanic. Note that it is not the percentage of individuals that survived, but the mean model-prediction. Thus, for a different model, we would most likely obtain a different mean value.
 
-The model's prediction for Johnny D is equal to 42.2 percent. It is much higher than the mean prediction. The two explanatory variables that influence this prediction the most are *class* (with the value "1st") and *age* (with the value equal to 8). By fixing the values of these two variables, we add 35.6 percentage points to the mean prediction. All other explanatory variables have smaller effects and they actually reduce the increase in the predicted value induced by *class* an *age*. For instance, *gender* (Johnny D was a boy) reduces the predicted survival probability by about 8.3 percentage points. 
+The model's prediction for Johnny D is equal to 42.2\%. It is much higher than the mean prediction. The two explanatory variables that influence this prediction the most are *class* (with the value "1st") and *age* (with the value equal to 8). By fixing the values of these two variables, we add 35.6 percentage points to the mean prediction. All other explanatory variables have smaller effects, and they actually reduce the increase in the predicted value induced by *class* and *age*. For instance, *gender* (Johnny D was a boy) reduces the predicted survival probability by about 8.3 percentage points. 
 
 It is worth noting that the part of the prediction attributed to an explanatory variable depends not only on the variable but also on the considered value. For instance, in the example presented in Figure \@ref(fig:BDPrice4), the effect of the *embarked* harbour is very small. This may be due to the fact that the variable is not very important for prediction. However, it is also possible that the variable is important, but the effect of the value considered for the particular instance (Johnny D, who embarked Titanic in Southampton) may be close to the mean, as compared to all other possible values of the variable.
 
-It is also worth mentioning that, for models that include interactions, the part of the prediction attributed to a variable depends on the order, in which one sets the values of the explanatory variables. Note that the interactions do not have to be explicitly specified in the model structure as it is the case of, for instance, linear-regression models. They may also emerge as a result of fitting to the data a flexible model like, for instance, a regression tree.  
+It is also worth mentioning that, for models that include interactions, the part of the prediction attributed to a variable depends on the order in which one sets the values of the explanatory variables. Note that the interactions do not have to be explicitly specified in the model structure as it is the case of, for instance, linear-regression models. They may also emerge as a result of fitting to the data a flexible model like, for instance, a regression tree.  
 
 To illustrate the point, Figure \@ref(fig:ordering) presents an example of a random forest model with only three explanatory variables fitted to the Titanic data. Subsequently, we focus on the model's prediction for a 2-year old boy that travelled in the second class. The predicted probability of survival is equal to 0.964, more than a double of the mean model-prediction of 0.407. We would like to understand which explanatory variables drive this prediction. Two possible explanations are illustrated in Figure \@ref(fig:ordering).
 
@@ -57,7 +57,7 @@ ggplot(ngjohnny, aes(age, scores, color = class)) +
   geom_line()
 ```
 
-(ref:orderingCaption) An illustration of the order-dependence of variable attributions. Two break-down plots for the same observation for a random forest model for the Titanic data set. The contribution attributed to class is negative in the plot at the top and positive in the one at the bottom. The difference is due to the difference in the ordering of explanatory variables used to construct the plots (as seen in the labelling of the rows).
+(ref:orderingCaption) An illustration of the order-dependence of variable attributions. Two break-down plots for the same observation for a random forest model for the Titanic dataset. The contribution attributed to class is negative in the plot at the top and positive in the one at the bottom. The difference is due to the difference in the ordering of explanatory variables used to construct the plots (as seen in the labelling of the rows).
 
 ```{r ordering, echo=FALSE, fig.cap='(ref:orderingCaption)', out.width = '60%', fig.align='center'}
 knitr::include_graphics("figure/ordering.png")
@@ -96,7 +96,7 @@ v(j, \underline{x}_*) = E_Y(Y | \underline{x}_*) - E_{X^j}\left[E_Y\left\{Y | \u
 (\#eq:BDattr1)
 \end{equation}
 
-where $v(j, \underline{x}_*)$ is the *variable-importance measure* for the $j$-th explanatory variable evaluated at $\underline{x}_*$ and the last expected value on the right-hand-side of \@ref(eq:BDattr1) is taken over the distribution of the variable (treated as random). For the linear-regression model \@ref(eq:BDkinreg), and if the explanatory variables are independent, $v(j,\underline{x}_*)$ can be expressed as follows:
+where $v(j, \underline{x}_*)$ is the *variable-importance measure* for the $j$-th explanatory variable evaluated at $\underline{x}_*$ and the last expected value on the right-hand side of \@ref(eq:BDattr1) is taken over the distribution of the variable (treated as random). For the linear-regression model \@ref(eq:BDkinreg), and if the explanatory variables are independent, $v(j,\underline{x}_*)$ can be expressed as follows:
 
 \begin{equation}
 v(j, \underline{x}_*) =  \beta^0 + \underline{x}_*' \underline{\beta} - E_{X^j}\left\{\beta^0 + \left(\underline{x}^{j|=X^j}_*\right)' \underline{\beta}\right\} = {\beta}^j\left\{{x}_*^j - E_{X^j}(X^j)\right\}.
@@ -162,7 +162,7 @@ In other words, the contribution of the $j$-th variable is the difference betwee
 
 Note that the definition does imply the dependence of $v(j, \underline{x}_*)$  on the order of the explanatory variables that is reflected in their indices (superscripts). 
 
-To consider more general cases, let $J$ denote a subset of $K$ indices ($K\leq p$) from $\{1,2,\ldots,p\}$, i.e., $J=\{j_1,j_2,\ldots,j_K\}$ where each $j_k \in \{1,2,\ldots,p\}$. Furthermore, let $L$ denote another subset of $M$ indices ($M\leq p-K$) from $\{1,2,\ldots,p\}$, distinct from $J$. That is, $L=\{l_1,l_2,\ldots,l_M\}$ where each $l_m \in \{1,2,\ldots,p\}$ and $J \cap L = \emptyset$. Let us define now    
+To consider more general cases, let $J$ denote a subset of $K$ indices ($K\leq p$) from $\{1,2,\ldots,p\}$, i.e., $J=\{j_1,j_2,\ldots,j_K\}$, where each $j_k \in \{1,2,\ldots,p\}$. Furthermore, let $L$ denote another subset of $M$ indices ($M\leq p-K$) from $\{1,2,\ldots,p\}$, distinct from $J$. That is, $L=\{l_1,l_2,\ldots,l_M\}$, where each $l_m \in \{1,2,\ldots,p\}$ and $J \cap L = \emptyset$. Let us define now    
 
 \begin{align}
 \Delta^{L|J}(\underline{x}_*) \equiv & E_{\underline{X}}\{f(\underline{X}) | X^{l_1} = {x}_*^{l_1},\ldots,X^{l_M} = {x}_*^{l_M},X^{j_1} = {x}_*^{j_1},\ldots,X^{j_K} = {x}_*^{j_K}\} - \nonumber \\
@@ -213,7 +213,7 @@ Let us consider the random forest model `titanic_rf` (see Section \@ref(model-ti
 
 The mean of model's predictions for all passengers is equal to $v_0=$ 0.2353095. Table \@ref(tab:titanicBreakDownDeltas) presents the scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ and the expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$. Note that, given \@ref(eq:deltaBreakDownAdditive) and the fact that $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}>v_0$ for all variables, we have got $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}=|\Delta^{j|\emptyset}(\underline{x}_*)|+v_0$. 
 
-Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ and scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ for the random forest model and Johnny D for the Titanic data. The scores are sorted in the decreasing order.
+Table: (\#tab:titanicBreakDownDeltas) Expected values $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ and scores $|\Delta^{j|\emptyset}(\underline{x}_*)|$ for the random forest model and Johnny D for the Titanic data. The scores are sorted in decreasing order.
 
 |variable $j$           | $E_{\underline{X}}\{f(\underline{X}) | X^j = {x}^j_*\}$ | $|\Delta^{j|\emptyset}(\underline{x}_*)|$  |
 |:----------------------|---------:|---------:|
@@ -376,7 +376,7 @@ The resulting plot is shown in Figure \@ref(fig:BDhenryExample). It can be used 
 (ref:BDhenryExampleDesc) Break-down plot for the random forest model and Henry for the Titanic data, obtained by the generic `plot()` function in R.
 
 ```{r BDhenryExample, warning=FALSE, message=FALSE,  echo = FALSE, fig.cap='(ref:BDhenryExampleDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
-plot(bd_rf)  + theme_ema
+plot(bd_rf)  + theme_ema + ggtitle("Break-down profile")
 ```
 
 
@@ -410,7 +410,7 @@ bd_rf_order <- predict_parts(explainer = explain_rf,
                                   type = "break_down",
                    order = c("class", "age", "gender", "fare", 
                              "parch", "sibsp", "embarked"))
-plot(bd_rf_order, max_features = 3) + theme_ema
+plot(bd_rf_order, max_features = 3) + theme_ema + ggtitle("Break-down profile")
 ```
 
 We can use the `keep_distributions = TRUE` argument to enrich the resulting object with additional information about conditional distributions of predicted values. Subsequently, we can apply the `plot_distributions = TRUE` argument in the `plot()` function to present the distributions as violin plots. 
@@ -425,7 +425,7 @@ bd_rf_distr <- predict_parts(explainer = explain_rf,
 plot(bd_rf_distr, plot_distributions = TRUE) 
 ```
 
-The resulting plot is presented in Figure \@ref(fig:BDhenryExampleDistr). Red dots indicate the mean model's predictions. Thin grey lines between violin plots indicate changes in predictions for individual observations. They can be used to track how do the model's predictions change after consecutive conditionings. A similar code was used to create the plot in panel A of Figure \@ref(fig:BDPrice4) for Johnny D. 
+The resulting plot is presented in Figure \@ref(fig:BDhenryExampleDistr). Red dots indicate the mean model's predictions. Thin grey lines between violin plots indicate changes in predictions for individual observations. They can be used to track how the model's predictions change after consecutive conditionings. A similar code was used to create the plot in panel A of Figure \@ref(fig:BDPrice4) for Johnny D. 
 
 (ref:BDhenryExampleDistrDesc) Break-down plot with violin plots summarizing distributions of predicted values for a selected order of explanatory variables for the random forest model and Henry for the Titanic data.
 
@@ -436,7 +436,7 @@ bd_rf_distr <- predict_parts(explainer = explain_rf,
               order = c("age", "class", "fare", "gender", 
                         "embarked", "sibsp", "parch"),
                     keep_distributions = TRUE)
-plot(bd_rf_distr, plot_distributions = TRUE) + theme_ema
+plot(bd_rf_distr, plot_distributions = TRUE) + theme_ema + ggtitle("Break-down profile")
 ```
 
 

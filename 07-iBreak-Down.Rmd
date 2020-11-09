@@ -10,13 +10,13 @@ In this chapter, we present an algorithm that addresses the issue. In particular
 
 ## Intuition {#iBDIntuition}
 
-Interaction (deviation from additivity) means that the effect of an explanatory variable depends on the value(s) of other variables (s). To illustrate such a situation, we use the Titanic dataset (see Section \@ref(TitanicDataset)). For the sake of simplicity, we consider only two variables, *age* and *class*. *Age* is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, for *class*, we will consider just "2nd class" and "other".
+Interaction (deviation from additivity) means that the effect of an explanatory variable depends on the value(s) of other variable(s). To illustrate such a situation, we use the Titanic dataset (see Section \@ref(TitanicDataset)). For the sake of simplicity, we consider only two variables, *age* and *class*. *Age* is a continuous variable, but we will use a dichotomized version of it, with two levels: boys (0-16 years old) and adults (17+ years old). Also, for *class*, we will consider just "2nd class" and "other".
 
 Table \@ref(tab:titanicMaleSurvival) shows percentages of survivors for boys and adult men travelling in the second class and other classes on Titanic. Overall, the proportion of survivors among males is 20.5%. However, among boys in the second class, the proportion is 91.7%. How do *age* and *class* contribute to this higher survival probability? Let us consider the following two explanations.
 
 **Explanation 1:** 
 
-The overall probability of survival for males is 20.5%, but for the male passengers from the second class, the probability is even lower, i.e., 13.5%. Thus, the effect of the travel class is negative, as it decreases the probability of survival by 7 percentage points. Now, if, for male passengers of the second class, we consider their age, we see that the survival probability for boys increases by 78.2 percentage points, from 13.5% (for a male in the second class) to 91.7%. Thus, by considering first the effect of *class*, and then the effect of *age*, we can conclude the effect of -7 percentage points for *class* and +78.2 percentage points for *age* (being a boy).
+The overall probability of survival for males is 20.5%, but for the male passengers from the second class, the probability is even lower, i.e., 13.5%. Thus, the effect of the travel class is negative, as it decreases the probability of survival by 7 percentage points. Now, if, for male passengers of the second class, we consider their age, we see that the survival probability for boys increases by 78.2 percentage points, from 13.5% (for a male in the second class) to 91.7%. Thus, by considering first the effect of *class*, and then the effect of *age*, we can conclude the effect of $-7$ percentage points for *class* and +78.2 percentage points for *age* (being a boy).
 
 **Explanation 2:** 
 
@@ -30,7 +30,7 @@ Table: (\#tab:titanicMaleSurvival) Proportion of survivors for men on Titanic.
 |other            |22/69 = 31.9%  |306/1469 = 20.8% |328/1538 = 21.3% |
 |Total            |33/81 = 40.7%  |319/1635 = 19.5% |352/1716 = 20.5% |
 
-Thus, by considering the effects of *class* and *age* in a different order, we get very different attributions (contributions attributed to the variables). This is because there is an interaction: the effect of *class* depends on *age* and *vice versa*. In particular, from Table \@ref(tab:titanicMaleSurvival) we could conclude that the overall effect of the second class is negative (-7 percentage points), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of being a boy is positive (+20.2 percentage points), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5%-7%+20.2%=33.7% for a boy in the second class. However, the observed proportion of survivors is much higher, 91.7%. The difference in 91.7%-33.7%=58% is the interaction effect. We can interpret it as an additional effect of the second class specific for boys, or as an additional effect of being a boy for the male passengers travelling in the second class.   
+Thus, by considering the effects of *class* and *age* in a different order, we get very different attributions (contributions attributed to the variables). This is because there is an interaction: the effect of *class* depends on *age* and *vice versa*. In particular, from Table \@ref(tab:titanicMaleSurvival) we could conclude that the overall effect of the second class is negative ( $-7$ percentage points), as it decreases the probability of survival from 20.5% to 13.5%. On the other hand, the overall effect of being a boy is positive (+20.2 percentage points), as it increases the probability of survival from 20.5% to 40.7%. Based on those effects, we would expect a probability of 20.5% $-$ 7% + 20.2% = 33.7% for a boy in the second class. However, the observed proportion of survivors is much higher, 91.7%. The difference in 91.7% $-$ 33.7% = 58% is the interaction effect. We can interpret it as an additional effect of the second class specific for boys, or as an additional effect of being a boy for the male passengers travelling in the second class.   
 
 ```{r, eval=FALSE, echo=FALSE}
 library(DALEX)
@@ -101,7 +101,7 @@ Table: (\#tab:titanicIBreakDownList) Paired-variable contributions $\Delta^{\{i,
 |embarked:sibsp  | -0.002|     0.001|       |
 |parch:class     |  0.183|     0.000|       |
 
-The table illustrates the calculation of the contributions of interactions. For instance, the additive contribution of *age* is equal to 0.270, while for *fare* it is equal to 0.143. The joint contribution of these two variables is equal to 0.249. Hence, the contribution attributed to the interaction is equal to 0.249-0.270-0.143=-0.164.    
+The table illustrates the calculation of the contributions of interactions. For instance, the additive contribution of *age* is equal to 0.270, while for *fare* it is equal to 0.143. The joint contribution of these two variables is equal to 0.249. Hence, the contribution attributed to the interaction is equal to 0.249 $-$ 0.270 $-$ 0.143 = $-0.164$.    
 
 Note that the rows of Table \@ref(tab:titanicIBreakDownList)  are sorted according to the absolute value of the net contribution of the single explanatory variable or the net contribution of the interaction between two variables. For a single variable, the net contribution is simply measured by $\Delta^{j|\emptyset}(\underline{x}_*)$, while for an interaction it is given by $\Delta_{I}^{\{i,j\}}(\underline{x}_*)$. In this way, if two variables are important and there is little interaction, then the net contribution of the interaction is smaller than the contribution of any of the two variables. Consequently, the interaction will be ranked lower. This is the case, for example, of variables *age* and *gender* in Table \@ref(tab:titanicIBreakDownList). On the other hand, if the interaction is important, then its net contribution will be larger than the contribution of any of the two variables. This is the case, for example, of variables *fare* and *class* in Table \@ref(tab:titanicIBreakDownList).
 
@@ -249,7 +249,7 @@ x <- titanic_rf
 p <- ncol(data)
 new_observation <- johnny_d
 
-plot(break_down(explain_titanic_rf, johnny_d, interactions = TRUE))+ theme_ema
+plot(break_down(explain_titanic_rf, johnny_d, interactions = TRUE))+ theme_ema + ggtitle("Break-down profile")
 ```
 
 ```{r iBreakDownTitanicExample, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
@@ -395,7 +395,7 @@ plot(bd_rf)
 (ref:iBDforHenryDesc) Break-down plot with interactions for the random forest model and Henry for the Titanic data, obtained by applying the generic `plot()` function in R.
 
 ```{r iBDforHenry, warning=FALSE, echo=FALSE, message=FALSE, fig.cap='(ref:iBDforHenryDesc)', out.width = '80%', fig.align='center', fig.width=7, fig.height=4}
-plot(bd_rf) + theme_ema
+plot(bd_rf) + theme_ema + ggtitle("Break-down profile")
 ```
 
 The resulting iBD plot for Henry is shown in Figure \@ref(fig:iBDforHenry). It can be compared to the iBD plot for Johnny D that is presented in Figure  \@ref(fig:iBreakDownTitanicExamplePlot). 
@@ -406,7 +406,7 @@ In this section, we use the `dalex` library for Python. The package covers all m
 
 For illustration purposes, we use the `titanic_rf` random forest model for the Titanic data developed in Section \@ref(model-titanic-python-rf). Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the first class (see Section \@ref(predictions-titanic-python)).
 
-In the first step we create an explainer-object that provides a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose (see Section \@ref(ExplainersTitanicPythonCode)).
+In the first step, we create an explainer-object that provides a uniform interface for the predictive model. We use the `Explainer()` constructor for this purpose (see Section \@ref(ExplainersTitanicPythonCode)).
 
 ```{python,  eval = FALSE}
 import pandas as pd
