@@ -19,7 +19,7 @@ In this chapter, we present a method that is useful for the evaluation of the im
 
 The methods for assessment of variable importance can be divided, in general, into two groups: model-specific and model-agnostic.
 
-For linear models and many other types of models, there are methods of assessing of explanatory variable's importance that exploit particular elements of the structure of the model. These are model-specific methods. For instance, for linear models, one can use the value of the normalized regression coefficient or its corresponding p-value as the variable-importance measure. For tree-based ensembles, such a measure may be based on the use of a particular variable in particular trees. A great example in this respect is the variable-importance measure based on out-of-bag data for a random forest model [@randomForestBreiman], but there are also other approaches like methods implemented in the `XgboostExplainer` package [@xgboostExplainer] for gradient boosting and `randomForestExplainer` [@randomForestExplainer] for random forest.
+For linear models and many other types of models, there are methods of assessing explanatory variable's importance that exploit particular elements of the structure of the model. These are model-specific methods. For instance, for linear models, one can use the value of the normalized regression coefficient or its corresponding p-value as the variable-importance measure. For tree-based ensembles, such a measure may be based on the use of a particular variable in particular trees. A great example in this respect is the variable-importance measure based on out-of-bag data for a random forest model [@randomForestBreiman], but there are also other approaches like methods implemented in the `XgboostExplainer` package [@xgboostExplainer] for gradient boosting and `randomForestExplainer` [@randomForestExplainer] for random forest.
 
 In this book, we focus on a model-agnostic method that does not assume anything about the model structure. Therefore, it can be applied to any predictive model or ensemble of models. Moreover, and perhaps even more importantly, it allows comparing an explanatory-variable's importance between models with different structures.
 
@@ -29,7 +29,7 @@ We focus on the method described in more detail by @variableImportancePermutatio
 
 The idea is borrowed from the variable-importance measure proposed by @randomForestBreiman for random forest. If a variable is important, then we expect that, after permuting the values of the variable, the model's performance (as captured by one of the measures discussed in Chapter \@ref(modelPerformance)) will worsen. The larger the change in the performance, the more important is the variable.
 
-Despite the simplicity of the idea, permutation-based-approach to measuring an explanatory-variable's importance is a very powerful model-agnostic tool for model exploration. Variable-importance measures obtained in this way may be compared between different models. This property is discussed in detail in Section \@ref(featureImportanceProsCons).
+Despite the simplicity of the idea, the permutation-based-approach to measuring an explanatory-variable's importance is a very powerful model-agnostic tool for model exploration. Variable-importance measures obtained in this way may be compared between different models. This property is discussed in detail in Section \@ref(featureImportanceProsCons).
 
 ## Method {#featureImportanceMethod}
 
@@ -126,7 +126,7 @@ plot(fi_rf, fi_gbm, fi_glm, bar_width = 5) + ggtitle("Permutation-based variable
   ylab("Loss function: 1-AUC") + theme_ema
 ```
 
-The plots in Figure \@ref(fig:TitanicFeatImp) indicate that *gender* is the most important explanatory variable in all three models, followed by *class* and *age*. Variable *fare*, which is highly correlated with *class*, is important in the random forest and SVM models, but not in the logistic regression model. On the other hand, variable *parch* is, essentially, not important neither in the gradient boosting nor in the logistic regression model, but it has some importance in the random forest model. *Country* is not important in any of the models. Overall, Figure \@ref(fig:TitanicFeatImp) indicates that, in the random forest model, all variables (except of *country*) have got some importance, while in the other two models the effect is mainly limited to *gender*, *class*, and *age* (and *fare* for the gradient boosting model).   
+The plots in Figure \@ref(fig:TitanicFeatImp) indicate that *gender* is the most important explanatory variable in all three models, followed by *class* and *age*. Variable *fare*, which is highly correlated with *class*, is important in the random forest and SVM models, but not in the logistic regression model. On the other hand, variable *parch* is, essentially, not important, neither in the gradient boosting nor in the logistic regression model, but it has some importance in the random forest model. *Country* is not important in any of the models. Overall, Figure \@ref(fig:TitanicFeatImp) indicates that, in the random forest model, all variables (except of *country*) have got some importance, while in the other two models the effect is mainly limited to *gender*, *class*, and *age* (and *fare* for the gradient boosting model).   
 
 ## Pros and cons {#featureImportanceProsCons}
 
@@ -174,8 +174,8 @@ loss_root_mean_square(observed = apartments_test$m2.price,
 
 To compute the permutation-based variable-importance measure, we apply the `model_parts()` function. Note that it is a wrapper for function `feature_importance()` from the `ingredients` package. The only required argument is `explainer`, which indicates the explainer-object (obtained with the help of the `explain()` function, see Section \@ref(ExplainersTitanicRCode)) for the model to be explained. The other (optional) arguments are:
 
-* `loss_function`, the loss function to be used (by default, it is the `loss_root_mean_square` function);     
-* `type`, the form of the variable-importance measure, with values `"raw"` resulting in the computation of $\mathcal L()$, `"difference"` yielding $vip_{Diff}^j$, and `"ratio"` providing $vip_{Ratio}^j$ (see Section \@ref(featureImportanceMethod));
+* `loss_function`, the loss function to be used (by default, it is the `loss_root_mean_square` function).
+* `type`, the form of the variable-importance measure, with values `"raw"` resulting in the computation of $\mathcal L()$, `"difference"` yielding $vip_{Diff}^j$, and `"ratio"` providing $vip_{Ratio}^j$ (see Section \@ref(featureImportanceMethod)).
 * `variables`, a character vector providing the names of the explanatory variables, for which the variable-importance measure is to be computed. By default, `variables = NULL`, in which case computations are performed for all variables in the dataset.
 * `variable_groups`, a list of character vectors of names of explanatory variables. For each vector, a single variable-importance measure is computed for the joint effect of the variables which names are provided in the vector. By default, `variable_groups = NULL`, in which case variable-importance measures are computed separately for all variables indicated in the `variables` argument.
 * `B`, the number of permutations to be used for the purpose of calculation of the (mean) variable-importance measures, with `B = 10` used by default. To get a single-permutation-based measure, use `B = 1`.
@@ -233,7 +233,7 @@ plot(vip.50) +
 
 The resulting graph is presented in Figure \@ref(fig:featureImportanceUnoPlot). The bars in the plot indicate the mean values of the variable-importance measures for all explanatory variables. Box plots are added to the bars to provide an idea about the distribution of the values of the measure across the permutations. 
 
-(ref:featureImportanceUnoPlotDesc) Mean variable-importance calculated by using 50 permutations and the root-mean- squared-error loss-function for the random forest model `apartments_rf` for the apartment-prices data. Plot obtained by using the generic `plot()` function in R.
+(ref:featureImportanceUnoPlotDesc) Mean variable-importance calculated by using 50 permutations and the root-mean-squared-error loss-function for the random forest model `apartments_rf` for the apartment-prices data. Plot obtained by using the generic `plot()` function in R.
 
 ```{r featureImportanceUnoPlot, fig.cap='(ref:featureImportanceUnoPlotDesc)', echo=FALSE, warning=FALSE, message=FALSE, fig.width=6, fig.height=2.5, fig.align='center', out.width = '70%'}
 library("ggplot2")
@@ -330,13 +330,13 @@ mp_rf.result
 knitr::include_graphics("figure/python_model_parts_2.png")
 ```
 
-The obtained results can be visualised by using the `plot()` method. Results are presented in figure \@ref(fig:examplePythonFIM2).
+The obtained results can be visualised by using the `plot()` method. Results are presented in Figure \@ref(fig:examplePythonFIM2).
 
 ```{python,  eval = FALSE}
 mp_rf.plot()
 ```
 
-(ref:examplePythonFIM2Desc) Mean variable-importance calculated by using 10 permutations and the root-mean- squared-error loss-function for the random forest model for the Titanic data. 
+(ref:examplePythonFIM2Desc) Mean variable-importance calculated by using 10 permutations and the root-mean-squared-error loss-function for the random forest model for the Titanic data. 
 
 ```{r examplePythonFIM2, echo=FALSE, out.width = '90%', fig.align='center', fig.cap='(ref:examplePythonFIM2Desc)'}
 knitr::include_graphics("figure/python_model_parts_1.png")
@@ -344,7 +344,7 @@ knitr::include_graphics("figure/python_model_parts_1.png")
 
 The `model_parts()` method in Python allows similar arguments as the corresponding function in the `DALEX` package in R (see Section \@ref(featureImportanceR)). These include, for example, the `loss_function` argument (with values like, e.g. ,`'rmse'` or `'1-auc'`); the `type` argument, (with values `'variable_importance'`, `'ratio'`, `'difference'`); and the `variable_groups` argument that allows specifying groups of explanatory variables, for which a single variable-importance measure should be computed. 
 
-In the code below, we illustrate the use of the `variable_groups` argument to specify two groups of variables. The resulting plot is presented in figure \@ref(fig:examplePythonFIM5).
+In the code below, we illustrate the use of the `variable_groups` argument to specify two groups of variables. The resulting plot is presented in Figure \@ref(fig:examplePythonFIM5).
 
 ```{python,  eval = FALSE}
 vi_grouped = titanic_rf_exp.model_parts(
