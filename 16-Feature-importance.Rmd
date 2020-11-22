@@ -12,14 +12,14 @@ source("code_snippets/ema_init.R")
 
 In this chapter, we present a method that is useful for the evaluation of the importance of an explanatory variable. The method may be applied for several purposes.
   
-* Model simplification: variables that do not influence a model's predictions may be excluded from the model. 
+* Model simplification: variables that do not influence a model's predictions may be excluded from the model. \index{Model | simplification}
 * Model exploration: comparison of variables' importance in different models may help in discovering interrelations between the variables. Also, the ordering of variables in the function of their importance is helpful in deciding in which order should we perform further model exploration. 
 * Domain-knowledge-based model validation: identification of the most important variables may be helpful in assessing the validity of the model based on domain knowledge. 
 * Knowledge generation: identification of the most important variables may lead to the discovery of new factors involved in a particular mechanism.
 
 The methods for assessment of variable importance can be divided, in general, into two groups: model-specific and model-agnostic.
 
-For linear models and many other types of models, there are methods of assessing explanatory variable's importance that exploit particular elements of the structure of the model. These are model-specific methods. For instance, for linear models, one can use the value of the normalized regression coefficient or its corresponding p-value as the variable-importance measure. For tree-based ensembles, such a measure may be based on the use of a particular variable in particular trees. A great example in this respect is the variable-importance measure based on out-of-bag data for a random forest model [@randomForestBreiman], but there are also other approaches like methods implemented in the `XgboostExplainer` package [@xgboostExplainer] for gradient boosting and `randomForestExplainer` [@randomForestExplainer] for random forest.
+For linear models and many other types of models, there are methods of assessing explanatory variable's importance that exploit particular elements of the structure of the model. These are model-specific methods. For instance, for linear models, one can use the value of the normalized regression coefficient or its corresponding p-value as the variable-importance measure. For tree-based ensembles, such a measure may be based on the use of a particular variable in particular trees. A great example in this respect is the variable-importance measure based on out-of-bag data for a random forest model [@randomForestBreiman], but there are also other approaches like methods implemented in the `XgboostExplainer` package [@xgboostExplainer] for gradient boosting and `randomForestExplainer` [@randomForestExplainer] for random forest.\index{Out-of-bag}\index{package | randomForestExplainer}\index{package | XgboostExplainer}
 
 In this book, we focus on a model-agnostic method that does not assume anything about the model structure. Therefore, it can be applied to any predictive model or ensemble of models. Moreover, and perhaps even more importantly, it allows comparing an explanatory-variable's importance between models with different structures.
 
@@ -33,7 +33,7 @@ Despite the simplicity of the idea, the permutation-based approach to measuring 
 
 ## Method {#featureImportanceMethod}
 
-Consider a set of $n$ observations for a set of $p$ explanatory variables and dependent variable $Y$. Let $\underline{X}$ denote the matrix containing, in rows, the (transposed column-vectors of) observed values of the explanatory variables for all observations. Denote by $\underline{y}$ the column vector of the observed values of $Y$. Let $\underline{\hat{y}}=(f(\underline{x}_1),\ldots,f(\underline{x}_n))'$ denote the corresponding vector of predictions for $\underline{y}$ for model $f()$. 
+Consider a set of $n$ observations for a set of $p$ explanatory variables and dependent variable $Y$. Let $\underline{X}$ denote the matrix containing, in rows, the (transposed column-vectors of) observed values of the explanatory variables for all observations. Denote by $\underline{y}$ the column vector of the observed values of $Y$. Let $\underline{\hat{y}}=(f(\underline{x}_1),\ldots,f(\underline{x}_n))'$ denote the corresponding vector of predictions for $\underline{y}$ for model $f()$. \index{Variable | importance}\index{Variable-importance measure}
 
 Let $\mathcal L(\underline{\hat{y}}, \underline X, \underline{y})$ be a loss function that quantifies goodness-of-fit of model $f()$. For instance, $\mathcal L()$ may be the value of log-likelihood (see Chapter \@ref(modelPerformance)) or any other model performance measure discussed in previous chapter. Consider the following algorithm:
 
@@ -165,14 +165,14 @@ explainer_rf <- DALEX::explain(model = apartments_rf,
                                colorize = FALSE)
 ```
 
-A popular loss function is the root-mean-square-error (RMSE) function \@ref(eq:RMSE). It is implemented in the `DALEX` package as the `loss_root_mean_square()` function. The latter requires two arguments: `observed`, which indicates the vector of observed values of the dependent variable, and `predicted`, which specifies the object (either vector or a matrix, as returned from the model-specific `predict()` function) with the predicted values. The original-testing-data value $L^0$ of RMSE for the random forest model can be obtained by applying the `loss_root_mean_square()` in the form given below.  
+A popular loss function is the root-mean-square-error (RMSE) function \@ref(eq:RMSE). It is implemented in the `DALEX` package as the `loss_root_mean_square()` function. The latter requires two arguments: `observed`, which indicates the vector of observed values of the dependent variable, and `predicted`, which specifies the object (either vector or a matrix, as returned from the model-specific `predict()` function) with the predicted values. The original-testing-data value $L^0$ of RMSE for the random forest model can be obtained by applying the `loss_root_mean_square()` in the form given below.  \index{Mean | squared-prediction-error}
 
 ```{r, warning=FALSE, message=FALSE}
 loss_root_mean_square(observed = apartments_test$m2.price, 
                    predicted = predict(apartments_rf, apartments_test))
 ```
 
-To compute the permutation-based variable-importance measure, we apply the `model_parts()` function. Note that it is a wrapper for function `feature_importance()` from the `ingredients` package. The only required argument is `explainer`, which indicates the explainer-object (obtained with the help of the `explain()` function, see Section \@ref(ExplainersTitanicRCode)) for the model to be explained. The other (optional) arguments are:
+To compute the permutation-based variable-importance measure, we apply the `model_parts()` function. Note that it is a wrapper for function `feature_importance()` from the `ingredients` package. The only required argument is `explainer`, which indicates the explainer-object (obtained with the help of the `explain()` function, see Section \@ref(ExplainersTitanicRCode)) for the model to be explained. The other (optional) arguments are:\index{package | ingredients}
 
 * `loss_function`, the loss function to be used (by default, it is the `loss_root_mean_square` function).
 * `type`, the form of the variable-importance measure, with values `"raw"` resulting in the computation of $\mathcal L()$, `"difference"` yielding $vip_{Diff}^j$, and `"ratio"` providing $vip_{Ratio}^j$ (see Section \@ref(featureImportanceMethod)).
@@ -366,3 +366,4 @@ vi_grouped.plot()
 ```{r examplePythonFIM5, echo=FALSE, out.width = '90%', fig.align='center', fig.cap='(ref:examplePythonFIM5Desc)'}
 knitr::include_graphics("figure/python_model_parts_5.png")
 ```
+
