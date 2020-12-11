@@ -10,6 +10,18 @@ A note to readers: this text is a work in progress.
 
 We've released this initial version to get more feedback. Feedback can be given at the GitHub repo https://github.com/pbiecek/ema/issues. We are primarily interested in the organization and consistency of the content, but any comments will be welcommed.
 
+### Bibtex entry
+
+```
+@Book{,
+  author = {Przemyslaw Biecek and Tomasz Burzykowski},
+  title = {{Explanatory Model Analysis}},
+  publisher = {Chapman and Hall/CRC, New York},
+  year = {2021},
+  isbn = {9780367135591},
+  url = {https://pbiecek.github.io/ema/},
+}
+```
 
 ### Model Studio
 
