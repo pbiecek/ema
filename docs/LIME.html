@@ -24,7 +24,7 @@
 <meta name="author" content="Przemyslaw Biecek and Tomasz Burzykowski" />
 
 
-<meta name="date" content="2020-12-11" />
+<meta name="date" content="2021-03-04" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,8 +52,6 @@
 
 
 <script src="libs/accessible-code-block-0.0.1/empty-anchor.js"></script>
-<script src="libs/kePrint-0.0.1/kePrint.js"></script>
-<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script>
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -430,7 +428,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <ul>
 <li class="chapter" data-level="18.3.1" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#local-dependence-profile"><i class="fa fa-check"></i><b>18.3.1</b> Local-dependence profile</a></li>
 <li class="chapter" data-level="18.3.2" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#accumulated-local-profile"><i class="fa fa-check"></i><b>18.3.2</b> Accumulated-local profile</a></li>
-<li class="chapter" data-level="18.3.3" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#dependence-profiles-for-a-model-with-interaction-and-correlated-explanatory-variables-an-example"><i class="fa fa-check"></i><b>18.3.3</b> Dependence profiles for a model with interaction and correlated explanatory variables: an example</a></li>
+<li class="chapter" data-level="18.3.3" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#summaryFeatureEffects"><i class="fa fa-check"></i><b>18.3.3</b> Illustrative examples</a></li>
+<li class="chapter" data-level="18.3.4" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#dependence-profiles-for-a-model-with-interaction-and-correlated-explanatory-variables-an-example"><i class="fa fa-check"></i><b>18.3.4</b> Dependence profiles for a model with interaction and correlated explanatory variables: an example</a></li>
 </ul></li>
 <li class="chapter" data-level="18.4" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#CDPExample"><i class="fa fa-check"></i><b>18.4</b> Example: apartment-prices data</a></li>
 <li class="chapter" data-level="18.5" data-path="accumulatedLocalProfiles.html"><a href="accumulatedLocalProfiles.html#ALPProsCons"><i class="fa fa-check"></i><b>18.5</b> Pros and cons</a></li>
@@ -633,36 +632,36 @@ Different implementations of LIME differ in the way how the interpretable featur
 <h2><span class="header-section-number">9.6</span> Code snippets for R</h2>
 <p>LIME and its variants are implemented in various R and Python packages. For example, <code>lime</code> <span class="citation">(Pedersen and Benesty <a href="#ref-limePackage" role="doc-biblioref">2019</a>)</span> started as a port of the LIME Python library <span class="citation">(Lundberg <a href="#ref-shapPackage" role="doc-biblioref">2019</a>)</span>, while <code>localModel</code> <span class="citation">(Staniak et al. <a href="#ref-localModelPackage" role="doc-biblioref">2019</a>)</span>, and <code>iml</code> <span class="citation">(Molnar, Bischl, and Casalicchio <a href="#ref-imlRPackage" role="doc-biblioref">2018</a>)</span> are separate packages that implement a version of this method entirely in R. </p>
 <p>Different implementations of LIME offer different algorithms for extraction of interpretable features, different methods for sampling, and different methods of weighting. For instance, regarding transformation of continuous variables into interpretable features, <code>lime</code> performs global discretization using quartiles, <code>localModel</code> performs local discretization using ceteris-paribus profiles (for more information about the profiles, see Chapter <a href="ceterisParibus.html#ceterisParibus">10</a>), while <code>iml</code> works directly on continuous variables. Due to these differences, the packages yield different results (explanations).</p>
-<p>Also, <code>lime</code>, <code>localModel</code>, and <code>iml</code> use different functions to implement the LIME method. Thus, we will use the <code>predict_surrogate()</code> method from the <code>localModel</code> package. The function offers a uniform interface to the functions from the three packages.</p>
+<p>Also, <code>lime</code>, <code>localModel</code>, and <code>iml</code> use different functions to implement the LIME method. Thus, we will use the <code>predict_surrogate()</code> method from the <code>DALEXtra</code> package. The function offers a uniform interface to the functions from the three packages.</p>
 <p>In what follows, for illustration purposes, we use the <code>titanic_rf</code> random forest model for the Titanic data developed in Section <a href="dataSetsIntro.html#model-titanic-rf">4.2.2</a>. Recall that it is developed to predict the probability of survival from the sinking of the Titanic. Instance-level explanations are calculated for Johnny D, an 8-year-old passenger that travelled in the first class. We first retrieve the <code>titanic_rf</code> model-object and the data frame for Johnny D via the <code>archivist</code> hooks, as listed in Section <a href="dataSetsIntro.html#ListOfModelsTitanic">4.2.7</a>. We also retrieve the version of the <code>titanic</code> data with imputed missing values.</p>
-<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb107-1"><a href="LIME.html#cb107-1"></a>titanic_imputed &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</span>
-<span id="cb107-2"><a href="LIME.html#cb107-2"></a>titanic_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/4e0fc&quot;</span>)</span>
-<span id="cb107-3"><a href="LIME.html#cb107-3"></a>johnny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="LIME.html#cb3-1"></a>titanic_imputed &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/27e5c&quot;</span>)</span>
+<span id="cb3-2"><a href="LIME.html#cb3-2"></a>titanic_rf &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/4e0fc&quot;</span>)</span>
+<span id="cb3-3"><a href="LIME.html#cb3-3"></a>johnny_d &lt;-<span class="st"> </span>archivist<span class="op">::</span><span class="st"> </span><span class="kw">aread</span>(<span class="st">&quot;pbiecek/models/e3596&quot;</span>)</span></code></pre></div>
 <pre><code>  class gender age sibsp parch fare    embarked
 1   1st   male   8     0     0   72 Southampton</code></pre>
 <p>Then we construct the explainer for the model by using the function <code>explain()</code> from the <code>DALEX</code> package (see Section <a href="dataSetsIntro.html#ExplainersTitanicRCode">4.2.6</a>). We also load the <code>randomForest</code> package, as the model was fitted by using function <code>randomForest()</code> from this package (see Section <a href="dataSetsIntro.html#model-titanic-rf">4.2.2</a>) and it is important to have the corresponding <code>predict()</code> function available.</p>
-<div class="sourceCode" id="cb109"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb109-1"><a href="LIME.html#cb109-1"></a><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</span>
-<span id="cb109-2"><a href="LIME.html#cb109-2"></a><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</span>
-<span id="cb109-3"><a href="LIME.html#cb109-3"></a>titanic_rf_exp &lt;-<span class="st"> </span>DALEX<span class="op">::</span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf,  </span>
-<span id="cb109-4"><a href="LIME.html#cb109-4"></a>                        <span class="dt">data =</span> titanic_imputed[, <span class="dv">-9</span>],</span>
-<span id="cb109-5"><a href="LIME.html#cb109-5"></a>                           <span class="dt">y =</span> titanic_imputed<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </span>
-<span id="cb109-6"><a href="LIME.html#cb109-6"></a>                       <span class="dt">label =</span> <span class="st">&quot;Random Forest&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="LIME.html#cb5-1"></a><span class="kw">library</span>(<span class="st">&quot;randomForest&quot;</span>)</span>
+<span id="cb5-2"><a href="LIME.html#cb5-2"></a><span class="kw">library</span>(<span class="st">&quot;DALEX&quot;</span>)</span>
+<span id="cb5-3"><a href="LIME.html#cb5-3"></a>titanic_rf_exp &lt;-<span class="st"> </span>DALEX<span class="op">::</span><span class="kw">explain</span>(<span class="dt">model =</span> titanic_rf,  </span>
+<span id="cb5-4"><a href="LIME.html#cb5-4"></a>                        <span class="dt">data =</span> titanic_imputed[, <span class="dv">-9</span>],</span>
+<span id="cb5-5"><a href="LIME.html#cb5-5"></a>                           <span class="dt">y =</span> titanic_imputed<span class="op">$</span>survived <span class="op">==</span><span class="st"> &quot;yes&quot;</span>, </span>
+<span id="cb5-6"><a href="LIME.html#cb5-6"></a>                       <span class="dt">label =</span> <span class="st">&quot;Random Forest&quot;</span>)</span></code></pre></div>
 <div id="LIMERcodelime" class="section level3" number="9.6.1">
 <h3><span class="header-section-number">9.6.1</span> The <code>lime</code> package</h3>
 <p>The key functions in the <code>lime</code> package are <code>lime()</code>, which creates an explanation, and <code>explain()</code>, which evaluates explanations. As mentioned earlier, we will apply the <code>predict_surrogate()</code> function from the <code>DALEXtra</code> package to access the functions via an interface that is consistent with the approach used in the previous chapters.</p>
 <p>The <code>predict_surrogate()</code> function requires two arguments: <code>explainer</code>, which specifies the name of the explainer-object created with the help of function <code>explain()</code> from the <code>DALEX</code> package, and <code>new_observation</code>, which specifies the name of the data frame for the instance for which prediction is of interest. An additional, important argument is <code>type</code> that indicates the package with the desired implementation of the LIME method: either <code>"localModel"</code> (default), <code>"lime"</code>, or <code>"iml"</code>. In case of the <code>lime</code>-package implementation, we can specify two additional arguments: <code>n_features</code> to indicate the maximum number (<span class="math inline">\(K\)</span>) of explanatory variables to be selected by the K-LASSO method, and <code>n_permutations</code> to specify the number of artifical data points to be sampled for the local-model approximation.</p>
 <p>In the code below, we apply the <code>predict_surrogate()</code> function to the explainer-object for the random forest model <code>titanic_rf</code> and data for Johnny D. Additionally, we specify that the K-LASSO method should select no more than <code>n_features=3</code> explanatory variables based on a fit to <code>n_permutations=1000</code> sampled data points. Note that we use the <code>set.seed()</code> function to ensure repeatability of the sampling.</p>
-<div class="sourceCode" id="cb110"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb110-1"><a href="LIME.html#cb110-1"></a><span class="kw">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb110-2"><a href="LIME.html#cb110-2"></a><span class="kw">library</span>(<span class="st">&quot;DALEXtra&quot;</span>)</span>
-<span id="cb110-3"><a href="LIME.html#cb110-3"></a><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</span>
-<span id="cb110-4"><a href="LIME.html#cb110-4"></a>model_type.dalex_explainer &lt;-<span class="st"> </span>DALEXtra<span class="op">::</span>model_type.dalex_explainer</span>
-<span id="cb110-5"><a href="LIME.html#cb110-5"></a>predict_model.dalex_explainer &lt;-<span class="st"> </span>DALEXtra<span class="op">::</span>predict_model.dalex_explainer</span>
-<span id="cb110-6"><a href="LIME.html#cb110-6"></a></span>
-<span id="cb110-7"><a href="LIME.html#cb110-7"></a>lime_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
-<span id="cb110-8"><a href="LIME.html#cb110-8"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
-<span id="cb110-9"><a href="LIME.html#cb110-9"></a>                  <span class="dt">n_features =</span> <span class="dv">3</span>, </span>
-<span id="cb110-10"><a href="LIME.html#cb110-10"></a>                  <span class="dt">n_permutations =</span> <span class="dv">1000</span>,</span>
-<span id="cb110-11"><a href="LIME.html#cb110-11"></a>                  <span class="dt">type =</span> <span class="st">&quot;lime&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="LIME.html#cb6-1"></a><span class="kw">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="LIME.html#cb6-2"></a><span class="kw">library</span>(<span class="st">&quot;DALEXtra&quot;</span>)</span>
+<span id="cb6-3"><a href="LIME.html#cb6-3"></a><span class="kw">library</span>(<span class="st">&quot;lime&quot;</span>)</span>
+<span id="cb6-4"><a href="LIME.html#cb6-4"></a>model_type.dalex_explainer &lt;-<span class="st"> </span>DALEXtra<span class="op">::</span>model_type.dalex_explainer</span>
+<span id="cb6-5"><a href="LIME.html#cb6-5"></a>predict_model.dalex_explainer &lt;-<span class="st"> </span>DALEXtra<span class="op">::</span>predict_model.dalex_explainer</span>
+<span id="cb6-6"><a href="LIME.html#cb6-6"></a></span>
+<span id="cb6-7"><a href="LIME.html#cb6-7"></a>lime_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
+<span id="cb6-8"><a href="LIME.html#cb6-8"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
+<span id="cb6-9"><a href="LIME.html#cb6-9"></a>                  <span class="dt">n_features =</span> <span class="dv">3</span>, </span>
+<span id="cb6-10"><a href="LIME.html#cb6-10"></a>                  <span class="dt">n_permutations =</span> <span class="dv">1000</span>,</span>
+<span id="cb6-11"><a href="LIME.html#cb6-11"></a>                  <span class="dt">type =</span> <span class="st">&quot;lime&quot;</span>)</span></code></pre></div>
 <!-- Subsequently, we create an explainer, i.e., an object with all elements needed for calculation of explanations. This can be done by using the `lime()` function with the data frame used for model fitting and the model object as arguments `x` and `model`, respectively.
 
 
@@ -672,7 +671,7 @@ lime_rf <- lime(x = titanic_imputed[,colnames(johnny_d)], model = titanic_rf)
 
 Finally, we generate an explanation. Toward this aim, we use the `lime::explain()` function. Note that it is worthwhile to indicate we use the `explain()` function from the `lime` package, because there is a similarly-named function in the `DALEX` package. The main arguments are `x`, which specifies the data frame for the instance of interest, and  `explainer`, which indicates the name of the explainer object. In the code below, we additionally apply the `labels = "yes"` argument to specifiy the value of the dependent binary variable for which predictions are of interest. -->
 <p>The contents of the resulting object can be printed out in the form of a data frame with 11 variables.</p>
-<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb111-1"><a href="LIME.html#cb111-1"></a>(<span class="kw">as.data.frame</span>(lime_johnny))</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="LIME.html#cb7-1"></a>(<span class="kw">as.data.frame</span>(lime_johnny))</span></code></pre></div>
 <pre><code>##   model_type case  model_r2 model_intercept model_prediction feature
 ## 1 regression    1 0.6826437       0.5541115        0.4784804  gender
 ## 2 regression    1 0.6826437       0.5541115        0.4784804     age
@@ -717,7 +716,7 @@ $$
 
 For the random forest model `titanic_rf`, the predicted probability was equal to 0.422, as seen in the `prediction` column (see also Section \@ref(predictions-titanic)). [TOMASZ: A SURPRISINGLY LARGE DIFFERENCE. CHECK?]-->
 <p>By applying the <code>plot()</code> function to the object containing the explanation, we obtain a graphical presentation of the results.</p>
-<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb113-1"><a href="LIME.html#cb113-1"></a><span class="kw">plot</span>(lime_johnny)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="LIME.html#cb9-1"></a><span class="kw">plot</span>(lime_johnny)</span></code></pre></div>
 <p>The resulting plot is shown in Figure <a href="LIME.html#fig:limeExplLIMETitanic">9.6</a>. The length of the bar indicates the magnitude (absolute value), while the color indicates the sign (red for negative, blue for positive) of the estimated coefficient.</p>
 
 <div class="figure" style="text-align: center"><span id="fig:limeExplLIMETitanic"></span>
@@ -731,14 +730,14 @@ Figure 9.6: Illustration of the LIME-method results for the prediction for Johnn
 <h3><span class="header-section-number">9.6.2</span> The <code>localModel</code> package</h3>
 <p>The key function of the <code>localModel</code> package is the <code>individual_surrogate_model()</code> function that fits the local glass-box model. The function is applied to the explainer-object obtained with the help of the <code>DALEX::explain()</code> function (see Section <a href="dataSetsIntro.html#ExplainersTitanicRCode">4.2.6</a>). As mentioned earlier, we will apply the <code>predict_surrogate()</code> function from the <code>DALEXtra</code> package to access the functions via an interface that is consistent with the approach used in the previous chapters. To choose the <code>localModel</code>-implementation of LIME, we set argument <code>type="localMode"</code> (see Section <a href="LIME.html#LIMERcodelime">9.6.1</a>). In that case, the method accepts, apart from the required arguments <code>explainer</code> and <code>new_observation</code>, two additional arguments: <code>size</code>, which specifies the number of artificial data points to be sampled for the local-model approximation, and <code>seed</code>, which sets the seed for the random-number generation allowing for a repeatable execution.</p>
 <p>In the code below, we apply the <code>predict_surrogate()</code> function to the explainer-object for the random forest model <code>titanic_rf</code> and data for Johnny D. Additionally, we specify that 1000 data points are to be sampled and we set the random-number-generation seed.</p>
-<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb114-1"><a href="LIME.html#cb114-1"></a><span class="kw">library</span>(<span class="st">&quot;localModel&quot;</span>)</span>
-<span id="cb114-2"><a href="LIME.html#cb114-2"></a>locMod_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
-<span id="cb114-3"><a href="LIME.html#cb114-3"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
-<span id="cb114-4"><a href="LIME.html#cb114-4"></a>                  <span class="dt">size =</span> <span class="dv">1000</span>, </span>
-<span id="cb114-5"><a href="LIME.html#cb114-5"></a>                  <span class="dt">seed =</span> <span class="dv">1</span>,</span>
-<span id="cb114-6"><a href="LIME.html#cb114-6"></a>                  <span class="dt">type =</span> <span class="st">&quot;localModel&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="LIME.html#cb10-1"></a><span class="kw">library</span>(<span class="st">&quot;localModel&quot;</span>)</span>
+<span id="cb10-2"><a href="LIME.html#cb10-2"></a>locMod_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
+<span id="cb10-3"><a href="LIME.html#cb10-3"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
+<span id="cb10-4"><a href="LIME.html#cb10-4"></a>                  <span class="dt">size =</span> <span class="dv">1000</span>, </span>
+<span id="cb10-5"><a href="LIME.html#cb10-5"></a>                  <span class="dt">seed =</span> <span class="dv">1</span>,</span>
+<span id="cb10-6"><a href="LIME.html#cb10-6"></a>                  <span class="dt">type =</span> <span class="st">&quot;localModel&quot;</span>)</span></code></pre></div>
 <p>The resulting object is a data frame with seven variables (columns). For brevity, we only print out the first three variables.</p>
-<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb115-1"><a href="LIME.html#cb115-1"></a>locMod_johnny[,<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="LIME.html#cb11-1"></a>locMod_johnny[,<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>]</span></code></pre></div>
 <pre><code>##     estimated                        variable original_variable
 ## 1  0.23530947                    (Model mean)                  
 ## 2  0.30331646                     (Intercept)                  
@@ -756,7 +755,7 @@ Figure 9.6: Illustration of the LIME-method results for the prediction for Johnn
 #6 0.02338929                fare > 31.05 0.6521442    
 ---->
 <p>The printed output includes column <code>estimated</code> that contains the estimated coefficients of the LASSO regression model, which is used to approximate the predictions from the random forest model. Column <code>variable</code> provides the information about the corresponding variables, which are transformations of <code>original_variable</code>. Note that the version of LIME, implemented in the <code>localModel</code> package, dichotomizes continuous variables by using ceteris-paribus profiles (for more information about the profiles, see Chapter <a href="ceterisParibus.html#ceterisParibus">10</a>). The profile for variable <em>age</em> for Johnny D can be obtained by using function <code>plot_interpretable_feature()</code>, as shown below.</p>
-<div class="sourceCode" id="cb117"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb117-1"><a href="LIME.html#cb117-1"></a><span class="kw">plot_interpretable_feature</span>(locMod_johnny, <span class="st">&quot;age&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="LIME.html#cb13-1"></a><span class="kw">plot_interpretable_feature</span>(locMod_johnny, <span class="st">&quot;age&quot;</span>)</span></code></pre></div>
 <p>The resulting plot is presented in Figure <a href="LIME.html#fig:LIMEexample02">9.7</a>. The profile indicates that the largest drop in the predicted probability of survival is observed when the value of <em>age</em> increases beyond about 15 years. Hence, in the output of the <code>predict_surrogate()</code> function, we see a binary variable <code>age &lt;= 15.36</code>, as Johnny D was 8 years old.</p>
 
 <div class="figure" style="text-align: center"><span id="fig:LIMEexample02"></span>
@@ -766,7 +765,7 @@ Figure 9.7: Discretization of the <em>age</em> variable for Johnny D based on th
 </p>
 </div>
 <p>By applying the generic <code>plot()</code> function to the object containing the LIME-method results, we obtain a graphical representation of the results.</p>
-<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb118-1"><a href="LIME.html#cb118-1"></a><span class="kw">plot</span>(locMod_johnny)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="LIME.html#cb14-1"></a><span class="kw">plot</span>(locMod_johnny)</span></code></pre></div>
 <p>The resulting plot is shown in Figure <a href="LIME.html#fig:limeExplLocalModelTitanic">9.8</a>. The lengths of the bars indicate the magnitude (absolute value) of the estimated coefficients of the LASSO logistic regression model. The bars are placed relative to the value of the mean prediction, 0.235.</p>
 
 <div class="figure" style="text-align: center"><span id="fig:limeExplLocalModelTitanic"></span>
@@ -787,14 +786,14 @@ Figure 9.8: Illustration of the LIME-method results for the prediction for Johnn
 <div id="LIMERcodeiml" class="section level3" number="9.6.3">
 <h3><span class="header-section-number">9.6.3</span> The <code>iml</code> package</h3>
 <p>The key functions of the <code>iml</code> package are <code>Predictor$new()</code>, which creates an explainer, and <code>LocalModel$new()</code>, which develops the local glass-box model. The main arguments of the <code>Predictor$new()</code> function are <code>model</code>, which specifies the model-object, and <code>data</code>, the data frame used for fitting the model. As mentioned earlier, we will apply the <code>predict_surrogate()</code> function from the <code>DALEXtra</code> package to access the functions via an interface that is consistent with the approach used in the previous chapters. To choose the <code>iml</code>-implementation of LIME, we set argument <code>type="iml"</code> (see Section <a href="LIME.html#LIMERcodelime">9.6.1</a>). In that case, the method accepts, apart from the required arguments <code>explainer</code>and <code>new_observation</code>, an additional argument <code>k</code> that specifies the number of explanatory variables included in the local-approximation model.</p>
-<div class="sourceCode" id="cb119"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb119-1"><a href="LIME.html#cb119-1"></a><span class="kw">library</span>(<span class="st">&quot;DALEXtra&quot;</span>)</span>
-<span id="cb119-2"><a href="LIME.html#cb119-2"></a><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</span>
-<span id="cb119-3"><a href="LIME.html#cb119-3"></a>iml_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
-<span id="cb119-4"><a href="LIME.html#cb119-4"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
-<span id="cb119-5"><a href="LIME.html#cb119-5"></a>                  <span class="dt">k =</span> <span class="dv">3</span>, </span>
-<span id="cb119-6"><a href="LIME.html#cb119-6"></a>                  <span class="dt">type =</span> <span class="st">&quot;iml&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="LIME.html#cb15-1"></a><span class="kw">library</span>(<span class="st">&quot;DALEXtra&quot;</span>)</span>
+<span id="cb15-2"><a href="LIME.html#cb15-2"></a><span class="kw">library</span>(<span class="st">&quot;iml&quot;</span>)</span>
+<span id="cb15-3"><a href="LIME.html#cb15-3"></a>iml_johnny &lt;-<span class="st"> </span><span class="kw">predict_surrogate</span>(<span class="dt">explainer =</span> titanic_rf_exp, </span>
+<span id="cb15-4"><a href="LIME.html#cb15-4"></a>                  <span class="dt">new_observation =</span> johnny_d, </span>
+<span id="cb15-5"><a href="LIME.html#cb15-5"></a>                  <span class="dt">k =</span> <span class="dv">3</span>, </span>
+<span id="cb15-6"><a href="LIME.html#cb15-6"></a>                  <span class="dt">type =</span> <span class="st">&quot;iml&quot;</span>)</span></code></pre></div>
 <p>The resulting object includes data frame <code>results</code> with seven variables that provides results of the LASSO logistic regression model which is used to approximate the predictions of the random forest model. For brevity, we print out selected variables.</p>
-<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb120-1"><a href="LIME.html#cb120-1"></a>iml_johnny<span class="op">$</span>results[,<span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">7</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="LIME.html#cb16-1"></a>iml_johnny<span class="op">$</span>results[,<span class="kw">c</span>(<span class="dv">1</span><span class="op">:</span><span class="dv">5</span>,<span class="dv">7</span>)]</span></code></pre></div>
 <pre><code>##            beta x.recoded      effect x.original     feature .class
 ## 1 -0.1992616770         1 -0.19926168        1st   class=1st     no
 ## 2  1.6005493672         1  1.60054937       male gender=male     no
@@ -825,10 +824,10 @@ Interestingly, unlike in the case of the results obtained for the `lime` and `lo
 #6  0.158368701         1  0.1583687         1st            class=1st
 --->
 <p>By applying the generic <code>plot()</code> function to the object containing the LIME-method results, we obtain a graphical representation of the results.</p>
-<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb122-1"><a href="LIME.html#cb122-1"></a><span class="kw">plot</span>(iml_johnny) </span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="LIME.html#cb18-1"></a><span class="kw">plot</span>(iml_johnny) </span></code></pre></div>
 <p>The resulting plot is shown in Figure <a href="LIME.html#fig:limeExplIMLTitanic">9.9</a>. It shows values of the two sets of three coefficients for both types of predictions (probability of death and survival).</p>
 
-<div class="sourceCode" id="cb123"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb123-1"><a href="LIME.html#cb123-1"></a><span class="kw">plot</span>(iml_johnny) </span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="LIME.html#cb19-1"></a><span class="kw">plot</span>(iml_johnny) </span></code></pre></div>
 <div class="figure" style="text-align: center"><span id="fig:limeExplIMLTitanic"></span>
 <img src="ema_files/figure-html/limeExplIMLTitanic-1.png" alt="Illustration of the LIME-method results for the prediction for Johnny D for the random forest model titanic_rf and the Titanic data, generated by the iml package." width="80%" />
 <p class="caption">
@@ -843,40 +842,40 @@ Figure 9.9: Illustration of the LIME-method results for the prediction for Johnn
 <p>In this section, we use the <code>lime</code> library for Python, which is probably the most popular implementation of the LIME method <span class="citation">(Ribeiro, Singh, and Guestrin <a href="#ref-lime" role="doc-biblioref">2016</a>)</span>. The <code>lime</code> library requires categorical variables to be encoded in a numerical format. This requires some additional work with the data. Therefore, below we will show you how to use this method in Python step by step.</p>
 <p>For illustration purposes, we use the random forest model for the Titanic data. Instance-level explanations are calculated for Henry, a 47-year-old passenger that travelled in the 1st class.</p>
 <p>In the first step, we read the Titanic data and encode categorical variables. In this case, we use the simplest encoding for <em>gender</em>, <em>class</em>, and <em>embarked</em>, i.e., the label-encoding.</p>
-<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="LIME.html#cb124-1"></a><span class="im">import</span> dalex <span class="im">as</span> dx</span>
-<span id="cb124-2"><a href="LIME.html#cb124-2"></a></span>
-<span id="cb124-3"><a href="LIME.html#cb124-3"></a>titanic <span class="op">=</span> dx.datasets.load_titanic()</span>
-<span id="cb124-4"><a href="LIME.html#cb124-4"></a>X <span class="op">=</span> titanic.drop(columns<span class="op">=</span><span class="st">&#39;survived&#39;</span>)</span>
-<span id="cb124-5"><a href="LIME.html#cb124-5"></a>y <span class="op">=</span> titanic.survived</span>
-<span id="cb124-6"><a href="LIME.html#cb124-6"></a></span>
-<span id="cb124-7"><a href="LIME.html#cb124-7"></a><span class="im">from</span> sklearn <span class="im">import</span> preprocessing</span>
-<span id="cb124-8"><a href="LIME.html#cb124-8"></a>le <span class="op">=</span> preprocessing.LabelEncoder()</span>
-<span id="cb124-9"><a href="LIME.html#cb124-9"></a></span>
-<span id="cb124-10"><a href="LIME.html#cb124-10"></a>X[<span class="st">&#39;gender&#39;</span>]   <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;gender&#39;</span>])</span>
-<span id="cb124-11"><a href="LIME.html#cb124-11"></a>X[<span class="st">&#39;class&#39;</span>]    <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;class&#39;</span>])</span>
-<span id="cb124-12"><a href="LIME.html#cb124-12"></a>X[<span class="st">&#39;embarked&#39;</span>] <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;embarked&#39;</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="LIME.html#cb20-1"></a><span class="im">import</span> dalex <span class="im">as</span> dx</span>
+<span id="cb20-2"><a href="LIME.html#cb20-2"></a></span>
+<span id="cb20-3"><a href="LIME.html#cb20-3"></a>titanic <span class="op">=</span> dx.datasets.load_titanic()</span>
+<span id="cb20-4"><a href="LIME.html#cb20-4"></a>X <span class="op">=</span> titanic.drop(columns<span class="op">=</span><span class="st">&#39;survived&#39;</span>)</span>
+<span id="cb20-5"><a href="LIME.html#cb20-5"></a>y <span class="op">=</span> titanic.survived</span>
+<span id="cb20-6"><a href="LIME.html#cb20-6"></a></span>
+<span id="cb20-7"><a href="LIME.html#cb20-7"></a><span class="im">from</span> sklearn <span class="im">import</span> preprocessing</span>
+<span id="cb20-8"><a href="LIME.html#cb20-8"></a>le <span class="op">=</span> preprocessing.LabelEncoder()</span>
+<span id="cb20-9"><a href="LIME.html#cb20-9"></a></span>
+<span id="cb20-10"><a href="LIME.html#cb20-10"></a>X[<span class="st">&#39;gender&#39;</span>]   <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;gender&#39;</span>])</span>
+<span id="cb20-11"><a href="LIME.html#cb20-11"></a>X[<span class="st">&#39;class&#39;</span>]    <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;class&#39;</span>])</span>
+<span id="cb20-12"><a href="LIME.html#cb20-12"></a>X[<span class="st">&#39;embarked&#39;</span>] <span class="op">=</span> le.fit_transform(X[<span class="st">&#39;embarked&#39;</span>])</span></code></pre></div>
 <p>In the next step we train a random forest model.</p>
-<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="LIME.html#cb125-1"></a><span class="im">from</span> sklearn.ensemble <span class="im">import</span> RandomForestClassifier <span class="im">as</span> rfc</span>
-<span id="cb125-2"><a href="LIME.html#cb125-2"></a>titanic_fr <span class="op">=</span> rfc()</span>
-<span id="cb125-3"><a href="LIME.html#cb125-3"></a>titanic_fr.fit(X, y)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="LIME.html#cb21-1"></a><span class="im">from</span> sklearn.ensemble <span class="im">import</span> RandomForestClassifier <span class="im">as</span> rfc</span>
+<span id="cb21-2"><a href="LIME.html#cb21-2"></a>titanic_fr <span class="op">=</span> rfc()</span>
+<span id="cb21-3"><a href="LIME.html#cb21-3"></a>titanic_fr.fit(X, y)</span></code></pre></div>
 <p>It is time to define the observation for which model prediction will be explained. We write Henry’s data into <code>pandas.Series</code> object.</p>
-<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="LIME.html#cb126-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb126-2"><a href="LIME.html#cb126-2"></a>henry <span class="op">=</span> pd.Series([<span class="dv">1</span>, <span class="fl">47.0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">25.0</span>, <span class="dv">0</span>, <span class="dv">0</span>], </span>
-<span id="cb126-3"><a href="LIME.html#cb126-3"></a>                  index <span class="op">=</span>[<span class="st">&#39;gender&#39;</span>, <span class="st">&#39;age&#39;</span>, <span class="st">&#39;class&#39;</span>, <span class="st">&#39;embarked&#39;</span>,</span>
-<span id="cb126-4"><a href="LIME.html#cb126-4"></a>                          <span class="st">&#39;fare&#39;</span>, <span class="st">&#39;sibsp&#39;</span>, <span class="st">&#39;parch&#39;</span>]) </span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="LIME.html#cb22-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb22-2"><a href="LIME.html#cb22-2"></a>henry <span class="op">=</span> pd.Series([<span class="dv">1</span>, <span class="fl">47.0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">25.0</span>, <span class="dv">0</span>, <span class="dv">0</span>], </span>
+<span id="cb22-3"><a href="LIME.html#cb22-3"></a>                  index <span class="op">=</span>[<span class="st">&#39;gender&#39;</span>, <span class="st">&#39;age&#39;</span>, <span class="st">&#39;class&#39;</span>, <span class="st">&#39;embarked&#39;</span>,</span>
+<span id="cb22-4"><a href="LIME.html#cb22-4"></a>                          <span class="st">&#39;fare&#39;</span>, <span class="st">&#39;sibsp&#39;</span>, <span class="st">&#39;parch&#39;</span>]) </span></code></pre></div>
 <p>The <code>lime</code> library explains models that operate on images, text, or tabular data. In the latter case, we have to use the <code>LimeTabularExplainer</code> module.</p>
-<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="LIME.html#cb127-1"></a><span class="im">from</span> lime.lime_tabular <span class="im">import</span> LimeTabularExplainer </span>
-<span id="cb127-2"><a href="LIME.html#cb127-2"></a>explainer <span class="op">=</span> LimeTabularExplainer(X, </span>
-<span id="cb127-3"><a href="LIME.html#cb127-3"></a>                      feature_names<span class="op">=</span>X.columns, </span>
-<span id="cb127-4"><a href="LIME.html#cb127-4"></a>                      class_names<span class="op">=</span>[<span class="st">&#39;died&#39;</span>, <span class="st">&#39;survived&#39;</span>], </span>
-<span id="cb127-5"><a href="LIME.html#cb127-5"></a>                      discretize_continuous<span class="op">=</span><span class="va">False</span>, </span>
-<span id="cb127-6"><a href="LIME.html#cb127-6"></a>                      verbose<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="LIME.html#cb23-1"></a><span class="im">from</span> lime.lime_tabular <span class="im">import</span> LimeTabularExplainer </span>
+<span id="cb23-2"><a href="LIME.html#cb23-2"></a>explainer <span class="op">=</span> LimeTabularExplainer(X, </span>
+<span id="cb23-3"><a href="LIME.html#cb23-3"></a>                      feature_names<span class="op">=</span>X.columns, </span>
+<span id="cb23-4"><a href="LIME.html#cb23-4"></a>                      class_names<span class="op">=</span>[<span class="st">&#39;died&#39;</span>, <span class="st">&#39;survived&#39;</span>], </span>
+<span id="cb23-5"><a href="LIME.html#cb23-5"></a>                      discretize_continuous<span class="op">=</span><span class="va">False</span>, </span>
+<span id="cb23-6"><a href="LIME.html#cb23-6"></a>                      verbose<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
 <p>The result is an explainer that can be used to interpret a model around specific observations.
 In the following example, we explain the behaviour of the model for Henry.
 The <code>explain_instance()</code> method finds a local approximation with an interpretable linear model.
 The result can be presented graphically with the <code>show_in_notebook()</code> method.</p>
-<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="LIME.html#cb128-1"></a>lime <span class="op">=</span> explainer.explain_instance(henry, titanic_fr.predict_proba)</span>
-<span id="cb128-2"><a href="LIME.html#cb128-2"></a>lime.show_in_notebook(show_table<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="LIME.html#cb24-1"></a>lime <span class="op">=</span> explainer.explain_instance(henry, titanic_fr.predict_proba)</span>
+<span id="cb24-2"><a href="LIME.html#cb24-2"></a>lime.show_in_notebook(show_table<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
 <p>The resulting plot is shown in Figure <a href="LIME.html#fig:limePython1">9.10</a>.</p>
 
 <div class="figure" style="text-align: center"><span id="fig:limePython1"></span>
