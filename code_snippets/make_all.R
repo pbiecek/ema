@@ -94,3 +94,16 @@ for (ff in seq_along(all_files)) {
   file.copy(all_files[ff], to_files[ff])
 }
 
+
+
+
+
+# remove \index from html files
+
+allFiles <- list.files("../docs", pattern = ".*html", full.names = TRUE)
+
+allContent <- lapply(allFiles, function(fl) {
+  tmp <- readLines(fl)
+  tmp <- gsub(tmp, pattern = "\\\\index\\{[^\\}]+\\}", replacement = "")
+  writeLines(text = tmp, con = fl)
+})
