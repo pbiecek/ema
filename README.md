@@ -19,7 +19,7 @@ We've released this initial version to get more feedback. Feedback can be given 
   publisher = {Chapman and Hall/CRC, New York},
   year = {2021},
   isbn = {9780367135591},
-  url = {https://pbiecek.github.io/ema/},
+  url = {https://ema.drwhy.ai/},
 }
 ```
 
